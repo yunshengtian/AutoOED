@@ -7,15 +7,17 @@ class Timer:
     '''
     For time recording and message logging
     '''
-    def __init__(self):
+    def __init__(self, stdout=True):
         self.t = time()
+        self.stdout = stdout
 
     def log(self, string=None, reset=True):
         msg = '%.2fs' % (time() - self.t)
 
         if string is not None:
             msg = string + ': ' + msg
-        print(msg)
+        if self.stdout:
+            print(msg)
         
         if reset:
             self.t = time()

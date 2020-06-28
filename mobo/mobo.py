@@ -53,7 +53,7 @@ class MOBO:
         curr_pfront, pidx = find_pareto_front(Y_init, return_index=True)
         curr_pset = X_init[pidx]
 
-        timer = Timer()
+        timer = Timer(stdout=False)
 
         # data normalization
         self.transformation.fit(X_init, Y_init)
@@ -81,9 +81,13 @@ class MOBO:
     def _build_dataframe(self, X):
         '''
         Build a dataframe from proposed samples X,
-        where columns are: [x1, x2, ..., Expected_f1, Expected_f2, ..., Uncertianty_f1, Uncertainty_f2, ...]
+        where columns are: [x1, x2, ..., f1, f2, ..., Expected_f1, Expected_f2, ..., Uncertianty_f1, Uncertainty_f2, ...]
         '''
         data = {}
+        sample_len = len(X)
+
+        # id
+        data['id'] = np.zeros(sample_len, dtype=int)
 
         # design variables
         for i in range(self.n_var):
@@ -96,11 +100,13 @@ class MOBO:
 
         # prediction and uncertainty
         for i in range(self.n_obj):
+            data[f'f{i + 1}'] = np.zeros(sample_len)
+        for i in range(self.n_obj):
             data[f'Expected_f{i + 1}'] = Y_pred_mean[:, i]
         for i in range(self.n_obj):
             data[f'Uncertainty_f{i + 1}'] = Y_pred_std[:, i]
 
-        return pd.DataFrame(data=info)
+        return pd.DataFrame(data=data)
         
 
     def __str__(self):

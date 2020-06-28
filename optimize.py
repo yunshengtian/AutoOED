@@ -25,7 +25,7 @@ def process_args(args_path):
     return general_args, framework_args
 
 
-def optimize(problem, X_init, Y_init):
+def optimize(problem, X_init, Y_init, seed=None):
     '''
     Run MOBO optimization from X_init and Y_init to produce X_next_df
     '''
@@ -33,7 +33,8 @@ def optimize(problem, X_init, Y_init):
     args, framework_args = process_args('experiment_config.yml')
 
     # set seed
-    np.random.seed(args.seed)
+    seed = args.seed if seed is None else seed
+    np.random.seed(seed)
 
     # initialize optimizer
     optimizer = get_algorithm(args.algo)(problem, args.ref_point, framework_args)
