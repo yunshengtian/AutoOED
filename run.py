@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from multiprocessing import Process, Lock
 from problems.common import build_problem, generate_initial_samples
-from optimize import optimize, process_args
+from optimize import optimize, load_config
 from evaluate import evaluate
 import tkinter
 import matplotlib.pyplot as plt
@@ -51,14 +51,16 @@ def main():
     lock = Lock()
 
     # load config
-    args, _ = process_args('experiment_config.yml')
+    config = load_config('experiment_config.yml')
+    genearl_cfg, problem_cfg = config['general'], config['problem']
+    n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
 
     # build problem
-    problem, true_pfront = build_problem(args.problem, args.n_var, args.n_obj)
+    problem, true_pfront = build_problem(problem_cfg)
 
     # generate initial samples
-    X, Y = generate_initial_samples(problem, args.n_init_sample)
-    dataframe = generate_initial_dataframe(X, Y, args.n_var, args.n_obj)
+    X, Y = generate_initial_samples(problem, genearl_cfg['n_init_sample'])
+    dataframe = generate_initial_dataframe(X, Y, n_var, n_obj)
     dataframe.to_csv('data.csv', index=False)
 
     sc = ax.scatter(*Y.T, color='blue', s=10)
@@ -69,13 +71,15 @@ def main():
         print(f'worker {worker_id} started')
 
         old_df = pd.read_csv('data.csv')
-        X = old_df[[f'x{i + 1}' for i in range(args.n_var)]].to_numpy()
-        Y = old_df[[f'f{i + 1}' for i in range(args.n_obj)]].to_numpy()
+        X = old_df[[f'x{i + 1}' for i in range(n_var)]].to_numpy()
+        Y = old_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
 
         # run optimization
-        result_df = optimize(problem, X, Y, seed=worker_id)
+        result_df = optimize(config, X, Y, seed=worker_id)
         # run evaluation
         result_df = evaluate(problem, result_df)
+
+        print(f'worker {worker_id}', result_df)
         
         lock.acquire()
 
@@ -107,7 +111,7 @@ def main():
 
     def redraw():
         df = pd.read_csv('data.csv')
-        Y = df[[f'f{i + 1}' for i in range(args.n_obj)]].to_numpy()
+        Y = df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
         x, y = Y.T[0], Y.T[1]
         sc.set_offsets(np.c_[x, y])
         fig.canvas.draw()

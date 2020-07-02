@@ -15,7 +15,7 @@ class MOBO:
     '''
     config = {}
 
-    def __init__(self, problem, ref_point, framework_args):
+    def __init__(self, problem, framework_args):
         '''
         Input:
             problem: the original / real optimization problem
@@ -24,7 +24,7 @@ class MOBO:
         '''
         self.real_problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
-        self.ref_point = ref_point
+        self.ref_point = problem.ref_point
 
         bounds = np.array([problem.xl, problem.xu])
         self.transformation = StandardTransform(bounds) # data normalization for surrogate model fitting

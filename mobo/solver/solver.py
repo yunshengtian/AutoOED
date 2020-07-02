@@ -10,7 +10,7 @@ class Solver:
     '''
     Multi-objective solver
     '''
-    def __init__(self, n_gen, pop_init_method, batch_size, algo, **kwargs):
+    def __init__(self, n_gen, pop_init_method, batch_size, algo, seed=None, **kwargs):
         '''
         Input:
             n_gen: number of generations to solve
@@ -21,6 +21,7 @@ class Solver:
         self.n_gen = n_gen
         self.pop_init_method = pop_init_method
         self.batch_size = batch_size
+        self.seed = seed
         self.algo_type = algo
         self.algo_kwargs = kwargs
         self.solution = None
@@ -36,7 +37,7 @@ class Solver:
         algo = self.algo_type(sampling=sampling, **self.algo_kwargs)
 
         # optimization
-        res = minimize(problem, algo, ('n_gen', self.n_gen))
+        res = minimize(problem, algo, n_gen=self.n_gen, seed=self.seed)
 
         # construct solution
         self.solution = {'x': res.pop.get('X'), 'y': res.pop.get('F'), 'algo': res.algorithm}

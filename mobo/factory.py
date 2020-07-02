@@ -76,7 +76,7 @@ def init_from_config(config, framework_args):
         kwargs = framework_args[key]
         if config is None:
             # no config specified, initialize from user arguments
-            name = kwargs[key]
+            name = kwargs['name']
         else:
             # initialize from config specifications, if certain keys are not provided, use default settings
             name = config[key] if key in config else 'default'

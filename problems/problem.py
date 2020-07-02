@@ -1,6 +1,6 @@
 import numpy as np
 import autograd
-from autograd.numpy import row_stack
+from abc import abstractmethod
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from pymoo.model.problem import Problem as PymooProblem
@@ -11,6 +11,29 @@ Problem definition built upon Pymoo's Problem class, added some custom features
 '''
 
 class Problem(PymooProblem):
+
+    def __init__(self, *args, ref_point=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if ref_point is None:
+            self.ref_point = np.zeros(self.n_obj)
+        else:
+            self.ref_point = ref_point
+
+    def set_ref_point(self, ref_point):
+        self.ref_point = ref_point
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        out['F'] = np.column_stack([*np.atleast_2d(self.evaluate_performance(x))])
+        out['G'] = self.evaluate_constraint(x)
+        if out['G'] is not None:
+            out['G'] = np.column_stack([*np.atleast_2d(out['G'])])
+
+    @abstractmethod
+    def evaluate_performance(self, x, **kwargs):
+        pass
+
+    def evaluate_constraint(self, x, **kwargs):
+        return None
     
     def evaluate(self,
                  X,
@@ -85,20 +108,17 @@ class Problem(PymooProblem):
             out[val] = None
 
         # calculate the output array - either elementwise or not. also consider the gradient
-        # NOTE: pass return_values_of to evaluation function to avoid unnecessary computation
-        if self.elementwise_evaluation:
-            out = self._evaluate_elementwise(X, calc_gradient, out, *args, return_values_of=return_values_of, **kwargs)
-        else:
-            out = self._evaluate_batch(X, calc_gradient, out, *args, return_values_of=return_values_of, **kwargs)
+        self._evaluate(X, out, *args, calc_gradient=calc_gradient, **kwargs)
+        at_least2d(out)
 
-            calc_gradient_of = [key for key, val in out.items()
-                                if "d" + key in return_values_of and
-                                out.get("d" + key) is None and
-                                (type(val) == autograd.numpy.numpy_boxes.ArrayBox)]
+        calc_gradient_of = [key for key, val in out.items()
+                            if "d" + key in return_values_of and
+                            out.get("d" + key) is None and
+                            (type(val) == autograd.numpy.numpy_boxes.ArrayBox)]
 
-            if len(calc_gradient_of) > 0:
-                deriv = self._calc_gradient(out, calc_gradient_of)
-                out = {**out, **deriv}
+        if len(calc_gradient_of) > 0:
+            deriv = self._calc_gradient(out, calc_gradient_of)
+            out = {**out, **deriv}
 
         # convert back to conventional numpy arrays - no array box as return type
         for key in out.keys():
@@ -132,61 +152,11 @@ class Problem(PymooProblem):
         if return_as_dictionary:
             return out
         else:
-
             # if just a single value do not return a tuple
             if len(return_values_of) == 1:
                 return out[return_values_of[0]]
             else:
                 return tuple([out[val] for val in return_values_of])
-
-    def _evaluate_batch(self, X, calc_gradient, out, *args, **kwargs):
-        # NOTE: to use self-calculated dF (gradient) rather than autograd.numpy, which is not supported by Pymoo
-        self._evaluate(X, out, *args, calc_gradient=calc_gradient, **kwargs)
-        at_least2d(out)
-        return out
-
-    def _evaluate_elementwise(self, X, calc_gradient, out, *args, **kwargs):
-        # NOTE: to use self-calculated dF (gradient) rather than autograd.numpy, which is not supported by Pymoo
-        ret = []
-        def func(_x):
-            _out = {}
-            self._evaluate(_x, _out, *args, calc_gradient=calc_gradient, **kwargs)
-            return _out
-        parallelization = self.parallelization
-        if not isinstance(parallelization, (list, tuple)):
-            parallelization = [self.parallelization]
-        _type = parallelization[0]
-        if len(parallelization) >= 1:
-            _params = parallelization[1:]
-        # just serialize evaluation
-        if _type is None:
-            [ret.append(func(x)) for x in X]
-        elif _type == "threads":
-            if len(_params) == 0:
-                n_threads = cpu_count() - 1
-            else:
-                n_threads = _params[0]
-            with ThreadPool(n_threads) as pool:
-                params = []
-                for k in range(len(X)):
-                    params.append([X[k], calc_gradient, self._evaluate, args, kwargs])
-                ret = np.array(pool.starmap(evaluate_in_parallel, params))
-        elif _type == "dask":
-            if len(_params) != 2:
-                raise Exception("A distributed client objective is need for using dask. parallelization=(dask, "
-                                "<client>, <function>).")
-            else:
-                client, fun = _params
-            jobs = []
-            for k in range(len(X)):
-                jobs.append(client.submit(fun, X[k]))
-            ret = [job.result() for job in jobs]
-        else:
-            raise Exception("Unknown parallelization method: %s (None, threads, dask)" % self.parallelization)
-        # stack all the single outputs together
-        for key in ret[0].keys():
-            out[key] = row_stack([ret[i][key] for i in range(len(ret))])
-        return out
 
     def __str__(self):
         return '========== Problem Definition ==========\n' + super().__str__()

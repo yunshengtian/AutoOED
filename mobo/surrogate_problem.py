@@ -41,4 +41,4 @@ class SurrogateProblem(Problem):
         
         # evaluate constraints by real problem
         x_ori = self.transformation.undo(x)
-        out['G'], out['CV'], out['feasible'] = self.real_problem.evaluate(x_ori, return_values_of=['G', 'CV', 'feasible'], requires_F=False)
+        out['G'] = self.real_problem.evaluate_constraint(x_ori)
