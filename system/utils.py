@@ -1,0 +1,52 @@
+import yaml
+import numpy as np
+
+
+def load_config(config_path):
+    '''
+    Post-process to arguments specified in config file for file simplicity
+    '''
+    with open(config_path, 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    genearl_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
+
+    n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
+    n_process, batch_size = genearl_cfg['n_process'], genearl_cfg['batch_size']
+
+    if 'var_name' not in problem_cfg:
+        problem_cfg['var_name'] = [f'x{i + 1}' for i in range(n_var)]
+    if 'obj_name' not in problem_cfg:
+        problem_cfg['obj_name'] = [f'f{i + 1}' for i in range(n_obj)]
+
+    algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})
+    algo_cfg['solver'].update({'n_obj': n_obj, 'n_process': n_process, 'batch_size': batch_size})
+    algo_cfg['selection'].update({'batch_size': batch_size})
+
+    return config
+
+
+def check_pareto(Y):
+    '''
+    Check pareto optimality of the input performance data
+    '''
+    sorted_indices = np.argsort(Y.T[0])
+    is_pareto = np.zeros(len(Y), dtype=bool)
+    for idx in sorted_indices:
+        # check domination relationship
+        if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
+            is_pareto[idx] = True
+    return is_pareto
+
+
+def find_pareto_front(Y):
+    '''
+    Return pareto front of the input performance data
+    '''
+    sorted_indices = np.argsort(Y.T[0])
+    pareto_indices = []
+    for idx in sorted_indices:
+        # check domination relationship
+        if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
+            pareto_indices.append(idx)
+    return Y[pareto_indices]

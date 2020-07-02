@@ -1,26 +1,7 @@
-import yaml
 import numpy as np
 from problems.common import build_problem, generate_initial_samples
 from mobo.algorithms import get_algorithm
-
-
-def load_config(config_path):
-    '''
-    Post-process to arguments specified in config file for file simplicity
-    '''
-    with open(config_path, 'r') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-
-    genearl_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
-
-    n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
-    n_process, batch_size = genearl_cfg['n_process'], genearl_cfg['batch_size']
-
-    algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})
-    algo_cfg['solver'].update({'n_obj': n_obj, 'n_process': n_process, 'batch_size': batch_size})
-    algo_cfg['selection'].update({'batch_size': batch_size})
-
-    return config
+from system.utils import load_config
 
 
 def optimize(config, X_init, Y_init, seed=None):
@@ -47,8 +28,13 @@ def optimize(config, X_init, Y_init, seed=None):
 
 if __name__ == '__main__':
 
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('--config-path', type=str, required=True)
+    args = parser.parse_args()
+
     # load config
-    config = load_config('experiment_config.yml')
+    config = load_config(args.config_path)
     genearl_cfg, problem_cfg = config['general'], config['problem']
 
     # build problem

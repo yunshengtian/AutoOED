@@ -81,7 +81,7 @@ class MOBO:
     def _build_dataframe(self, X):
         '''
         Build a dataframe from proposed samples X,
-        where columns are: [x1, x2, ..., f1, f2, ..., Expected_f1, Expected_f2, ..., Uncertianty_f1, Uncertainty_f2, ...]
+        where columns are: [x1, x2, ..., f1, f2, ..., expected_f1, expected_f2, ..., uncertianty_f1, uncertainty_f2, ...]
         '''
         data = {}
         sample_len = len(X)
@@ -102,9 +102,9 @@ class MOBO:
         for i in range(self.n_obj):
             data[f'f{i + 1}'] = np.zeros(sample_len)
         for i in range(self.n_obj):
-            data[f'Expected_f{i + 1}'] = Y_pred_mean[:, i]
+            data[f'expected_f{i + 1}'] = Y_pred_mean[:, i]
         for i in range(self.n_obj):
-            data[f'Uncertainty_f{i + 1}'] = Y_pred_std[:, i]
+            data[f'uncertainty_f{i + 1}'] = Y_pred_std[:, i]
 
         return pd.DataFrame(data=data)
         
