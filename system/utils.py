@@ -51,16 +51,3 @@ def check_pareto(Y):
         if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
             is_pareto[idx] = True
     return is_pareto
-
-
-def find_pareto_front(Y):
-    '''
-    Return pareto front of the input performance data
-    '''
-    sorted_indices = np.argsort(Y.T[0])
-    pareto_indices = []
-    for idx in sorted_indices:
-        # check domination relationship
-        if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
-            pareto_indices.append(idx)
-    return Y[pareto_indices]

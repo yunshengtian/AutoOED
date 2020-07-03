@@ -1,22 +1,26 @@
+'''
+Run with local tkinter GUI and csv file for data storage
+'''
+
 import numpy as np
 import pandas as pd
 from argparse import ArgumentParser
 from multiprocessing import Process, Lock
-from problems.common import build_problem, generate_initial_samples
 from pymoo.performance_indicator.hv import Hypervolume
+from problems.common import build_problem
 from system.optimize import optimize
 from system.evaluate import evaluate
-from system.utils import load_config, check_pareto, find_pareto_front
-from system.simple_gui import SimpleGUI
+from system.utils import load_config, check_pareto
+from system.gui_local import LocalGUI
 
 
 def generate_initial_dataframe(X, Y, hv):
+    '''
+    Generate initial dataframe from initial X, Y and hypervolume
+    '''
     data = {}
     sample_len = len(X)
     n_var, n_obj = X.shape[1], Y.shape[1]
-
-    # id
-    data['id'] = np.arange(sample_len, dtype=int)
 
     # design variables
     for i in range(n_var):
@@ -39,6 +43,7 @@ def generate_initial_dataframe(X, Y, hv):
     return pd.DataFrame(data=data)
 
 
+# global index count for parallel workers
 worker_id = 0
 
 
@@ -64,18 +69,20 @@ def main():
 
     # generate initial data csv file
     dataframe = generate_initial_dataframe(X, Y, hv)
-    dataframe.to_csv(data_path, index=False)
+    dataframe.to_csv(data_path)
 
-    # main process of optimization and evaluation
-    def optimize_process(lock, worker_id):
+    def optimize_worker(worker_id):
+        '''
+        Worker process of optimization algorithm execution
+        '''
         print(f'worker {worker_id} started')
 
+        # run several iterations of algorithm
         for _ in range(general_cfg['n_iter']):
 
-            # read file
+            # read current data from file
             with lock:
-                old_df = pd.read_csv(data_path)
-
+                old_df = pd.read_csv(data_path, index_col=0)
             X = old_df[[f'x{i + 1}' for i in range(n_var)]].to_numpy()
             Y = old_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
 
@@ -84,35 +91,38 @@ def main():
             # run evaluation
             result_df = evaluate(problem, result_df)
             
-            # write file
+            # write optimized data to file
             with lock:
-                old_df = pd.read_csv(data_path)
-                last_id = old_df['id'].iloc[-1]
-                ids = np.arange(len(result_df), dtype=int) + last_id + 1
-                result_df['id'] = ids
+                old_df = pd.read_csv(data_path, index_col=0)
                 new_df = pd.concat([old_df, result_df], ignore_index=True)
                 Y = new_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
                 new_df.loc[len(new_df)-len(result_df):len(new_df), 'hv'] = hv.calc(Y)
                 new_df['is_pareto'] = check_pareto(Y)
-                new_df.to_csv(data_path, index=False)
+                new_df.to_csv(data_path)
 
         print(f'worker {worker_id} ended')
 
     def optimize_command():
+        '''
+        Optimization command linked to GUI button click
+        '''
         global worker_id
-        Process(target=optimize_process, args=(lock, worker_id)).start()
+        Process(target=optimize_worker, args=(worker_id,)).start()
         worker_id += 1
 
     def load_command():
+        '''
+        Data loading command linked to GUI figure refresh
+        '''
         with lock:
-            df = pd.read_csv(data_path)
+            df = pd.read_csv(data_path, index_col=0)
         Y = df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
         is_pareto = df['is_pareto'].to_numpy()
         hv_value = df['hv'].to_numpy()
         return Y, Y[is_pareto], hv_value
 
     # gui
-    gui = SimpleGUI(config, optimize_command, load_command)
+    gui = LocalGUI(config, optimize_command, load_command)
     gui.init_draw(true_pfront)
     gui.mainloop()
 
