@@ -20,9 +20,13 @@ Tested with Python 3.7.
 ## Getting Started
 
 ```
-python optimize.py
+python local_file_run.py
 ```
 
-This command will run 1 iteration of MOBO optimization using configurations specified in experiment_config.yml (will add a doc on the parameter settings in this yml file later).
+This command will run MOBO optimization using configurations specified in config/example_config.yml, with local tkinter-based GUI and csv file as data storage.
 
-The main function is optimize() in optimize.py, where it takes (problem, X_init, Y_init) as input and output a dataframe X_next_df.
+```
+python local_db_run.py
+```
+
+This command will run MOBO optimization using configurations specified in config/example_config.yml, with local tkinter-based GUI and SQLite database as data storage.
