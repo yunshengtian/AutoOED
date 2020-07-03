@@ -1,5 +1,5 @@
 '''
-Run with local tkinter GUI and csv file for data storage
+Run with local tkinter GUI and sqlite database for data storage
 '''
 
 import numpy as np

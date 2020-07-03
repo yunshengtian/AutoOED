@@ -1,11 +1,17 @@
+'''
+SQLite database operations (compatible with multiprocessing)
+'''
+
 import sqlite3
 import numpy as np
-import io
 
 from .utils import check_pareto
 
 
 def db_create(db_path, config):
+    '''
+    Create database based on config file
+    '''
     conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
     cur = conn.cursor()
 
@@ -22,6 +28,9 @@ def db_create(db_path, config):
 
 
 def db_init(db_path, hv, X, Y):
+    '''
+    Initialize database table with initial data X, Y
+    '''
     conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
     cur = conn.cursor()
 
@@ -39,6 +48,9 @@ def db_init(db_path, hv, X, Y):
 
 
 def db_insert(db_path, hv, X, Y, Y_expected, Y_uncertainty):
+    '''
+    Insert data into rows of database table
+    '''
     conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
     cur = conn.cursor()
 
@@ -63,6 +75,9 @@ def db_insert(db_path, hv, X, Y, Y_expected, Y_uncertainty):
 
 
 def db_select(db_path, keys, dtype=float, rowid=None):
+    '''
+    Query data from database
+    '''
     conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
     cur = conn.cursor()
     
