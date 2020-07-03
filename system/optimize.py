@@ -15,7 +15,7 @@ def optimize(config, X_init, Y_init, seed=None):
     algo_cfg['solver'].update({'seed': seed})
 
     # build problem
-    problem, _ = build_problem(problem_cfg)
+    problem = build_problem(problem_cfg)
 
     # initialize optimizer
     optimizer = get_algorithm(algo_cfg['name'])(problem, algo_cfg)
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     genearl_cfg, problem_cfg = config['general'], config['problem']
 
     # build problem
-    problem, _ = build_problem(problem_cfg)
+    problem = build_problem(problem_cfg)
 
     # generate initial samples
     X_init, Y_init = generate_initial_samples(problem, genearl_cfg['n_init_sample'])

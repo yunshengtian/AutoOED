@@ -7,17 +7,13 @@ from pymoo.performance_indicator.hv import Hypervolume
 from system.optimize import optimize
 from system.evaluate import evaluate
 from system.utils import load_config, check_pareto, find_pareto_front
-
-import tkinter
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.backend_bases import key_press_handler
+from system.simple_gui import SimpleGUI
 
 
-def generate_initial_dataframe(X, Y, n_var, n_obj, hv_value):
+def generate_initial_dataframe(X, Y, hv):
     data = {}
     sample_len = len(X)
+    n_var, n_obj = X.shape[1], Y.shape[1]
 
     # id
     data['id'] = np.arange(sample_len, dtype=int)
@@ -35,7 +31,7 @@ def generate_initial_dataframe(X, Y, n_var, n_obj, hv_value):
         data[f'uncertainty_f{i + 1}'] = np.zeros(sample_len)
 
     # hypervolume
-    data['hv'] = hv_value
+    data['hv'] = hv.calc(Y)
 
     # pareto optimality
     data['is_pareto'] = check_pareto(Y)
@@ -54,53 +50,22 @@ def main():
     args = parser.parse_args()
     config_path, data_path = args.config_path, args.data_path
 
-    # gui
-    root = tkinter.Tk()
-    fig = plt.figure(figsize=(12, 6))
-    ax1 = fig.add_subplot(121)
-    ax1.set_title('Performance Space')
-    ax2 = fig.add_subplot(122)
-    ax2.set_xlabel('Evaluations')
-    ax2.set_ylabel('Hypervolume')
-
-    canvas = FigureCanvasTkAgg(fig, master=root)
-    canvas.draw()
-    widget = canvas.get_tk_widget()
-    widget.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-
     # multiprocessing lock
     lock = Lock()
 
     # load config
     config = load_config(config_path)
     general_cfg, problem_cfg = config['general'], config['problem']
-    n_init_sample = general_cfg['n_init_sample']
-    n_var, n_obj, ref_point = problem_cfg['n_var'], problem_cfg['n_obj'], problem_cfg['ref_point']
-    f1_name, f2_name = problem_cfg['obj_name']
-    ax1.set_xlabel(f1_name)
-    ax1.set_ylabel(f2_name)
+    n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
 
     # build problem
-    problem, true_pfront = build_problem(problem_cfg)
+    problem, true_pfront, X, Y = build_problem(problem_cfg, get_pfront=True, get_init_samples=True)
+    ref_point = problem.ref_point
+    hv = Hypervolume(ref_point=ref_point) # hypervolume calculator
 
-    # generate initial samples & reference point
-    X, Y = generate_initial_samples(problem, n_init_sample)
-    if ref_point is None:
-        ref_point = np.max(Y, axis=0)
-        problem.set_ref_point(ref_point)
-    hv = Hypervolume(ref_point=ref_point)
-    hv_value = hv.calc(Y)
-    dataframe = generate_initial_dataframe(X, Y, n_var, n_obj, hv_value)
+    # generate initial data csv file
+    dataframe = generate_initial_dataframe(X, Y, hv)
     dataframe.to_csv(data_path, index=False)
-    ax2.set_title('Hypervolume: %.2f' % hv_value)
-
-    # draw initial figures
-    if true_pfront is not None:
-        ax1.scatter(*true_pfront.T, color='gray', s=5, label='True Pareto front')
-    sc1 = ax1.scatter(*Y.T, color='blue', s=10, label='Evaluated')
-    sc2 = ax1.scatter(*find_pareto_front(Y).T, color='red', s=10, label='Approximated Pareto front')
-    ax1.legend(loc='upper right')
-    line = ax2.plot(np.arange(n_init_sample, dtype=int), np.full(n_init_sample, hv_value))[0]
 
     # main process of optimization and evaluation
     def optimize_process(lock, worker_id):
@@ -134,45 +99,23 @@ def main():
 
         print(f'worker {worker_id} ended')
 
-    # gui events
-    def optimize_worker():
+    def optimize_command():
         global worker_id
         Process(target=optimize_process, args=(lock, worker_id)).start()
         worker_id += 1
-    
-    button = tkinter.Button(master=root, text="optimize", command=optimize_worker)
-    button.pack(side=tkinter.BOTTOM)
 
-    def gui_quit():
-        root.quit()
-        root.destroy()
-
-    root.protocol("WM_DELETE_WINDOW", gui_quit)
-
-    # refresh figures
-    def redraw():
+    def load_command():
         with lock:
             df = pd.read_csv(data_path)
-
-        # refresh performance space
         Y = df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
         is_pareto = df['is_pareto'].to_numpy()
-        sc1.set_offsets(Y)
-        sc2.set_offsets(Y[is_pareto])
-
-        # refresh hypervolume
         hv_value = df['hv'].to_numpy()
-        line.set_data(np.arange(len(Y), dtype=int), hv_value)
-        ax2.relim()
-        ax2.autoscale_view()
-        ax2.set_title('Hypervolume: %.2f' % hv_value[-1])
+        return Y, Y[is_pareto], hv_value
 
-        fig.canvas.draw()
-        root.after(100, redraw)
-
-    root.after(100, redraw)
-
-    tkinter.mainloop()
+    # gui
+    gui = SimpleGUI(config, optimize_command, load_command)
+    gui.init_draw(true_pfront)
+    gui.mainloop()
 
 
 if __name__ == '__main__':

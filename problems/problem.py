@@ -14,6 +14,7 @@ class Problem(PymooProblem):
 
     def __init__(self, *args, ref_point=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # TODO
         if ref_point is None:
             self.ref_point = np.zeros(self.n_obj)
         else:

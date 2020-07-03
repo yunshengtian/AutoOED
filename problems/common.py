@@ -60,7 +60,7 @@ def generate_initial_samples(problem, n_sample):
     return X, Y
 
 
-def build_problem(config):
+def build_problem(config, get_pfront=False, get_init_samples=False):
     '''
     Build optimization problem from name, get initial samples
     Input:
@@ -72,6 +72,9 @@ def build_problem(config):
         pareto_front: the true pareto front of the problem (if defined, otherwise None)
     '''
     name, n_var, n_obj, ref_point = config['name'], config['n_var'], config['n_obj'], config['ref_point']
+    # NOTE: either set ref_point from config file, or set from init random/provided samples
+    # TODO: support provided init samples
+    # TODO: seperate getting pareto front
 
     # build problem
     if name.startswith('zdt') or name == 'vlmop2':
@@ -101,5 +104,19 @@ def build_problem(config):
 
     if n_var != problem.n_var or n_obj != problem.n_obj:
         raise Exception('problem dimension mismatch, please specify the valid dimension')
+
+    if get_init_samples:
+        X_init, Y_init = generate_initial_samples(problem, config['n_init_sample'])
+        if ref_point is None:
+            ref_point = np.max(Y_init, axis=0)
+            problem.set_ref_point(ref_point)
+            # config['ref_point'] = ref_point # update reference point in config
     
-    return problem, pareto_front
+    if not get_pfront and not get_init_samples:
+        return problem
+    elif get_pfront and get_init_samples:
+        return problem, pareto_front, X_init, Y_init
+    elif get_pfront:
+        return problem, pareto_front
+    elif get_init_samples:
+        return problem, X_init, Y_init

@@ -9,16 +9,20 @@ def load_config(config_path):
     with open(config_path, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
-    genearl_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
+    general_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
 
     n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
-    n_process, batch_size = genearl_cfg['n_process'], genearl_cfg['batch_size']
+    n_process, batch_size = general_cfg['n_process'], general_cfg['batch_size']
 
+    # set default values for optional configurations
+    if 'ref_point' not in problem_cfg:
+        problem_cfg['ref_point'] = None
     if 'var_name' not in problem_cfg:
         problem_cfg['var_name'] = [f'x{i + 1}' for i in range(n_var)]
     if 'obj_name' not in problem_cfg:
         problem_cfg['obj_name'] = [f'f{i + 1}' for i in range(n_obj)]
 
+    problem_cfg['n_init_sample'] = general_cfg['n_init_sample'] # TODO
     algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})
     algo_cfg['solver'].update({'n_obj': n_obj, 'n_process': n_process, 'batch_size': batch_size})
     algo_cfg['selection'].update({'batch_size': batch_size})
