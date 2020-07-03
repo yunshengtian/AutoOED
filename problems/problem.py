@@ -12,15 +12,12 @@ Problem definition built upon Pymoo's Problem class, added some custom features
 
 class Problem(PymooProblem):
 
-    def __init__(self, *args, ref_point=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # TODO
-        if ref_point is None:
-            self.ref_point = np.zeros(self.n_obj)
-        else:
-            self.ref_point = ref_point
+        self.ref_point = None
 
     def set_ref_point(self, ref_point):
+        assert len(ref_point) == self.n_obj, f'reference point should have {self.n_obj} dimensions'
         self.ref_point = ref_point
 
     def _evaluate(self, x, out, *args, **kwargs):

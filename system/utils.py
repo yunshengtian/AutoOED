@@ -1,5 +1,14 @@
 import yaml
 import numpy as np
+from problems.common import build_problem
+
+
+def correct_config(problem_cfg):
+    '''
+    Correct n_var and n_obj in config file due to problem specification
+    '''
+    problem = build_problem(problem_cfg)
+    problem_cfg['n_var'], problem_cfg['n_obj'] = problem.n_var, problem.n_obj
 
 
 def load_config(config_path):
@@ -10,13 +19,14 @@ def load_config(config_path):
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     general_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
+    if 'ref_point' not in problem_cfg:
+        problem_cfg['ref_point'] = None
+    correct_config(problem_cfg)
 
     n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
     n_process, batch_size = general_cfg['n_process'], general_cfg['batch_size']
 
     # set default values for optional configurations
-    if 'ref_point' not in problem_cfg:
-        problem_cfg['ref_point'] = None
     if 'var_name' not in problem_cfg:
         problem_cfg['var_name'] = [f'x{i + 1}' for i in range(n_var)]
     if 'obj_name' not in problem_cfg:

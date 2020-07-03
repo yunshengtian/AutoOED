@@ -13,7 +13,7 @@ class RE(Problem, ABC):
     xl = None
     xu = None
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         Problem.__init__(self, n_var=self.n_var, n_obj=self.n_obj, xl=np.array(self.xl), xu=np.array(self.xu))
 
     def _calc_pareto_front(self, *args, **kwargs):

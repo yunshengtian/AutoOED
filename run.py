@@ -56,11 +56,10 @@ def main():
     # load config
     config = load_config(config_path)
     general_cfg, problem_cfg = config['general'], config['problem']
-    n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
 
     # build problem
     problem, true_pfront, X, Y = build_problem(problem_cfg, get_pfront=True, get_init_samples=True)
-    ref_point = problem.ref_point
+    n_var, n_obj, ref_point = problem.n_var, problem.n_obj, problem.ref_point
     hv = Hypervolume(ref_point=ref_point) # hypervolume calculator
 
     # generate initial data csv file

@@ -1,5 +1,5 @@
 import numpy as np
-from pymoo.factory import get_from_list, get_reference_directions
+from pymoo.factory import get_from_list
 from problems import *
 from mobo.lhs import lhs
 
@@ -74,43 +74,31 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
     name, n_var, n_obj, ref_point = config['name'], config['n_var'], config['n_obj'], config['ref_point']
     # NOTE: either set ref_point from config file, or set from init random/provided samples
     # TODO: support provided init samples
-    # TODO: seperate getting pareto front
 
     # build problem
-    if name.startswith('zdt') or name == 'vlmop2':
-        problem = get_problem(name, n_var=n_var)
-        pareto_front = problem.pareto_front()
-    elif name.startswith('dtlz'):
+    try:
         problem = get_problem(name, n_var=n_var, n_obj=n_obj)
-        if n_obj <= 3 and name in ['dtlz1', 'dtlz2', 'dtlz3', 'dtlz4']:
-            ref_kwargs = dict(n_points=100) if n_obj == 2 else dict(n_partitions=15)
-            ref_dirs = get_reference_directions('das-dennis', n_dim=n_obj, **ref_kwargs)
-            pareto_front = problem.pareto_front(ref_dirs)
-        elif n_obj == 3 and name in ['dtlz5', 'dtlz6']:
-            pareto_front = problem.pareto_front()
-        else:
-            pareto_front = None
-    else:
-        try:
-            problem = get_problem(name)
-        except:
-            raise NotImplementedError('problem not supported yet!')
-        try:
-            pareto_front = problem.pareto_front()
-        except:
-            pareto_front = None
-
-    problem.set_ref_point(ref_point)
+    except:
+        raise NotImplementedError('problem not supported yet!')
 
     if n_var != problem.n_var or n_obj != problem.n_obj:
-        raise Exception('problem dimension mismatch, please specify the valid dimension')
+        # NOTE: problem dimension mismatch between arguments and problem specification, use problem specification instead
+        n_var, n_obj = problem.n_var, problem.n_obj
+        config['n_var'], config['n_obj'] = n_var, n_obj
+
+    if get_pfront:
+        try:
+            pareto_front = problem.pareto_front()
+        except:
+            pareto_front = None
 
     if get_init_samples:
         X_init, Y_init = generate_initial_samples(problem, config['n_init_sample'])
         if ref_point is None:
             ref_point = np.max(Y_init, axis=0)
-            problem.set_ref_point(ref_point)
-            # config['ref_point'] = ref_point # update reference point in config
+            config['ref_point'] = ref_point # update reference point in config
+
+    problem.set_ref_point(ref_point)
     
     if not get_pfront and not get_init_samples:
         return problem

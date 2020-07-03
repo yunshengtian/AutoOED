@@ -1,6 +1,7 @@
 import numpy as np
 
 from .problem import Problem
+from pymoo.factory import get_reference_directions
 from pymoo.problems.util import load_pareto_front_from_file
 
 
@@ -46,7 +47,9 @@ class DTLZ1(DTLZ):
     def __init__(self, n_var=7, n_obj=3, **kwargs):
         super().__init__(n_var, n_obj, **kwargs)
 
-    def _calc_pareto_front(self, ref_dirs=None):
+    def _calc_pareto_front(self):
+        ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
+        ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return 0.5 * ref_dirs
 
     def evaluate_performance(self, x):
@@ -67,7 +70,9 @@ class DTLZ2(DTLZ):
     def __init__(self, n_var=10, n_obj=3, **kwargs):
         super().__init__(n_var, n_obj, **kwargs)
 
-    def _calc_pareto_front(self, ref_dirs):
+    def _calc_pareto_front(self):
+        ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
+        ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return generic_sphere(ref_dirs)
 
     def evaluate_performance(self, x):
@@ -80,7 +85,9 @@ class DTLZ3(DTLZ):
     def __init__(self, n_var=10, n_obj=3, **kwargs):
         super().__init__(n_var, n_obj, **kwargs)
 
-    def _calc_pareto_front(self, ref_dirs):
+    def _calc_pareto_front(self):
+        ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
+        ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return generic_sphere(ref_dirs)
 
     def evaluate_performance(self, x):
@@ -95,7 +102,9 @@ class DTLZ4(DTLZ):
         self.alpha = alpha
         self.d = d
 
-    def _calc_pareto_front(self, ref_dirs):
+    def _calc_pareto_front(self):
+        ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
+        ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return generic_sphere(ref_dirs)
 
     def evaluate_performance(self, x):

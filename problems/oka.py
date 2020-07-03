@@ -6,7 +6,7 @@ class OKA1(Problem):
     '''
     Okabe, Tatsuya, et al. "On test functions for evolutionary multi-objective optimization." International Conference on Parallel Problem Solving from Nature. Springer, Berlin, Heidelberg, 2004.
     '''
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__(n_var=2, n_obj=2, type_var=np.double)
         sin, cos = np.sin(np.pi / 12), np.cos(np.pi / 12)
         self.xl = np.array([6 * sin, -2 * np.pi * sin])
@@ -36,7 +36,7 @@ class OKA2(Problem):
     '''
     Okabe, Tatsuya, et al. "On test functions for evolutionary multi-objective optimization." International Conference on Parallel Problem Solving from Nature. Springer, Berlin, Heidelberg, 2004.
     '''
-    def __init__(self):
+    def __init__(self, **kwarg):
         super().__init__(n_var=3, n_obj=2, type_var=np.double)
         self.xl = np.array([-np.pi, -5.0, -5.0])
         self.xu = np.array([np.pi, 5.0, 5.0])
