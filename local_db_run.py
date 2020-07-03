@@ -5,13 +5,13 @@ Run with local tkinter GUI and sqlite database for data storage
 import numpy as np
 import pandas as pd
 from argparse import ArgumentParser
-from multiprocessing import Process, Lock, Queue
+from multiprocessing import Process
 from pymoo.performance_indicator.hv import Hypervolume
 from problems.common import build_problem
 from system.optimize import optimize
 from system.evaluate import evaluate
 from system.utils import load_config
-from system.database_sqlite import db_create, db_init, db_insert, db_select
+from system.database import db_create, db_init, db_insert, db_multiple_select
 from system.gui_local import LocalGUI
 
 
@@ -26,9 +26,6 @@ def main():
     parser.add_argument('--data-path', type=str, default='data.db')
     args = parser.parse_args()
     config_path, data_path = args.config_path, args.data_path
-
-    # multiprocessing lock
-    lock = Lock()
 
     # load config
     config = load_config(config_path)
@@ -53,9 +50,9 @@ def main():
         for _ in range(general_cfg['n_iter']):
 
             # read current data from database
-            with lock:
-                X = db_select(data_path, [f'x{i + 1}' for i in range(n_var)])
-                Y = db_select(data_path, [f'f{i + 1}' for i in range(n_obj)])
+            select_result = db_multiple_select(data_path, 
+                keys_list=[[f'x{i + 1}' for i in range(n_var)], [f'f{i + 1}' for i in range(n_obj)]])
+            X, Y = select_result[0], select_result[1]
 
             # run optimization
             result_df = optimize(config, X, Y, seed=worker_id)
@@ -63,12 +60,11 @@ def main():
             result_df = evaluate(problem, result_df)
             
             # write optimized data to database
-            with lock:
-                X = result_df[[f'x{i + 1}' for i in range(n_var)]].to_numpy()
-                Y = result_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
-                Y_expected = result_df[[f'expected_f{i + 1}' for i in range(n_obj)]].to_numpy()
-                Y_uncertainty = result_df[[f'uncertainty_f{i + 1}' for i in range(n_obj)]].to_numpy()
-                db_insert(data_path, hv, X, Y, Y_expected, Y_uncertainty)
+            X = result_df[[f'x{i + 1}' for i in range(n_var)]].to_numpy()
+            Y = result_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
+            Y_expected = result_df[[f'expected_f{i + 1}' for i in range(n_obj)]].to_numpy()
+            Y_uncertainty = result_df[[f'uncertainty_f{i + 1}' for i in range(n_obj)]].to_numpy()
+            db_insert(data_path, hv, X, Y, Y_expected, Y_uncertainty)
 
         print(f'worker {worker_id} ended')
 
@@ -84,10 +80,10 @@ def main():
         '''
         Data loading command linked to GUI figure refresh
         '''
-        with lock:
-            Y = db_select(data_path, [f'f{i + 1}' for i in range(n_obj)])
-            hv_value = db_select(data_path, ['hv']).squeeze()
-            is_pareto = db_select(data_path, ['is_pareto'], dtype=bool).squeeze()
+        select_result = db_multiple_select(data_path, 
+            keys_list=[[f'f{i + 1}' for i in range(n_obj)], ['hv'], ['is_pareto']],
+            dtype_list=[float, float, bool])
+        Y, hv_value, is_pareto = select_result[0], select_result[1].squeeze(), select_result[2].squeeze()
         return Y, Y[is_pareto], hv_value
 
     # gui

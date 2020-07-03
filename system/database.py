@@ -12,7 +12,7 @@ def db_create(db_path, config):
     '''
     Create database based on config file
     '''
-    conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
     n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
@@ -31,7 +31,7 @@ def db_init(db_path, hv, X, Y):
     '''
     Initialize database table with initial data X, Y
     '''
-    conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
     sample_len, n_var, n_obj = X.shape[0], X.shape[1], Y.shape[1]
@@ -51,7 +51,7 @@ def db_insert(db_path, hv, X, Y, Y_expected, Y_uncertainty):
     '''
     Insert data into rows of database table
     '''
-    conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
     sample_len, n_var, n_obj = X.shape[0], X.shape[1], Y.shape[1]
@@ -66,9 +66,10 @@ def db_insert(db_path, hv, X, Y, Y_expected, Y_uncertainty):
     data = np.column_stack([X, Y, Y_expected, Y_uncertainty, hv_value]).tolist()
     for i in range(len(data)):
         data[i].append(False)
-    cur.executemany(f'insert into data values ({",".join(["?"] * (n_var + 3 * n_obj + 2))})', data)
-    cur.execute(f'update data set is_pareto = false')
-    cur.execute(f'update data set is_pareto = true where rowid in ({",".join(is_pareto.astype(str))})')
+    with conn:
+        cur.executemany(f'insert into data values ({",".join(["?"] * (n_var + 3 * n_obj + 2))})', data)
+        cur.execute(f'update data set is_pareto = false')
+        cur.execute(f'update data set is_pareto = true where rowid in ({",".join(is_pareto.astype(str))})')
     
     conn.commit()
     conn.close()
@@ -78,7 +79,7 @@ def db_select(db_path, keys, dtype=float, rowid=None):
     '''
     Query data from database
     '''
-    conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     
     if rowid is None:
@@ -89,3 +90,30 @@ def db_select(db_path, keys, dtype=float, rowid=None):
     
     conn.close()
     return result
+
+
+def db_multiple_select(db_path, keys_list, dtype_list=None, rowid_list=None):
+    '''
+    Query multiple types of data from database
+    '''
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    if dtype_list is None:
+        dtype_list = [float] * len(keys_list)
+    if rowid_list is None:
+        rowid_list = [None] * len(keys_list)
+    assert len(keys_list) == len(dtype_list) == len(rowid_list)
+
+    with conn:
+        result_list = []
+        for keys, dtype, rowid in zip(keys_list, dtype_list, rowid_list):
+            if rowid is None:
+                cur.execute(f'select {",".join(keys)} from data')
+            else:
+                cur.execute(f'select {",".join(keys)} from data where rowid = {rowid}')
+            result = np.array(cur.fetchall(), dtype=dtype)
+            result_list.append(result)
+    
+    conn.close()
+    return result_list
