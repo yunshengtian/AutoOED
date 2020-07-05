@@ -4,6 +4,7 @@ Run with local tkinter GUI and sqlite database for data storage
 
 import numpy as np
 import pandas as pd
+from time import time
 from argparse import ArgumentParser
 from multiprocessing import Process
 from pymoo.performance_indicator.hv import Hypervolume
@@ -11,7 +12,7 @@ from problems.common import build_problem
 from system.optimize import optimize
 from system.evaluate import evaluate
 from system.utils import load_config
-from system.database import db_create, db_init, db_insert, db_multiple_select
+from system.database import Database
 from system.gui_local import LocalGUI
 
 
@@ -26,6 +27,7 @@ def main():
     parser.add_argument('--data-path', type=str, default='data.db')
     args = parser.parse_args()
     config_path, data_path = args.config_path, args.data_path
+    start_time = time()
 
     # load config
     config = load_config(config_path)
@@ -37,20 +39,20 @@ def main():
     hv = Hypervolume(ref_point=ref_point) # hypervolume calculator
 
     # init database
-    db_create(data_path, config)
-    db_init(data_path, hv, X, Y)
+    db = Database(data_path, n_var, n_obj, hv)
+    db.init(X, Y)
 
     def optimize_worker(worker_id):
         '''
         Worker process of optimization algorithm execution
         '''
-        print(f'worker {worker_id} started')
+        print(f'worker {worker_id} started, time: {time() - start_time}')
 
         # run several iterations of algorithm
         for _ in range(general_cfg['n_iter']):
 
             # read current data from database
-            select_result = db_multiple_select(data_path, 
+            select_result = db.select_multiple(
                 keys_list=[[f'x{i + 1}' for i in range(n_var)], [f'f{i + 1}' for i in range(n_obj)]])
             X, Y = select_result[0], select_result[1]
 
@@ -64,9 +66,9 @@ def main():
             Y = result_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
             Y_expected = result_df[[f'expected_f{i + 1}' for i in range(n_obj)]].to_numpy()
             Y_uncertainty = result_df[[f'uncertainty_f{i + 1}' for i in range(n_obj)]].to_numpy()
-            db_insert(data_path, hv, X, Y, Y_expected, Y_uncertainty)
+            db.insert(X, Y, Y_expected, Y_uncertainty)
 
-        print(f'worker {worker_id} ended')
+        print(f'worker {worker_id} ended, time: {time() - start_time}')
 
     def optimize_command():
         '''
@@ -80,14 +82,20 @@ def main():
         '''
         Data loading command linked to GUI figure refresh
         '''
-        select_result = db_multiple_select(data_path, 
+        select_result = db.select_multiple(
             keys_list=[[f'f{i + 1}' for i in range(n_obj)], ['hv'], ['is_pareto']],
             dtype_list=[float, float, bool])
         Y, hv_value, is_pareto = select_result[0], select_result[1].squeeze(), select_result[2].squeeze()
         return Y, Y[is_pareto], hv_value
 
+    def quit_command():
+        '''
+        Command triggered when GUI quit
+        '''
+        db.quit()
+
     # gui
-    gui = LocalGUI(config, optimize_command, load_command)
+    gui = LocalGUI(config, optimize_command, load_command, quit_command)
     gui.init_draw(true_pfront)
     gui.mainloop()
 

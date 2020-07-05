@@ -13,7 +13,7 @@ class LocalGUI:
         Figure 2: hypervolume curve (hypervolume value w.r.t. number of evaluations)
         Button: "optimize" (execute the optimization algorithm)
     '''
-    def __init__(self, config, optimize_command, load_command):
+    def __init__(self, config, optimize_command, load_command, quit_command=None):
         '''
         GUI initialization
         Input:
@@ -24,6 +24,8 @@ class LocalGUI:
 
         # GUI quit handling
         def gui_quit():
+            if quit_command is not None:
+                quit_command()
             self.root.quit()
             self.root.destroy()
         self.root.protocol("WM_DELETE_WINDOW", gui_quit)
