@@ -83,10 +83,11 @@ def main():
         Data loading command linked to GUI figure refresh
         '''
         select_result = db.select_multiple(
-            keys_list=[[f'f{i + 1}' for i in range(n_obj)], ['hv'], ['is_pareto']],
-            dtype_list=[float, float, bool])
-        Y, hv_value, is_pareto = select_result[0], select_result[1].squeeze(), select_result[2].squeeze()
-        return Y, Y[is_pareto], hv_value
+            keys_list=[[f'f{i + 1}' for i in range(n_obj)] + ['hv', 'pred_error'], ['is_pareto']],
+            dtype_list=[float, bool])
+        Y, hv_value, pred_error, is_pareto = \
+            select_result[0][:, :n_obj], select_result[0][:, n_obj].squeeze(), select_result[0][:, n_obj + 1].squeeze(), select_result[1].squeeze()
+        return Y, Y[is_pareto], hv_value, pred_error
 
     def quit_command():
         '''

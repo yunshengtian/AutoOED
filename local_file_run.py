@@ -10,7 +10,7 @@ from pymoo.performance_indicator.hv import Hypervolume
 from problems.common import build_problem
 from system.optimize import optimize
 from system.evaluate import evaluate
-from system.utils import load_config, check_pareto
+from system.utils import load_config, check_pareto, calc_pred_error
 from system.gui_local import LocalGUI
 
 
@@ -36,6 +36,9 @@ def generate_initial_dataframe(X, Y, hv):
 
     # hypervolume
     data['hv'] = hv.calc(Y)
+
+    # prediction error
+    data['pred_error'] = np.ones(sample_len) * 100
 
     # pareto optimality
     data['is_pareto'] = check_pareto(Y)
@@ -70,6 +73,7 @@ def main():
     # generate initial data csv file
     dataframe = generate_initial_dataframe(X, Y, hv)
     dataframe.to_csv(data_path)
+    n_init_sample = len(X)
 
     def optimize_worker(worker_id):
         '''
@@ -96,7 +100,10 @@ def main():
                 old_df = pd.read_csv(data_path, index_col=0)
                 new_df = pd.concat([old_df, result_df], ignore_index=True)
                 Y = new_df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
-                new_df.loc[len(new_df)-len(result_df):len(new_df), 'hv'] = hv.calc(Y)
+                Y_expected = new_df[[f'expected_f{i + 1}' for i in range(n_obj)]].to_numpy()
+                new_idx_range = slice(len(new_df)-len(result_df), len(new_df))
+                new_df.loc[new_idx_range, 'hv'] = hv.calc(Y)
+                new_df.loc[new_idx_range, 'pred_error'] = calc_pred_error(Y[n_init_sample:], Y_expected[n_init_sample:])
                 new_df['is_pareto'] = check_pareto(Y)
                 new_df.to_csv(data_path)
 
@@ -117,9 +124,10 @@ def main():
         with lock:
             df = pd.read_csv(data_path, index_col=0)
         Y = df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
-        is_pareto = df['is_pareto'].to_numpy()
         hv_value = df['hv'].to_numpy()
-        return Y, Y[is_pareto], hv_value
+        pred_error = df['pred_error'].to_numpy()
+        is_pareto = df['is_pareto'].to_numpy()
+        return Y, Y[is_pareto], hv_value, pred_error
 
     # gui
     gui = LocalGUI(config, optimize_command, load_command)

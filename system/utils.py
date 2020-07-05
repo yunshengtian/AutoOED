@@ -51,3 +51,11 @@ def check_pareto(Y):
         if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
             is_pareto[idx] = True
     return is_pareto
+
+
+def calc_pred_error(Y, Y_expected):
+    '''
+    Calculate averaged relative prediction error (in %)
+    '''
+    pred_error = np.sum(np.linalg.norm(Y - Y_expected, axis=1) / np.linalg.norm(Y)) / len(Y) * 100.0
+    return pred_error
