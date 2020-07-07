@@ -86,9 +86,6 @@ class MOBO:
         data = {}
         sample_len = len(X)
 
-        # id
-        data['id'] = np.zeros(sample_len, dtype=int)
-
         # design variables
         for i in range(self.n_var):
             data[f'x{i + 1}'] = X[:, i]
