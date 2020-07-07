@@ -20,13 +20,37 @@ Tested with Python 3.7.
 ## Getting Started
 
 ```
-python local_file_run.py
+python run_interactive_db.py
 ```
 
-This command will run MOBO optimization using configurations specified in config/example_config.yml, with local tkinter-based GUI and csv file as data storage.
+This command will run MOBO optimization using configurations specified from GUI interaction, with interactive tkinter-based GUI and SQLite database for data storage.
 
 ```
-python local_db_run.py
+python run_interactive_csv.py
 ```
 
-This command will run MOBO optimization using configurations specified in config/example_config.yml, with local tkinter-based GUI and SQLite database as data storage.
+This command will run MOBO optimization using configurations specified from GUI interaction, with interactive tkinter-based GUI and csv file for data storage.
+
+```
+python run_cmd_db.py
+```
+
+This command will run MOBO optimization using configurations specified from command line, with simple tkinter-based GUI and SQLite database for data storage.
+
+```
+python run_cmd_csv.py
+```
+
+This command will run MOBO optimization using configurations specified from command line, with simple tkinter-based GUI and csv file for data storage.
+
+## GUI
+
+### Interactive GUI
+
+![gui_interactive](data/gui_interactive_main.png)
+
+![gui_interactive](data/gui_interactive_config.png)
+
+### Simple GUI
+
+![gui_interactive](data/gui_simple.png)

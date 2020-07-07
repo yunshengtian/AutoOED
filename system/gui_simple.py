@@ -23,6 +23,8 @@ class SimpleGUI:
         '''
         # GUI root
         self.root = tkinter.Tk()
+        self.root.title('Multi-Objective Bayesian Optimization')
+        self.root.configure(bg='white')
 
         # GUI quit handling
         def gui_quit():
