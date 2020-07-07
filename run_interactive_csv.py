@@ -71,16 +71,17 @@ def load_command(config, data_path):
     '''
     Data loading command linked to GUI figure refresh
     '''
-    n_obj = config['problem']['n_obj']
+    n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
 
     with lock:
         df = pd.read_csv(data_path, index_col=0)
+    X = df[[f'x{i + 1}' for i in range(n_var)]].to_numpy()
     Y = df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
     hv_value = df['hv'].to_numpy()
     pred_error = df['pred_error'].to_numpy()
     is_pareto = df['is_pareto'].to_numpy()
 
-    return Y, Y[is_pareto], hv_value, pred_error
+    return X, Y, Y[is_pareto], hv_value, pred_error
 
 
 def main():

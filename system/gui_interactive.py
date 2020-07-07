@@ -5,12 +5,14 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.backend_bases import key_press_handler
+from matplotlib.backend_bases import MouseButton
+
 
 import os
 import yaml
+import numpy as np
 from multiprocessing import Lock, Process
-from .utils import process_config, load_config, get_available_algorithms, get_available_problems
+from .utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
 
 
 class InteractiveGUI:
@@ -61,8 +63,10 @@ class InteractiveGUI:
         self.scrtext_log = None
 
         # data to be plotted
+        self.scatter_x = None
         self.scatter_y = None
         self.scatter_y_pareto = None
+        self.annotate = None
         self.line_hv = None
         self.line_error = None
         self.n_init_sample = None
@@ -460,7 +464,7 @@ class InteractiveGUI:
         First draw of performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        Y, Y_pareto, hv_value, _ = self.load_command(self.config, self.data_path)
+        X, Y, Y_pareto, hv_value, _ = self.load_command(self.config, self.data_path)
 
         # update status
         self.n_init_sample = len(Y)
@@ -469,6 +473,7 @@ class InteractiveGUI:
         # plot performance space
         if true_pfront is not None:
             self.ax1.scatter(*true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
+        self.scatter_x = X
         self.scatter_y = self.ax1.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
         self.scatter_y_pareto = self.ax1.scatter(*Y_pareto.T, color='red', s=10, label='Approximated Pareto front')
         self.ax1.legend(loc='upper right')
@@ -479,6 +484,32 @@ class InteractiveGUI:
 
         # plot prediction error curve
         self.line_error = self.ax3.plot([], [])[0]
+
+         # mouse clicking event
+        def check_design_values(event):
+            if event.inaxes != self.ax1: return
+            if event.button == MouseButton.LEFT:
+                loc = [event.xdata, event.ydata]
+                all_y = self.scatter_y._offsets
+                closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
+                closest_x = self.scatter_x[closest_idx]
+                x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(self.config['problem']['var_name'], closest_x)])
+                if self.annotate is not None:
+                    self.annotate.remove()
+                    self.annotate = None
+                y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
+                text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
+                self.annotate = self.ax1.annotate(x_str, xy=closest_y, xytext=text_loc,
+                    bbox=dict(boxstyle="round", fc="w", alpha=0.7),
+                    arrowprops=dict(arrowstyle="->"))
+                self.fig.canvas.draw()
+            elif event.button == MouseButton.RIGHT:
+                if self.annotate is not None:
+                    self.annotate.remove()
+                    self.annotate = None
+                self.fig.canvas.draw()
+        
+        self.fig.canvas.mpl_connect('button_press_event', check_design_values)
 
         # refresh figure
         self.fig.canvas.draw()
@@ -520,13 +551,14 @@ class InteractiveGUI:
         Redraw performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        Y, Y_pareto, hv_value, pred_error = self.load_command(self.config, self.data_path)
+        X, Y, Y_pareto, hv_value, pred_error = self.load_command(self.config, self.data_path)
 
         # check if needs redraw
         if len(Y) == self.n_curr_sample: return
         self.n_curr_sample = len(Y)
 
         # replot performance space
+        self.scatter_x = X
         self.scatter_y.set_offsets(Y)
         self.scatter_y_pareto.set_offsets(Y_pareto)
 

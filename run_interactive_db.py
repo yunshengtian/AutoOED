@@ -61,14 +61,18 @@ def load_command(config, data_path):
     '''
     Data loading command linked to GUI figure refresh
     '''
-    n_obj = config['problem']['n_obj']
+    n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
 
     select_result = db.select_multiple(
-        keys_list=[[f'f{i + 1}' for i in range(n_obj)] + ['hv', 'pred_error'], ['is_pareto']],
+        keys_list=[[f'x{i + 1}' for i in range(n_var)] + [f'f{i + 1}' for i in range(n_obj)] + ['hv', 'pred_error'], ['is_pareto']],
         dtype_list=[float, bool])
-    Y, hv_value, pred_error, is_pareto = \
-        select_result[0][:, :n_obj], select_result[0][:, n_obj].squeeze(), select_result[0][:, n_obj + 1].squeeze(), select_result[1].squeeze()
-    return Y, Y[is_pareto], hv_value, pred_error
+    X, Y, hv_value, pred_error, is_pareto = \
+        select_result[0][:, :n_var], \
+        select_result[0][:, n_var:n_var + n_obj], \
+        select_result[0][:, n_var + n_obj].squeeze(), \
+        select_result[0][:, n_var + n_obj + 1].squeeze(), \
+        select_result[1].squeeze()
+    return X, Y, Y[is_pareto], hv_value, pred_error
 
 
 def quit_command():
