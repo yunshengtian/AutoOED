@@ -1,5 +1,6 @@
 import sqlite3
 import numpy as np
+from pymoo.performance_indicator.hv import Hypervolume
 
 from .utils import check_pareto, calc_pred_error
 
@@ -9,11 +10,11 @@ class Database:
     SQLite database (compatible with multiprocessing)
     Keys: x1, x2, ..., f1, f2, ..., expected_f1, expected_f2, ..., uncertainty_f1, uncertainty_f2, ..., hv, pred_error, is_pareto
     '''
-    def __init__(self, db_path, n_var, n_obj, hv):
+    def __init__(self, db_path, problem):
         self.db_path = db_path
-        self.n_var = n_var
-        self.n_obj = n_obj
-        self.hv = hv
+        self.n_var = problem.n_var
+        self.n_obj = problem.n_obj
+        self.hv = Hypervolume(ref_point=problem.ref_point) # hypervolume calculator
         self.n_init_sample = None
         self.conn = sqlite3.connect(self.db_path)
         self.cur = self.conn.cursor()

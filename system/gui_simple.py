@@ -6,9 +6,9 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.backend_bases import key_press_handler
 
 
-class LocalGUI:
+class SimpleGUI:
     '''
-    Local tkinter-based GUI
+    Simple local tkinter-based GUI
     Layout:
         Figure 1: performance space (evaluated points, approximated Pareto front and true Pareto front)
         Figure 2: hypervolume curve (hypervolume value w.r.t. number of evaluations)

@@ -65,15 +65,24 @@ class Custom(MOBO):
     config = None
 
 
+algos = {
+    'tsemo': TSEMO,
+    'usemo-ei': USEMO_EI,
+    'moead-ego': MOEAD_EGO,
+    'parego': ParEGO,
+    'custom': Custom,
+}
+
+
 def get_algorithm(name):
     '''
     Get class of algorithm by name
     '''
-    algo = {
-        'tsemo': TSEMO,
-        'usemo-ei': USEMO_EI,
-        'moead-ego': MOEAD_EGO,
-        'parego': ParEGO,
-        'custom': Custom,
-    }
-    return algo[name]
+    return algos[name]
+
+
+def get_algorithm_list():
+    '''
+    Get names of available algorithms
+    '''
+    return list(algos.keys())

@@ -1,0 +1,30 @@
+# stores default values for optional parameters
+
+general: 
+  n_init_sample: required # number of initial random samples
+  batch_size: required
+  n_iter: required # number of algorithm iterations
+  n_process: 1 # number of parallel processes used in algorithm
+problem: 
+  name: required
+  n_var: required
+  n_obj: required
+  var_name: null # name of design variables
+  obj_name: null # name of performance objectives
+  ref_point: null # reference point for hypervolume calculation
+algorithm: 
+  name: required
+  surrogate:
+    name: gp
+    n_spectral_pts: 100
+    nu: 5
+    mean_sample: false
+  acquisition:
+    name: identity
+  solver:
+    name: nsga2
+    pop_size: 100
+    n_gen: 200
+    pop_init_method: nds
+  selection:
+    name: hvi

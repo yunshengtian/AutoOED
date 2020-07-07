@@ -1,5 +1,5 @@
 '''
-Run with local tkinter GUI and sqlite database for data storage
+Run with local tkinter GUI and SQLite database for data storage, receiving command line input for config and data paths
 '''
 
 import numpy as np
@@ -7,13 +7,12 @@ import pandas as pd
 from time import time
 from argparse import ArgumentParser
 from multiprocessing import Process
-from pymoo.performance_indicator.hv import Hypervolume
 from problems.common import build_problem
 from system.optimize import optimize
 from system.evaluate import evaluate
 from system.utils import load_config
 from system.database import Database
-from system.gui_local import LocalGUI
+from system.gui_simple import SimpleGUI
 
 
 # global index count for parallel workers
@@ -35,11 +34,10 @@ def main():
 
     # build problem
     problem, true_pfront, X, Y = build_problem(problem_cfg, get_pfront=True, get_init_samples=True)
-    n_var, n_obj, ref_point = problem.n_var, problem.n_obj, problem.ref_point
-    hv = Hypervolume(ref_point=ref_point) # hypervolume calculator
+    n_var, n_obj = problem.n_var, problem.n_obj
 
     # init database
-    db = Database(data_path, n_var, n_obj, hv)
+    db = Database(data_path, problem)
     db.init(X, Y)
 
     def optimize_worker(worker_id):
@@ -96,7 +94,7 @@ def main():
         db.quit()
 
     # gui
-    gui = LocalGUI(config, optimize_command, load_command, quit_command)
+    gui = SimpleGUI(config, optimize_command, load_command, quit_command)
     gui.init_draw(true_pfront)
     gui.mainloop()
 

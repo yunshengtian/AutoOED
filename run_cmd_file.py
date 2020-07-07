@@ -1,5 +1,5 @@
 '''
-Run with local tkinter GUI and csv file for data storage
+Run with local tkinter GUI and csv file for data storage, receiving command line input for config and data paths
 '''
 
 import numpy as np
@@ -11,7 +11,7 @@ from problems.common import build_problem
 from system.optimize import optimize
 from system.evaluate import evaluate
 from system.utils import load_config, check_pareto, calc_pred_error
-from system.gui_local import LocalGUI
+from system.gui_simple import SimpleGUI
 
 
 def generate_initial_dataframe(X, Y, hv):
@@ -130,7 +130,7 @@ def main():
         return Y, Y[is_pareto], hv_value, pred_error
 
     # gui
-    gui = LocalGUI(config, optimize_command, load_command)
+    gui = SimpleGUI(config, optimize_command, load_command)
     gui.init_draw(true_pfront)
     gui.mainloop()
 

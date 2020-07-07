@@ -34,6 +34,13 @@ def get_problem(name, *args, d={}, **kwargs):
     return get_from_list(get_problem_options(), name.lower(), args, {**d, **kwargs})
 
 
+def get_problem_list():
+    '''
+    Get names of available problems
+    '''
+    return [p[0] for p in get_problem_options()]
+
+
 def generate_initial_samples(problem, n_sample):
     '''
     Generate feasible initial samples.
@@ -96,9 +103,10 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
         X_init, Y_init = generate_initial_samples(problem, config['n_init_sample'])
         if ref_point is None:
             ref_point = np.max(Y_init, axis=0)
-            config['ref_point'] = ref_point # update reference point in config
+            config['ref_point'] = ref_point.tolist() # update reference point in config
 
-    problem.set_ref_point(ref_point)
+    if ref_point is not None:
+        problem.set_ref_point(ref_point)
     
     if not get_pfront and not get_init_samples:
         return problem
