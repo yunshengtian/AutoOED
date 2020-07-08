@@ -1,5 +1,5 @@
 import numpy as np
-from .problem import Problem
+from problems import Problem
 
 
 class OKA1(Problem):

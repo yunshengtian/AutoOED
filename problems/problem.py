@@ -6,12 +6,11 @@ from multiprocessing.pool import ThreadPool
 from pymoo.model.problem import Problem as PymooProblem
 from pymoo.model.problem import at_least2d, evaluate_in_parallel
 
-'''
-Problem definition built upon Pymoo's Problem class, added some custom features
-'''
 
 class Problem(PymooProblem):
-
+    '''
+    Problem definition built upon Pymoo's Problem class, added some custom features
+    '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ref_point = None
@@ -27,10 +26,10 @@ class Problem(PymooProblem):
             out['G'] = np.column_stack([*np.atleast_2d(out['G'])])
 
     @abstractmethod
-    def evaluate_performance(self, x, **kwargs):
+    def evaluate_performance(self, x):
         pass
 
-    def evaluate_constraint(self, x, **kwargs):
+    def evaluate_constraint(self, x):
         return None
     
     def evaluate(self,
@@ -158,3 +157,28 @@ class Problem(PymooProblem):
 
     def __str__(self):
         return '========== Problem Definition ==========\n' + super().__str__()
+
+
+
+class CustomProblem(Problem):
+    '''
+    Base class for custom problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
+    '''
+    config = {} # to be inherited
+
+    default_config = {
+        'n_var': None, # required
+        'n_obj': None, # required
+        'n_constr': 0, # no constraints as default
+        'xl': 0, # 0 as lower bound as default
+        'xu': 1, # 1 as upper bound as default
+    }
+
+    def __init__(self):
+        # fill config with default_config when there are key missings
+        for key, value in self.default_config.items():
+            if key not in self.config:
+                if value is None:
+                    raise Exception('Invalid config for custom problem, required values are not provided')
+                self.config[key] = value
+        super().__init__(**self.config)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import os
 import numpy as np
-from .problem import Problem
+from problems import Problem
 
 
 class RE(Problem, ABC):
@@ -18,7 +18,7 @@ class RE(Problem, ABC):
 
     def _calc_pareto_front(self, *args, **kwargs):
         name = self.__class__.__name__
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'data/RE/ParetoFront/{name}.npy')
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'../data/pareto_front/{name}.npy')
         return np.load(file_path)
 
 

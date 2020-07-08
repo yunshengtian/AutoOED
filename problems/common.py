@@ -1,7 +1,7 @@
 import numpy as np
 from pymoo.factory import get_from_list
 from problems import *
-from mobo.lhs import lhs
+from external import lhs
 
 
 def get_problem_options():
@@ -79,19 +79,20 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
         pareto_front: the true pareto front of the problem (if defined, otherwise None)
     '''
     name, n_var, n_obj, ref_point = config['name'], config['n_var'], config['n_obj'], config['ref_point']
+    xl, xu = config['xl'], config['xu']
     # NOTE: either set ref_point from config file, or set from init random/provided samples
     # TODO: support provided init samples
 
     # build problem
     try:
-        problem = get_problem(name, n_var=n_var, n_obj=n_obj)
+        problem = get_problem(name, n_var=n_var, n_obj=n_obj, xl=xl, xu=xu)
     except:
         raise NotImplementedError('problem not supported yet!')
 
-    if n_var != problem.n_var or n_obj != problem.n_obj:
-        # NOTE: problem dimension mismatch between arguments and problem specification, use problem specification instead
-        n_var, n_obj = problem.n_var, problem.n_obj
-        config['n_var'], config['n_obj'] = n_var, n_obj
+    # NOTE: when config mismatch between arguments and problem specification, use problem specification instead
+    config['n_var'], config['n_obj'] = problem.n_var, problem.n_obj
+    if problem.xl is not None: config['xl'] = problem.xl.tolist()
+    if problem.xu is not None: config['xu'] = problem.xu.tolist()
 
     if get_pfront:
         try:

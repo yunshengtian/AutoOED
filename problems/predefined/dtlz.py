@@ -1,6 +1,6 @@
 import numpy as np
 
-from .problem import Problem
+from problems import Problem
 from pymoo.factory import get_reference_directions
 from pymoo.problems.util import load_pareto_front_from_file
 
@@ -45,7 +45,7 @@ def generic_sphere(ref_dirs):
 
 class DTLZ1(DTLZ):
     def __init__(self, n_var=7, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj, **kwargs)
+        super().__init__(n_var, n_obj)
 
     def _calc_pareto_front(self):
         ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
@@ -68,7 +68,7 @@ class DTLZ1(DTLZ):
 
 class DTLZ2(DTLZ):
     def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj, **kwargs)
+        super().__init__(n_var, n_obj)
 
     def _calc_pareto_front(self):
         ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
@@ -83,7 +83,7 @@ class DTLZ2(DTLZ):
 
 class DTLZ3(DTLZ):
     def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj, **kwargs)
+        super().__init__(n_var, n_obj)
 
     def _calc_pareto_front(self):
         ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
@@ -98,7 +98,7 @@ class DTLZ3(DTLZ):
 
 class DTLZ4(DTLZ):
     def __init__(self, n_var=10, n_obj=3, alpha=100, d=100, **kwargs):
-        super().__init__(n_var, n_obj, **kwargs)
+        super().__init__(n_var, n_obj)
         self.alpha = alpha
         self.d = d
 
@@ -115,7 +115,7 @@ class DTLZ4(DTLZ):
 
 class DTLZ5(DTLZ):
     def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj, **kwargs)
+        super().__init__(n_var, n_obj)
 
     def _calc_pareto_front(self):
         if self.n_obj == 3:
@@ -135,7 +135,7 @@ class DTLZ5(DTLZ):
 
 class DTLZ6(DTLZ):
     def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj, **kwargs)
+        super().__init__(n_var, n_obj)
 
     def _calc_pareto_front(self):
         if self.n_obj == 3:

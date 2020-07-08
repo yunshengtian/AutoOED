@@ -9,7 +9,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import norm
 from scipy.stats.distributions import chi2
 from scipy.linalg import solve_triangular
-from mobo.lhs import lhs
+from external import lhs
 from mobo.utils import safe_divide
 
 '''

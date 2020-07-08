@@ -9,6 +9,8 @@ problem:
   name: required
   n_var: required
   n_obj: required
+  xl: null # lower bound of design variables
+  xu: null # upper bound of design variables
   var_name: null # name of design variables
   obj_name: null # name of performance objectives
   ref_point: null # reference point for hypervolume calculation

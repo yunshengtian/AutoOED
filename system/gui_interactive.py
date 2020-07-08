@@ -250,13 +250,15 @@ class InteractiveGUI:
 
             # problem subsection
             frame_problem = create_frame(frame_param, 0, 1, 'Problem')
-            create_multiple_label(frame_problem, ['name*', 'n_var*', 'n_obj*', 'var_name', 'obj_name', 'ref_point'])
+            create_multiple_label(frame_problem, ['name*', 'n_var*', 'n_obj*', 'xl', 'xu', 'var_name', 'obj_name', 'ref_point'])
             combobox_problem_0 = create_combobox(frame_problem, 0, 1, get_available_problems(), valid_check=lambda x: x in get_available_problems())
             entry_problem_1 = create_entry(frame_problem, 1, 1, IntEntry, valid_check=lambda x: x > 0)
             entry_problem_2 = create_entry(frame_problem, 2, 1, IntEntry, valid_check=lambda x: x > 0)
-            entry_problem_3 = create_entry(frame_problem, 3, 1, StringListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_1.get())
-            entry_problem_4 = create_entry(frame_problem, 4, 1, StringListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_2.get())
-            entry_problem_5 = create_entry(frame_problem, 5, 1, FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_2.get())
+            entry_problem_3 = create_entry(frame_problem, 3, 1, FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) in [1, entry_problem_1.get()])
+            entry_problem_4 = create_entry(frame_problem, 4, 1, FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) in [1, entry_problem_1.get()])
+            entry_problem_5 = create_entry(frame_problem, 5, 1, StringListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_1.get())
+            entry_problem_6 = create_entry(frame_problem, 6, 1, StringListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_2.get())
+            entry_problem_7 = create_entry(frame_problem, 7, 1, FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_2.get())
 
             # algorithm subsection
             frame_algorithm = create_frame(frame_param, 0, 2, 'Algorithm')
@@ -279,9 +281,11 @@ class InteractiveGUI:
                             'name': combobox_problem_0.get(),
                             'n_var': entry_problem_1.get(),
                             'n_obj': entry_problem_2.get(),
-                            'var_name': entry_problem_3.get(),
-                            'obj_name': entry_problem_4.get(),
-                            'ref_point': entry_problem_5.get(),
+                            'xl': entry_problem_3.get(),
+                            'xu': entry_problem_4.get(),
+                            'var_name': entry_problem_5.get(),
+                            'obj_name': entry_problem_6.get(),
+                            'ref_point': entry_problem_7.get(),
                         },
                         'algorithm': {
                             'name': combobox_algorithm_0.get(),

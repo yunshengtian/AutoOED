@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from pymoo.factory import get_performance_indicator
 from pymoo.algorithms.nsga2 import calc_crowding_distance
-from .acquisition import IdentityFunc, EI, UCB, LCB
+from mobo.acquisition import IdentityFunc, EI, UCB, LCB
 
 '''
 Selection methods for new batch of samples to evaluate on real problem
