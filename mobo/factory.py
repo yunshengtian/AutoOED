@@ -60,9 +60,9 @@ def get_selection(name):
     return selection[name]
 
 
-def init_from_config(config, framework_args):
+def init_framework(spec, config):
     '''
-    Initialize each component of the MOBO framework from config
+    Initialize each component of the MOBO framework from spec provided by algorithm and config provided by user
     '''
     init_func = {
         'surrogate': get_surrogate_model,
@@ -73,13 +73,13 @@ def init_from_config(config, framework_args):
 
     framework = {}
     for key, func in init_func.items():
-        kwargs = framework_args[key]
-        if config is None:
-            # no config specified, initialize from user arguments
+        kwargs = config[key]
+        if spec is None:
+            # no spec specified, initialize from user config
             name = kwargs['name']
         else:
-            # initialize from config specifications, if certain keys are not provided, use default settings
-            name = config[key] if key in config else 'default'
-        framework[key] = func(name)(**kwargs)
+            # initialize from default specifications from algorithm, if certain keys are not provided, use default settings
+            name = spec[key] if key in spec else 'default'
+        framework[key] = func(name)(**kwargs) # initialize framework components by parameters from user config
 
     return framework

@@ -2,7 +2,8 @@ import yaml
 import numpy as np
 import pandas as pd
 from problems.common import build_problem, get_problem_list
-from mobo.algorithms import get_algorithm_list
+from mobo.algorithms import get_algorithm_list as get_algo_list_mobo
+from moo.algorithms import get_algorithm_list as get_algo_list_moo
 
 
 def correct_config(config):
@@ -81,7 +82,7 @@ def get_available_algorithms():
     '''
     Get names of available algorithms
     '''
-    return get_algorithm_list()
+    return get_algo_list_mobo() + get_algo_list_moo()
 
 
 def get_available_problems():

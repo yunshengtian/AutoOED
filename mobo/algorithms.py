@@ -1,7 +1,7 @@
 from mobo.mobo import MOBO
 
 '''
-High-level algorithm specifications by providing config
+High-level algorithm specifications by providing spec
 '''
 
 
@@ -9,7 +9,7 @@ class TSEMO(MOBO):
     '''
     TSEMO
     '''
-    config = {
+    spec = {
         'surrogate': 'ts',
         'acquisition': 'identity',
         'solver': 'nsga2',
@@ -21,7 +21,7 @@ class USEMO_EI(MOBO):
     '''
     USeMO, using EI as acquisition
     '''
-    config = {
+    spec = {
         'surrogate': 'gp',
         'acquisition': 'ei',
         'solver': 'nsga2',
@@ -33,7 +33,7 @@ class MOEAD_EGO(MOBO):
     '''
     MOEA/D-EGO
     '''
-    config = {
+    spec = {
         'surrogate': 'gp',
         'acquisition': 'ei',
         'solver': 'moead',
@@ -45,7 +45,7 @@ class ParEGO(MOBO):
     '''
     ParEGO
     '''
-    config = {
+    spec = {
         'surrogate': 'gp',
         'acquisition': 'ei',
         'solver': 'parego',
@@ -62,7 +62,7 @@ class Custom(MOBO):
     '''
     Totally rely on user arguments to specify each component
     '''
-    config = None
+    spec = None
 
 
 algos = {
@@ -78,7 +78,10 @@ def get_algorithm(name):
     '''
     Get class of algorithm by name
     '''
-    return algos[name]
+    try:
+        return algos[name]
+    except:
+        return None
 
 
 def get_algorithm_list():

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from mobo.surrogate_problem import SurrogateProblem
 from mobo.utils import Timer, find_pareto_front
-from mobo.factory import init_from_config
+from mobo.factory import init_framework
 from mobo.transformation import StandardTransform
 
 '''
@@ -11,16 +11,16 @@ Main algorithm framework for Multi-Objective Bayesian Optimization
 
 class MOBO:
     '''
-    Base class of algorithm framework, inherit this class with different configs to create new algorithm classes
+    Base class of algorithm framework, inherit this class with different specifications to create new algorithm classes
     '''
-    config = {}
+    spec = {}
 
-    def __init__(self, problem, framework_args):
+    def __init__(self, problem, algo_cfg):
         '''
         Input:
             problem: the original / real optimization problem
             ref_point: reference point for hypervolume calculation
-            framework_args: arguments to initialize each component of the framework
+            algo_cfg: algorithm configurations
         '''
         self.real_problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
@@ -30,7 +30,7 @@ class MOBO:
         self.transformation = StandardTransform(bounds) # data normalization for surrogate model fitting
 
         # framework components
-        framework = init_from_config(self.config, framework_args)
+        framework = init_framework(self.spec, algo_cfg)
         
         self.surrogate_model = framework['surrogate'] # surrogate model
         self.acquisition = framework['acquisition'] # acquisition function
