@@ -14,22 +14,16 @@ from system.gui_interactive import InteractiveGUI
 db = None
 
 
-def init_command(config, data_path):
+def init_command(problem, X, Y, data_path):
     '''
-    Problem initialization command linked to GUI button click
+    Data storage initialization command linked to GUI button click
     '''
-    # build problem
-    problem, true_pfront, X, Y = build_problem(config['problem'], get_pfront=True, get_init_samples=True)
-
-    # init database
     global db
     db = Database(data_path, problem)
     db.init(X, Y)
 
-    return problem, true_pfront
 
-
-def optimize_command(worker_id, config, data_path, problem):
+def optimize_command(worker_id, problem, config, data_path):
     '''
     Optimization command linked to GUI button click
     Worker process of optimization algorithm execution
@@ -57,11 +51,11 @@ def optimize_command(worker_id, config, data_path, problem):
         db.insert(X, Y, Y_expected, Y_uncertainty)
 
 
-def load_command(config, data_path):
+def load_command(data_path):
     '''
     Data loading command linked to GUI figure refresh
     '''
-    n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
+    n_var, n_obj = db.n_var, db.n_obj
 
     select_result = db.select_multiple(
         keys_list=[[f'x{i + 1}' for i in range(n_var)] + [f'f{i + 1}' for i in range(n_obj)] + ['hv', 'pred_error'], ['is_pareto']],

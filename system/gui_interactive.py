@@ -12,7 +12,8 @@ import os
 import yaml
 import numpy as np
 from multiprocessing import Lock, Process
-from .utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
+from problems.common import build_problem
+from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
 
 
 class InteractiveGUI:
@@ -24,9 +25,9 @@ class InteractiveGUI:
         GUI initialization
         Input:
             data_format: format of data to be saved, e.g., 'csv', 'db'
-            init_command: command for problem initialization (usage: init_command(config, data_path) -> problem, true_pfront)
-            optimize_command: command for algorithm optimization (usage: optimize_command(process_id, config, data_path, problem))
-            load_command: command for data loading when GUI periodically refreshes (usage: load_command(config, data_path) -> Y, Y_pareto, hv_value, pred_error)
+            init_command: command for data storage initialization (usage: init_command(problem, X_init, Y_init, data_path))
+            optimize_command: command for algorithm optimization (usage: optimize_command(process_id, problem, config, data_path))
+            load_command: command for data loading when GUI periodically refreshes (usage: load_command(data_path) -> Y, Y_pareto, hv_value, pred_error)
             quit_command: command when quitting program (usage: quit_command())
         '''
         # GUI root
@@ -51,6 +52,7 @@ class InteractiveGUI:
 
         # variables need to be initialized
         self.config = None
+        self.config_raw = None
         self.problem = None
 
         # event widgets
@@ -377,7 +379,7 @@ class InteractiveGUI:
             self.button_load.configure(state=tk.DISABLED)
             self.button_customize.configure(state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
-            worker = Process(target=self.optimize_command, args=(self.process_id, self.config, self.data_path, self.problem))
+            worker = Process(target=self.optimize_command, args=(self.process_id, self.problem, self.config, self.data_path))
             worker.start()
             self.processes.append([self.process_id, worker])
             self._log(f'worker {self.process_id} started')
@@ -434,41 +436,70 @@ class InteractiveGUI:
         '''
         GUI setting configurations
         '''
-        # check if data_path file exists
-        if os.path.exists(self.data_path):
-            tk.messagebox.showinfo('Error', f'File {self.data_path} exists, please change another file name')
-            return
+        # update raw config (config will be processed and changed later in build_problem())
+        self.config_raw = config.copy()
 
-        # initialize
-        try:
-            self.problem, true_pfront = self.init_command(config, self.data_path)
-        except:
-            tk.messagebox.showinfo('Error', 'Invalid values in configuration')
-            return
+        if self.config is None: # first time setting config
+            # check if data_path file exists
+            if os.path.exists(self.data_path):
+                tk.messagebox.showinfo('Error', f'File {self.data_path} exists, please change another file name')
+                return
 
-        self.config = config
+            # initialize problem and data storage
+            try:
+                self.problem, true_pfront, X_init, Y_init = build_problem(config['problem'], get_pfront=True, get_init_samples=True)
+                self.init_command(self.problem, X_init, Y_init, self.data_path)
+            except:
+                tk.messagebox.showinfo('Error', 'Invalid values in configuration')
+                return
 
-        # update plot
-        f1_name, f2_name = self.config['problem']['obj_name']
-        self.ax1.set_xlabel(f1_name)
-        self.ax1.set_ylabel(f2_name)
-        self._init_draw(true_pfront)
+            self.config = config
 
-        # activate optimization button
-        self.button_optimize.configure(state=tk.NORMAL)
-        self.scrtext_config.configure(state=tk.NORMAL)
-        self.scrtext_config.insert(tk.INSERT, yaml.dump(self.config, default_flow_style=False, sort_keys=False))
-        self.scrtext_config.configure(state=tk.DISABLED)
+            # update plot
+            f1_name, f2_name = self.config['problem']['obj_name']
+            self.ax1.set_xlabel(f1_name)
+            self.ax1.set_ylabel(f2_name)
+            self._init_draw(true_pfront)
 
-        # trigger periodic refresh
-        self.root.after(self.refresh_rate, self._refresh)
+            # activate optimization button
+            self.button_optimize.configure(state=tk.NORMAL)
+
+            # refresh config display
+            self.scrtext_config.configure(state=tk.NORMAL)
+            self.scrtext_config.insert(tk.INSERT, yaml.dump(self.config, default_flow_style=False, sort_keys=False))
+            self.scrtext_config.configure(state=tk.DISABLED)
+
+            # trigger periodic refresh
+            self.root.after(self.refresh_rate, self._refresh)
+
+        else: # user changed config in the middle
+            try:
+                # some keys cannot be changed
+                for key in ['n_init_sample']:
+                    assert self.config_raw['general'][key] == config['general'][key]
+                for key in ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'ref_point']: # TODO
+                    assert self.config_raw['problem'][key] == config['problem'][key]
+
+                # reinitialize problem
+                self.problem = build_problem(config['problem'])            
+            except:
+                tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading')
+                return
+
+            self.config = config
+
+            # refresh config display
+            self.scrtext_config.configure(state=tk.NORMAL)
+            self.scrtext_config.delete('1.0', tk.END)
+            self.scrtext_config.insert(tk.INSERT, yaml.dump(self.config, default_flow_style=False, sort_keys=False))
+            self.scrtext_config.configure(state=tk.DISABLED)
 
     def _init_draw(self, true_pfront):
         '''
         First draw of performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_pareto, hv_value, _ = self.load_command(self.config, self.data_path)
+        X, Y, Y_pareto, hv_value, _ = self.load_command(self.data_path)
 
         # update status
         self.n_init_sample = len(Y)
@@ -549,13 +580,15 @@ class InteractiveGUI:
                 self.processes.remove(p)
         if len(self.processes) == 0:
             self.button_stop.configure(state=tk.DISABLED)
+            self.button_load.configure(state=tk.NORMAL)
+            self.button_customize.configure(state=tk.NORMAL)
 
     def _redraw(self):
         '''
         Redraw performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_pareto, hv_value, pred_error = self.load_command(self.config, self.data_path)
+        X, Y, Y_pareto, hv_value, pred_error = self.load_command(self.data_path)
 
         # check if needs redraw
         if len(Y) == self.n_curr_sample: return

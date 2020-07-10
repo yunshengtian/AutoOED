@@ -16,22 +16,16 @@ from system.gui_interactive import InteractiveGUI
 lock = Lock()
 
 
-def init_command(config, data_path):
+def init_command(problem, X, Y, data_path):
     '''
-    Problem initialization command linked to GUI button click
+    Data storage initialization command linked to GUI button click
     '''
-    # build problem
-    problem, true_pfront, X, Y = build_problem(config['problem'], get_pfront=True, get_init_samples=True)
     hv = Hypervolume(ref_point=problem.ref_point) # hypervolume calculator
-
-    # generate initial data csv file
     dataframe = generate_initial_dataframe(X, Y, hv)
     dataframe.to_csv(data_path)
 
-    return problem, true_pfront
 
-
-def optimize_command(worker_id, config, data_path, problem):
+def optimize_command(worker_id, problem, config, data_path):
     '''
     Optimization command linked to GUI button click
     Worker process of optimization algorithm execution
@@ -67,16 +61,19 @@ def optimize_command(worker_id, config, data_path, problem):
             new_df.to_csv(data_path)
 
 
-def load_command(config, data_path):
+def load_command(data_path):
     '''
     Data loading command linked to GUI figure refresh
     '''
-    n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
-
     with lock:
         df = pd.read_csv(data_path, index_col=0)
-    X = df[[f'x{i + 1}' for i in range(n_var)]].to_numpy()
-    Y = df[[f'f{i + 1}' for i in range(n_obj)]].to_numpy()
+    
+    keys = list(df.keys())
+    x_keys = [key for key in keys if key.startswith('x') and key[1:].isnumeric()]
+    y_keys = [key for key in keys if key.startswith('f') and key[1:].isnumeric()]
+
+    X = df[x_keys].to_numpy()
+    Y = df[y_keys].to_numpy()
     hv_value = df['hv'].to_numpy()
     pred_error = df['pred_error'].to_numpy()
     is_pareto = df['is_pareto'].to_numpy()
