@@ -23,6 +23,7 @@ class Agent:
             [f'uncertainty_f{i + 1} real' for i in range(self.n_obj)] + \
             ['hv real', 'pred_error real', 'is_pareto boolean', 'config_id integer']
         self.db.create('data', key=key_list)
+        self.db.commit()
 
         # high level key mapping (e.g., X -> [x1, x2, ...])
         self.key_map = {
@@ -33,7 +34,7 @@ class Agent:
             'hv': 'hv',
             'pred_error': 'pred_error',
             'is_pareto': 'is_pareto',
-            'config_id': 'config_id'
+            'config_id': 'config_id',
         }
 
         # datatype mapping in python
@@ -47,6 +48,38 @@ class Agent:
             'is_pareto': bool,
             'config_id': int,
         }
+
+    def _mapped_keys(self, keys, flatten=False):
+        '''
+        Get mapped keys from self.key_map
+        '''
+        if not flatten:
+            return [self.key_map[key] for key in keys]
+        else:
+            result = []
+            for key in keys:
+                mapped_key = self.key_map[key]
+                if isinstance(mapped_key, list):
+                    result.extend(mapped_key)
+                else:
+                    result.append(mapped_key)
+            return result
+
+    def _mapped_types(self, keys, flatten=False):
+        '''
+        Get mapped types from self.type_map
+        '''
+        if not flatten:
+            return [self.type_map[key] for key in keys]
+        else:
+            result = []
+            for key in keys:
+                mapped_key = self.type_map[key]
+                if isinstance(mapped_key, list):
+                    result.extend(mapped_key)
+                else:
+                    result.append(mapped_key)
+            return result
 
     def init(self, X, Y):
         '''
@@ -62,41 +95,81 @@ class Agent:
         config_id = np.zeros(self.n_init_sample, dtype=int)
 
         self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id])
+        self.db.commit()
 
-    def select(self, keys):
+    def select(self, keys, valid_only=True):
         '''
         Select array from database table
-        '''
-        return self.db.select('data', key=[self.key_map[key] for key in keys], dtype=[self.type_map[key] for key in keys])
-
-    def insert(self, dataframe, config_id):
-        '''
-        Insert array to database table
         Input:
-            dataframe: result dataframe from optimization and evaluation, keys: X, Y, Y_expected, Y_uncertainty
+            valid_only: if only keeps valid data, i.e., filled data, without nan
+        '''
+        result = self.db.select('data', key=self._mapped_keys(keys), dtype=self._mapped_types(keys))
+        if valid_only:
+            if isinstance(result, list):
+                isnan = None
+                for res in result:
+                    assert len(res.shape) in [1, 2]
+                    curr_isnan = np.isnan(res) if len(res.shape) == 1 else np.isnan(res).any(axis=1)
+                    if isnan is None:
+                        isnan = curr_isnan
+                    else:
+                        isnan = np.logical_or(isnan, curr_isnan)
+                valid_idx = np.where(~isnan)[0]
+                return [res[valid_idx] for res in result]
+            else:
+                assert len(result.shape) in [1, 2]
+                isnan = np.isnan(result) if len(result.shape) == 1 else np.isnan(result).any(axis=1)
+                valid_idx = np.where(~isnan)[0]
+                return result[valid_idx]
+        else:
+            return result
+
+    def insert(self, X, Y_expected, Y_uncertainty, config_id):
+        '''
+        Insert optimization result to database
+        Input:
             config_id: current configuration index (user can sequentially reload different config files)
         '''
-        X = dataframe[self.key_map['X']].to_numpy()
-        Y = dataframe[self.key_map['Y']].to_numpy()
-        Y_expected = dataframe[self.key_map['Y_expected']].to_numpy()
-        Y_uncertainty = dataframe[self.key_map['Y_uncertainty']].to_numpy()
+        sample_len = len(X)
+        config_id = np.full(sample_len, config_id)
 
         with self.db.get_lock():
-            old_Y, old_Y_expected = self.select(['Y', 'Y_expected'])
-            all_Y, all_Y_expected = np.vstack([old_Y, Y]), np.vstack([old_Y_expected, Y_expected])
+            self.db.insert('data', key=self._mapped_keys(['X', 'Y_expected', 'Y_uncertainty', 'config_id'], flatten=True), 
+                data=[X, Y_expected, Y_uncertainty, config_id])
+            last_rowid = self.db.get_last_rowid('data')
+        
+        self.db.commit()
+        rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
+        return rowids
 
-            # compute associated values from dataframe (hv, pred_error, is_pareto)
-            sample_len = X.shape[0]
-            hv_value = np.full(sample_len, self.hv.calc(all_Y))
-            pred_error = calc_pred_error(all_Y[self.n_init_sample:], all_Y_expected[self.n_init_sample:])
+    def update(self, Y, rowids):
+        '''
+        Update evaluation result to database
+        Input:
+            rowids: row indices to be updated
+        '''
+        with self.db.get_lock():
+            all_Y, all_Y_expected = self.select(['Y', 'Y_expected'], valid_only=False)
+            all_Y[rowids - 1] = Y
+            valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
+            all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
+
+            # compute associated values based on evaluation data (hv, pred_error, is_pareto)
+            sample_len, all_len = len(rowids), len(all_Y)
+            hv_value = np.full(sample_len, self.hv.calc(all_Y_valid))
+            pred_error = calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])
             pred_error = np.full(sample_len, pred_error)
-            is_pareto = check_pareto(all_Y)
+            is_pareto = np.full(all_len, False)
+            is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
-            config_id = np.full(sample_len, config_id)
-            
-            self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, np.zeros(sample_len, dtype=bool), config_id])
+
+            for i, rowid in enumerate(rowids.tolist()):
+                self.db.update('data', key=self._mapped_keys(['Y', 'hv', 'pred_error'], flatten=True), 
+                    data=[Y[i], hv_value[i], pred_error[i]], rowid=rowid)
             self.db.update('data', key='is_pareto', data=False, rowid=None)
             self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
+        
+        self.db.commit()
 
     def quit(self):
         '''

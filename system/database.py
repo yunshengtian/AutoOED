@@ -34,7 +34,6 @@ class Database:
             self.cur.execute(f'create table {table_name} ({",".join(key)})')
         else:
             raise NotImplementedError
-        self.conn.commit()
 
     def select(self, table_name, key, dtype):
         '''
@@ -84,7 +83,6 @@ class Database:
             self.cur.executemany(f'insert into {table_name} values ({",".join(["?"] * data.shape[1])})', data)
         else:
             raise NotImplementedError
-        self.conn.commit()
 
     def update(self, table_name, key, data, rowid):
         '''
@@ -104,13 +102,32 @@ class Database:
             raise NotImplementedError
 
         if isinstance(key, str):
-            # update single array to single column
+            # update single scalar to single column
             self.cur.executemany(f'update {table_name} set {key} = ?' + condition, [[data]])
         elif isinstance(key, list):
-            # update multiple array to multiple columns
-            self.cur.executemany(f'update {table_name} set ({",".join(key)}) = ({",".join(["?" * len(data)])})' + condition, [data])
+            # update multiple scalars to multiple columns
+            flattened_data = []
+            for d in data:
+                if isinstance(d, list) or isinstance(d, np.ndarray):
+                    flattened_data.extend(d)
+                else:
+                    flattened_data.append(d)
+            self.cur.executemany(f'update {table_name} set ({",".join(key)}) = ({",".join(["?"] * len(flattened_data))})' + condition, [flattened_data])
         else:
             raise NotImplementedError
+
+    def commit(self):
+        '''
+        Commit changes to database, prevent losing unsaved changes
+        '''
+        self.conn.commit()
+
+    def get_last_rowid(self, table_name):
+        '''
+        Get the last rowid from database (i.e., number of rows in database)
+        '''
+        self.cur.execute(f'select max(rowid) from {table_name}')
+        return self.cur.fetchone()[0]
 
     def quit(self):
         '''

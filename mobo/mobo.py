@@ -76,35 +76,12 @@ class MOBO:
         X_next, self.info = self.selection.select(solution, self.surrogate_model, self.transformation, curr_pset, curr_pfront)
         timer.log('Next sample batch selected')
 
-        return self._build_dataframe(X_next)
+        # evalaute prediction and uncertainty on surrogate models
+        val = self.surrogate_model.evaluate(self.transformation.do(x=X_next), std=True)
+        Y_expected = self.transformation.undo(y=val['F'])
+        Y_uncertainty = val['S']
 
-    def _build_dataframe(self, X):
-        '''
-        Build a dataframe from proposed samples X,
-        where columns are: [x1, x2, ..., f1, f2, ..., expected_f1, expected_f2, ..., uncertianty_f1, uncertainty_f2, ...]
-        '''
-        data = {}
-        sample_len = len(X)
-
-        # design variables
-        for i in range(self.n_var):
-            data[f'x{i + 1}'] = X[:, i]
-        
-        # evaluate prediction on surrogate model
-        val = self.surrogate_model.evaluate(self.transformation.do(x=X), std=True)
-        Y_pred_mean = self.transformation.undo(y=val['F'])
-        Y_pred_std = val['S']
-
-        # prediction and uncertainty
-        for i in range(self.n_obj):
-            data[f'f{i + 1}'] = np.zeros(sample_len)
-        for i in range(self.n_obj):
-            data[f'expected_f{i + 1}'] = Y_pred_mean[:, i]
-        for i in range(self.n_obj):
-            data[f'uncertainty_f{i + 1}'] = Y_pred_std[:, i]
-
-        return pd.DataFrame(data=data)
-        
+        return X_next, Y_expected, Y_uncertainty
 
     def __str__(self):
         return \

@@ -40,12 +40,16 @@ def optimize_command(worker_id, problem, config, config_id):
         X, Y = agent.select(['X', 'Y'])
 
         # run optimization
-        result_df = optimize(config, X, Y, seed=worker_id)
-        # run evaluation
-        result_df = evaluate(problem, result_df)
+        X_next, Y_expected, Y_uncertainty = optimize(config, X, Y, seed=worker_id)
+
+        # insert optimization result to database
+        rowids = agent.insert(X_next, Y_expected, Y_uncertainty, config_id)
         
-        # insert optimized data to database
-        agent.insert(result_df, config_id)
+        # run evaluation
+        Y_next = evaluate(problem, X_next)
+        
+        # update evaluation result to database
+        agent.update(Y_next, rowids)
 
 
 def load_command():
