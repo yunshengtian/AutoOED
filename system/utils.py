@@ -122,35 +122,3 @@ def find_closest_point(y, Y, return_index=False):
         return Y[idx], idx
     else:
         return Y[idx]
-
-
-def generate_initial_dataframe(X, Y, hv):
-    '''
-    Generate initial dataframe from initial X, Y and hypervolume
-    '''
-    data = {}
-    sample_len = len(X)
-    n_var, n_obj = X.shape[1], Y.shape[1]
-
-    # design variables
-    for i in range(n_var):
-        data[f'x{i + 1}'] = X[:, i]
-
-    # prediction and uncertainty
-    for i in range(n_obj):
-        data[f'f{i + 1}'] = Y[:, i]
-    for i in range(n_obj):
-        data[f'expected_f{i + 1}'] = np.zeros(sample_len)
-    for i in range(n_obj):
-        data[f'uncertainty_f{i + 1}'] = np.zeros(sample_len)
-
-    # hypervolume
-    data['hv'] = hv.calc(Y)
-
-    # prediction error
-    data['pred_error'] = np.ones(sample_len) * 100
-
-    # pareto optimality
-    data['is_pareto'] = check_pareto(Y)
-
-    return pd.DataFrame(data=data)

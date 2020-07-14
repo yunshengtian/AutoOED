@@ -16,18 +16,17 @@ from problems.common import build_problem
 from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
 
 
-class InteractiveGUI:
+class GUI:
     '''
     Interactive local tkinter-based GUI
     '''
-    def __init__(self, data_format, init_command, optimize_command, load_command, quit_command=None):
+    def __init__(self, init_command, optimize_command, load_command, quit_command=None):
         '''
         GUI initialization
         Input:
-            data_format: format of data to be saved, e.g., 'csv', 'db'
-            init_command: command for data storage initialization (usage: init_command(problem, X_init, Y_init, data_path))
-            optimize_command: command for algorithm optimization (usage: optimize_command(process_id, problem, config, data_path))
-            load_command: command for data loading when GUI periodically refreshes (usage: load_command(data_path) -> Y, Y_pareto, hv_value, pred_error)
+            init_command: command for data storage initialization (usage: init_command(problem, X_init, Y_init, result_dir))
+            optimize_command: command for algorithm optimization (usage: optimize_command(process_id, problem, config, config_id))
+            load_command: command for data loading when GUI periodically refreshes (usage: load_command() -> Y, Y_pareto, hv_value, pred_error)
             quit_command: command when quitting program (usage: quit_command())
         '''
         # GUI root
@@ -36,8 +35,7 @@ class InteractiveGUI:
         self.root.configure(bg='white')
         self.root.protocol("WM_DELETE_WINDOW", self._quit)
         self.refresh_rate = 100 # ms
-        self.data_format = data_format
-        self.data_path = os.path.abspath('data.' + self.data_format)
+        self.result_dir = os.path.abspath('result')
 
         # interaction commands
         self.init_command = init_command
@@ -53,6 +51,7 @@ class InteractiveGUI:
         # variables need to be initialized
         self.config = None
         self.config_raw = None
+        self.config_id = -1
         self.problem = None
 
         # event widgets
@@ -63,6 +62,7 @@ class InteractiveGUI:
         self.button_clear = None
         self.scrtext_config = None
         self.scrtext_log = None
+        self.entry_path = None
 
         # data to be plotted
         self.scatter_x = None
@@ -328,12 +328,12 @@ class InteractiveGUI:
 
         # path display entry
         def sv_path_callback(sv):
-            self.data_path = sv.get()
+            self.result_dir = sv.get()
         sv_path = tk.StringVar()
         sv_path.trace('w', lambda name, index, mode, sv=sv_path: sv_path_callback(sv))
-        entry_path = tk.Entry(master=frame_storage, bg='white', textvariable=sv_path, width=36)
-        entry_path.grid(row=1, column=0, padx=10, sticky='EW')
-        entry_path.insert(tk.END, self.data_path)
+        self.entry_path = tk.Entry(master=frame_storage, bg='white', textvariable=sv_path, width=36)
+        self.entry_path.grid(row=1, column=0, padx=10, sticky='EW')
+        self.entry_path.insert(tk.END, self.result_dir)
 
         # path change command
         button_path = tk.Button(master=frame_storage, text='Browse')
@@ -346,9 +346,9 @@ class InteractiveGUI:
             dirname = tk.filedialog.askdirectory(parent=self.root)
             if not isinstance(dirname, str) or dirname == '': return
 
-            entry_path.delete(0, tk.END)
-            self.data_path = os.path.join(dirname, 'data.' + self.data_format)
-            entry_path.insert(tk.END, self.data_path)
+            self.entry_path.delete(0, tk.END)
+            self.result_dir = dirname
+            self.entry_path.insert(tk.END, self.result_dir)
 
         # link to commands
         button_path.configure(command=gui_change_saving_path)
@@ -379,7 +379,7 @@ class InteractiveGUI:
             self.button_load.configure(state=tk.DISABLED)
             self.button_customize.configure(state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
-            worker = Process(target=self.optimize_command, args=(self.process_id, self.problem, self.config, self.data_path))
+            worker = Process(target=self.optimize_command, args=(self.process_id, self.problem, self.config, self.config_id))
             worker.start()
             self.processes.append([self.process_id, worker])
             self._log(f'worker {self.process_id} started')
@@ -432,6 +432,14 @@ class InteractiveGUI:
         # link to commands
         self.button_clear.configure(command=gui_log_clear)
 
+    def _save_config(self, config):
+        '''
+        Save configurations to file
+        '''
+        self.config_id += 1
+        with open(os.path.join(self.result_dir, 'config', f'config_{self.config_id}.yml'), 'w') as fp:
+            yaml.dump(config, fp, default_flow_style=False, sort_keys=False)
+
     def _set_config(self, config):
         '''
         GUI setting configurations
@@ -440,15 +448,19 @@ class InteractiveGUI:
         self.config_raw = config.copy()
 
         if self.config is None: # first time setting config
-            # check if data_path file exists
-            if os.path.exists(self.data_path):
-                tk.messagebox.showinfo('Error', f'File {self.data_path} exists, please change another file name')
+            # check if result_dir folder exists
+            if os.path.exists(self.result_dir):
+                tk.messagebox.showinfo('Error', f'Folder {self.result_dir} exists, please change another folder')
                 return
+
+            os.makedirs(self.result_dir)
+            config_dir = os.path.join(self.result_dir, 'config')
+            os.makedirs(config_dir)
 
             # initialize problem and data storage
             try:
                 self.problem, true_pfront, X_init, Y_init = build_problem(config['problem'], get_pfront=True, get_init_samples=True)
-                self.init_command(self.problem, X_init, Y_init, self.data_path)
+                self.init_command(self.problem, X_init, Y_init, self.result_dir)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration')
                 return
@@ -460,6 +472,9 @@ class InteractiveGUI:
             self.ax1.set_xlabel(f1_name)
             self.ax1.set_ylabel(f2_name)
             self._init_draw(true_pfront)
+
+            # lock path entry
+            self.entry_path.configure(state=tk.DISABLED)
 
             # activate optimization button
             self.button_optimize.configure(state=tk.NORMAL)
@@ -493,13 +508,15 @@ class InteractiveGUI:
             self.scrtext_config.delete('1.0', tk.END)
             self.scrtext_config.insert(tk.INSERT, yaml.dump(self.config, default_flow_style=False, sort_keys=False))
             self.scrtext_config.configure(state=tk.DISABLED)
+        
+        self._save_config(self.config)
 
     def _init_draw(self, true_pfront):
         '''
         First draw of performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_pareto, hv_value, _ = self.load_command(self.data_path)
+        X, Y, Y_pareto, hv_value, _ = self.load_command()
 
         # update status
         self.n_init_sample = len(Y)
@@ -588,7 +605,7 @@ class InteractiveGUI:
         Redraw performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_pareto, hv_value, pred_error = self.load_command(self.data_path)
+        X, Y, Y_pareto, hv_value, pred_error = self.load_command()
 
         # check if needs redraw
         if len(Y) == self.n_curr_sample: return

@@ -1,108 +1,119 @@
 import sqlite3
 import numpy as np
-from pymoo.performance_indicator.hv import Hypervolume
-
-from .utils import check_pareto, calc_pred_error
 
 
 class Database:
     '''
     SQLite database (compatible with multiprocessing)
-    Keys: x1, x2, ..., f1, f2, ..., expected_f1, expected_f2, ..., uncertainty_f1, uncertainty_f2, ..., hv, pred_error, is_pareto
     '''
-    def __init__(self, db_path, problem):
-        self.db_path = db_path
-        self.n_var = problem.n_var
-        self.n_obj = problem.n_obj
-        self.hv = Hypervolume(ref_point=problem.ref_point) # hypervolume calculator
-        self.n_init_sample = None
-        self.conn = sqlite3.connect(self.db_path)
+    def __init__(self, data_path):
+        '''
+        Input:
+            data_path: file path to database
+        '''
+        self.conn = sqlite3.connect(data_path)
         self.cur = self.conn.cursor()
-        self._create()
+        self.alive = True
+    
+    def get_lock(self):
+        '''
+        Get multiprocessing lock
+        Usage: with self.get_lock(): ...
+        '''
+        return self.conn
 
-    def _create(self):
+    def create(self, table_name, key):
         '''
-        Create database table
+        Create table in database
         '''
-        key_list = [f'x{i + 1} real' for i in range(self.n_var)] + \
-            [f'f{i + 1} real' for i in range(self.n_obj)] + \
-            [f'expected_f{i + 1} real' for i in range(self.n_obj)] + \
-            [f'uncertainty_f{i + 1} real' for i in range(self.n_obj)] + \
-            ['hv real', 'pred_error real', 'is_pareto boolean']
-        self.cur.execute(f'create table data ({",".join(key_list)})')
-        self.conn.commit()
-
-    def init(self, X, Y):
-        '''
-        Initialize database table with initial data X, Y
-        '''
-        self.n_init_sample = X.shape[0]
-        Y_expected = np.zeros((self.n_init_sample, self.n_obj))
-        Y_uncertainty = np.zeros((self.n_init_sample, self.n_obj))
-
-        hv_value = np.full(self.n_init_sample, self.hv.calc(Y))
-        pred_error = np.ones(self.n_init_sample) * 100
-        is_pareto = check_pareto(Y)
-
-        data = np.column_stack([X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto])
-        self.cur.executemany(f'insert into data values ({",".join(["?"] * (self.n_var + 3 * self.n_obj + 3))})', data)
-        self.conn.commit()
-        
-    def insert(self, X, Y, Y_expected, Y_uncertainty):
-        '''
-        Insert data into rows of database table
-        '''
-        sample_len = X.shape[0]
-        Y_keys = [f'f{i + 1}' for i in range(self.n_obj)] + [f'expected_f{i + 1}' for i in range(self.n_obj)]
-        self.cur.execute(f'select {",".join(Y_keys)} from data')
-        select_result = np.array(self.cur.fetchall())
-        old_Y, old_Y_expected = select_result[:, :self.n_obj], select_result[:, self.n_obj:]
-        all_Y, all_Y_expected = np.vstack([old_Y, Y]), np.vstack([old_Y_expected, Y_expected])
-
-        hv_value = np.full(sample_len, self.hv.calc(all_Y))
-        pred_error = calc_pred_error(all_Y[self.n_init_sample:], all_Y_expected[self.n_init_sample:])
-        pred_error = np.full(sample_len, pred_error)
-        is_pareto = np.where(check_pareto(all_Y))[0] + 1
-        data = np.column_stack([X, Y, Y_expected, Y_uncertainty, hv_value, pred_error]).tolist()
-        for i in range(len(data)):
-            data[i].append(False) # TODO
-        with self.conn:
-            self.cur.executemany(f'insert into data values ({",".join(["?"] * (self.n_var + 3 * self.n_obj + 3))})', data)
-            self.cur.execute(f'update data set is_pareto = false')
-            self.cur.execute(f'update data set is_pareto = true where rowid in ({",".join(is_pareto.astype(str))})')
-        self.conn.commit()
-
-    def select(self, keys, dtype=float, rowid=None):
-        '''
-        Query data from database
-        '''
-        if rowid is None:
-            self.cur.execute(f'select {",".join(keys)} from data')
+        if isinstance(key, str):
+            # create table with single key
+            self.cur.execute(f'create table {table_name} ({key})')
+        elif isinstance(key, list):
+            # create table with multiple keys
+            self.cur.execute(f'create table {table_name} ({",".join(key)})')
         else:
-            self.cur.execute(f'select {",".join(keys)} from data where rowid = {rowid}')
-        result = np.array(self.cur.fetchall(), dtype=dtype)
-        return result
+            raise NotImplementedError
+        self.conn.commit()
 
-    def select_multiple(self, keys_list, dtype_list=None, rowid_list=None):
+    def select(self, table_name, key, dtype):
         '''
-        Query multiple types of data from database
+        Select array data from table
         '''
-        if dtype_list is None:
-            dtype_list = [float] * len(keys_list)
-        if rowid_list is None:
-            rowid_list = [None] * len(keys_list)
-        assert len(keys_list) == len(dtype_list) == len(rowid_list)
+        if isinstance(key, str):
+            # select array from single column
+            self.cur.execute(f'select {key} from {table_name}')
+            return np.array(self.cur.fetchall(), dtype=dtype).squeeze()
+        elif isinstance(key, list):
+            if isinstance(dtype, type):
+                # select array with single datatype from multiple columns
+                self.cur.execute(f'select {",".join(key)} from {table_name}')
+                return np.array(self.cur.fetchall(), dtype=dtype)
+            elif isinstance(dtype, list):
+                # select array with multiple datatypes from multiple columns
+                with self.get_lock():
+                    result_list = []
+                    for key_, dtype_ in zip(key, dtype):
+                        if isinstance(key_, str):
+                            self.cur.execute(f'select {key_} from {table_name}')
+                            result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                        elif isinstance(key_, list):
+                            self.cur.execute(f'select {",".join(key_)} from {table_name}')
+                            result = np.array(self.cur.fetchall(), dtype=dtype_)
+                        else:
+                            raise NotImplementedError
+                        result_list.append(result)
+                return result_list
+        else:
+            raise NotImplementedError
 
-        with self.conn:
-            result_list = []
-            for keys, dtype, rowid in zip(keys_list, dtype_list, rowid_list):
-                if rowid is None:
-                    self.cur.execute(f'select {",".join(keys)} from data')
-                else:
-                    self.cur.execute(f'select {",".join(keys)} from data where rowid = {rowid}')
-                result = np.array(self.cur.fetchall(), dtype=dtype)
-                result_list.append(result)
-        return result_list
+    def insert(self, table_name, key, data):
+        '''
+        Insert array data to table
+        '''
+        if isinstance(key, str):
+            # insert single array into single column
+            self.cur.executemany(f'insert into {table_name} ({key}) values (?)', data)
+        elif isinstance(key, list):
+            # insert multiple array to multiple columns
+            data = np.column_stack([np.array(arr, dtype=object) for arr in data])
+            self.cur.executemany(f'insert into {table_name} ({",".join(key)}) values ({",".join(["?"] * data.shape[1])})', data)
+        elif key is None:
+            # insert multiple array to all columns
+            data = np.column_stack([np.array(arr, dtype=object) for arr in data])
+            self.cur.executemany(f'insert into {table_name} values ({",".join(["?"] * data.shape[1])})', data)
+        else:
+            raise NotImplementedError
+        self.conn.commit()
+
+    def update(self, table_name, key, data, rowid):
+        '''
+        Update scalar data to table
+        NOTE: updating different values to different rows is not supported
+        '''
+        if isinstance(rowid, int):
+            # update single row
+            condition = f' where rowid = {rowid}'
+        elif isinstance(rowid, list) or isinstance(rowid, np.ndarray):
+            # update multiple rows
+            condition = f' where rowid in ({",".join(np.array(rowid, dtype=str))})'
+        elif rowid is None:
+            # update all rows
+            condition = ''
+        else:
+            raise NotImplementedError
+
+        if isinstance(key, str):
+            # update single array to single column
+            self.cur.executemany(f'update {table_name} set {key} = ?' + condition, [[data]])
+        elif isinstance(key, list):
+            # update multiple array to multiple columns
+            self.cur.executemany(f'update {table_name} set ({",".join(key)}) = ({",".join(["?" * len(data)])})' + condition, [data])
+        else:
+            raise NotImplementedError
 
     def quit(self):
+        '''
+        Quit database
+        '''
         self.conn.close()
