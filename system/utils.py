@@ -4,6 +4,8 @@ import pandas as pd
 from problems.common import build_problem, get_problem_list
 from mobo.algorithms import get_algorithm_list as get_algo_list_mobo
 from moo.algorithms import get_algorithm_list as get_algo_list_moo
+from mobo.algorithms import get_algorithm as get_algorithm_mobo
+from moo.algorithms import get_algorithm as get_algorithm_moo
 
 
 def correct_config(config):
@@ -122,3 +124,23 @@ def find_closest_point(y, Y, return_index=False):
         return Y[idx], idx
     else:
         return Y[idx]
+
+
+def build_optimizer(config):
+    '''
+    Build optimizer based on problem and configurations
+    Input:
+        config: algorithm configuration
+    '''
+    problem_cfg, algo_cfg = config['problem'], config['algorithm']
+
+    problem = build_problem(problem_cfg)
+
+    algo = get_algorithm_mobo(algo_cfg['name'])
+    if algo is None:
+        algo = get_algorithm_moo(algo_cfg['name'])
+    if algo is None:
+        raise Exception('Invalid algorithm name')
+    optimizer = algo(problem, algo_cfg)
+    
+    return optimizer

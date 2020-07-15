@@ -20,14 +20,16 @@ class GUI:
     '''
     Interactive local tkinter-based GUI
     '''
-    def __init__(self, init_command, optimize_command, load_command, quit_command=None):
+    def __init__(self, init_command, optimize_command, predict_command, update_command, load_command, quit_command=None):
         '''
         GUI initialization
         Input:
-            init_command: command for data storage initialization (usage: init_command(problem, X_init, Y_init, result_dir))
-            optimize_command: command for algorithm optimization (usage: optimize_command(process_id, problem, config, config_id))
-            load_command: command for data loading when GUI periodically refreshes (usage: load_command() -> Y, Y_pareto, hv_value, pred_error)
-            quit_command: command when quitting program (usage: quit_command())
+            init_command: command for data storage & agent initialization
+            optimize_command: command for algorithm optimization
+            predict_command: command for design variable prediction
+            update_command: command for database update
+            load_command: command for data loading when GUI periodically refreshes
+            quit_command: command when quitting program
         '''
         # GUI root
         self.root = tk.Tk()
@@ -40,6 +42,8 @@ class GUI:
         # interaction commands
         self.init_command = init_command
         self.optimize_command = optimize_command
+        self.predict_command = predict_command
+        self.update_command = update_command
         self.load_command = load_command
         self.quit_command = quit_command
 
@@ -52,7 +56,6 @@ class GUI:
         self.config = None
         self.config_raw = None
         self.config_id = -1
-        self.problem = None
 
         # event widgets
         self.button_load = None
@@ -379,7 +382,7 @@ class GUI:
             self.button_load.configure(state=tk.DISABLED)
             self.button_customize.configure(state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
-            worker = Process(target=self.optimize_command, args=(self.process_id, self.problem, self.config, self.config_id))
+            worker = Process(target=self.optimize_command, args=(self.config, self.config_id))
             worker.start()
             self.processes.append([self.process_id, worker])
             self._log(f'worker {self.process_id} started')
@@ -459,8 +462,8 @@ class GUI:
 
             # initialize problem and data storage
             try:
-                self.problem, true_pfront, X_init, Y_init = build_problem(config['problem'], get_pfront=True, get_init_samples=True)
-                self.init_command(self.problem, X_init, Y_init, self.result_dir)
+                _, true_pfront = build_problem(config['problem'], get_pfront=True)
+                self.init_command(config, self.result_dir)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration')
                 return
@@ -493,10 +496,7 @@ class GUI:
                 for key in ['n_init_sample']:
                     assert self.config_raw['general'][key] == config['general'][key]
                 for key in ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'ref_point']: # TODO
-                    assert self.config_raw['problem'][key] == config['problem'][key]
-
-                # reinitialize problem
-                self.problem = build_problem(config['problem'])            
+                    assert self.config_raw['problem'][key] == config['problem'][key]           
             except:
                 tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading')
                 return

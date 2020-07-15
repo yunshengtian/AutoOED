@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from mobo.surrogate_problem import SurrogateProblem
 from mobo.utils import Timer, find_pareto_front
 from mobo.factory import init_framework
@@ -76,12 +75,29 @@ class MOBO:
         X_next, self.info = self.selection.select(solution, self.surrogate_model, self.transformation, curr_pset, curr_pfront)
         timer.log('Next sample batch selected')
 
+        return X_next
+
+    def predict(self, X_init, Y_init, X_next):
+        '''
+        Predict the performance of X_next based on initial data (X_init, Y_init)
+        '''
+        timer = Timer(stdout=False)
+
+        # data normalization
+        self.transformation.fit(X_init, Y_init)
+        X, Y = self.transformation.do(X_init, Y_init)
+
+        # build surrogate models
+        self.surrogate_model.fit(X, Y)
+        timer.log('Surrogate model fitted')
+
         # evalaute prediction and uncertainty on surrogate models
         val = self.surrogate_model.evaluate(self.transformation.do(x=X_next), std=True)
         Y_expected = self.transformation.undo(y=val['F'])
         Y_uncertainty = val['S']
+        timer.log('Performance of next batch predicted')
 
-        return X_next, Y_expected, Y_uncertainty
+        return Y_expected, Y_uncertainty
 
     def __str__(self):
         return \
