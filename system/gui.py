@@ -31,11 +31,18 @@ class GUI:
             load_command: command for data loading when GUI periodically refreshes
             quit_command: command when quitting program
         '''
-        # GUI root
-        self.root = tk.Tk()
-        self.root.title('Multi-Objective Bayesian Optimization')
-        self.root.configure(bg='white')
-        self.root.protocol("WM_DELETE_WINDOW", self._quit)
+        # GUI control panel
+        self.root_ctrl = tk.Tk()
+        self.root_ctrl.title('MOBO - Control')
+        self.root_ctrl.configure(bg='white')
+        self.root_ctrl.protocol("WM_DELETE_WINDOW", self._quit)
+
+        # GUI visualization panel
+        self.root_viz = tk.Tk()
+        self.root_viz.title('MOBO - Visualization')
+        self.root_viz.configure(bg='white')
+        self.root_viz.protocol("WM_DELETE_WINDOW", self._quit)
+
         self.refresh_rate = 100 # ms
         self.result_dir = os.path.abspath('result')
 
@@ -79,8 +86,8 @@ class GUI:
 
         # widget initialization
         self._init_figure_widgets()
-        self._init_config_widgets()
         self._init_storage_widgets()
+        self._init_config_widgets()
         self._init_control_widgets()
         self._init_log_widgets()
 
@@ -92,10 +99,6 @@ class GUI:
             Figure 2: hypervolume curve (hypervolume value w.r.t. number of evaluations)
             Figure 3: surrogate model prediction error (averaged relative error w.r.t. number of evaluations) 
         '''
-        # figure overall frame
-        frame_figure = tk.LabelFrame(master=self.root, bg='white', text='Visualization', font=('courier', 12, 'normal'))
-        frame_figure.grid(row=0, rowspan=3, column=1, padx=10, pady=10, sticky='NSEW')
-
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
         self.fig = plt.figure(figsize=(10, 6))
         gs = GridSpec(2, 3, figure=self.fig)
@@ -120,10 +123,52 @@ class GUI:
 
         # connect matplotlib figure with tkinter GUI
         plt.tight_layout()
-        self.canvas = FigureCanvasTkAgg(self.fig, master=frame_figure)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root_viz)
         self.canvas.draw()
         widget = self.canvas.get_tk_widget()
-        widget.grid(row=0, column=1)
+        widget.grid(row=0, column=0)
+
+    def _init_storage_widgets(self):
+        '''
+        GUI data storage related widgets initialization
+        Layout:
+            Entry: display saving path
+            Button "Browse": change saving path by opening file browser
+        '''
+        # storage overall frame
+        frame_storage = tk.LabelFrame(master=self.root_ctrl, bg='white', text='Storage', font=('courier', 12, 'normal'))
+        frame_storage.grid(row=0, column=0, padx=10, pady=10, sticky='NSEW')
+
+        # description label
+        label_path = tk.Label(master=frame_storage, bg='white', text='File location for data saving:')
+        label_path.grid(row=0, column=0, padx=10, pady=10, sticky='W')
+
+        # path display entry
+        def sv_path_callback(sv):
+            self.result_dir = sv.get()
+        sv_path = tk.StringVar()
+        sv_path.trace('w', lambda name, index, mode, sv=sv_path: sv_path_callback(sv))
+        self.entry_path = tk.Entry(master=frame_storage, bg='white', textvariable=sv_path, width=36)
+        self.entry_path.grid(row=1, column=0, padx=10, sticky='EW')
+        self.entry_path.insert(tk.END, self.result_dir)
+
+        # path change command
+        button_path = tk.Button(master=frame_storage, text='Browse')
+        button_path.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
+
+        def gui_change_saving_path():
+            '''
+            GUI change data saving path
+            '''
+            dirname = tk.filedialog.askdirectory(parent=self.root_ctrl)
+            if not isinstance(dirname, str) or dirname == '': return
+
+            self.entry_path.delete(0, tk.END)
+            self.result_dir = dirname
+            self.entry_path.insert(tk.END, self.result_dir)
+
+        # link to commands
+        button_path.configure(command=gui_change_saving_path)
 
     def _init_config_widgets(self):
         '''
@@ -134,8 +179,8 @@ class GUI:
             ScrolledText: display loaded/customized configuration
         '''
         # config overall frame
-        frame_config = tk.LabelFrame(master=self.root, bg='white', text='Configurations', font=('courier', 12, 'normal'))
-        frame_config.grid(row=0, column=0, padx=10, pady=10, sticky='NSEW')
+        frame_config = tk.LabelFrame(master=self.root_ctrl, bg='white', text='Configurations', font=('courier', 12, 'normal'))
+        frame_config.grid(row=1, rowspan=2, column=0, padx=10, pady=10, sticky='NSEW')
 
         # config file loading command
         self.button_load = tk.Button(master=frame_config, text='Load')
@@ -147,19 +192,19 @@ class GUI:
 
         # config display
         self.scrtext_config = scrolledtext.ScrolledText(master=frame_config, width=10, height=10, state=tk.DISABLED)
-        self.scrtext_config.grid(row=1, column=0, columnspan=2, ipadx=80, ipady=80, padx=5, pady=10, sticky='NSEW')
+        self.scrtext_config.grid(row=1, column=0, columnspan=2, ipadx=80, ipady=120, padx=5, pady=10, sticky='NSEW')
 
         def gui_open_file():
             '''
             GUI load config from file
             '''
-            filename = tk.filedialog.askopenfilename(parent=self.root)
+            filename = tk.filedialog.askopenfilename(parent=self.root_ctrl)
             if not isinstance(filename, str) or filename == '': return
 
             try:
                 config = load_config(filename)
             except:
-                tk.messagebox.showinfo('Error', 'Invalid yaml file', parent=self.root)
+                tk.messagebox.showinfo('Error', 'Invalid yaml file', parent=self.root_ctrl)
                 self.button_optimize.configure(state=tk.DISABLED)
                 return
                 
@@ -169,7 +214,7 @@ class GUI:
             '''
             GUI customize configurations from popup window
             '''
-            window = tk.Toplevel(master=self.root)
+            window = tk.Toplevel(master=self.root_ctrl)
             window.title('Customize Configurations')
             window.configure(bg='white')
 
@@ -178,39 +223,6 @@ class GUI:
             label_font = ('courier', 10, 'normal')
             entry_width = 5
             combobox_width = 10
-
-            # widget creation tools
-            class Entry:
-                def __init__(self, widget, valid_check=None):
-                    self.widget = widget
-                    self.valid_check = valid_check
-                def get(self):
-                    val = self.widget.get()
-                    if val == '':
-                        return None
-                    result = self._get(val)
-                    if self.valid_check is not None:
-                        if not self.valid_check(result):
-                            raise Exception('Invalid value specified in the entry')
-                    return result
-                def _get(self, val):
-                    return val
-            
-            class IntEntry(Entry):
-                def _get(self, val):
-                    return int(val)
-
-            class FloatEntry(Entry):
-                def _get(self, val):
-                    return float(val)
-                    
-            class FloatListEntry(Entry):
-                def _get(self, val):
-                    return [float(num) for num in val.split(',')]
-
-            class StringListEntry(Entry):
-                def _get(self, val):
-                    return val.split(',')
 
             # widget creation tools
             def create_frame(master, row, column, text):
@@ -314,48 +326,6 @@ class GUI:
         self.button_load.configure(command=gui_open_file)
         self.button_customize.configure(command=gui_customize)
 
-    def _init_storage_widgets(self):
-        '''
-        GUI data storage related widgets initialization
-        Layout:
-            Entry: display saving path
-            Button "Browse": change saving path by opening file browser
-        '''
-        # storage overall frame
-        frame_storage = tk.LabelFrame(master=self.root, bg='white', text='Storage', font=('courier', 12, 'normal'))
-        frame_storage.grid(row=1, column=0, padx=10, pady=10, sticky='NSEW')
-
-        # description label
-        label_path = tk.Label(master=frame_storage, bg='white', text='File location for data saving:')
-        label_path.grid(row=0, column=0, padx=10, pady=10, sticky='W')
-
-        # path display entry
-        def sv_path_callback(sv):
-            self.result_dir = sv.get()
-        sv_path = tk.StringVar()
-        sv_path.trace('w', lambda name, index, mode, sv=sv_path: sv_path_callback(sv))
-        self.entry_path = tk.Entry(master=frame_storage, bg='white', textvariable=sv_path, width=36)
-        self.entry_path.grid(row=1, column=0, padx=10, sticky='EW')
-        self.entry_path.insert(tk.END, self.result_dir)
-
-        # path change command
-        button_path = tk.Button(master=frame_storage, text='Browse')
-        button_path.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
-
-        def gui_change_saving_path():
-            '''
-            GUI change data saving path
-            '''
-            dirname = tk.filedialog.askdirectory(parent=self.root)
-            if not isinstance(dirname, str) or dirname == '': return
-
-            self.entry_path.delete(0, tk.END)
-            self.result_dir = dirname
-            self.entry_path.insert(tk.END, self.result_dir)
-
-        # link to commands
-        button_path.configure(command=gui_change_saving_path)
-
     def _init_control_widgets(self):
         '''
         GUI control widgets initialization
@@ -364,16 +334,20 @@ class GUI:
             Button "Stop" stop all algorithm optimizations
         '''
         # control overall frame
-        frame_control = tk.LabelFrame(master=self.root, bg='white', text='Control', font=('courier', 12, 'normal'))
-        frame_control.grid(row=2, column=0, padx=10, pady=10, sticky='NSEW')
+        frame_control = tk.LabelFrame(master=self.root_ctrl, bg='white', text='Control', font=('courier', 12, 'normal'))
+        frame_control.grid(row=0, column=1, padx=10, pady=10, sticky='NSEW')
 
         # optimization command
         self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
-        self.button_optimize.grid(row=0, column=0, ipadx=40, padx=5, pady=10, sticky='NS')
+        self.button_optimize.grid(row=0, column=0, ipadx=40, padx=5, pady=20)
 
         # stop optimization command
         self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
-        self.button_stop.grid(row=0, column=1, ipadx=20, padx=5, pady=10, sticky='NS')
+        self.button_stop.grid(row=0, column=1, ipadx=20, padx=5, pady=20)
+
+        # get design variables from user input
+        self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
+        self.button_input.grid(row=1, column=0, columnspan=2, ipadx=30, padx=10, pady=0)
 
         def gui_optimize():
             '''
@@ -401,9 +375,86 @@ class GUI:
                 self.processes = []
             self.button_stop.configure(state=tk.DISABLED)
 
+        def gui_user_input():
+            '''
+            GUI getting design variables from user input
+            '''
+            window = tk.Toplevel(master=self.root_ctrl)
+            window.title('User Input')
+            window.configure(bg='white')
+
+            # description label
+            label_x = tk.Label(master=window, bg='white', text='Design variable values (seperated by ","):')
+            label_x.grid(row=0, column=0, padx=10, pady=10, sticky='W')
+
+            # design variable entry
+            entry_x = tk.Entry(master=window, bg='white', width=50)
+            entry_x.grid(row=1, column=0, padx=10, sticky='EW')
+            entry_x = FloatListEntry(widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
+
+            # evaluation checkbox
+            eval_var = tk.IntVar()
+            checkbutton_eval = tk.Checkbutton(master=window, bg='white', text='Ask before evaluation', variable=eval_var)
+            checkbutton_eval.grid(row=2, column=0, padx=10, pady=10)
+
+            # add input design variables
+            button_add = tk.Button(master=window, text='Add')
+            button_add.grid(row=3, column=0, ipadx=40, padx=10, pady=10)
+
+            def add_user_input():
+                '''
+                Predict performance of user inputted design variables, optionally do real evaluation and add to database
+                '''
+                # TODO: add batch input support
+                try:
+                    X_next = np.atleast_2d(entry_x.get())
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid design values', parent=window)
+                    return
+
+                if_eval = eval_var.get() == 1
+                window.destroy()
+
+                Y_expected, Y_uncertainty = self.predict_command(self.config, X_next)
+
+                if if_eval:
+                    window2 = tk.Toplevel(master=self.root_ctrl)
+                    window2.title('Prediction Completed')
+                    window2.configure(bg='white')
+
+                    # Y_expected description
+                    label_y_mean = tk.Label(master=window2, bg='white', text=f'Y_expected: ({",".join([str(y) for y in Y_expected.squeeze()])})')
+                    label_y_mean.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='W')
+
+                    # Y_uncertainty description
+                    label_y_std = tk.Label(master=window2, bg='white', text=f'Y_uncertainty: ({",".join([str(y) for y in Y_uncertainty.squeeze()])})')
+                    label_y_std.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='W')
+
+                    # evaluate button
+                    button_eval = tk.Button(master=window2, text='Evaluate')
+                    button_eval.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
+
+                    # cancel button
+                    button_cancel = tk.Button(master=window2, text='Cancel')
+                    button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
+
+                    def eval_user_input():
+                        self.update_command(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)
+                        # TODO: highlight user input in viz
+                        window2.destroy()
+
+                    button_eval.configure(command=eval_user_input)
+                    button_cancel.configure(command=window2.destroy)
+                else:
+                    self.update_command(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)
+                    # TODO: highlight user input in viz
+
+            button_add.configure(command=add_user_input)
+
         # link to commands
         self.button_optimize.configure(command=gui_optimize)
         self.button_stop.configure(command=gui_stop_optimize)
+        self.button_input.configure(command=gui_user_input)
 
     def _init_log_widgets(self):
         '''
@@ -413,12 +464,12 @@ class GUI:
             Button "clear": clear log info
         '''
         # log overall frame
-        frame_log = tk.LabelFrame(master=self.root, bg='white', text='Log', font=('courier', 12, 'normal'))
-        frame_log.grid(row=0, rowspan=3, column=2, padx=10, pady=10, sticky='NSEW')
+        frame_log = tk.LabelFrame(master=self.root_ctrl, bg='white', text='Log', font=('courier', 12, 'normal'))
+        frame_log.grid(row=1, rowspan=2, column=1, padx=10, pady=10, sticky='NSEW')
 
         # log display
         self.scrtext_log = scrolledtext.ScrolledText(master=frame_log, width=10, height=10, state=tk.DISABLED)
-        self.scrtext_log.grid(row=0, column=0, ipadx=80, ipady=200, padx=5, pady=10, sticky='NSEW')
+        self.scrtext_log.grid(row=0, column=0, ipadx=90, ipady=120, padx=5, pady=10, sticky='NSEW')
 
         # log clear command
         self.button_clear = tk.Button(master=frame_log, text="Clear")
@@ -481,6 +532,7 @@ class GUI:
 
             # activate optimization button
             self.button_optimize.configure(state=tk.NORMAL)
+            self.button_input.configure(state=tk.NORMAL)
 
             # refresh config display
             self.scrtext_config.configure(state=tk.NORMAL)
@@ -488,7 +540,7 @@ class GUI:
             self.scrtext_config.configure(state=tk.DISABLED)
 
             # trigger periodic refresh
-            self.root.after(self.refresh_rate, self._refresh)
+            self.root_ctrl.after(self.refresh_rate, self._refresh)
 
         else: # user changed config in the middle
             try:
@@ -580,7 +632,7 @@ class GUI:
         '''
         self._check_status()
         self._redraw()
-        self.root.after(self.refresh_rate, self._refresh)
+        self.root_ctrl.after(self.refresh_rate, self._refresh)
 
     def _check_status(self):
         '''
@@ -643,8 +695,48 @@ class GUI:
         '''
         if self.quit_command is not None:
             self.quit_command()
+
         for p in self.processes:
             _, worker = p
             worker.terminate()
-        self.root.quit()
-        self.root.destroy()
+
+        self.root_ctrl.quit()
+        self.root_ctrl.destroy()
+        self.root_viz.quit()
+        self.root_viz.destroy()
+
+
+class Entry:
+    '''
+    Entry widget creation tools
+    '''
+    def __init__(self, widget, valid_check=None):
+        self.widget = widget
+        self.valid_check = valid_check
+    def get(self):
+        val = self.widget.get()
+        if val == '':
+            return None
+        result = self._get(val)
+        if self.valid_check is not None:
+            if not self.valid_check(result):
+                raise Exception('Invalid value specified in the entry')
+        return result
+    def _get(self, val):
+        return val
+
+class IntEntry(Entry):
+    def _get(self, val):
+        return int(val)
+
+class FloatEntry(Entry):
+    def _get(self, val):
+        return float(val)
+        
+class FloatListEntry(Entry):
+    def _get(self, val):
+        return [float(num) for num in val.split(',')]
+
+class StringListEntry(Entry):
+    def _get(self, val):
+        return val.split(',')
