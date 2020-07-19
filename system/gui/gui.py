@@ -14,6 +14,7 @@ import numpy as np
 from multiprocessing import Lock, Process
 from problems.common import build_problem
 from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
+from system.gui.radar import radar_factory
 
 
 class GUI:
@@ -81,6 +82,8 @@ class GUI:
         self.annotate = None
         self.line_hv = None
         self.line_error = None
+        self.line_design = None
+        self.fill_design = None
         self.n_init_sample = None
         self.n_curr_sample = None
 
@@ -100,26 +103,35 @@ class GUI:
             Figure 3: surrogate model prediction error (averaged relative error w.r.t. number of evaluations) 
         '''
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
-        self.fig = plt.figure(figsize=(10, 6))
-        gs = GridSpec(2, 3, figure=self.fig)
+        self.fig = plt.figure(figsize=(13, 6))
+        self.gs = GridSpec(6, 13, figure=self.fig)
 
         # performance space figure
-        self.ax1 = self.fig.add_subplot(gs[:, :2])
+        self.ax1 = self.fig.add_subplot(self.gs[:, 4:10])
         self.ax1.set_title('Performance Space')
 
         # hypervolume curve figure
-        self.ax2 = self.fig.add_subplot(gs[0, 2])
+        self.ax2 = self.fig.add_subplot(self.gs[:3, 10:])
         self.ax2.set_title('Hypervolume')
         self.ax2.set_xlabel('Evaluations')
         self.ax2.set_ylabel('Hypervolume')
         self.ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
         # model prediction error figure
-        self.ax3 = self.fig.add_subplot(gs[1, 2])
+        self.ax3 = self.fig.add_subplot(self.gs[3:, 10:])
         self.ax3.set_title('Model Prediction Error')
         self.ax3.set_xlabel('Evaluations')
         self.ax3.set_ylabel('Averaged Relative Error (%)')
         self.ax3.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        # design space figure
+        n_var_init = 5
+        self.theta = radar_factory(n_var_init)
+        self.ax4 = self.fig.add_subplot(self.gs[1:5, :4], projection='radar')
+        self.ax4.set_xticks(self.theta)
+        self.ax4.set_varlabels([f'x{i + 1}' for i in range(n_var_init)])
+        self.ax4.set_yticklabels([])
+        self.ax4.set_title('Design Space', position=(0.5, 1.1))
 
         # connect matplotlib figure with tkinter GUI
         plt.tight_layout()
@@ -525,6 +537,18 @@ class GUI:
             f1_name, f2_name = self.config['problem']['obj_name']
             self.ax1.set_xlabel(f1_name)
             self.ax1.set_ylabel(f2_name)
+
+            n_var = self.config['problem']['n_var']
+            self.theta = radar_factory(n_var)
+            self.fig.delaxes(self.ax4)
+            self.ax4 = self.fig.add_subplot(self.gs[1:5, :4], projection='radar')
+            self.ax4.set_xticks(self.theta)
+            var_name, self.xl, self.xu = self.config['problem']['var_name'], np.array(self.config['problem']['xl']), np.array(self.config['problem']['xu'])
+            self.ax4.set_varlabels([f'{var_name[i]}\n[{self.xl[i]},{self.xu[i]}]' for i in range(n_var)])
+            self.ax4.set_yticklabels([])
+            self.ax4.set_title('Design Space', position=(0.5, 1.1))
+            self.ax4.set_ylim(0, 1)
+
             self._init_draw(true_pfront)
 
             # lock path entry
@@ -601,17 +625,30 @@ class GUI:
                 if self.annotate is not None:
                     self.annotate.remove()
                     self.annotate = None
+                if self.line_design is not None:
+                    self.line_design.remove()
+                    self.fill_design.remove()
+                    self.line_design = None
+                    self.fill_design = None
                 y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
                 text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
                 self.annotate = self.ax1.annotate(x_str, xy=closest_y, xytext=text_loc,
                     bbox=dict(boxstyle="round", fc="w", alpha=0.7),
                     arrowprops=dict(arrowstyle="->"))
-                self.fig.canvas.draw()
+                transformed_x = (np.array(closest_x) - self.xl) / (self.xu - self.xl)
+                self.line_design = self.ax4.plot(self.theta, transformed_x)[0]
+                self.fill_design = self.ax4.fill(self.theta, transformed_x, alpha=0.2)[0]
             elif event.button == MouseButton.RIGHT:
                 if self.annotate is not None:
                     self.annotate.remove()
                     self.annotate = None
-                self.fig.canvas.draw()
+                if self.line_design is not None:
+                    self.line_design.remove()
+                    self.fill_design.remove()
+                    self.line_design = None
+                    self.fill_design = None
+                
+            self.fig.canvas.draw()
         
         self.fig.canvas.mpl_connect('button_press_event', check_design_values)
 
