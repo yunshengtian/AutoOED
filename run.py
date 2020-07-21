@@ -80,14 +80,12 @@ def optimize_command(config, config_id):
         update_command(config, X_next, Y_expected, Y_uncertainty, config_id)
 
 
-def load_command():
+def load_command(keys):
     '''
     Data loading command linked to GUI figure refresh
     '''
     # read current data from database
-    X, Y, hv, pred_error, is_pareto = agent.select(['X', 'Y', 'hv', 'pred_error', 'is_pareto'])
-
-    return X, Y, Y[is_pareto], hv, pred_error
+    return agent.select(keys)
 
 
 def quit_command():

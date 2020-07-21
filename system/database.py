@@ -1,5 +1,6 @@
 import sqlite3
 import numpy as np
+from multiprocessing import Lock
 
 
 class Database:
@@ -14,13 +15,14 @@ class Database:
         self.conn = sqlite3.connect(data_path)
         self.cur = self.conn.cursor()
         self.alive = True
+        self.lock = Lock()
     
     def get_lock(self):
         '''
         Get multiprocessing lock
         Usage: with self.get_lock(): ...
         '''
-        return self.conn
+        return self.lock
 
     def create(self, table_name, key):
         '''
@@ -35,7 +37,7 @@ class Database:
         else:
             raise NotImplementedError
 
-    def select(self, table_name, key, dtype):
+    def select(self, table_name, key, dtype, lock=True):
         '''
         Select array data from table
         '''
@@ -50,18 +52,21 @@ class Database:
                 return np.array(self.cur.fetchall(), dtype=dtype)
             elif isinstance(dtype, list):
                 # select array with multiple datatypes from multiple columns
-                with self.get_lock():
-                    result_list = []
-                    for key_, dtype_ in zip(key, dtype):
-                        if isinstance(key_, str):
-                            self.cur.execute(f'select {key_} from {table_name}')
-                            result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
-                        elif isinstance(key_, list):
-                            self.cur.execute(f'select {",".join(key_)} from {table_name}')
-                            result = np.array(self.cur.fetchall(), dtype=dtype_)
-                        else:
-                            raise NotImplementedError
-                        result_list.append(result)
+                if lock:
+                    self.lock.acquire()
+                result_list = []
+                for key_, dtype_ in zip(key, dtype):
+                    if isinstance(key_, str):
+                        self.cur.execute(f'select {key_} from {table_name}')
+                        result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                    elif isinstance(key_, list):
+                        self.cur.execute(f'select {",".join(key_)} from {table_name}')
+                        result = np.array(self.cur.fetchall(), dtype=dtype_)
+                    else:
+                        raise NotImplementedError
+                    result_list.append(result)
+                if lock:
+                    self.lock.release()
                 return result_list
         else:
             raise NotImplementedError

@@ -137,8 +137,12 @@ class GUI:
         plt.tight_layout()
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root_viz)
         self.canvas.draw()
-        widget = self.canvas.get_tk_widget()
-        widget.grid(row=0, column=0)
+        self.canvas.get_tk_widget().grid(row=0, column=0)
+
+        frame_toolbar = tk.Frame(master=self.root_viz, bg='white')
+        frame_toolbar.grid(row=1, column=0, sticky='NSEW')
+        toolbar = NavigationToolbar2Tk(self.canvas, frame_toolbar)
+        toolbar.update()
 
     def _init_storage_widgets(self):
         '''
@@ -351,15 +355,19 @@ class GUI:
 
         # optimization command
         self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
-        self.button_optimize.grid(row=0, column=0, ipadx=40, padx=5, pady=20)
+        self.button_optimize.grid(row=0, column=0, ipadx=18, padx=5, pady=20, sticky='NSEW')
 
         # stop optimization command
         self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
-        self.button_stop.grid(row=0, column=1, ipadx=20, padx=5, pady=20)
+        self.button_stop.grid(row=0, column=1, ipadx=18, padx=5, pady=20, sticky='NSEW')
 
         # get design variables from user input
         self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
-        self.button_input.grid(row=1, column=0, columnspan=2, ipadx=30, padx=10, pady=0)
+        self.button_input.grid(row=1, column=0, ipadx=18, padx=5, pady=0, sticky='NSEW')
+
+        # show optimization history
+        self.button_history = tk.Button(master=frame_control, text='Show History', state=tk.DISABLED)
+        self.button_history.grid(row=1, column=1, ipadx=18, padx=5, pady=0, sticky='NSEW')
 
         def gui_optimize():
             '''
@@ -463,10 +471,14 @@ class GUI:
 
             button_add.configure(command=add_user_input)
 
+        def gui_show_history():
+            pass
+
         # link to commands
         self.button_optimize.configure(command=gui_optimize)
         self.button_stop.configure(command=gui_stop_optimize)
         self.button_input.configure(command=gui_user_input)
+        self.button_history.configure(command=gui_show_history)
 
     def _init_log_widgets(self):
         '''
@@ -592,7 +604,7 @@ class GUI:
         First draw of performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_pareto, hv_value, _ = self.load_command()
+        X, Y, hv_value, is_pareto = self.load_command(['X', 'Y', 'hv', 'is_pareto'])
 
         # update status
         self.n_init_sample = len(Y)
@@ -603,8 +615,11 @@ class GUI:
             self.ax1.scatter(*true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
         self.scatter_x = X
         self.scatter_y = self.ax1.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
-        self.scatter_y_pareto = self.ax1.scatter(*Y_pareto.T, color='red', s=10, label='Approximated Pareto front')
+        self.scatter_y_pareto = self.ax1.scatter(*Y[is_pareto].T, color='red', s=10, label='Approximated Pareto front')
+        self.scatter_y_new = self.ax1.scatter([], [], color='m', s=10, label='New evaluated points')
+        self.scatter_y_pred = self.ax1.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted points')
         self.ax1.legend(loc='upper right')
+        self.line_y_pred_list = []
 
         # plot hypervolume curve
         self.line_hv = self.ax2.plot(list(range(self.n_init_sample)), hv_value)[0]
@@ -616,7 +631,7 @@ class GUI:
          # mouse clicking event
         def check_design_values(event):
             if event.inaxes != self.ax1: return
-            if event.button == MouseButton.LEFT:
+            if event.button == MouseButton.LEFT and event.dblclick:
                 loc = [event.xdata, event.ydata]
                 all_y = self.scatter_y._offsets
                 closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
@@ -694,7 +709,7 @@ class GUI:
         Redraw performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_pareto, hv_value, pred_error = self.load_command()
+        X, Y, Y_expected, hv_value, pred_error, is_pareto, batch_id = self.load_command(['X', 'Y', 'Y_expected', 'hv', 'pred_error', 'is_pareto', 'batch_id'])
 
         # check if needs redraw
         if len(Y) == self.n_curr_sample: return
@@ -703,8 +718,34 @@ class GUI:
         # replot performance space
         self.scatter_x = X
         self.scatter_y.set_offsets(Y)
-        self.scatter_y_pareto.set_offsets(Y_pareto)
+        self.scatter_y_pareto.set_offsets(Y[is_pareto])
+        
+        # rescale plot
+        x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
+        y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
+        x_offset = (x_max - x_min) / 20
+        y_offset = (y_max - y_min) / 20
+        curr_x_min, curr_x_max = self.ax1.get_xlim()
+        curr_y_min, curr_y_max = self.ax1.get_ylim()
+        x_min, x_max = min(x_min - x_offset, curr_x_min), max(x_max + x_offset, curr_x_max)
+        y_min, y_max = min(y_min - y_offset, curr_y_min), max(y_max + y_offset, curr_y_max)
+        self.ax1.set_xlim(x_min, x_max)
+        self.ax1.set_ylim(y_min, y_max)
 
+        # replot new evaluated & predicted points
+        self.scatter_y_new.remove()
+        self.scatter_y_pred.remove()
+        for line in self.line_y_pred_list:
+            line.remove()
+        self.line_y_pred_list = []
+
+        last_batch_idx = np.where(batch_id == batch_id[-1])[0]
+        self.scatter_y_new = self.ax1.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
+        self.scatter_y_pred = self.ax1.scatter(*Y_expected[last_batch_idx].T, facecolors='none', edgecolors='m', s=15, label='New predicted points')
+        for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
+            line = self.ax1.plot([y[0], y_expected[0]], [y[1], y_expected[1]], '--', color='m', alpha=0.5)[0]
+            self.line_y_pred_list.append(line)
+            
         # replot hypervolume curve
         self.line_hv.set_data(list(range(len(Y))), hv_value)
         self.ax2.relim()

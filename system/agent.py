@@ -15,13 +15,14 @@ class Agent:
         self.n_obj = problem.n_obj
         self.hv = Hypervolume(ref_point=problem.ref_point) # hypervolume calculator
         self.n_init_sample = None
+        self.batch_id = 1
 
         # keys and associated datatypes of database table
         key_list = [f'x{i + 1} real' for i in range(self.n_var)] + \
             [f'f{i + 1} real' for i in range(self.n_obj)] + \
             [f'expected_f{i + 1} real' for i in range(self.n_obj)] + \
             [f'uncertainty_f{i + 1} real' for i in range(self.n_obj)] + \
-            ['hv real', 'pred_error real', 'is_pareto boolean', 'config_id integer']
+            ['hv real', 'pred_error real', 'is_pareto boolean', 'config_id integer', 'batch_id integer']
         self.db.create('data', key=key_list)
         self.db.commit()
 
@@ -35,6 +36,7 @@ class Agent:
             'pred_error': 'pred_error',
             'is_pareto': 'is_pareto',
             'config_id': 'config_id',
+            'batch_id': 'batch_id',
         }
 
         # datatype mapping in python
@@ -47,6 +49,7 @@ class Agent:
             'pred_error': float,
             'is_pareto': bool,
             'config_id': int,
+            'batch_id': int,
         }
 
     def _mapped_keys(self, keys, flatten=False):
@@ -93,17 +96,19 @@ class Agent:
         pred_error = np.ones(self.n_init_sample) * 100
         is_pareto = check_pareto(Y)
         config_id = np.zeros(self.n_init_sample, dtype=int)
+        batch_id = np.zeros(self.n_init_sample, dtype=int)
 
-        self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id])
-        self.db.commit()
+        with self.db.get_lock():
+            self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id, batch_id])
+            self.db.commit()
 
-    def select(self, keys, valid_only=True):
+    def select(self, keys, valid_only=True, lock=True):
         '''
         Select array from database table
         Input:
             valid_only: if only keeps valid data, i.e., filled data, without nan
         '''
-        result = self.db.select('data', key=self._mapped_keys(keys), dtype=self._mapped_types(keys))
+        result = self.db.select('data', key=self._mapped_keys(keys), dtype=self._mapped_types(keys), lock=lock)
         if valid_only:
             if isinstance(result, list):
                 isnan = None
@@ -132,13 +137,15 @@ class Agent:
         '''
         sample_len = len(X)
         config_id = np.full(sample_len, config_id)
+        batch_id = np.full(sample_len, self.batch_id)
+        self.batch_id += 1
 
         with self.db.get_lock():
-            self.db.insert('data', key=self._mapped_keys(['X', 'Y_expected', 'Y_uncertainty', 'config_id'], flatten=True), 
-                data=[X, Y_expected, Y_uncertainty, config_id])
+            self.db.insert('data', key=self._mapped_keys(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
+                data=[X, Y_expected, Y_uncertainty, config_id, batch_id])
             last_rowid = self.db.get_last_rowid('data')
-        
-        self.db.commit()
+            self.db.commit()
+            
         rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
         return rowids
 
@@ -149,7 +156,7 @@ class Agent:
             rowids: row indices to be updated
         '''
         with self.db.get_lock():
-            all_Y, all_Y_expected = self.select(['Y', 'Y_expected'], valid_only=False)
+            all_Y, all_Y_expected = self.select(['Y', 'Y_expected'], valid_only=False, lock=False)
             all_Y[rowids - 1] = Y
             valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
             all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
@@ -168,8 +175,7 @@ class Agent:
                     data=[Y[i], hv_value[i], pred_error[i]], rowid=rowid)
             self.db.update('data', key='is_pareto', data=False, rowid=None)
             self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
-        
-        self.db.commit()
+            self.db.commit()
 
     def quit(self):
         '''
