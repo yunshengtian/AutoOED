@@ -97,6 +97,7 @@ def quit_command():
 
 
 def main():
+    os.environ['OMP_NUM_THREADS'] = '1'
     gui = GUI(init_command, optimize_command, predict_command, update_command, load_command, quit_command)
     gui.mainloop()
 

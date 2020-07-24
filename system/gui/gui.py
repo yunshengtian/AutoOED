@@ -194,10 +194,7 @@ class GUI:
             self.menu_config.entryconfig(1, state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
             worker = Process(target=self.optimize_command, args=(self.config, self.config_id))
-            worker.start()
-            self.processes.append([self.process_id, worker])
-            self._log(f'worker {self.process_id} started')
-            self.process_id += 1
+            self._start_worker(worker)
 
         def gui_stop_optimize():
             '''
@@ -276,19 +273,20 @@ class GUI:
                     button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
 
                     def eval_user_input():
-                        self.update_command(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)
-                        # TODO: highlight user input in viz
+                        worker = Process(target=self.update_command, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
+                        self._start_worker(worker)
                         window2.destroy()
 
                     button_eval.configure(command=eval_user_input)
                     button_cancel.configure(command=window2.destroy)
                 else:
-                    self.update_command(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)
-                    # TODO: highlight user input in viz
+                    worker = Process(target=self.update_command, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
+                    self._start_worker(worker)
 
             button_add.configure(command=add_user_input)
 
         def gui_show_history():
+            # TODO
             pass
 
         # link to commands
@@ -640,6 +638,15 @@ class GUI:
         self._check_status()
         self._redraw()
         self.root.after(self.refresh_rate, self._refresh)
+
+    def _start_worker(self, worker):
+        '''
+        Start a worker process
+        '''
+        worker.start()
+        self.processes.append([self.process_id, worker])
+        self._log(f'worker {self.process_id} started')
+        self.process_id += 1
 
     def _check_status(self):
         '''

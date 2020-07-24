@@ -15,7 +15,6 @@ class Agent:
         self.n_obj = problem.n_obj
         self.hv = Hypervolume(ref_point=problem.ref_point) # hypervolume calculator
         self.n_init_sample = None
-        self.batch_id = 1
 
         # keys and associated datatypes of database table
         key_list = [f'x{i + 1} real' for i in range(self.n_var)] + \
