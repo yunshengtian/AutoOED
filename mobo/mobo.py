@@ -36,7 +36,7 @@ class MOBO:
         self.solver = framework['solver'] # multi-objective solver for finding the paretofront
         self.selection = framework['selection'] # selection method for choosing new (batch of) samples to evaluate on real problem
 
-        # other component-specific information that needs to be stored or exported
+        # other component-specific information that needs to be stored or exported (TODO: clean)
         self.info = None
 
     def solve(self, X_init, Y_init):

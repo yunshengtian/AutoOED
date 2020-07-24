@@ -137,10 +137,10 @@ class Agent:
         '''
         sample_len = len(X)
         config_id = np.full(sample_len, config_id)
-        batch_id = np.full(sample_len, self.batch_id)
-        self.batch_id += 1
 
         with self.db.get_lock():
+            batch_id = self.db.select_last('data', key='batch_id', dtype=int, lock=False) + 1
+            batch_id = np.full(sample_len, batch_id)
             self.db.insert('data', key=self._mapped_keys(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
                 data=[X, Y_expected, Y_uncertainty, config_id, batch_id])
             last_rowid = self.db.get_last_rowid('data')

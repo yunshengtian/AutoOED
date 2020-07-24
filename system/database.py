@@ -39,7 +39,7 @@ class Database:
 
     def select(self, table_name, key, dtype, lock=True):
         '''
-        Select array data from table
+        Select array data from all rows of the table
         '''
         if isinstance(key, str):
             # select array from single column
@@ -61,6 +61,40 @@ class Database:
                         result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
                     elif isinstance(key_, list):
                         self.cur.execute(f'select {",".join(key_)} from {table_name}')
+                        result = np.array(self.cur.fetchall(), dtype=dtype_)
+                    else:
+                        raise NotImplementedError
+                    result_list.append(result)
+                if lock:
+                    self.lock.release()
+                return result_list
+        else:
+            raise NotImplementedError
+
+    def select_last(self, table_name, key, dtype, lock=True):
+        '''
+        Select scalar data from the last row of the table
+        '''
+        if isinstance(key, str):
+            # select scalar from single column
+            self.cur.execute(f'select {key} from {table_name} order by rowid desc limit 1')
+            return np.array(self.cur.fetchall(), dtype=dtype).squeeze()
+        elif isinstance(key, list):
+            if isinstance(dtype, type):
+                # select scalar with single datatype from multiple columns
+                self.cur.execute(f'select {",".join(key)} from {table_name} order by rowid desc limit 1')
+                return np.array(self.cur.fetchall(), dtype=dtype)
+            elif isinstance(dtype, list):
+                # select scalar with multiple datatypes from multiple columns
+                if lock:
+                    self.lock.acquire()
+                result_list = []
+                for key_, dtype_ in zip(key, dtype):
+                    if isinstance(key_, str):
+                        self.cur.execute(f'select {key_} from {table_name} order by rowid desc limit 1')
+                        result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                    elif isinstance(key_, list):
+                        self.cur.execute(f'select {",".join(key_)} from {table_name} order by rowid desc limit 1')
                         result = np.array(self.cur.fetchall(), dtype=dtype_)
                     else:
                         raise NotImplementedError

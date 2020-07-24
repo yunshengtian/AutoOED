@@ -229,10 +229,10 @@ class GUI:
             entry_x.grid(row=1, column=0, padx=10, sticky='EW')
             entry_x = FloatListEntry(widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
 
-            # evaluation checkbox
-            eval_var = tk.IntVar()
-            checkbutton_eval = tk.Checkbutton(master=window, bg='white', text='Ask before evaluation', variable=eval_var)
-            checkbutton_eval.grid(row=2, column=0, padx=10, pady=10)
+            # ask before evaluation checkbox
+            ask_var = tk.IntVar()
+            checkbutton_ask = tk.Checkbutton(master=window, bg='white', text='Ask before evaluation', variable=ask_var)
+            checkbutton_ask.grid(row=2, column=0, padx=10, pady=10)
 
             # add input design variables
             button_add = tk.Button(master=window, text='Add')
@@ -249,12 +249,12 @@ class GUI:
                     tk.messagebox.showinfo('Error', 'Invalid design values', parent=window)
                     return
 
-                if_eval = eval_var.get() == 1
+                ask = ask_var.get() == 1
                 window.destroy()
 
                 Y_expected, Y_uncertainty = self.predict_command(self.config, X_next)
 
-                if if_eval:
+                if ask:
                     window2 = tk.Toplevel(master=self.root)
                     window2.title('Prediction Completed')
                     window2.configure(bg='white')
