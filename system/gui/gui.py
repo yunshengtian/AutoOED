@@ -102,47 +102,63 @@ class GUI:
             Figure 2: hypervolume curve (hypervolume value w.r.t. number of evaluations)
             Figure 3: surrogate model prediction error (averaged relative error w.r.t. number of evaluations) 
         '''
+        nb = ttk.Notebook(master=self.root_viz)
+        nb.grid(row=0, column=0)
+        frame_viz = tk.Frame(master=nb)
+        frame_stat = tk.Frame(master=nb)
+        nb.add(child=frame_viz, text='Visualization')
+        nb.add(child=frame_stat, text='Statistics')
+
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
-        self.fig = plt.figure(figsize=(13, 6))
-        self.gs = GridSpec(6, 13, figure=self.fig)
+        self.fig1 = plt.figure(figsize=(10, 5))
+        self.gs1 = GridSpec(1, 2, figure=self.fig1, width_ratios=[3, 2])
+        self.fig2 = plt.figure(figsize=(10, 5))
 
         # performance space figure
-        self.ax1 = self.fig.add_subplot(self.gs[:, 4:10])
-        self.ax1.set_title('Performance Space')
-
-        # hypervolume curve figure
-        self.ax2 = self.fig.add_subplot(self.gs[:3, 10:])
-        self.ax2.set_title('Hypervolume')
-        self.ax2.set_xlabel('Evaluations')
-        self.ax2.set_ylabel('Hypervolume')
-        self.ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-        # model prediction error figure
-        self.ax3 = self.fig.add_subplot(self.gs[3:, 10:])
-        self.ax3.set_title('Model Prediction Error')
-        self.ax3.set_xlabel('Evaluations')
-        self.ax3.set_ylabel('Averaged Relative Error (%)')
-        self.ax3.xaxis.set_major_locator(MaxNLocator(integer=True))
+        self.ax11 = self.fig1.add_subplot(self.gs1[0])
+        self.ax11.set_title('Performance Space')
 
         # design space figure
         n_var_init = 5
         self.theta = radar_factory(n_var_init)
-        self.ax4 = self.fig.add_subplot(self.gs[1:5, :4], projection='radar')
-        self.ax4.set_xticks(self.theta)
-        self.ax4.set_varlabels([f'x{i + 1}' for i in range(n_var_init)])
-        self.ax4.set_yticklabels([])
-        self.ax4.set_title('Design Space', position=(0.5, 1.1))
+        self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
+        self.ax12.set_xticks(self.theta)
+        self.ax12.set_varlabels([f'x{i + 1}' for i in range(n_var_init)])
+        self.ax12.set_yticklabels([])
+        self.ax12.set_title('Design Space', position=(0.5, 1.1))
+
+        # hypervolume curve figure
+        self.ax21 = self.fig2.add_subplot(121)
+        self.ax21.set_title('Hypervolume')
+        self.ax21.set_xlabel('Evaluations')
+        self.ax21.set_ylabel('Hypervolume')
+        self.ax21.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        # model prediction error figure
+        self.ax22 = self.fig2.add_subplot(122)
+        self.ax22.set_title('Model Prediction Error')
+        self.ax22.set_xlabel('Evaluations')
+        self.ax22.set_ylabel('Averaged Relative Error (%)')
+        self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
 
         # connect matplotlib figure with tkinter GUI
-        plt.tight_layout()
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root_viz)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=0, column=0)
+        canvas1 = FigureCanvasTkAgg(self.fig1, master=frame_viz)
+        canvas1.draw()
+        canvas1.get_tk_widget().grid(row=0, column=0)
 
-        frame_toolbar = tk.Frame(master=self.root_viz, bg='white')
-        frame_toolbar.grid(row=1, column=0, sticky='NSEW')
-        toolbar = NavigationToolbar2Tk(self.canvas, frame_toolbar)
-        toolbar.update()
+        frame_toolbar1 = tk.Frame(master=frame_viz, bg='white')
+        frame_toolbar1.grid(row=1, column=0, sticky='NSEW')
+        toolbar1 = NavigationToolbar2Tk(canvas1, frame_toolbar1)
+        toolbar1.update()
+
+        canvas2 = FigureCanvasTkAgg(self.fig2, master=frame_stat)
+        canvas2.draw()
+        canvas2.get_tk_widget().grid(row=0, column=0)
+
+        frame_toolbar2 = tk.Frame(master=frame_stat, bg='white')
+        frame_toolbar2.grid(row=1, column=0, sticky='NSEW')
+        toolbar2 = NavigationToolbar2Tk(canvas2, frame_toolbar2)
+        toolbar2.update()
 
     def _init_storage_widgets(self):
         '''
@@ -547,19 +563,19 @@ class GUI:
 
             # update plot
             f1_name, f2_name = self.config['problem']['obj_name']
-            self.ax1.set_xlabel(f1_name)
-            self.ax1.set_ylabel(f2_name)
+            self.ax11.set_xlabel(f1_name)
+            self.ax11.set_ylabel(f2_name)
 
             n_var = self.config['problem']['n_var']
             self.theta = radar_factory(n_var)
-            self.fig.delaxes(self.ax4)
-            self.ax4 = self.fig.add_subplot(self.gs[1:5, :4], projection='radar')
-            self.ax4.set_xticks(self.theta)
+            self.fig1.delaxes(self.ax12)
+            self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
+            self.ax12.set_xticks(self.theta)
             var_name, self.xl, self.xu = self.config['problem']['var_name'], np.array(self.config['problem']['xl']), np.array(self.config['problem']['xu'])
-            self.ax4.set_varlabels([f'{var_name[i]}\n[{self.xl[i]},{self.xu[i]}]' for i in range(n_var)])
-            self.ax4.set_yticklabels([])
-            self.ax4.set_title('Design Space', position=(0.5, 1.1))
-            self.ax4.set_ylim(0, 1)
+            self.ax12.set_varlabels([f'{var_name[i]}\n[{self.xl[i]},{self.xu[i]}]' for i in range(n_var)])
+            self.ax12.set_yticklabels([])
+            self.ax12.set_title('Design Space', position=(0.5, 1.1))
+            self.ax12.set_ylim(0, 1)
 
             self._init_draw(true_pfront)
 
@@ -612,25 +628,25 @@ class GUI:
 
         # plot performance space
         if true_pfront is not None:
-            self.ax1.scatter(*true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
+            self.ax11.scatter(*true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
         self.scatter_x = X
-        self.scatter_y = self.ax1.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
-        self.scatter_y_pareto = self.ax1.scatter(*Y[is_pareto].T, color='red', s=10, label='Approximated Pareto front')
-        self.scatter_y_new = self.ax1.scatter([], [], color='m', s=10, label='New evaluated points')
-        self.scatter_y_pred = self.ax1.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted points')
-        self.ax1.legend(loc='upper right')
+        self.scatter_y = self.ax11.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
+        self.scatter_y_pareto = self.ax11.scatter(*Y[is_pareto].T, color='red', s=10, label='Approximated Pareto front')
+        self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated points')
+        self.scatter_y_pred = self.ax11.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted points')
+        self.ax11.legend(loc='upper right')
         self.line_y_pred_list = []
 
         # plot hypervolume curve
-        self.line_hv = self.ax2.plot(list(range(self.n_init_sample)), hv_value)[0]
-        self.ax2.set_title('Hypervolume: %.2f' % hv_value[-1])
+        self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
+        self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
 
         # plot prediction error curve
-        self.line_error = self.ax3.plot([], [])[0]
+        self.line_error = self.ax22.plot([], [])[0]
 
          # mouse clicking event
         def check_design_values(event):
-            if event.inaxes != self.ax1: return
+            if event.inaxes != self.ax11: return
             if event.button == MouseButton.LEFT and event.dblclick:
                 loc = [event.xdata, event.ydata]
                 all_y = self.scatter_y._offsets
@@ -647,12 +663,12 @@ class GUI:
                     self.fill_design = None
                 y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
                 text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
-                self.annotate = self.ax1.annotate(x_str, xy=closest_y, xytext=text_loc,
+                self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
                     bbox=dict(boxstyle="round", fc="w", alpha=0.7),
                     arrowprops=dict(arrowstyle="->"))
                 transformed_x = (np.array(closest_x) - self.xl) / (self.xu - self.xl)
-                self.line_design = self.ax4.plot(self.theta, transformed_x)[0]
-                self.fill_design = self.ax4.fill(self.theta, transformed_x, alpha=0.2)[0]
+                self.line_design = self.ax12.plot(self.theta, transformed_x)[0]
+                self.fill_design = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
             elif event.button == MouseButton.RIGHT:
                 if self.annotate is not None:
                     self.annotate.remove()
@@ -663,12 +679,13 @@ class GUI:
                     self.line_design = None
                     self.fill_design = None
                 
-            self.fig.canvas.draw()
+            self.fig1.canvas.draw()
         
-        self.fig.canvas.mpl_connect('button_press_event', check_design_values)
+        self.fig1.canvas.mpl_connect('button_press_event', check_design_values)
 
         # refresh figure
-        self.fig.canvas.draw()
+        self.fig1.canvas.draw()
+        self.fig2.canvas.draw()
 
     def _log(self, string):
         '''
@@ -725,12 +742,12 @@ class GUI:
         y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
         x_offset = (x_max - x_min) / 20
         y_offset = (y_max - y_min) / 20
-        curr_x_min, curr_x_max = self.ax1.get_xlim()
-        curr_y_min, curr_y_max = self.ax1.get_ylim()
+        curr_x_min, curr_x_max = self.ax11.get_xlim()
+        curr_y_min, curr_y_max = self.ax11.get_ylim()
         x_min, x_max = min(x_min - x_offset, curr_x_min), max(x_max + x_offset, curr_x_max)
         y_min, y_max = min(y_min - y_offset, curr_y_min), max(y_max + y_offset, curr_y_max)
-        self.ax1.set_xlim(x_min, x_max)
-        self.ax1.set_ylim(y_min, y_max)
+        self.ax11.set_xlim(x_min, x_max)
+        self.ax11.set_ylim(y_min, y_max)
 
         # replot new evaluated & predicted points
         self.scatter_y_new.remove()
@@ -740,26 +757,27 @@ class GUI:
         self.line_y_pred_list = []
 
         last_batch_idx = np.where(batch_id == batch_id[-1])[0]
-        self.scatter_y_new = self.ax1.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
-        self.scatter_y_pred = self.ax1.scatter(*Y_expected[last_batch_idx].T, facecolors='none', edgecolors='m', s=15, label='New predicted points')
+        self.scatter_y_new = self.ax11.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
+        self.scatter_y_pred = self.ax11.scatter(*Y_expected[last_batch_idx].T, facecolors='none', edgecolors='m', s=15, label='New predicted points')
         for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
-            line = self.ax1.plot([y[0], y_expected[0]], [y[1], y_expected[1]], '--', color='m', alpha=0.5)[0]
+            line = self.ax11.plot([y[0], y_expected[0]], [y[1], y_expected[1]], '--', color='m', alpha=0.5)[0]
             self.line_y_pred_list.append(line)
             
         # replot hypervolume curve
         self.line_hv.set_data(list(range(len(Y))), hv_value)
-        self.ax2.relim()
-        self.ax2.autoscale_view()
-        self.ax2.set_title('Hypervolume: %.2f' % hv_value[-1])
+        self.ax21.relim()
+        self.ax21.autoscale_view()
+        self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
 
         # replot prediction error curve
         self.line_error.set_data(list(range(self.n_init_sample, len(Y))), pred_error[self.n_init_sample:])
-        self.ax3.relim()
-        self.ax3.autoscale_view()
-        self.ax3.set_title('Model Prediction Error: %.2f%%' % pred_error[-1])
+        self.ax22.relim()
+        self.ax22.autoscale_view()
+        self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[-1])
 
         # refresh figure
-        self.fig.canvas.draw()
+        self.fig1.canvas.draw()
+        self.fig2.canvas.draw()
 
     def mainloop(self):
         '''
