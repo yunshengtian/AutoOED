@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -34,11 +35,18 @@ def embed_figure(fig, master, toolbar=True):
 
 class Entry:
     '''
-    Entry widget creation tools
+    Entry widget with customized get() and set() method
     '''
     def __init__(self, widget, valid_check=None):
         self.widget = widget
         self.valid_check = valid_check
+
+    def enable(self):
+        self.widget.configure(state=tk.NORMAL)
+    
+    def disable(self):
+        self.widget.configure(state=tk.DISABLED)
+
     def get(self):
         val = self.widget.get()
         if val == '':
@@ -48,21 +56,79 @@ class Entry:
             if not self.valid_check(result):
                 raise Exception('Invalid value specified in the entry')
         return result
+
+    def set(self, val):
+        new_val = str(self._set(val))
+        if isinstance(self.widget, tk.Entry):
+            self.widget.delete(0, tk.END)
+            self.widget.insert(0, new_val)
+        else:
+            self.widget.set(new_val)
+
+    @abstractmethod
+    def _get(self, val):
+        pass
+
+    @abstractmethod
+    def _set(self, val):
+        pass
+
+class StringEntry(Entry):
+    '''
+    Entry for string
+    '''
     def _get(self, val):
         return val
 
+    def _set(self, val):
+        return val
+
 class IntEntry(Entry):
+    '''
+    Entry for integer
+    '''
     def _get(self, val):
         return int(val)
 
+    def _set(self, val):
+        return int(val)
+
 class FloatEntry(Entry):
+    '''
+    Entry for float number
+    '''
     def _get(self, val):
         return float(val)
-        
+
+    def _set(self, val):
+        return float(val)
+
+class StringListEntry(Entry):
+    '''
+    Entry for list of string
+    '''
+    def _get(self, val):
+        return val.split(',')
+
+    def _set(self, val):
+        return ','.join(val)
+
+class IntListEntry(Entry):
+    '''
+    Entry for list of float number
+    '''
+    def _get(self, val):
+        return [int(num) for num in val.split(',')]
+
+    def _set(self, val):
+        return ','.join([str(int(num)) for num in val])
+
 class FloatListEntry(Entry):
+    '''
+    Entry for list of float number
+    '''
     def _get(self, val):
         return [float(num) for num in val.split(',')]
 
-class StringListEntry(Entry):
-    def _get(self, val):
-        return val.split(',')
+    def _set(self, val):
+        return ','.join([str(float(num)) for num in val])

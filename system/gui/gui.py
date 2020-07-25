@@ -384,7 +384,7 @@ class GUI:
             def create_combobox(master, row, column, values, valid_check=None):
                 combobox = ttk.Combobox(master=master, values=values, width=combobox_width)
                 combobox.grid(row=row, column=column, padx=10, pady=10, sticky='W')
-                return Entry(combobox, valid_check=valid_check)
+                return StringEntry(combobox, valid_check=valid_check)
 
             def create_button(master, row, column, text, command):
                 button = tk.Button(master=master, text=text, command=command)
@@ -419,6 +419,35 @@ class GUI:
             frame_algorithm = create_frame(frame_param, 0, 2, 'Algorithm')
             create_multiple_label(frame_algorithm, ['name*'])
             combobox_algorithm_0 = create_combobox(frame_algorithm, 0, 1, get_available_algorithms(), valid_check=lambda x: x in get_available_algorithms())
+
+            def load_curr_config():
+                '''
+                Set values of widgets as current configuration values
+                '''
+                config = self.config
+                
+                entry_general_0.set(config['general']['n_init_sample'])
+                entry_general_0.disable()
+                entry_general_1.set(config['general']['batch_size'])
+                entry_general_2.set(config['general']['n_iter'])
+                entry_general_3.set(config['general']['n_process'])
+                
+                combobox_problem_0.set(config['problem']['name'])
+                combobox_problem_0.disable()
+                entry_problem_1.set(config['problem']['n_var'])
+                entry_problem_1.disable()
+                entry_problem_2.set(config['problem']['n_obj'])
+                entry_problem_2.disable()
+                entry_problem_3.set(config['problem']['xl'])
+                entry_problem_4.set(config['problem']['xu'])
+                entry_problem_5.set(config['problem']['var_name'])
+                entry_problem_5.disable()
+                entry_problem_6.set(config['problem']['obj_name'])
+                entry_problem_6.disable()
+                entry_problem_7.set(config['problem']['ref_point'])
+                entry_problem_7.disable()
+
+                combobox_algorithm_0.set(config['algorithm']['name'])
 
             def save_config():
                 '''
@@ -459,6 +488,10 @@ class GUI:
             frame_action.grid(row=1, column=0, columnspan=3)
             create_button(frame_action, 0, 0, 'Save', save_config)
             create_button(frame_action, 0, 1, 'Cancel', window.destroy)
+
+            # load current config values to entry if not first time setting config
+            if self.config is not None:
+                load_curr_config()
 
         # link to commands
         self.menu_config.add_command(label='Load', command=gui_open_file)
@@ -673,8 +706,10 @@ class GUI:
                 self.processes.remove(p)
         if len(self.processes) == 0:
             self.button_stop.configure(state=tk.DISABLED)
-            self.menu_config.entryconfig(0, state=tk.NORMAL)
-            self.menu_config.entryconfig(1, state=tk.NORMAL)
+            if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
+                self.menu_config.entryconfig(0, state=tk.NORMAL)
+            if self.menu_config.entrycget(1, 'state') == tk.DISABLED:
+                self.menu_config.entryconfig(1, state=tk.NORMAL)
 
     def _clear_design_space(self):
         '''
