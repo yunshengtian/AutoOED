@@ -11,6 +11,7 @@ import yaml
 import numpy as np
 from multiprocessing import Lock, Process
 from problems.common import build_problem
+from system.agent import Agent
 from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
 from system.gui.radar import radar_factory
 from system.gui.utils import *
@@ -20,16 +21,9 @@ class GUI:
     '''
     Interactive local tkinter-based GUI
     '''
-    def __init__(self, init_command, optimize_command, predict_command, update_command, load_command, quit_command=None):
+    def __init__(self):
         '''
         GUI initialization
-        Input:
-            init_command: command for data storage & agent initialization
-            optimize_command: command for algorithm optimization
-            predict_command: command for design variable prediction
-            update_command: command for database update
-            load_command: command for data loading when GUI periodically refreshes
-            quit_command: command when quitting program
         '''
         # GUI
         self.root = tk.Tk()
@@ -46,13 +40,8 @@ class GUI:
         self.refresh_rate = 100 # ms
         self.result_dir = os.path.abspath('result') # initial result directory
 
-        # interaction commands
-        self.init_command = init_command
-        self.optimize_command = optimize_command
-        self.predict_command = predict_command
-        self.update_command = update_command
-        self.load_command = load_command
-        self.quit_command = quit_command
+        # agent
+        self.agent = None
 
         # running processes
         self.processes = []
@@ -120,17 +109,29 @@ class GUI:
         '''
         GUI figure widgets initialization (visualization, statistics)
         '''
+        frame_figure = tk.Frame(master=self.root)
+        frame_figure.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+        grid_configure(frame_figure, [0], [0])
+
         # configure tab widgets
-        nb = ttk.Notebook(master=self.root)
-        nb.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+        nb = ttk.Notebook(master=frame_figure)
+        nb.grid(row=0, column=0, sticky='NSEW')
         frame_viz = tk.Frame(master=nb)
         frame_stat = tk.Frame(master=nb)
+        grid_configure(frame_viz, [0], [0])
+        grid_configure(frame_stat, [0], [0])
         nb.add(child=frame_viz, text='Visualization')
         nb.add(child=frame_stat, text='Statistics')
 
-        # configure for resolution change
-        grid_configure(frame_viz, [0], [0])
-        grid_configure(frame_stat, [0], [0])
+        # configure slider widget
+        frame_slider = tk.Frame(master=frame_figure)
+        frame_slider.grid(row=1, column=0, pady=5, sticky='EW')
+        grid_configure(frame_slider, [0], [1])
+        
+        label_iter = tk.Label(master=frame_slider, text='Iteration:')
+        label_iter.grid(row=0, column=0, sticky='EW')
+        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, from_=0, to=0)
+        self.scale_iter.grid(row=0, column=1, sticky='EW')
 
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
         self.fig1 = plt.figure(figsize=(10, 5))
@@ -199,7 +200,7 @@ class GUI:
             self.menu_config.entryconfig(0, state=tk.DISABLED)
             self.menu_config.entryconfig(1, state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
-            worker = Process(target=self.optimize_command, args=(self.config, self.config_id))
+            worker = Process(target=self.agent.optimize, args=(self.config, self.config_id))
             self._start_worker(worker)
 
         def gui_stop_optimize():
@@ -255,7 +256,7 @@ class GUI:
                 ask = ask_var.get() == 1
                 window.destroy()
 
-                Y_expected, Y_uncertainty = self.predict_command(self.config, X_next)
+                Y_expected, Y_uncertainty = self.agent.predict(self.config, X_next)
 
                 if ask:
                     window2 = tk.Toplevel(master=self.root)
@@ -279,14 +280,14 @@ class GUI:
                     button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
 
                     def eval_user_input():
-                        worker = Process(target=self.update_command, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
+                        worker = Process(target=self.agent.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
                         self._start_worker(worker)
                         window2.destroy()
 
                     button_eval.configure(command=eval_user_input)
                     button_cancel.configure(command=window2.destroy)
                 else:
-                    worker = Process(target=self.update_command, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
+                    worker = Process(target=self.agent.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
                     self._start_worker(worker)
 
             button_add.configure(command=add_user_input)
@@ -493,10 +494,10 @@ class GUI:
             config_dir = os.path.join(self.result_dir, 'config')
             os.makedirs(config_dir)
 
-            # initialize problem and data storage
+            # initialize problem and data storage (agent)
             try:
                 _, true_pfront = build_problem(config['problem'], get_pfront=True)
-                self.init_command(config, self.result_dir)
+                self.agent = Agent(config, self.result_dir)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration')
                 return
@@ -562,7 +563,7 @@ class GUI:
         First draw of performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, hv_value, is_pareto = self.load_command(['X', 'Y', 'hv', 'is_pareto'])
+        X, Y, hv_value, is_pareto = self.agent.load(['X', 'Y', 'hv', 'is_pareto'])
 
         # update status
         self.n_init_sample = len(Y)
@@ -677,7 +678,7 @@ class GUI:
         Redraw performance space, hypervolume curve and model prediction error
         '''
         # load from database
-        X, Y, Y_expected, hv_value, pred_error, is_pareto, batch_id = self.load_command(['X', 'Y', 'Y_expected', 'hv', 'pred_error', 'is_pareto', 'batch_id'])
+        X, Y, Y_expected, hv_value, pred_error, is_pareto, batch_id = self.agent.load(['X', 'Y', 'Y_expected', 'hv', 'pred_error', 'is_pareto', 'batch_id'])
 
         # check if needs redraw
         if len(Y) == self.n_curr_sample: return
@@ -740,8 +741,8 @@ class GUI:
         '''
         GUI quit handling
         '''
-        if self.quit_command is not None:
-            self.quit_command()
+        if self.agent is not None:
+            self.agent.quit()
 
         for p in self.processes:
             _, worker = p

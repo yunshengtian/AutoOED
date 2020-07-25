@@ -11,10 +11,10 @@ def grid_configure(master, row_list, column_list, row_weights=None, column_weigh
         row_weights = [1] * len(row_list)
     if column_weights is None:
         column_weights = [1] * len(column_list)
-    for row in row_list:
-        tk.Grid.rowconfigure(master, row, weight=row_weights[row])
-    for column in column_list:
-        tk.Grid.columnconfigure(master, column, weight=column_weights[column])
+    for i, row in enumerate(row_list):
+        tk.Grid.rowconfigure(master, row, weight=row_weights[i])
+    for i, column in enumerate(column_list):
+        tk.Grid.columnconfigure(master, column, weight=column_weights[i])
 
 
 def embed_figure(fig, master, toolbar=True):
