@@ -196,6 +196,12 @@ class Agent:
         else:
             return result
 
+    def get_sample_num(self):
+        '''
+        Get number of samples (rows)
+        '''
+        return self.db.get_last_rowid('data')
+
     def predict(self, config, X_next):
         '''
         Performance prediction of given design variables X_next

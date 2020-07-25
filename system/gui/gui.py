@@ -12,7 +12,7 @@ import numpy as np
 from multiprocessing import Lock, Process
 from problems.common import build_problem
 from system.agent import Agent
-from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point
+from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point, check_pareto
 from system.gui.radar import radar_factory
 from system.gui.utils import *
 
@@ -53,6 +53,8 @@ class GUI:
         self.config_raw = None
         self.config_id = -1
 
+        # TODO: clean up below
+
         # event widgets
         self.button_optimize = None
         self.button_stop = None
@@ -71,6 +73,8 @@ class GUI:
         self.fill_design = None
         self.n_init_sample = None
         self.n_curr_sample = None
+        self.curr_iter = tk.IntVar()
+        self.max_iter = 0
 
         # widget initialization
         self._init_menu()
@@ -130,7 +134,7 @@ class GUI:
         
         label_iter = tk.Label(master=frame_slider, text='Iteration:')
         label_iter.grid(row=0, column=0, sticky='EW')
-        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, from_=0, to=0)
+        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
         self.scale_iter.grid(row=0, column=1, sticky='EW')
 
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
@@ -169,6 +173,21 @@ class GUI:
         embed_figure(self.fig1, frame_viz)
         embed_figure(self.fig2, frame_stat)
 
+        def gui_redraw_viz(val):
+            '''
+            Redraw design and performance space when slider changes
+            '''
+            # get current iteration from slider value
+            curr_iter = int(val)
+
+            # clear design space
+            self._clear_design_space()
+
+            # replot performance space
+            self._redraw_performance_space(curr_iter)
+
+        self.scale_iter.configure(command=gui_redraw_viz)
+
     def _init_control_widgets(self):
         '''
         GUI control widgets initialization (optimize, stop, user input, show history)
@@ -187,11 +206,7 @@ class GUI:
 
         # get design variables from user input
         self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
-        self.button_input.grid(row=1, column=0, padx=5, pady=5, sticky='NSEW')
-
-        # show optimization history
-        self.button_history = tk.Button(master=frame_control, text='Show History', state=tk.DISABLED)
-        self.button_history.grid(row=1, column=1, padx=5, pady=5, sticky='NSEW')
+        self.button_input.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
 
         def gui_optimize():
             '''
@@ -292,15 +307,10 @@ class GUI:
 
             button_add.configure(command=add_user_input)
 
-        def gui_show_history():
-            # TODO
-            pass
-
         # link to commands
         self.button_optimize.configure(command=gui_optimize)
         self.button_stop.configure(command=gui_stop_optimize)
         self.button_input.configure(command=gui_user_input)
-        self.button_history.configure(command=gui_show_history)
 
     def _init_display_widgets(self):
         '''
@@ -590,20 +600,19 @@ class GUI:
          # mouse clicking event
         def check_design_values(event):
             if event.inaxes != self.ax11: return
-            if event.button == MouseButton.LEFT and event.dblclick:
+
+            if event.button == MouseButton.LEFT and event.dblclick: # check certain design values
+                # find nearest performance values with associated design values
                 loc = [event.xdata, event.ydata]
                 all_y = self.scatter_y._offsets
                 closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
                 closest_x = self.scatter_x[closest_idx]
                 x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(self.config['problem']['var_name'], closest_x)])
-                if self.annotate is not None:
-                    self.annotate.remove()
-                    self.annotate = None
-                if self.line_design is not None:
-                    self.line_design.remove()
-                    self.fill_design.remove()
-                    self.line_design = None
-                    self.fill_design = None
+
+                # clear checked design values
+                self._clear_design_space()
+
+                # plot checked design values (TODO: fix annotation location)
                 y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
                 text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
                 self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
@@ -612,15 +621,9 @@ class GUI:
                 transformed_x = (np.array(closest_x) - self.xl) / (self.xu - self.xl)
                 self.line_design = self.ax12.plot(self.theta, transformed_x)[0]
                 self.fill_design = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
-            elif event.button == MouseButton.RIGHT:
-                if self.annotate is not None:
-                    self.annotate.remove()
-                    self.annotate = None
-                if self.line_design is not None:
-                    self.line_design.remove()
-                    self.fill_design.remove()
-                    self.line_design = None
-                    self.fill_design = None
+
+            elif event.button == MouseButton.RIGHT: # clear checked design values
+                self._clear_design_space()
                 
             self.fig1.canvas.draw()
         
@@ -673,18 +676,31 @@ class GUI:
             self.menu_config.entryconfig(0, state=tk.NORMAL)
             self.menu_config.entryconfig(1, state=tk.NORMAL)
 
-    def _redraw(self):
+    def _clear_design_space(self):
         '''
-        Redraw performance space, hypervolume curve and model prediction error
+        Clear design space value and annotation
         '''
-        # load from database
-        X, Y, Y_expected, hv_value, pred_error, is_pareto, batch_id = self.agent.load(['X', 'Y', 'Y_expected', 'hv', 'pred_error', 'is_pareto', 'batch_id'])
+        if self.annotate is not None:
+            self.annotate.remove()
+            self.annotate = None
+        if self.line_design is not None:
+            self.line_design.remove()
+            self.line_design = None
+        if self.fill_design is not None:
+            self.fill_design.remove()
+            self.fill_design = None
 
-        # check if needs redraw
-        if len(Y) == self.n_curr_sample: return
-        self.n_curr_sample = len(Y)
-
-        # replot performance space
+    def _redraw_performance_space(self, draw_iter=None):
+        '''
+        Redraw performance space
+        '''
+        X, Y, Y_expected, is_pareto, batch_id = self.agent.load(['X', 'Y', 'Y_expected', 'is_pareto', 'batch_id'])
+        if draw_iter is not None and draw_iter < batch_id[-1]:
+            draw_idx = batch_id <= draw_iter
+            X, Y, Y_expected, batch_id = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch_id[draw_idx]
+            is_pareto = check_pareto(Y)
+        
+        # replot evaluated & pareto points
         self.scatter_x = X
         self.scatter_y.set_offsets(Y)
         self.scatter_y_pareto.set_offsets(Y[is_pareto])
@@ -702,33 +718,60 @@ class GUI:
         self.ax11.set_ylim(y_min, y_max)
 
         # replot new evaluated & predicted points
-        self.scatter_y_new.remove()
-        self.scatter_y_pred.remove()
+        if self.scatter_y_new is not None:
+            self.scatter_y_new.remove()
+            self.scatter_y_new = None
+        if self.scatter_y_pred is not None:
+            self.scatter_y_pred.remove()
+            self.scatter_y_pred = None
         for line in self.line_y_pred_list:
             line.remove()
         self.line_y_pred_list = []
 
-        last_batch_idx = np.where(batch_id == batch_id[-1])[0]
-        self.scatter_y_new = self.ax11.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
-        self.scatter_y_pred = self.ax11.scatter(*Y_expected[last_batch_idx].T, facecolors='none', edgecolors='m', s=15, label='New predicted points')
-        for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
-            line = self.ax11.plot([y[0], y_expected[0]], [y[1], y_expected[1]], '--', color='m', alpha=0.5)[0]
-            self.line_y_pred_list.append(line)
+        if batch_id[-1] > 0:
+            last_batch_idx = np.where(batch_id == batch_id[-1])[0]
+            self.scatter_y_new = self.ax11.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
+            self.scatter_y_pred = self.ax11.scatter(*Y_expected[last_batch_idx].T, facecolors='none', edgecolors='m', s=15, label='New predicted points')
+            for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
+                line = self.ax11.plot([y[0], y_expected[0]], [y[1], y_expected[1]], '--', color='m', alpha=0.5)[0]
+                self.line_y_pred_list.append(line)
+
+        self.fig1.canvas.draw()
+
+    def _redraw(self):
+        '''
+        Redraw performance space, hypervolume curve and model prediction error
+        '''
+        # check if needs redraw
+        if self.agent.get_sample_num() == self.n_curr_sample: return
+
+        # load from database
+        hv_value, pred_error, batch_id = self.agent.load(['hv', 'pred_error', 'batch_id'])
+        self.n_curr_sample = len(batch_id)
+
+        # replot performance space if currently focusing on the lastest iteration
+        if self.curr_iter.get() == self.max_iter:
+            self.max_iter = batch_id[-1]
+            self.scale_iter.configure(to=self.max_iter)
+            self.curr_iter.set(self.max_iter)
+            self._redraw_performance_space()
+        else:
+            self.max_iter = batch_id[-1]
+            self.scale_iter.configure(to=self.max_iter)
             
         # replot hypervolume curve
-        self.line_hv.set_data(list(range(len(Y))), hv_value)
+        self.line_hv.set_data(list(range(self.n_curr_sample)), hv_value)
         self.ax21.relim()
         self.ax21.autoscale_view()
         self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
 
         # replot prediction error curve
-        self.line_error.set_data(list(range(self.n_init_sample, len(Y))), pred_error[self.n_init_sample:])
+        self.line_error.set_data(list(range(self.n_init_sample, self.n_curr_sample)), pred_error[self.n_init_sample:])
         self.ax22.relim()
         self.ax22.autoscale_view()
         self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[-1])
 
         # refresh figure
-        self.fig1.canvas.draw()
         self.fig2.canvas.draw()
 
     def mainloop(self):
