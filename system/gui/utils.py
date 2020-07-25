@@ -3,7 +3,7 @@ from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 
 
-def gridconfigure(master, row_list, column_list, row_weights=None, column_weights=None):
+def grid_configure(master, row_list, column_list, row_weights=None, column_weights=None):
     '''
     Configure spacing expansion for widget when resolution change
     '''
@@ -29,7 +29,6 @@ def embed_figure(fig, master, toolbar=True):
         frame_toolbar = tk.Frame(master=master, bg='white')
         frame_toolbar.grid(row=1, column=0, sticky='NSEW')
         toolbar_obj = NavigationToolbar2Tk(canvas, frame_toolbar)
-        toolbar_obj.configure(background='white')
         toolbar_obj.update()
 
 

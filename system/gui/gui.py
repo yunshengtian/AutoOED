@@ -35,7 +35,13 @@ class GUI:
         self.root = tk.Tk()
         self.root.title('MOBO')
         self.root.protocol("WM_DELETE_WINDOW", self._quit)
-        gridconfigure(self.root, [0, 1], [0], row_weights=[1, 20]) # configure for resolution change
+        grid_configure(self.root, [0, 1], [0], row_weights=[1, 20]) # configure for resolution change
+        screen_width = self.root.winfo_screenwidth()
+        max_width = 1280
+        width = 0.8 * screen_width
+        if width > max_width: width = max_width
+        height = 0.5 * width
+        self.root.geometry(f'{int(width)}x{int(height)}')
 
         self.refresh_rate = 100 # ms
         self.result_dir = os.path.abspath('result') # initial result directory
@@ -88,7 +94,7 @@ class GUI:
         GUI menu initialization
         '''
         # top-level menu
-        self.menu = tk.Menu(master=self.root)
+        self.menu = tk.Menu(master=self.root, relief='raised')
         self.root.config(menu=self.menu)
 
         # sub-level menu
@@ -123,8 +129,8 @@ class GUI:
         nb.add(child=frame_stat, text='Statistics')
 
         # configure for resolution change
-        gridconfigure(frame_viz, [0], [0])
-        gridconfigure(frame_stat, [0], [0])
+        grid_configure(frame_viz, [0], [0])
+        grid_configure(frame_stat, [0], [0])
 
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
         self.fig1 = plt.figure(figsize=(10, 5))
@@ -308,8 +314,8 @@ class GUI:
         nb.add(child=frame_log, text='Log')
 
         # configure for resolution change
-        gridconfigure(frame_config, [0], [0])
-        gridconfigure(frame_log, [0], [0])
+        grid_configure(frame_config, [0], [0])
+        grid_configure(frame_log, [0], [0])
 
         # config display
         self.scrtext_config = scrolledtext.ScrolledText(master=frame_config, width=10, height=10, state=tk.DISABLED)
