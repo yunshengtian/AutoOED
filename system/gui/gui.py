@@ -95,8 +95,18 @@ class GUI:
         self.menu.add_cascade(label='File', menu=self.menu_file)
         self.menu_config = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Config', menu=self.menu_config)
+        self.menu_problem = tk.Menu(master=self.menu, tearoff=0)
+        self.menu.add_cascade(label='Problem', menu=self.menu_problem)
         self.menu_log = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Log', menu=self.menu_log)
+
+        # menu entries
+        self.menu_file.add_command(label='Save in...')
+        self.menu_config.add_command(label='Load')
+        self.menu_config.add_command(label='Create')
+        self.menu_problem.add_command(label='Create') # TODO
+        self.menu_problem.add_command(label='Manage') # TODO
+        self.menu_log.add_command(label='Clear')
 
         def gui_change_saving_path():
             '''
@@ -106,8 +116,8 @@ class GUI:
             if not isinstance(dirname, str) or dirname == '': return
             self.result_dir = dirname
 
-        # link menu entry command
-        self.menu_file.add_command(label='Choose saving location', command=gui_change_saving_path)
+        # link menu command
+        self.menu_file.entryconfig(0, command=gui_change_saving_path)
 
     def _init_figure_widgets(self):
         '''
@@ -332,7 +342,7 @@ class GUI:
         self.scrtext_config = scrolledtext.ScrolledText(master=frame_config, width=10, height=10, state=tk.DISABLED)
         self.scrtext_config.grid(row=0, column=0, sticky='NSEW')
 
-        def gui_open_file():
+        def gui_load_config():
             '''
             GUI load config from file
             '''
@@ -348,12 +358,12 @@ class GUI:
                 
             self._set_config(config)
 
-        def gui_customize():
+        def gui_create_config():
             '''
-            GUI customize configurations from popup window
+            GUI create config from popup window
             '''
             window = tk.Toplevel(master=self.root)
-            window.title('Customize Configurations')
+            window.title('Create Configurations')
             window.configure(bg='white')
 
             # predefined formatting
@@ -494,8 +504,8 @@ class GUI:
                 load_curr_config()
 
         # link to commands
-        self.menu_config.add_command(label='Load', command=gui_open_file)
-        self.menu_config.add_command(label='Customize', command=gui_customize)
+        self.menu_config.entryconfig(0, command=gui_load_config)
+        self.menu_config.entryconfig(1, command=gui_create_config)
 
         # log display
         self.scrtext_log = scrolledtext.ScrolledText(master=frame_log, width=10, height=10, state=tk.DISABLED)
@@ -510,7 +520,7 @@ class GUI:
             self.scrtext_log.configure(state=tk.DISABLED)
 
         # link to commands
-        self.menu_log.add_command(label='Clear', command=gui_log_clear)
+        self.menu_log.entryconfig(0, command=gui_log_clear)
 
     def _save_config(self, config):
         '''
@@ -529,11 +539,11 @@ class GUI:
 
         if self.config is None: # first time setting config
             # check if result_dir folder exists
-            if os.path.exists(self.result_dir):
-                tk.messagebox.showinfo('Error', f'Folder {self.result_dir} exists, please change another folder')
+            if os.path.exists(self.result_dir) and os.listdir(self.result_dir) != []:
+                tk.messagebox.showinfo('Error', f'Result folder {self.result_dir} is not empty, please change another folder for saving results by clicking: File -> Save in...')
                 return
 
-            os.makedirs(self.result_dir)
+            os.makedirs(self.result_dir, exist_ok=True)
             config_dir = os.path.join(self.result_dir, 'config')
             os.makedirs(config_dir)
 
