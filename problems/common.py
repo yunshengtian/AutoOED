@@ -1,44 +1,58 @@
 import numpy as np
 from pymoo.factory import get_from_list
-from problems import *
+from problems import Problem
 from external import lhs
 
-
-def get_problem_options():
-    problems = [
-        ('zdt1', ZDT1),
-        ('zdt2', ZDT2),
-        ('zdt3', ZDT3),
-        ('dtlz1', DTLZ1),
-        ('dtlz2', DTLZ2),
-        ('dtlz3', DTLZ3),
-        ('dtlz4', DTLZ4),
-        ('dtlz5', DTLZ5),
-        ('dtlz6', DTLZ6),
-        ('oka1', OKA1),
-        ('oka2', OKA2),
-        ('vlmop2', VLMOP2),
-        ('vlmop3', VLMOP3),
-        ('re1', RE1),
-        ('re2', RE2),
-        ('re3', RE3),
-        ('re4', RE4),
-        ('re5', RE5),
-        ('re6', RE6),
-        ('re7', RE7),
-    ]
-    return problems
+import importlib
+from os.path import dirname, basename, isfile, join
+import glob
 
 
-def get_problem(name, *args, d={}, **kwargs):
-    return get_from_list(get_problem_options(), name.lower(), args, {**d, **kwargs})
+# find all problem modules
+predefined_modules = glob.glob(join(dirname(__file__), "predefined/*.py"))
+predefined_modules = ['predefined.' + basename(f)[:-3] for f in predefined_modules if isfile(f) and not f.endswith('__init__.py')]
+custom_modules = glob.glob(join(dirname(__file__), "custom/*.py"))
+custom_modules = ['custom.' + basename(f)[:-3] for f in custom_modules if isfile(f) and not f.endswith('__init__.py')]
+all_modules = predefined_modules + custom_modules
+
+
+def get_subclasses(cls):
+    '''
+    Get all leaf subclasses of a given class
+    '''
+    subclasses = []
+    for subclass in cls.__subclasses__():
+        subsubclasses = get_subclasses(subclass)
+        if subsubclasses == []:
+            subclasses.append(subclass)
+        else:
+            subclasses.extend(subsubclasses)
+    return subclasses
+
+
+# find all problem classes
+problems = {}
+for module in all_modules:
+    for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
+        key = key.lower()
+        if not key.startswith('_') and not key.startswith('exampleproblem') and val in get_subclasses(Problem):
+            problems[key] = val
+
+
+def get_problem(name, *args, **kwargs):
+    '''
+    Build problem from name and arguments
+    '''
+    if name not in problems:
+        raise Exception(f'Problem {name} not found')
+    return problems[name](*args, **kwargs)
 
 
 def get_problem_list():
     '''
     Get names of available problems
     '''
-    return [p[0] for p in get_problem_options()]
+    return list(problems.keys())
 
 
 def generate_initial_samples(problem, n_sample):
