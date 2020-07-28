@@ -25,7 +25,7 @@ class GUI:
         '''
         GUI initialization
         '''
-        # GUI
+        # GUI root initialization
         self.root = tk.Tk()
         self.root.title('MOBO')
         self.root.protocol("WM_DELETE_WINDOW", self._quit)
@@ -37,6 +37,7 @@ class GUI:
         height = 0.5 * width
         self.root.geometry(f'{int(width)}x{int(height)}')
 
+        # predefined GUI parameters
         self.refresh_rate = 100 # ms
         self.result_dir = os.path.abspath('result') # initial result directory
 
@@ -53,12 +54,10 @@ class GUI:
         self.config_raw = None
         self.config_id = -1
 
-        # TODO: clean up below
-
         # event widgets
         self.button_optimize = None
         self.button_stop = None
-        self.button_clear = None
+        self.button_input = None
         self.scrtext_config = None
         self.scrtext_log = None
 
@@ -67,24 +66,24 @@ class GUI:
         self.scatter_y = None
         self.scatter_y_pareto = None
         self.annotate = None
+        self.line_x = None
+        self.fill_x = None
         self.line_hv = None
         self.line_error = None
-        self.line_design = None
-        self.fill_design = None
+
+        # status variables
         self.n_init_sample = None
         self.n_curr_sample = None
         self.curr_iter = tk.IntVar()
         self.max_iter = 0
 
-        # widget initialization
+        # GUI modules initialization
         self._init_menu()
-        self._init_figure_widgets()
-        self._init_control_widgets()
-        self._init_display_widgets()
+        self._init_widgets()
 
     def _init_menu(self):
         '''
-        GUI menu initialization
+        Menu initialization
         '''
         # top-level menu
         self.menu = tk.Menu(master=self.root, relief='raised')
@@ -100,17 +99,21 @@ class GUI:
         self.menu_log = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Log', menu=self.menu_log)
 
-        # menu entries
+        # init sub-level menu
+        self._init_file_menu()
+        self._init_config_menu()
+        self._init_problem_menu()
+        self._init_log_menu()
+
+    def _init_file_menu(self):
+        '''
+        File menu initialization
+        '''
         self.menu_file.add_command(label='Save in...')
-        self.menu_config.add_command(label='Load')
-        self.menu_config.add_command(label='Create')
-        self.menu_problem.add_command(label='Create') # TODO
-        self.menu_problem.add_command(label='Manage') # TODO
-        self.menu_log.add_command(label='Clear')
 
         def gui_change_saving_path():
             '''
-            GUI change data saving path
+            Change data saving path
             '''
             dirname = tk.filedialog.askdirectory(parent=self.root)
             if not isinstance(dirname, str) or dirname == '': return
@@ -119,232 +122,16 @@ class GUI:
         # link menu command
         self.menu_file.entryconfig(0, command=gui_change_saving_path)
 
-    def _init_figure_widgets(self):
+    def _init_config_menu(self):
         '''
-        GUI figure widgets initialization (visualization, statistics)
+        Config menu initialization
         '''
-        frame_figure = tk.Frame(master=self.root)
-        frame_figure.grid(row=0, column=0, rowspan=2, sticky='NSEW')
-        grid_configure(frame_figure, [0], [0])
-
-        # configure tab widgets
-        nb = ttk.Notebook(master=frame_figure)
-        nb.grid(row=0, column=0, sticky='NSEW')
-        frame_viz = tk.Frame(master=nb)
-        frame_stat = tk.Frame(master=nb)
-        grid_configure(frame_viz, [0], [0])
-        grid_configure(frame_stat, [0], [0])
-        nb.add(child=frame_viz, text='Visualization')
-        nb.add(child=frame_stat, text='Statistics')
-
-        # configure slider widget
-        frame_slider = tk.Frame(master=frame_figure)
-        frame_slider.grid(row=1, column=0, pady=5, sticky='EW')
-        grid_configure(frame_slider, [0], [1])
-        
-        label_iter = tk.Label(master=frame_slider, text='Iteration:')
-        label_iter.grid(row=0, column=0, sticky='EW')
-        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
-        self.scale_iter.grid(row=0, column=1, sticky='EW')
-
-        # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
-        self.fig1 = plt.figure(figsize=(10, 5))
-        self.gs1 = GridSpec(1, 2, figure=self.fig1, width_ratios=[3, 2])
-        self.fig2 = plt.figure(figsize=(10, 5))
-
-        # performance space figure
-        self.ax11 = self.fig1.add_subplot(self.gs1[0])
-        self.ax11.set_title('Performance Space')
-
-        # design space figure
-        n_var_init = 5
-        self.theta = radar_factory(n_var_init)
-        self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
-        self.ax12.set_xticks(self.theta)
-        self.ax12.set_varlabels([f'x{i + 1}' for i in range(n_var_init)])
-        self.ax12.set_yticklabels([])
-        self.ax12.set_title('Design Space', position=(0.5, 1.1))
-
-        # hypervolume curve figure
-        self.ax21 = self.fig2.add_subplot(121)
-        self.ax21.set_title('Hypervolume')
-        self.ax21.set_xlabel('Evaluations')
-        self.ax21.set_ylabel('Hypervolume')
-        self.ax21.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-        # model prediction error figure
-        self.ax22 = self.fig2.add_subplot(122)
-        self.ax22.set_title('Model Prediction Error')
-        self.ax22.set_xlabel('Evaluations')
-        self.ax22.set_ylabel('Averaged Relative Error (%)')
-        self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-        # connect matplotlib figure with tkinter GUI
-        embed_figure(self.fig1, frame_viz)
-        embed_figure(self.fig2, frame_stat)
-
-        def gui_redraw_viz(val):
-            '''
-            Redraw design and performance space when slider changes
-            '''
-            # get current iteration from slider value
-            curr_iter = int(val)
-
-            # clear design space
-            self._clear_design_space()
-
-            # replot performance space
-            self._redraw_performance_space(curr_iter)
-
-        self.scale_iter.configure(command=gui_redraw_viz)
-
-    def _init_control_widgets(self):
-        '''
-        GUI control widgets initialization (optimize, stop, user input, show history)
-        '''
-        # control overall frame
-        frame_control = tk.Frame(master=self.root)
-        frame_control.grid(row=0, column=1, sticky='NSEW')
-
-        # optimization command
-        self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
-        self.button_optimize.grid(row=0, column=0, padx=5, pady=20, sticky='NSEW')
-
-        # stop optimization command
-        self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
-        self.button_stop.grid(row=0, column=1, padx=5, pady=20, sticky='NSEW')
-
-        # get design variables from user input
-        self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
-        self.button_input.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
-
-        def gui_optimize():
-            '''
-            GUI execute optimization
-            '''
-            self.menu_config.entryconfig(0, state=tk.DISABLED)
-            self.menu_config.entryconfig(1, state=tk.DISABLED)
-            self.button_stop.configure(state=tk.NORMAL)
-            worker = Process(target=self.agent.optimize, args=(self.config, self.config_id))
-            self._start_worker(worker)
-
-        def gui_stop_optimize():
-            '''
-            GUI stop optimization
-            '''
-            with self.lock:
-                for p in self.processes:
-                    pid, worker = p
-                    if worker.is_alive():
-                        worker.terminate()
-                        self._log(f'worker {pid} interrupted')
-                self.processes = []
-            self.button_stop.configure(state=tk.DISABLED)
-
-        def gui_user_input():
-            '''
-            GUI getting design variables from user input
-            '''
-            window = tk.Toplevel(master=self.root)
-            window.title('User Input')
-            window.configure(bg='white')
-
-            # description label
-            label_x = tk.Label(master=window, bg='white', text='Design variable values (seperated by ","):')
-            label_x.grid(row=0, column=0, padx=10, pady=10, sticky='W')
-
-            # design variable entry
-            entry_x = tk.Entry(master=window, bg='white', width=50)
-            entry_x.grid(row=1, column=0, padx=10, sticky='EW')
-            entry_x = FloatListEntry(widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
-
-            # ask before evaluation checkbox
-            ask_var = tk.IntVar()
-            checkbutton_ask = tk.Checkbutton(master=window, bg='white', text='Ask before evaluation', variable=ask_var)
-            checkbutton_ask.grid(row=2, column=0, padx=10, pady=10)
-
-            # add input design variables
-            button_add = tk.Button(master=window, text='Add')
-            button_add.grid(row=3, column=0, ipadx=40, padx=10, pady=10)
-
-            def add_user_input():
-                '''
-                Predict performance of user inputted design variables, optionally do real evaluation and add to database
-                '''
-                # TODO: add batch input support
-                try:
-                    X_next = np.atleast_2d(entry_x.get())
-                except:
-                    tk.messagebox.showinfo('Error', 'Invalid design values', parent=window)
-                    return
-
-                ask = ask_var.get() == 1
-                window.destroy()
-
-                Y_expected, Y_uncertainty = self.agent.predict(self.config, X_next)
-
-                if ask:
-                    window2 = tk.Toplevel(master=self.root)
-                    window2.title('Prediction Completed')
-                    window2.configure(bg='white')
-
-                    # Y_expected description
-                    label_y_mean = tk.Label(master=window2, bg='white', text=f'Y_expected: ({",".join([str(y) for y in Y_expected.squeeze()])})')
-                    label_y_mean.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='W')
-
-                    # Y_uncertainty description
-                    label_y_std = tk.Label(master=window2, bg='white', text=f'Y_uncertainty: ({",".join([str(y) for y in Y_uncertainty.squeeze()])})')
-                    label_y_std.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='W')
-
-                    # evaluate button
-                    button_eval = tk.Button(master=window2, text='Evaluate')
-                    button_eval.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
-
-                    # cancel button
-                    button_cancel = tk.Button(master=window2, text='Cancel')
-                    button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
-
-                    def eval_user_input():
-                        worker = Process(target=self.agent.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
-                        self._start_worker(worker)
-                        window2.destroy()
-
-                    button_eval.configure(command=eval_user_input)
-                    button_cancel.configure(command=window2.destroy)
-                else:
-                    worker = Process(target=self.agent.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
-                    self._start_worker(worker)
-
-            button_add.configure(command=add_user_input)
-
-        # link to commands
-        self.button_optimize.configure(command=gui_optimize)
-        self.button_stop.configure(command=gui_stop_optimize)
-        self.button_input.configure(command=gui_user_input)
-
-    def _init_display_widgets(self):
-        '''
-        GUI display widgets initialization (config, log)
-        '''
-        # configure tab widgets
-        nb = ttk.Notebook(master=self.root)
-        nb.grid(row=1, column=1, sticky='NSEW')
-        frame_config = tk.Frame(master=nb)
-        frame_log = tk.Frame(master=nb)
-        nb.add(child=frame_config, text='Config')
-        nb.add(child=frame_log, text='Log')
-
-        # configure for resolution change
-        grid_configure(frame_config, [0], [0])
-        grid_configure(frame_log, [0], [0])
-
-        # config display
-        self.scrtext_config = scrolledtext.ScrolledText(master=frame_config, width=10, height=10, state=tk.DISABLED)
-        self.scrtext_config.grid(row=0, column=0, sticky='NSEW')
+        self.menu_config.add_command(label='Load')
+        self.menu_config.add_command(label='Create')
 
         def gui_load_config():
             '''
-            GUI load config from file
+            Load config from file
             '''
             filename = tk.filedialog.askopenfilename(parent=self.root)
             if not isinstance(filename, str) or filename == '': return
@@ -360,7 +147,7 @@ class GUI:
 
         def gui_create_config():
             '''
-            GUI create config from popup window
+            Create config from popup window
             '''
             window = tk.Toplevel(master=self.root)
             window.title('Create Configurations')
@@ -459,7 +246,7 @@ class GUI:
 
                 combobox_algorithm_0.set(config['algorithm']['name'])
 
-            def save_config():
+            def gui_save_config():
                 '''
                 Save specified configuration values
                 '''
@@ -496,20 +283,29 @@ class GUI:
             # action section
             frame_action = tk.Frame(master=window, bg='white')
             frame_action.grid(row=1, column=0, columnspan=3)
-            create_button(frame_action, 0, 0, 'Save', save_config)
+            create_button(frame_action, 0, 0, 'Save', gui_save_config)
             create_button(frame_action, 0, 1, 'Cancel', window.destroy)
 
             # load current config values to entry if not first time setting config
             if self.config is not None:
                 load_curr_config()
 
-        # link to commands
+        # link menu command
         self.menu_config.entryconfig(0, command=gui_load_config)
         self.menu_config.entryconfig(1, command=gui_create_config)
 
-        # log display
-        self.scrtext_log = scrolledtext.ScrolledText(master=frame_log, width=10, height=10, state=tk.DISABLED)
-        self.scrtext_log.grid(row=0, column=0, sticky='NSEW')
+    def _init_problem_menu(self):
+        '''
+        Problem menu initialization
+        '''
+        self.menu_problem.add_command(label='Create') # TODO
+        self.menu_problem.add_command(label='Manage') # TODO
+
+    def _init_log_menu(self):
+        '''
+        Log menu initialization
+        '''
+        self.menu_log.add_command(label='Clear')
 
         def gui_log_clear():
             '''
@@ -519,8 +315,243 @@ class GUI:
             self.scrtext_log.delete('1.0', tk.END)
             self.scrtext_log.configure(state=tk.DISABLED)
 
-        # link to commands
+        # link menu command
         self.menu_log.entryconfig(0, command=gui_log_clear)
+        
+    def _init_widgets(self):
+        '''
+        Widgets initialization
+        '''
+        self._init_figure_widgets()
+        self._init_control_widgets()
+        self._init_display_widgets()
+
+    def _init_figure_widgets(self):
+        '''
+        Figure widgets initialization (visualization, statistics)
+        '''
+        frame_figure = tk.Frame(master=self.root)
+        frame_figure.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+        grid_configure(frame_figure, [0], [0])
+
+        # configure tab widgets
+        nb = ttk.Notebook(master=frame_figure)
+        nb.grid(row=0, column=0, sticky='NSEW')
+        frame_viz = tk.Frame(master=nb)
+        frame_stat = tk.Frame(master=nb)
+        grid_configure(frame_viz, [0], [0])
+        grid_configure(frame_stat, [0], [0])
+        nb.add(child=frame_viz, text='Visualization')
+        nb.add(child=frame_stat, text='Statistics')
+
+        # configure slider widget
+        frame_slider = tk.Frame(master=frame_figure)
+        frame_slider.grid(row=1, column=0, pady=5, sticky='EW')
+        grid_configure(frame_slider, [0], [1])
+        
+        label_iter = tk.Label(master=frame_slider, text='Iteration:')
+        label_iter.grid(row=0, column=0, sticky='EW')
+        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
+        self.scale_iter.grid(row=0, column=1, sticky='EW')
+
+        # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
+        self.fig1 = plt.figure(figsize=(10, 5))
+        self.gs1 = GridSpec(1, 2, figure=self.fig1, width_ratios=[3, 2])
+        self.fig2 = plt.figure(figsize=(10, 5))
+
+        # performance space figure
+        self.ax11 = self.fig1.add_subplot(self.gs1[0])
+        self.ax11.set_title('Performance Space')
+
+        # design space figure
+        n_var_init = 5
+        self.theta = radar_factory(n_var_init)
+        self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
+        self.ax12.set_xticks(self.theta)
+        self.ax12.set_varlabels([f'x{i + 1}' for i in range(n_var_init)])
+        self.ax12.set_yticklabels([])
+        self.ax12.set_title('Design Space', position=(0.5, 1.1))
+
+        # hypervolume curve figure
+        self.ax21 = self.fig2.add_subplot(121)
+        self.ax21.set_title('Hypervolume')
+        self.ax21.set_xlabel('Evaluations')
+        self.ax21.set_ylabel('Hypervolume')
+        self.ax21.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        # model prediction error figure
+        self.ax22 = self.fig2.add_subplot(122)
+        self.ax22.set_title('Model Prediction Error')
+        self.ax22.set_xlabel('Evaluations')
+        self.ax22.set_ylabel('Averaged Relative Error (%)')
+        self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        # connect matplotlib figure with tkinter GUI
+        embed_figure(self.fig1, frame_viz)
+        embed_figure(self.fig2, frame_stat)
+
+        def gui_redraw_viz(val):
+            '''
+            Redraw design and performance space when slider changes
+            '''
+            # get current iteration from slider value
+            curr_iter = int(val)
+
+            # clear design space
+            self._clear_design_space()
+
+            # replot performance space
+            self._redraw_performance_space(curr_iter)
+
+        self.scale_iter.configure(command=gui_redraw_viz)
+
+    def _init_control_widgets(self):
+        '''
+        Control widgets initialization (optimize, stop, user input, show history)
+        '''
+        # control overall frame
+        frame_control = tk.Frame(master=self.root)
+        frame_control.grid(row=0, column=1, sticky='NSEW')
+
+        # optimization command
+        self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
+        self.button_optimize.grid(row=0, column=0, padx=5, pady=20, sticky='NSEW')
+
+        # stop optimization command
+        self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
+        self.button_stop.grid(row=0, column=1, padx=5, pady=20, sticky='NSEW')
+
+        # get design variables from user input
+        self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
+        self.button_input.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
+
+        def gui_optimize():
+            '''
+            Execute optimization
+            '''
+            self.menu_config.entryconfig(0, state=tk.DISABLED)
+            self.menu_config.entryconfig(1, state=tk.DISABLED)
+            self.button_stop.configure(state=tk.NORMAL)
+            worker = Process(target=self.agent.optimize, args=(self.config, self.config_id))
+            self._start_worker(worker)
+
+        def gui_stop_optimize():
+            '''
+            Stop optimization
+            '''
+            with self.lock:
+                for p in self.processes:
+                    pid, worker = p
+                    if worker.is_alive():
+                        worker.terminate()
+                        self._log(f'worker {pid} interrupted')
+                self.processes = []
+            self.button_stop.configure(state=tk.DISABLED)
+
+        def gui_user_input():
+            '''
+            Getting design variables from user input
+            '''
+            window = tk.Toplevel(master=self.root)
+            window.title('User Input')
+            window.configure(bg='white')
+
+            # description label
+            label_x = tk.Label(master=window, bg='white', text='Design variable values (seperated by ","):')
+            label_x.grid(row=0, column=0, padx=10, pady=10, sticky='W')
+
+            # design variable entry
+            entry_x = tk.Entry(master=window, bg='white', width=50)
+            entry_x.grid(row=1, column=0, padx=10, sticky='EW')
+            entry_x = FloatListEntry(widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
+
+            # ask before evaluation checkbox
+            ask_var = tk.IntVar()
+            checkbutton_ask = tk.Checkbutton(master=window, bg='white', text='Ask before evaluation', variable=ask_var)
+            checkbutton_ask.grid(row=2, column=0, padx=10, pady=10)
+
+            # add input design variables
+            button_add = tk.Button(master=window, text='Add')
+            button_add.grid(row=3, column=0, ipadx=40, padx=10, pady=10)
+
+            def gui_add_user_input():
+                '''
+                Predict performance of user inputted design variables, optionally do real evaluation and add to database
+                '''
+                # TODO: add batch input support
+                try:
+                    X_next = np.atleast_2d(entry_x.get())
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid design values', parent=window)
+                    return
+
+                ask = ask_var.get() == 1
+                window.destroy()
+
+                Y_expected, Y_uncertainty = self.agent.predict(self.config, X_next)
+
+                if ask:
+                    window2 = tk.Toplevel(master=self.root)
+                    window2.title('Prediction Completed')
+                    window2.configure(bg='white')
+
+                    # Y_expected description
+                    label_y_mean = tk.Label(master=window2, bg='white', text=f'Y_expected: ({",".join([str(y) for y in Y_expected.squeeze()])})')
+                    label_y_mean.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='W')
+
+                    # Y_uncertainty description
+                    label_y_std = tk.Label(master=window2, bg='white', text=f'Y_uncertainty: ({",".join([str(y) for y in Y_uncertainty.squeeze()])})')
+                    label_y_std.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='W')
+
+                    # evaluate button
+                    button_eval = tk.Button(master=window2, text='Evaluate')
+                    button_eval.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
+
+                    # cancel button
+                    button_cancel = tk.Button(master=window2, text='Cancel')
+                    button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
+
+                    def eval_user_input():
+                        worker = Process(target=self.agent.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
+                        self._start_worker(worker)
+                        window2.destroy()
+
+                    button_eval.configure(command=eval_user_input)
+                    button_cancel.configure(command=window2.destroy)
+                else:
+                    worker = Process(target=self.agent.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
+                    self._start_worker(worker)
+
+            button_add.configure(command=gui_add_user_input)
+
+        # link to commands
+        self.button_optimize.configure(command=gui_optimize)
+        self.button_stop.configure(command=gui_stop_optimize)
+        self.button_input.configure(command=gui_user_input)
+
+    def _init_display_widgets(self):
+        '''
+        Display widgets initialization (config, log)
+        '''
+        # configure tab widgets
+        nb = ttk.Notebook(master=self.root)
+        nb.grid(row=1, column=1, sticky='NSEW')
+        frame_config = tk.Frame(master=nb)
+        frame_log = tk.Frame(master=nb)
+        nb.add(child=frame_config, text='Config')
+        nb.add(child=frame_log, text='Log')
+
+        # configure for resolution change
+        grid_configure(frame_config, [0], [0])
+        grid_configure(frame_log, [0], [0])
+
+        # config display
+        self.scrtext_config = scrolledtext.ScrolledText(master=frame_config, width=10, height=10, state=tk.DISABLED)
+        self.scrtext_config.grid(row=0, column=0, sticky='NSEW')
+
+        # log display
+        self.scrtext_log = scrolledtext.ScrolledText(master=frame_log, width=10, height=10, state=tk.DISABLED)
+        self.scrtext_log.grid(row=0, column=0, sticky='NSEW')
 
     def _save_config(self, config):
         '''
@@ -532,7 +563,7 @@ class GUI:
 
     def _set_config(self, config):
         '''
-        GUI setting configurations
+        Setting configurations
         '''
         # update raw config (config will be processed and changed later in build_problem())
         self.config_raw = config.copy()
@@ -662,8 +693,8 @@ class GUI:
                     bbox=dict(boxstyle="round", fc="w", alpha=0.7),
                     arrowprops=dict(arrowstyle="->"))
                 transformed_x = (np.array(closest_x) - self.xl) / (self.xu - self.xl)
-                self.line_design = self.ax12.plot(self.theta, transformed_x)[0]
-                self.fill_design = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
+                self.line_x = self.ax12.plot(self.theta, transformed_x)[0]
+                self.fill_x = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
 
             elif event.button == MouseButton.RIGHT: # clear checked design values
                 self._clear_design_space()
@@ -728,12 +759,12 @@ class GUI:
         if self.annotate is not None:
             self.annotate.remove()
             self.annotate = None
-        if self.line_design is not None:
-            self.line_design.remove()
-            self.line_design = None
-        if self.fill_design is not None:
-            self.fill_design.remove()
-            self.fill_design = None
+        if self.line_x is not None:
+            self.line_x.remove()
+            self.line_x = None
+        if self.fill_x is not None:
+            self.fill_x.remove()
+            self.fill_x = None
 
     def _redraw_performance_space(self, draw_iter=None):
         '''
@@ -827,7 +858,7 @@ class GUI:
 
     def _quit(self):
         '''
-        GUI quit handling
+        Quit handling
         '''
         if self.agent is not None:
             self.agent.quit()
