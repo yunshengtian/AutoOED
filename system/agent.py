@@ -9,7 +9,7 @@ from system.database import Database
 from system.core import optimize, predict, evaluate
 
 
-class Agent:
+class DataAgent:
     '''
     Agent controlling data communication from & to database
     '''
