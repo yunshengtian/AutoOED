@@ -795,7 +795,7 @@ class GUI:
 
             # initialize problem and data storage (agent)
             try:
-                _, true_pfront = build_problem(config['problem'], get_pfront=True)
+                problem, true_pfront = build_problem(config['problem'], get_pfront=True)
                 self.agent_data = DataAgent(config, self.result_dir)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration')
@@ -803,26 +803,14 @@ class GUI:
 
             self.config = config
 
-            # update plot
-            f1_name, f2_name = self.config['problem']['obj_name']
-            self.ax11.set_xlabel(f1_name)
-            self.ax11.set_ylabel(f2_name)
-
-            n_var = self.config['problem']['n_var']
-            var_name, self.var_lb, self.var_ub = self.config['problem']['var_name'], self.config['problem']['var_lb'], self.config['problem']['var_ub']
-            if self.var_lb is None:
-                self.var_lb = np.zeros(n_var)
-            elif len(self.var_lb) == 1:
-                self.var_lb = np.full(n_var, self.var_lb)
-            else:
-                self.var_lb = np.array(self.var_lb)
-            if self.var_ub is None:
-                self.var_ub = np.ones(n_var)
-            elif len(self.var_ub) == 1:
-                self.var_ub = np.full(n_var, self.var_ub)
-            else:
-                self.var_ub = np.array(self.var_ub)
+            n_var, var_name, obj_name = problem.n_var, problem.var_name, problem.obj_name
+            self.var_lb, self.var_ub = problem.xl, problem.xu
+            if self.var_lb is None: self.var_lb = np.zeros(n_var)
+            if self.var_ub is None: self.var_ub = np.ones(n_var)
             
+            # update plot
+            self.ax11.set_xlabel(obj_name[0])
+            self.ax11.set_ylabel(obj_name[1])
             self.theta = radar_factory(n_var)
             self.fig1.delaxes(self.ax12)
             self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')

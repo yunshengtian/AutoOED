@@ -8,14 +8,6 @@ from os.path import dirname, basename, isfile, join
 import glob
 
 
-# find all problem modules
-predefined_modules = glob.glob(join(dirname(__file__), "predefined/*.py"))
-predefined_modules = ['predefined.' + basename(f)[:-3] for f in predefined_modules if isfile(f) and not f.endswith('__init__.py')]
-custom_modules = glob.glob(join(dirname(__file__), "custom/*.py"))
-custom_modules = ['custom.' + basename(f)[:-3] for f in custom_modules if isfile(f) and not f.endswith('__init__.py')]
-all_modules = predefined_modules + custom_modules
-
-
 def get_subclasses(cls):
     '''
     Get all leaf subclasses of a given class
@@ -30,13 +22,33 @@ def get_subclasses(cls):
     return subclasses
 
 
-# find all problem classes
-problems = {}
-for module in all_modules:
-    for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
-        key = key.lower()
-        if not key.startswith('_') and not key.startswith('exampleproblem') and val in get_subclasses(Problem):
-            problems[key] = val
+def find_all_problem_modules():
+    '''
+    Return a list of module of all problems
+    '''
+    predefined_modules = glob.glob(join(dirname(__file__), "predefined/*.py"))
+    predefined_modules = ['predefined.' + basename(f)[:-3] for f in predefined_modules if isfile(f) and not f.endswith('__init__.py')]
+    custom_modules = glob.glob(join(dirname(__file__), "custom/*.py"))
+    custom_modules = ['custom.' + basename(f)[:-3] for f in custom_modules if isfile(f) and not f.endswith('__init__.py')]
+    all_modules = predefined_modules + custom_modules
+    return all_modules
+
+
+def find_all_problem_classes():
+    '''
+    Return a dict of {name: class} of all problems
+    '''
+    problems = {}
+    all_modules = find_all_problem_modules()
+    for module in all_modules:
+        for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
+            key = key.lower()
+            if not key.startswith('_') and not key.startswith('exampleproblem') and val in get_subclasses(Problem):
+                problems[key] = val
+    return problems
+
+
+problems = find_all_problem_classes()
 
 
 def get_problem(name, *args, **kwargs):

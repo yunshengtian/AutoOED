@@ -161,7 +161,6 @@ class Problem(PymooProblem):
         return '========== Problem Definition ==========\n' + super().__str__()
 
 
-
 class CustomProblem(Problem):
     '''
     Base class for custom problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
@@ -184,17 +183,20 @@ class CustomProblem(Problem):
         'var_ub': 'xu',
     }
 
-    def __init__(self):
+    def __init__(self, n_obj=None, n_var=None, var_lb=None, var_ub=None):
         # fill config with default_config when there are key missings
         for key, value in self.default_config.items():
             if key not in self.config:
                 if value is None:
                     raise Exception('Invalid config for custom problem, required values are not provided')
                 self.config[key] = value
+
+        # allow dynamically changing design bounds
+        if var_lb is not None: self.config['var_lb'] = var_lb
+        if var_ub is not None: self.config['var_ub'] = var_ub
                 
         # translate config
-        config = self.config.copy()
         for old_key, new_key in self.config_translate.items():
-            config[new_key] = config.pop(old_key)
+            self.config[new_key] = self.config.pop(old_key)
 
-        super().__init__(**config)
+        super().__init__(**self.config)
