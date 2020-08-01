@@ -6,7 +6,7 @@ from pymoo.problems.util import load_pareto_front_from_file
 
 
 class DTLZ(Problem):
-    def __init__(self, n_var, n_obj, k=None):
+    def __init__(self, n_var, n_obj, xl=None, xu=None, k=None):
 
         if n_var:
             self.k = n_var - n_obj + 1
@@ -16,7 +16,10 @@ class DTLZ(Problem):
         else:
             raise Exception("Either provide number of variables or k!")
 
-        super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=0, xu=1, type_var=np.double)
+        if xl is None: xl = 0
+        if xu is None: xu = 1
+
+        super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu, type_var=np.double)
 
     def g1(self, X_M):
         return 100 * (self.k + np.sum(np.square(X_M - 0.5) - np.cos(20 * np.pi * (X_M - 0.5)), axis=1))
@@ -44,8 +47,8 @@ def generic_sphere(ref_dirs):
 
 
 class DTLZ1(DTLZ):
-    def __init__(self, n_var=7, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, n_var=7, n_obj=3, xl=None, xu=None, **kwargs):
+        super().__init__(n_var, n_obj, xl, xu)
 
     def _calc_pareto_front(self):
         ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
@@ -67,8 +70,8 @@ class DTLZ1(DTLZ):
 
 
 class DTLZ2(DTLZ):
-    def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, n_var=10, n_obj=3, xl=None, xu=None, **kwargs):
+        super().__init__(n_var, n_obj, xl, xu)
 
     def _calc_pareto_front(self):
         ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
@@ -82,8 +85,8 @@ class DTLZ2(DTLZ):
 
 
 class DTLZ3(DTLZ):
-    def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, n_var=10, n_obj=3, xl=None, xu=None, **kwargs):
+        super().__init__(n_var, n_obj, xl, xu)
 
     def _calc_pareto_front(self):
         ref_kwargs = dict(n_points=100) if self.n_obj == 2 else dict(n_partitions=15)
@@ -97,8 +100,8 @@ class DTLZ3(DTLZ):
 
 
 class DTLZ4(DTLZ):
-    def __init__(self, n_var=10, n_obj=3, alpha=100, d=100, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, n_var=10, n_obj=3, xl=None, xu=None, alpha=100, d=100, **kwargs):
+        super().__init__(n_var, n_obj, xl, xu)
         self.alpha = alpha
         self.d = d
 
@@ -114,8 +117,8 @@ class DTLZ4(DTLZ):
 
 
 class DTLZ5(DTLZ):
-    def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, n_var=10, n_obj=3, xl=None, xu=None, **kwargs):
+        super().__init__(n_var, n_obj, xl, xu)
 
     def _calc_pareto_front(self):
         if self.n_obj == 3:
@@ -134,8 +137,8 @@ class DTLZ5(DTLZ):
 
 
 class DTLZ6(DTLZ):
-    def __init__(self, n_var=10, n_obj=3, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, n_var=10, n_obj=3, xl=None, xu=None, **kwargs):
+        super().__init__(n_var, n_obj, xl, xu)
 
     def _calc_pareto_front(self):
         if self.n_obj == 3:
