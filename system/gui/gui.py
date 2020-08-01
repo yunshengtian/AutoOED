@@ -809,15 +809,19 @@ class GUI:
             self.ax11.set_ylabel(f2_name)
 
             n_var = self.config['problem']['n_var']
-            var_name, self.var_lb, self.var_ub = self.config['problem']['var_name'], np.array(self.config['problem']['var_lb']), np.array(self.config['problem']['var_ub'])
-            if self.var_lb == None:
+            var_name, self.var_lb, self.var_ub = self.config['problem']['var_name'], self.config['problem']['var_lb'], self.config['problem']['var_ub']
+            if self.var_lb is None:
                 self.var_lb = np.zeros(n_var)
             elif len(self.var_lb) == 1:
                 self.var_lb = np.full(n_var, self.var_lb)
-            if self.var_ub == None:
+            else:
+                self.var_lb = np.array(self.var_lb)
+            if self.var_ub is None:
                 self.var_ub = np.ones(n_var)
             elif len(self.var_ub) == 1:
                 self.var_ub = np.full(n_var, self.var_ub)
+            else:
+                self.var_ub = np.array(self.var_ub)
             
             self.theta = radar_factory(n_var)
             self.fig1.delaxes(self.ax12)
