@@ -16,9 +16,6 @@ class DTLZ(Problem):
         else:
             raise Exception("Either provide number of variables or k!")
 
-        if xl is None: xl = 0
-        if xu is None: xu = 1
-
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu, type_var=np.double)
 
     def g1(self, X_M):

@@ -48,13 +48,11 @@ def find_all_problem_classes():
     return problems
 
 
-problems = find_all_problem_classes()
-
-
 def get_problem(name, *args, **kwargs):
     '''
     Build problem from name and arguments
     '''
+    problems = find_all_problem_classes()
     if name not in problems:
         raise Exception(f'Problem {name} not found')
     return problems[name](*args, **kwargs)
@@ -64,6 +62,7 @@ def get_problem_list():
     '''
     Get names of available problems
     '''
+    problems = find_all_problem_classes()
     return list(problems.keys())
 
 

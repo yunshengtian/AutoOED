@@ -11,8 +11,10 @@ class Problem(PymooProblem):
     '''
     Problem definition built upon Pymoo's Problem class, added some custom features
     '''
-    def __init__(self, *args, var_name=None, obj_name=None, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, xl=None, xu=None, var_name=None, obj_name=None, **kwargs):
+        if xl is None: xl = 0
+        if xu is None: xu = 1
+        super().__init__(*args, xl=xl, xu=xu, **kwargs)
         self.ref_point = None
         self.var_name = var_name if var_name is not None else [f'x{i + 1}' for i in range(self.n_var)]
         self.obj_name = obj_name if obj_name is not None else [f'f{i + 1}' for i in range(self.n_obj)]
@@ -183,7 +185,7 @@ class CustomProblem(Problem):
         'var_ub': 'xu',
     }
 
-    def __init__(self, n_obj=None, n_var=None, var_lb=None, var_ub=None):
+    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None):
         # fill config with default_config when there are key missings
         for key, value in self.default_config.items():
             if key not in self.config:

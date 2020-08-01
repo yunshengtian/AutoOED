@@ -6,8 +6,8 @@ from pymoo.util.normalization import normalize
 
 class ZDT(Problem):
 
-    def __init__(self, n_var=30, n_obj=None, xl=0, xu=1, **kwargs):
-        super().__init__(n_var=n_var, n_obj=2, n_constr=0, xl=xl, xu=xu)
+    def __init__(self, n_var=30, n_obj=None, n_constr=None, **kwargs):
+        super().__init__(n_var=n_var, n_obj=2, n_constr=0, **kwargs)
 
 
 class ZDT1(ZDT):

@@ -6,7 +6,9 @@ class VLMOP2(Problem):
     '''
     Van Veldhuizen, David A., and Gary B. Lamont. "Multiobjective evolutionary algorithm test suites." Proceedings of the 1999 ACM symposium on Applied computing. 1999.
     '''
-    def __init__(self, n_var=2, n_obj=None, xl=-2, xu=2, **kwargs):
+    def __init__(self, n_var=2, n_obj=None, xl=None, xu=None, **kwargs):
+        if xl is None: xl = -2
+        if xu is None: xu = 2
         super().__init__(n_var=n_var, n_obj=2, xl=xl, xu=xu, type_var=np.double)
 
     def evaluate_performance(self, x):
@@ -28,7 +30,9 @@ class VLMOP3(Problem):
     '''
     Van Veldhuizen, David A., and Gary B. Lamont. "Multiobjective evolutionary algorithm test suites." Proceedings of the 1999 ACM symposium on Applied computing. 1999.
     '''
-    def __init__(self, n_var=None, n_obj=None, xl=-3, xu=3, **kwargs):
+    def __init__(self, n_var=None, n_obj=None, xl=None, xu=None, **kwargs):
+        if xl is None: xl = -3
+        if xu is None: xu = 3
         super().__init__(n_var=2, n_obj=3, xl=xl, xu=xu, type_var=np.double)
 
     def evaluate_performance(self, x):

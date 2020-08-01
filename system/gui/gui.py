@@ -6,12 +6,12 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.backend_bases import MouseButton
 
 
-import importlib
 import os
 import yaml
 import numpy as np
 from multiprocessing import Lock, Process
 from problems.common import build_problem
+from problems.utils import import_module_from_path
 from system.agent import DataAgent
 from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point, check_pareto
 from system.gui.radar import radar_factory
@@ -271,7 +271,7 @@ class GUI:
                     tk.messagebox.showinfo('Error', 'Invalid configurations', parent=window)
                     return
 
-                self._set_config(config)
+                self._set_config(config, window)
                 window.destroy()
 
             # action section
@@ -346,9 +346,7 @@ class GUI:
                 if path is None:
                     return False
                 try:
-                    spec = importlib.util.spec_from_file_location("eval_check", path)
-                    module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(module)
+                    module = import_module_from_path('eval_check', path)
                     module.evaluate_performance
                 except:
                     return False
@@ -374,9 +372,7 @@ class GUI:
                 if path is None:
                     return False
                 try:
-                    spec = importlib.util.spec_from_file_location("eval_check", path)
-                    module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(module)
+                    module = import_module_from_path('eval_check', path)
                     module.evaluate_constraint
                 except:
                     return False
@@ -776,17 +772,20 @@ class GUI:
         with open(os.path.join(self.result_dir, 'config', f'config_{self.config_id}.yml'), 'w') as fp:
             yaml.dump(config, fp, default_flow_style=False, sort_keys=False)
 
-    def _set_config(self, config):
+    def _set_config(self, config, window=None):
         '''
         Setting configurations
         '''
         # update raw config (config will be processed and changed later in build_problem())
         self.config_raw = config.copy()
 
+        # set parent window for displaying potential error messagebox
+        if window is None: window = self.root
+
         if self.config is None: # first time setting config
             # check if result_dir folder exists
             if os.path.exists(self.result_dir) and os.listdir(self.result_dir) != []:
-                tk.messagebox.showinfo('Error', f'Result folder {self.result_dir} is not empty, please change another folder for saving results by clicking: File -> Save in...')
+                tk.messagebox.showinfo('Error', f'Result folder {self.result_dir} is not empty, please change another folder for saving results by clicking: File -> Save in...', parent=window)
                 return
 
             os.makedirs(self.result_dir, exist_ok=True)
@@ -798,7 +797,7 @@ class GUI:
                 problem, true_pfront = build_problem(config['problem'], get_pfront=True)
                 self.agent_data = DataAgent(config, self.result_dir)
             except:
-                tk.messagebox.showinfo('Error', 'Invalid values in configuration')
+                tk.messagebox.showinfo('Error', 'Invalid values in configuration', parent=window)
                 return
 
             self.config = config
@@ -845,7 +844,7 @@ class GUI:
                 for key in ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'ref_point']: # TODO
                     assert self.config_raw['problem'][key] == config['problem'][key]           
             except:
-                tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading')
+                tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading', parent=window)
                 return
 
             self.config = config
