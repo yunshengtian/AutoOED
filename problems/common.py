@@ -28,8 +28,8 @@ def find_all_problem_modules():
     '''
     predefined_modules = glob.glob(join(dirname(__file__), "predefined/*.py"))
     predefined_modules = ['predefined.' + basename(f)[:-3] for f in predefined_modules if isfile(f) and not f.endswith('__init__.py')]
-    custom_modules = glob.glob(join(dirname(__file__), "custom/*.py"))
-    custom_modules = ['custom.' + basename(f)[:-3] for f in custom_modules if isfile(f) and not f.endswith('__init__.py')]
+    custom_modules = glob.glob(join(dirname(__file__), "custom/python/*.py"))
+    custom_modules = ['custom.python.' + basename(f)[:-3] for f in custom_modules if isfile(f) and not f.endswith('__init__.py')]
     all_modules = predefined_modules + custom_modules
     return all_modules
 

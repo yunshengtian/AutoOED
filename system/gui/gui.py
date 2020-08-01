@@ -12,7 +12,7 @@ import numpy as np
 from multiprocessing import Lock, Process
 from problems.common import build_problem
 from problems.utils import import_module_from_path
-from system.agent import DataAgent
+from system.agent import DataAgent, ProblemAgent
 from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point, check_pareto
 from system.gui.radar import radar_factory
 from system.gui.excel import Excel
@@ -45,7 +45,7 @@ class GUI:
 
         # agent
         self.agent_data = None
-        self.agent_problem = None
+        self.agent_problem = ProblemAgent()
 
         # running processes
         self.processes = []
@@ -223,7 +223,8 @@ class GUI:
 
             # problem subsection
             frame_problem = create_labeled_frame(frame_param, 0, 1, 'Problem')
-            widget_map['problem']['name'] = create_labeled_combobox(frame_problem, 0, 0, name_map['problem']['name'], get_available_problems(), valid_check=lambda x: x in get_available_problems())
+            all_problems = get_available_problems() + self.agent_problem.list_problem()
+            widget_map['problem']['name'] = create_labeled_combobox(frame_problem, 0, 0, name_map['problem']['name'], all_problems, valid_check=lambda x: x in all_problems)
             widget_map['problem']['n_var'] = create_labeled_entry(frame_problem, 1, 0, name_map['problem']['n_var'], IntEntry, valid_check=lambda x: x > 0)
             widget_map['problem']['n_obj'] = create_labeled_entry(frame_problem, 2, 0, name_map['problem']['n_obj'], IntEntry, valid_check=lambda x: x > 0)
             widget_map['problem']['var_lb'] = create_labeled_entry(frame_problem, 3, 0, name_map['problem']['var_lb'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) in [1, widget_map['problem']['n_var'].get()])
@@ -477,7 +478,7 @@ class GUI:
                             return
                         window_2.destroy()
 
-                        # TODO
+                        self.agent_problem.save_problem(problem_cfg)
 
                     # action section
                     frame_action = tk.Frame(master=window_2, bg='white')
