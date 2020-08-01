@@ -164,8 +164,8 @@ class GUI:
                     'name': 'Name of problem',
                     'n_var': 'Number of design variables',
                     'n_obj': 'Number of objectives',
-                    'xl': 'Lower bound',
-                    'xu': 'Upper bound',
+                    'var_lb': 'Lower bound',
+                    'var_ub': 'Upper bound',
                     'var_name': 'Name of design variables',
                     'obj_name': 'Name of objectives',
                     'ref_point': 'Reference point',
@@ -194,8 +194,8 @@ class GUI:
                     'name': False,
                     'n_var': False,
                     'n_obj': False,
-                    'xl': True,
-                    'xu': True,
+                    'var_lb': True,
+                    'var_ub': True,
                     'var_name': False,
                     'obj_name': False,
                     'ref_point': False,
@@ -225,12 +225,12 @@ class GUI:
             frame_problem = create_labeled_frame(frame_param, 0, 1, 'Problem')
             widget_map['problem']['name'] = create_labeled_combobox(frame_problem, 0, 0, name_map['problem']['name'], get_available_problems(), valid_check=lambda x: x in get_available_problems())
             widget_map['problem']['n_var'] = create_labeled_entry(frame_problem, 1, 0, name_map['problem']['n_var'], IntEntry, valid_check=lambda x: x > 0)
-            widget_map['problem']['n_obj'] = create_labeled_entry(frame_problem, 2, 0, name_map['problem']['n_obj'],IntEntry, valid_check=lambda x: x > 0)
-            widget_map['problem']['xl'] = create_labeled_entry(frame_problem, 3, 0, name_map['problem']['xl'],FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) in [1, entry_problem_1.get()])
-            widget_map['problem']['xu'] = create_labeled_entry(frame_problem, 4, 0, name_map['problem']['xu'],FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) in [1, entry_problem_1.get()])
-            widget_map['problem']['var_name'] = create_labeled_entry(frame_problem, 5, 0, name_map['problem']['var_name'],StringListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_1.get())
-            widget_map['problem']['obj_name'] = create_labeled_entry(frame_problem, 6, 0, name_map['problem']['obj_name'],StringListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_2.get())
-            widget_map['problem']['ref_point'] = create_labeled_entry(frame_problem, 7, 0, name_map['problem']['ref_point'],FloatListEntry, width=10, valid_check=lambda x: x == '' or len(x) == entry_problem_2.get())
+            widget_map['problem']['n_obj'] = create_labeled_entry(frame_problem, 2, 0, name_map['problem']['n_obj'], IntEntry, valid_check=lambda x: x > 0)
+            widget_map['problem']['var_lb'] = create_labeled_entry(frame_problem, 3, 0, name_map['problem']['var_lb'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) in [1, widget_map['problem']['n_var'].get()])
+            widget_map['problem']['var_ub'] = create_labeled_entry(frame_problem, 4, 0, name_map['problem']['var_ub'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) in [1, widget_map['problem']['n_var'].get()])
+            widget_map['problem']['var_name'] = create_labeled_entry(frame_problem, 5, 0, name_map['problem']['var_name'], StringListEntry, width=10, valid_check=lambda x: x is None or len(x) == widget_map['problem']['n_var'].get())
+            widget_map['problem']['obj_name'] = create_labeled_entry(frame_problem, 6, 0, name_map['problem']['obj_name'], StringListEntry, width=10, valid_check=lambda x: x is None or len(x) == widget_map['problem']['n_obj'].get())
+            widget_map['problem']['ref_point'] = create_labeled_entry(frame_problem, 7, 0, name_map['problem']['ref_point'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) == widget_map['problem']['n_obj'].get())
 
             # algorithm subsection
             frame_algorithm = create_labeled_frame(frame_param, 0, 2, 'Algorithm')
@@ -304,15 +304,15 @@ class GUI:
                 'name': 'Name',
                 'n_var': 'Number of design variables',
                 'n_obj': 'Number of objectives',
-                'n_const': 'Number of constraints',
+                'n_constr': 'Number of constraints',
                 'performance': 'Performance evaluation script',
                 'constraint': 'Constraint evaluation script',
                 'var_name': 'Names',
                 'obj_name': 'Names',
-                'var_xl': 'Lower bound',
-                'var_xu': 'Upper bound',
-                'obj_xl': 'Lower bound',
-                'obj_xu': 'Upper bound',
+                'var_lb': 'Lower bound',
+                'var_ub': 'Upper bound',
+                'obj_lb': 'Lower bound',
+                'obj_ub': 'Upper bound',
             }
 
             # problem config, structured as a dict
@@ -329,7 +329,7 @@ class GUI:
             widget_map['name'] = create_labeled_entry(frame_problem, 0, 0, name_map['name'], StringEntry, width=15, valid_check=lambda x: x is not None)
             widget_map['n_var'] = create_labeled_entry(frame_problem, 1, 0, name_map['n_var'], IntEntry, valid_check=lambda x: x is None or x > 0)
             widget_map['n_obj'] = create_labeled_entry(frame_problem, 2, 0, name_map['n_obj'], IntEntry, valid_check=lambda x: x is None or x > 1)
-            widget_map['n_const'] = create_labeled_entry(frame_problem, 3, 0, name_map['n_const'], IntEntry, valid_check=lambda x: x is None or x >= 0)
+            widget_map['n_constr'] = create_labeled_entry(frame_problem, 3, 0, name_map['n_constr'], IntEntry, valid_check=lambda x: x is None or x >= 0)
 
             def gui_set_performance_script():
                 '''
@@ -419,7 +419,7 @@ class GUI:
                 create_label(frame_design, 0, 0, 'Enter the properties for design variables:')
                 n_var = problem_cfg['n_var'] if problem_cfg['n_var'] is not None else 1
                 excel_design = Excel(master=frame_design, rows=n_var, columns=3, width=15,
-                    column_titles=[name_map['var_name'], name_map['var_xl'], name_map['var_xu']])
+                    column_titles=[name_map['var_name'], name_map['var_lb'], name_map['var_ub']])
                 excel_design.grid(row=1, column=0)
                 excel_design.set_column(0, [f'x{i + 1}' for i in range(n_var)])
 
@@ -427,7 +427,7 @@ class GUI:
                     '''
                     Save values of design properties to config dict
                     '''
-                    for key, column, dtype, valid_check in zip(['var_name', 'var_xl', 'var_xu'], [0, 1, 2], [str, float, float], [lambda x: x is not None, None, None]):
+                    for key, column, dtype, valid_check in zip(['var_name', 'var_lb', 'var_ub'], [0, 1, 2], [str, float, float], [lambda x: x is not None, None, None]):
                         try:
                             config[key] = excel.get_column(column, dtype, valid_check)
                         except:
@@ -455,7 +455,7 @@ class GUI:
                     create_label(frame_performance, 0, 0, 'Enter the properties for objectives:')
                     n_obj = problem_cfg['n_obj'] if problem_cfg['n_obj'] is not None else 1
                     excel_performance = Excel(master=frame_performance, rows=n_obj, columns=3, width=15,
-                        column_titles=[name_map['obj_name'], name_map['obj_xl'], name_map['obj_xu']])
+                        column_titles=[name_map['obj_name'], name_map['obj_lb'], name_map['obj_ub']])
                     excel_performance.grid(row=1, column=0)
                     excel_performance.set_column(0, [f'f{i + 1}' for i in range(n_obj)])
 
@@ -463,7 +463,7 @@ class GUI:
                         '''
                         Save values of performance properties to config dict
                         '''
-                        for key, column, dtype, valid_check in zip(['obj_name', 'obj_xl', 'obj_xu'], [0, 1, 2], [str, float, float], [lambda x: x is not None, None, None]):
+                        for key, column, dtype, valid_check in zip(['obj_name', 'obj_lb', 'obj_ub'], [0, 1, 2], [str, float, float], [lambda x: x is not None, None, None]):
                             try:
                                 config[key] = excel.get_column(column, dtype, valid_check)
                             except:
@@ -497,7 +497,7 @@ class GUI:
 
             # default values
             widget_map['name'].set('problem name')
-            widget_map['n_const'].set('0')
+            widget_map['n_constr'].set('0')
             widget_map['performance'].set('scripts/sample_performance_eval.py')
             widget_map['constraint'].set('scripts/sample_constraint_eval.py')
 
@@ -809,12 +809,21 @@ class GUI:
             self.ax11.set_ylabel(f2_name)
 
             n_var = self.config['problem']['n_var']
+            var_name, self.var_lb, self.var_ub = self.config['problem']['var_name'], np.array(self.config['problem']['var_lb']), np.array(self.config['problem']['var_ub'])
+            if self.var_lb == None:
+                self.var_lb = np.zeros(n_var)
+            elif len(self.var_lb) == 1:
+                self.var_lb = np.full(n_var, self.var_lb)
+            if self.var_ub == None:
+                self.var_ub = np.ones(n_var)
+            elif len(self.var_ub) == 1:
+                self.var_ub = np.full(n_var, self.var_ub)
+            
             self.theta = radar_factory(n_var)
             self.fig1.delaxes(self.ax12)
             self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
             self.ax12.set_xticks(self.theta)
-            var_name, self.xl, self.xu = self.config['problem']['var_name'], np.array(self.config['problem']['xl']), np.array(self.config['problem']['xu'])
-            self.ax12.set_varlabels([f'{var_name[i]}\n[{self.xl[i]},{self.xu[i]}]' for i in range(n_var)])
+            self.ax12.set_varlabels([f'{var_name[i]}\n[{self.var_lb[i]},{self.var_ub[i]}]' for i in range(n_var)])
             self.ax12.set_yticklabels([])
             self.ax12.set_title('Design Space', position=(0.5, 1.1))
             self.ax12.set_ylim(0, 1)
@@ -907,7 +916,7 @@ class GUI:
                 self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
                     bbox=dict(boxstyle="round", fc="w", alpha=0.7),
                     arrowprops=dict(arrowstyle="->"))
-                transformed_x = (np.array(closest_x) - self.xl) / (self.xu - self.xl)
+                transformed_x = (np.array(closest_x) - self.var_lb) / (self.var_ub - self.var_lb)
                 self.line_x = self.ax12.plot(self.theta, transformed_x)[0]
                 self.fill_x = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
 

@@ -93,7 +93,7 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
         pareto_front: the true pareto front of the problem (if defined, otherwise None)
     '''
     name, n_var, n_obj, ref_point = config['name'], config['n_var'], config['n_obj'], config['ref_point']
-    xl, xu = config['xl'], config['xu']
+    xl, xu = config['var_lb'], config['var_ub']
     # NOTE: either set ref_point from config file, or set from init random/provided samples
     # TODO: support provided init samples
 

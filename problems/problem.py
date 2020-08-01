@@ -11,9 +11,11 @@ class Problem(PymooProblem):
     '''
     Problem definition built upon Pymoo's Problem class, added some custom features
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, var_name=None, obj_name=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.ref_point = None
+        self.var_name = var_name if var_name is not None else [f'x{i + 1}' for i in range(self.n_var)]
+        self.obj_name = obj_name if obj_name is not None else [f'f{i + 1}' for i in range(self.n_obj)]
 
     def set_ref_point(self, ref_point):
         assert len(ref_point) == self.n_obj, f'reference point should have {self.n_obj} dimensions'
@@ -164,14 +166,22 @@ class CustomProblem(Problem):
     '''
     Base class for custom problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
     '''
-    config = {} # to be inherited
+    # main problem config, to be inherited
+    config = {}
 
+    # default values for problem config
     default_config = {
         'n_var': None, # required
         'n_obj': None, # required
-        'n_constr': 0, # no constraints as default
-        'xl': 0, # 0 as lower bound as default
-        'xu': 1, # 1 as upper bound as default
+        'n_constr': 0, # no constraints by default
+        'var_lb': 0, # 0 as lower bound by default
+        'var_ub': 1, # 1 as upper bound by default
+    }
+
+    # translate config keys to corresponding ones used in pymoo
+    config_translate = {
+        'var_lb': 'xl',
+        'var_ub': 'xu',
     }
 
     def __init__(self):
@@ -181,4 +191,10 @@ class CustomProblem(Problem):
                 if value is None:
                     raise Exception('Invalid config for custom problem, required values are not provided')
                 self.config[key] = value
-        super().__init__(**self.config)
+                
+        # translate config
+        config = self.config.copy()
+        for old_key, new_key in self.config_translate.items():
+            config[new_key] = config.pop(old_key)
+
+        super().__init__(**config)

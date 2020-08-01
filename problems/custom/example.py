@@ -3,6 +3,26 @@ from problems import CustomProblem
 
 '''
 Example custom problem definitions (performance and constraint evaluation functions here might not make any sense)
+
+Problem configuration is defined as a 'config' dict, where each key means:
+    n_var: number of design variables
+    n_obj: number of objectives
+    n_constr: number of constraints (except bounds)
+    var_lb: lower bounds of design variables
+    var_ub: upper bounds of design variables
+    obj_lb: lower bounds of objectives
+    obj_ub: upper bounds of objectives
+    var_name: names of design variables
+    obj_name: names of objectives
+
+Default values if not specifed in problem config:
+    n_constr: 0
+    var_lb: 0
+    var_ub: 1
+    obj_lb: None
+    obj_ub: None
+    var_name: ['x1', ..., 'x{n_var}']
+    obj_name: ['f1', ..., 'f{n_obj}']
 '''
 
 class ExampleProblem1(CustomProblem):
@@ -12,7 +32,6 @@ class ExampleProblem1(CustomProblem):
     config = {
         'n_var': 6,
         'n_obj': 2,
-        # use n_constr = 0, xl = 0, xu = 1 by default
     }
 
     def evaluate_performance(self, x):
@@ -28,9 +47,8 @@ class ExampleProblem2(CustomProblem):
     config = {
         'n_var': 10,
         'n_obj': 2,
-        'xl': [0, 0, 0, 1],
-        'xu': [1, 1, 1, 10],
-        # use n_constr = 0 by default
+        'var_lb': [0, 0, 0, 1],
+        'var_ub': [1, 1, 1, 10],
     }
 
     def evaluate_performance(self, x):
@@ -48,8 +66,8 @@ class ExampleProblem3(CustomProblem):
         'n_var': 4,
         'n_obj': 3,
         'n_constr': 2,
-        'xl': 0,
-        'xu': 1,
+        'var_lb': 0,
+        'var_ub': 1,
     }
 
     def evaluate_performance(self, x):
