@@ -97,6 +97,13 @@ def get_problem_list():
     return list(python_problems.keys()) + list(yaml_problems.keys())
 
 
+def get_yaml_problem_list():
+    '''
+    Get names of available generated problems
+    '''
+    return list(find_yaml_problems().keys())
+
+
 def generate_initial_samples(problem, n_sample):
     '''
     Generate feasible initial samples.

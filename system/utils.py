@@ -1,7 +1,7 @@
 import yaml
 import numpy as np
 import pandas as pd
-from problems.common import build_problem, get_problem_list
+from problems.common import build_problem
 from mobo.algorithms import get_algorithm_list as get_algo_list_mobo
 from moo.algorithms import get_algorithm_list as get_algo_list_moo
 from mobo.algorithms import get_algorithm as get_algorithm_mobo
@@ -85,13 +85,6 @@ def get_available_algorithms():
     Get names of available algorithms
     '''
     return get_algo_list_mobo() + get_algo_list_moo()
-
-
-def get_available_problems():
-    '''
-    Get names of available problems
-    '''
-    return get_problem_list()
 
 
 def check_pareto(Y):

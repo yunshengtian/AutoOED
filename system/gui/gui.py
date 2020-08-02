@@ -10,10 +10,10 @@ import os
 import yaml
 import numpy as np
 from multiprocessing import Lock, Process
-from problems.common import build_problem
+from problems.common import build_problem, get_problem_list, get_yaml_problem_list
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent
-from system.utils import process_config, load_config, get_available_algorithms, get_available_problems, find_closest_point, check_pareto
+from system.utils import process_config, load_config, get_available_algorithms, find_closest_point, check_pareto
 from system.gui.radar import radar_factory
 from system.gui.excel import Excel
 from system.gui.utils import *
@@ -182,7 +182,10 @@ class GUI:
             }
 
             window = tk.Toplevel(master=self.root)
-            window.title('Create Configurations')
+            if change:
+                window.title('Change Configurations')
+            else:
+                window.title('Create Configurations')
             window.configure(bg='white')
             window.resizable(False, False)
 
@@ -208,8 +211,8 @@ class GUI:
             # problem subsection
             frame_problem = create_labeled_frame(master=frame_param, row=0, column=1, text='Problem')
             widget_map['problem']['name'] = create_labeled_combobox(
-                master=frame_problem, row=0, column=0, text=name_map['problem']['name'], values=get_available_problems(), required=True, 
-                valid_check=lambda x: x in get_available_problems(), error_msg="problem doesn't exist", changeable=False)
+                master=frame_problem, row=0, column=0, text=name_map['problem']['name'], values=get_problem_list(), required=True, 
+                valid_check=lambda x: x in get_problem_list(), error_msg="problem doesn't exist", changeable=False)
             widget_map['problem']['n_var'] = create_labeled_entry(
                 master=frame_problem, row=1, column=0, text=name_map['problem']['n_var'], class_type=IntEntry, 
                 valid_check=lambda x: x > 0, error_msg='number of design variables must be positive', changeable=False)
@@ -303,12 +306,13 @@ class GUI:
         '''
         Problem menu initialization
         '''
-        self.menu_problem.add_command(label='Create') # TODO
-        self.menu_problem.add_command(label='Manage') # TODO
+        self.menu_problem.add_command(label='Create')
+        self.menu_problem.add_command(label='Change')
+        self.menu_problem.add_command(label='Manage')
 
-        def gui_create_problem():
+        def gui_build_problem_window(change=False):
             '''
-            Create problem from GUI
+            Build problem GUI
             '''
             # displayed name of each property
             name_map = {
@@ -330,16 +334,24 @@ class GUI:
             problem_cfg = {}
 
             window_0 = tk.Toplevel(master=self.root)
-            window_0.title('Create Problem')
+            if change:
+                window_0.title('Change Problem')
+            else:
+                window_0.title('Create Problem')
             window_0.configure(bg='white')
             window_0.resizable(False, False)
 
             # problem section
             frame_problem = create_labeled_frame(master=window_0, row=0, column=0, text='Problem')
             widget_map = {}
-            widget_map['name'] = create_labeled_entry(
-                master=frame_problem, row=0, column=0, text=name_map['name'], class_type=StringEntry, width=15, required=True, 
-                valid_check=lambda x: x not in get_available_problems(), error_msg='problem already exists')
+            if change:
+                widget_map['name'] = create_labeled_combobox(
+                    master=frame_problem, row=0, column=0, text=name_map['name'], values=get_yaml_problem_list(), width=15, required=True, 
+                    valid_check=lambda x: x in get_yaml_problem_list(), error_msg="problem doesn't exist")
+            else:
+                widget_map['name'] = create_labeled_entry(
+                    master=frame_problem, row=0, column=0, text=name_map['name'], class_type=StringEntry, width=15, required=True, 
+                    valid_check=lambda x: x not in get_problem_list(), error_msg='problem already exists')
             widget_map['n_var'] = create_labeled_entry(
                 master=frame_problem, row=1, column=0, text=name_map['n_var'], class_type=IntEntry, 
                 valid_check=lambda x: x > 0, error_msg='number of design variables must be positive')
@@ -373,7 +385,7 @@ class GUI:
 
             frame_performance_script = create_frame(master=frame_problem, row=4, column=0, padx=0)
             create_label(master=frame_performance_script, row=0, column=0, text=name_map['performance_eval'] + ' (*): ', columnspan=2)
-            create_button(master=frame_performance_script, row=1, column=0, text='Browse', command=gui_set_performance_script, pady=0)
+            button_performance_browse = create_button(master=frame_performance_script, row=1, column=0, text='Browse', command=gui_set_performance_script, pady=0)
             widget_map['performance_eval'] = create_entry(
                 master=frame_performance_script, row=1, column=1, class_type=StringEntry, width=30, required=True, 
                 valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside", pady=0)
@@ -401,7 +413,7 @@ class GUI:
 
             frame_constraint_script = create_frame(master=frame_problem, row=5, column=0, padx=0)
             create_label(master=frame_constraint_script, row=0, column=0, text=name_map['constraint_eval'] + ': ', columnspan=2)
-            create_button(master=frame_constraint_script, row=1, column=0, text='Browse', command=gui_set_constraint_script, pady=0)
+            button_constraint_browse = create_button(master=frame_constraint_script, row=1, column=0, text='Browse', command=gui_set_constraint_script, pady=0)
             widget_map['constraint_eval'] = create_entry(
                 master=frame_constraint_script, row=1, column=1, class_type=StringEntry, width=30, 
                 valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside", pady=0)
@@ -418,6 +430,13 @@ class GUI:
                         error_msg = '' if error_msg is None else ': ' + error_msg
                         tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[name]}"' + error_msg, parent=window_0)
                         raise Exception()
+
+            def load_entry_values(entry_map, config):
+                '''
+                Load values of entries from config dict
+                '''
+                for name, widget in entry_map.items():
+                    widget.set(config[name])
 
             def gui_set_design_space():
                 '''
@@ -519,8 +538,45 @@ class GUI:
             # action section
             frame_action = tk.Frame(master=window_0, bg='white')
             frame_action.grid(row=1, column=0)
-            create_button(frame_action, 0, 0, 'Continue', gui_set_design_space)
+            button_continue = create_button(frame_action, 0, 0, 'Continue', gui_set_design_space)
             create_button(frame_action, 0, 1, 'Cancel', window_0.destroy)
+
+            # disable widgets until problem selected
+            if change:
+                for widget_name in ['n_var', 'n_obj', 'n_constr', 'performance_eval', 'constraint_eval']:
+                    widget_map[widget_name].disable()
+                button_performance_browse.configure(state=tk.DISABLED)
+                button_constraint_browse.configure(state=tk.DISABLED)
+                button_continue.configure(state=tk.DISABLED)
+
+                def gui_problem_selected(event):
+                    '''
+                    Select problem, load problem config, enable widgets
+                    '''
+                    name = widget_map['name'].get()
+
+                    for widget in widget_map.values():
+                        widget.enable()
+                    button_performance_browse.configure(state=tk.NORMAL)
+                    button_constraint_browse.configure(state=tk.NORMAL)
+                    button_continue.configure(state=tk.NORMAL)
+
+                    config = self.agent_problem.load_problem(name)
+                    load_entry_values(widget_map, config)
+
+                widget_map['name'].widget.bind("<<ComboboxSelected>>", gui_problem_selected)
+
+        def gui_create_problem():
+            '''
+            Create problem from GUI
+            '''
+            gui_build_problem_window(change=False)
+
+        def gui_change_problem():
+            '''
+            Change problem from GUI
+            '''
+            gui_build_problem_window(change=True)
 
         def gui_manage_problem():
             '''
@@ -529,7 +585,8 @@ class GUI:
             pass
 
         self.menu_problem.entryconfig(0, command=gui_create_problem)
-        self.menu_problem.entryconfig(1, command=gui_manage_problem)
+        self.menu_problem.entryconfig(1, command=gui_change_problem)
+        self.menu_problem.entryconfig(2, command=gui_manage_problem)
 
     def _init_log_menu(self):
         '''

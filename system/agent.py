@@ -287,6 +287,7 @@ class ProblemAgent:
                 config = yaml.load(f, Loader=yaml.FullLoader)
         except:
             raise Exception('not a valid config file')
+        return config
 
     def list_problem(self):
         '''
