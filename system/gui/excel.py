@@ -3,24 +3,62 @@ import tkinter as tk
 
 class Excel(tk.Frame):
     '''
-    Excel-like table in tkinter gui
+    Excel-like table in tkinter gui, with column-based structure
     '''
-    def __init__(self, master, rows, columns, width, row_titles=None, column_titles=None):
+    def __init__(self, master, rows, columns, width, title=None, dtype=None, default=None, required=None, valid_check=None):
+        '''
+        Input:
+            rows: number of rows
+            columns: number of columns
+            width: entry width
+            title: titles of each column
+            dtype: data types of each column
+            default: default values of each column
+            required: whether values of each column are required
+            valid_check: functions that check the validity of each column
+        '''
         super().__init__(master)
         self.n_row = rows
         self.n_column = columns
         self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
 
-        if column_titles is not None:
+        # make titles
+        if title is not None:
             for column in range(self.n_column):
-                self._make_entry(0, column + 1, width, column_titles[column], False) 
+                self._make_entry(0, column + 1, width, title[column], False) 
 
+        # make entries
         for row in range(self.n_row):
-            if row_titles is not None:
-                self._make_entry(row + 1, 0, 5, row_titles[row], False)
-                
             for column in range(self.n_column):
                 self.entries[row][column] = self._make_entry(row + 1, column + 1, width, '', True)
+
+        # set data types
+        if dtype is None:
+            self.dtype = [str for _ in range(self.n_column)]
+        else:
+            assert len(dtype) == self.n_column
+            self.dtype = dtype
+
+        # set default values
+        if default is None:
+            self.default = [None for _ in range(self.n_column)]
+        else:
+            assert len(default) == self.n_column
+            self.default = default
+
+        # set required flags
+        if required is None:
+            self.required = [False for _ in range(self.n_column)]
+        else:
+            assert len(required) == self.n_column
+            self.required = required
+
+        # set validity check functions
+        if valid_check is None:
+            self.valid_check = [None for _ in range(self.n_column)]
+        else:
+            assert len(valid_check) == self.n_column
+            self.valid_check = valid_check
 
     def _make_entry(self, row, column, width, text, state):
         entry = tk.Entry(self, width=width)
@@ -30,27 +68,27 @@ class Excel(tk.Frame):
         entry.grid(row=row, column=column)
         return entry
 
-    def get(self, row, column, dtype=str, valid_check=None):
+    def get(self, row, column):
         val = self.entries[row][column].get()
         if val == '':
-            result = None
+            result = None if self.required[column] else self.default[column]
         else:
             try:
-                result = dtype(val)
+                result = self.dtype[column](val)
             except:
                 raise Exception('Invalid value specified in the entry')
-        if valid_check is not None and not valid_check(result):
+        if self.valid_check[column] is not None and not self.valid_check[column](result):
             raise Exception('Invalid value specified in the entry')
         return result
 
-    def get_row(self, row, dtype=str, valid_check=None):
-        return [self.get(row, column, dtype, valid_check) for column in range(self.n_column)]
+    def get_row(self, row):
+        return [self.get(row, column) for column in range(self.n_column)]
 
-    def get_column(self, column, dtype=str, valid_check=None):
-        return [self.get(row, column, dtype, valid_check) for row in range(self.n_row)]
+    def get_column(self, column):
+        return [self.get(row, column) for row in range(self.n_row)]
 
-    def get_all(self, dtype=str, valid_check=None):
-        return [[self.get(row, column, dtype, valid_check) for column in range(self.n_column)] for row in range(self.n_row)]
+    def get_all(self):
+        return [[self.get(row, column) for column in range(self.n_column)] for row in range(self.n_row)]
 
     def set(self, row, column, val):
         self.entries[row][column].delete(0, tk.END)

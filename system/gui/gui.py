@@ -182,29 +182,6 @@ class GUI:
                 'algorithm': {},
             }
 
-            # if each entry can change after creation
-            changeable_map = {
-                'general': {
-                    'n_init_sample': False,
-                    'batch_size': True,
-                    'n_iter': True,
-                    'n_process': True,
-                },
-                'problem': {
-                    'name': False,
-                    'n_var': False,
-                    'n_obj': False,
-                    'var_lb': True,
-                    'var_ub': True,
-                    'var_name': False,
-                    'obj_name': False,
-                    'ref_point': False,
-                },
-                'algorithm': {
-                    'name': True,
-                },
-            }
-
             window = tk.Toplevel(master=self.root)
             window.title('Create Configurations')
             window.configure(bg='white')
@@ -215,27 +192,52 @@ class GUI:
             frame_param.grid(row=0, column=0)
 
             # general subsection
-            frame_general = create_labeled_frame(frame_param, 0, 0, 'General')
-            widget_map['general']['n_init_sample'] = create_labeled_entry(frame_general, 0, 0, name_map['general']['n_init_sample'], IntEntry, valid_check=lambda x: x > 0)
-            widget_map['general']['batch_size'] = create_labeled_entry(frame_general, 1, 0, name_map['general']['batch_size'], IntEntry, valid_check=lambda x: x > 0)
-            widget_map['general']['n_iter'] = create_labeled_entry(frame_general, 2, 0, name_map['general']['n_iter'], IntEntry, valid_check=lambda x: x > 0)
-            widget_map['general']['n_process'] = create_labeled_entry(frame_general, 3, 0, name_map['general']['n_process'], IntEntry, valid_check=lambda x: x > 0)
+            frame_general = create_labeled_frame(master=frame_param, row=0, column=0, text='General')
+            widget_map['general']['n_init_sample'] = create_labeled_entry(
+                master=frame_general, row=0, column=0, text=name_map['general']['n_init_sample'], class_type=IntEntry, required=True, 
+                valid_check=lambda x: x > 0, error_msg='number of initial samples must be positive', changeable=False)
+            widget_map['general']['batch_size'] = create_labeled_entry(
+                master=frame_general, row=1, column=0, text=name_map['general']['batch_size'], class_type=IntEntry, required=True, 
+                valid_check=lambda x: x > 0, error_msg='number of batch size must be positive')
+            widget_map['general']['n_iter'] = create_labeled_entry(
+                master=frame_general, row=2, column=0, text=name_map['general']['n_iter'], class_type=IntEntry, required=True, 
+                valid_check=lambda x: x > 0, error_msg='number of optimization iteration must be positive')
+            widget_map['general']['n_process'] = create_labeled_entry(
+                master=frame_general, row=3, column=0, text=name_map['general']['n_process'], class_type=IntEntry, default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
 
             # problem subsection
-            frame_problem = create_labeled_frame(frame_param, 0, 1, 'Problem')
-            all_problems = get_available_problems() + self.agent_problem.list_problem()
-            widget_map['problem']['name'] = create_labeled_combobox(frame_problem, 0, 0, name_map['problem']['name'], all_problems, valid_check=lambda x: x in all_problems)
-            widget_map['problem']['n_var'] = create_labeled_entry(frame_problem, 1, 0, name_map['problem']['n_var'], IntEntry, valid_check=lambda x: x > 0)
-            widget_map['problem']['n_obj'] = create_labeled_entry(frame_problem, 2, 0, name_map['problem']['n_obj'], IntEntry, valid_check=lambda x: x > 0)
-            widget_map['problem']['var_lb'] = create_labeled_entry(frame_problem, 3, 0, name_map['problem']['var_lb'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) in [1, widget_map['problem']['n_var'].get()])
-            widget_map['problem']['var_ub'] = create_labeled_entry(frame_problem, 4, 0, name_map['problem']['var_ub'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) in [1, widget_map['problem']['n_var'].get()])
-            widget_map['problem']['var_name'] = create_labeled_entry(frame_problem, 5, 0, name_map['problem']['var_name'], StringListEntry, width=10, valid_check=lambda x: x is None or len(x) == widget_map['problem']['n_var'].get())
-            widget_map['problem']['obj_name'] = create_labeled_entry(frame_problem, 6, 0, name_map['problem']['obj_name'], StringListEntry, width=10, valid_check=lambda x: x is None or len(x) == widget_map['problem']['n_obj'].get())
-            widget_map['problem']['ref_point'] = create_labeled_entry(frame_problem, 7, 0, name_map['problem']['ref_point'], FloatListEntry, width=10, valid_check=lambda x: x is None or len(x) == widget_map['problem']['n_obj'].get())
+            frame_problem = create_labeled_frame(master=frame_param, row=0, column=1, text='Problem')
+            widget_map['problem']['name'] = create_labeled_combobox(
+                master=frame_problem, row=0, column=0, text=name_map['problem']['name'], values=get_available_problems(), required=True, 
+                valid_check=lambda x: x in get_available_problems(), error_msg="problem doesn't exist", changeable=False)
+            widget_map['problem']['n_var'] = create_labeled_entry(
+                master=frame_problem, row=1, column=0, text=name_map['problem']['n_var'], class_type=IntEntry, 
+                valid_check=lambda x: x > 0, error_msg='number of design variables must be positive', changeable=False)
+            widget_map['problem']['n_obj'] = create_labeled_entry(
+                master=frame_problem, row=2, column=0, text=name_map['problem']['n_obj'], class_type=IntEntry, 
+                valid_check=lambda x: x > 1, error_msg='number of objectives must be greater than 1', changeable=False)
+            widget_map['problem']['var_lb'] = create_labeled_entry(
+                master=frame_problem, row=3, column=0, text=name_map['problem']['var_lb'], class_type=FloatListEntry, width=10, 
+                valid_check=lambda x: len(x) in [1, widget_map['problem']['n_var'].get()], error_msg='size of bound mismatches number of design variables') # TODO: default?
+            widget_map['problem']['var_ub'] = create_labeled_entry(
+                master=frame_problem, row=4, column=0, text=name_map['problem']['var_ub'], class_type=FloatListEntry, width=10, 
+                valid_check=lambda x: len(x) in [1, widget_map['problem']['n_var'].get()], error_msg='size of bound mismatches number of design variables') # TODO: default?
+            widget_map['problem']['var_name'] = create_labeled_entry(
+                master=frame_problem, row=5, column=0, text=name_map['problem']['var_name'], class_type=StringListEntry, width=10, 
+                valid_check=lambda x: len(x) == widget_map['problem']['n_var'].get(), error_msg='number of names mismatches number of design variables', changeable=False) # TODO: default?
+            widget_map['problem']['obj_name'] = create_labeled_entry(
+                master=frame_problem, row=6, column=0, text=name_map['problem']['obj_name'], class_type=StringListEntry, width=10, 
+                valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='number of names mismatches number of objectives', changeable=False) # TODO: default?
+            widget_map['problem']['ref_point'] = create_labeled_entry(
+                master=frame_problem, row=7, column=0, text=name_map['problem']['ref_point'], class_type=FloatListEntry, width=10, 
+                valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
 
             # algorithm subsection
-            frame_algorithm = create_labeled_frame(frame_param, 0, 2, 'Algorithm')
-            widget_map['algorithm']['name'] = create_labeled_combobox(frame_algorithm, 0, 0, name_map['algorithm']['name'], get_available_algorithms(), valid_check=lambda x: x in get_available_algorithms())
+            frame_algorithm = create_labeled_frame(master=frame_param, row=0, column=2, text='Algorithm')
+            widget_map['algorithm']['name'] = create_labeled_combobox(
+                master=frame_algorithm, row=0, column=0, text=name_map['algorithm']['name'], values=get_available_algorithms(), required=True, 
+                valid_check=lambda x: x in get_available_algorithms(), error_msg="algorithm doesn't exist")
 
             def load_curr_config():
                 '''
@@ -244,7 +246,7 @@ class GUI:
                 for cfg_type, val_map in widget_map.items():
                     for cfg_name, widget in val_map.items():
                         widget.set(self.config[cfg_type][cfg_name])
-                        if not changeable_map[cfg_type][cfg_name]:
+                        if not widget.changeable:
                             widget.disable()
 
             def gui_save_config():
@@ -263,7 +265,9 @@ class GUI:
                         try:
                             config[cfg_type][cfg_name] = widget.get()
                         except:
-                            tk.messagebox.showinfo('Error', f'Invalid value for {name_map[cfg_type][cfg_name]}', parent=window)
+                            error_msg = widget.get_error_msg()
+                            error_msg = '' if error_msg is None else ': ' + error_msg
+                            tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[cfg_type][cfg_name]}"' + error_msg, parent=window)
                             return
 
                 try:
@@ -278,8 +282,8 @@ class GUI:
             # action section
             frame_action = tk.Frame(master=window, bg='white')
             frame_action.grid(row=1, column=0, columnspan=3)
-            create_button(frame_action, 0, 0, 'Save', gui_save_config)
-            create_button(frame_action, 0, 1, 'Cancel', window.destroy)
+            create_button(master=frame_action, row=0, column=0, text='Save', command=gui_save_config)
+            create_button(master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
             # load current config values to entry if not first time setting config
             if self.config is not None:
@@ -306,8 +310,8 @@ class GUI:
                 'n_var': 'Number of design variables',
                 'n_obj': 'Number of objectives',
                 'n_constr': 'Number of constraints',
-                'performance': 'Performance evaluation script',
-                'constraint': 'Constraint evaluation script',
+                'performance_eval': 'Performance evaluation script',
+                'constraint_eval': 'Constraint evaluation script',
                 'var_name': 'Names',
                 'obj_name': 'Names',
                 'var_lb': 'Lower bound',
@@ -325,12 +329,20 @@ class GUI:
             window_0.resizable(False, False)
 
             # problem section
-            frame_problem = create_labeled_frame(window_0, 0, 0, 'Problem')
+            frame_problem = create_labeled_frame(master=window_0, row=0, column=0, text='Problem')
             widget_map = {}
-            widget_map['name'] = create_labeled_entry(frame_problem, 0, 0, name_map['name'], StringEntry, width=15, valid_check=lambda x: x is not None)
-            widget_map['n_var'] = create_labeled_entry(frame_problem, 1, 0, name_map['n_var'], IntEntry, valid_check=lambda x: x is None or x > 0)
-            widget_map['n_obj'] = create_labeled_entry(frame_problem, 2, 0, name_map['n_obj'], IntEntry, valid_check=lambda x: x is None or x > 1)
-            widget_map['n_constr'] = create_labeled_entry(frame_problem, 3, 0, name_map['n_constr'], IntEntry, valid_check=lambda x: x is None or x >= 0)
+            widget_map['name'] = create_labeled_entry(
+                master=frame_problem, row=0, column=0, text=name_map['name'], class_type=StringEntry, width=15, required=True, 
+                valid_check=lambda x: x not in get_available_problems(), error_msg='problem already exists')
+            widget_map['n_var'] = create_labeled_entry(
+                master=frame_problem, row=1, column=0, text=name_map['n_var'], class_type=IntEntry, 
+                valid_check=lambda x: x > 0, error_msg='number of design variables must be positive')
+            widget_map['n_obj'] = create_labeled_entry(
+                master=frame_problem, row=2, column=0, text=name_map['n_obj'], class_type=IntEntry, 
+                valid_check=lambda x: x > 1, error_msg='number of objectives must be greater than 1')
+            widget_map['n_constr'] = create_labeled_entry(
+                master=frame_problem, row=3, column=0, text=name_map['n_constr'], class_type=IntEntry, default=0, 
+                valid_check=lambda x: x >= 0, error_msg='number of constraints must be positive')
 
             def gui_set_performance_script():
                 '''
@@ -338,7 +350,7 @@ class GUI:
                 '''
                 filename = tk.filedialog.askopenfilename(parent=window_0)
                 if not isinstance(filename, str) or filename == '': return
-                widget_map['performance'].set(filename)
+                widget_map['performance_eval'].set(filename)
 
             def performance_script_valid_check(path):
                 '''
@@ -353,10 +365,12 @@ class GUI:
                     return False
                 return True
 
-            frame_performance_script = create_frame(frame_problem, 4, 0, padx=0)
-            create_label(frame_performance_script, 0, 0, name_map['performance'] + ': ', columnspan=2)
-            create_button(frame_performance_script, 1, 0, 'Browse', gui_set_performance_script, pady=0)
-            widget_map['performance'] = create_entry(frame_performance_script, 1, 1, StringEntry, width=30, valid_check=performance_script_valid_check, pady=0)
+            frame_performance_script = create_frame(master=frame_problem, row=4, column=0, padx=0)
+            create_label(master=frame_performance_script, row=0, column=0, text=name_map['performance_eval'] + ' (*): ', columnspan=2)
+            create_button(master=frame_performance_script, row=1, column=0, text='Browse', command=gui_set_performance_script, pady=0)
+            widget_map['performance_eval'] = create_entry(
+                master=frame_performance_script, row=1, column=1, class_type=StringEntry, width=30, required=True, 
+                valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside", pady=0)
 
             def gui_set_constraint_script():
                 '''
@@ -364,7 +378,7 @@ class GUI:
                 '''
                 filename = tk.filedialog.askopenfilename(parent=window_0)
                 if not isinstance(filename, str) or filename == '': return
-                widget_map['constraint'].set(filename)
+                widget_map['constraint_eval'].set(filename)
 
             def constraint_script_valid_check(path):
                 '''
@@ -379,20 +393,24 @@ class GUI:
                     return False
                 return True
 
-            frame_constraint_script = create_frame(frame_problem, 5, 0, padx=0)
-            create_label(frame_constraint_script, 0, 0, name_map['constraint'] + ': ', columnspan=2)
-            create_button(frame_constraint_script, 1, 0, 'Browse', gui_set_constraint_script, pady=0)
-            widget_map['constraint'] = create_entry(frame_constraint_script, 1, 1, StringEntry, width=30, valid_check=constraint_script_valid_check, pady=0)
+            frame_constraint_script = create_frame(master=frame_problem, row=5, column=0, padx=0)
+            create_label(master=frame_constraint_script, row=0, column=0, text=name_map['constraint_eval'] + ': ', columnspan=2)
+            create_button(master=frame_constraint_script, row=1, column=0, text='Browse', command=gui_set_constraint_script, pady=0)
+            widget_map['constraint_eval'] = create_entry(
+                master=frame_constraint_script, row=1, column=1, class_type=StringEntry, width=30, 
+                valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside", pady=0)
 
             def save_entry_values(entry_map, config):
                 '''
                 Save values of entries to config dict
                 '''
-                for key, val in entry_map.items():
+                for name, widget in entry_map.items():
                     try:
-                        config[key] = val.get()
+                        config[name] = widget.get()
                     except:
-                        tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_0)
+                        error_msg = widget.get_error_msg()
+                        error_msg = '' if error_msg is None else ': ' + error_msg
+                        tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[name]}"' + error_msg, parent=window_0)
                         raise Exception()
 
             def gui_set_design_space():
@@ -412,11 +430,11 @@ class GUI:
                 window_1.resizable(False, False)
 
                 # design space section
-                frame_design = create_labeled_frame(window_1, 0, 0, 'Design Space')
-                create_label(frame_design, 0, 0, 'Enter the properties for design variables:')
+                frame_design = create_labeled_frame(master=window_1, row=0, column=0, text='Design Space')
+                create_label(master=frame_design, row=0, column=0, text='Enter the properties for design variables:')
                 n_var = problem_cfg['n_var'] if problem_cfg['n_var'] is not None else 1
                 excel_design = Excel(master=frame_design, rows=n_var, columns=3, width=15,
-                    column_titles=[name_map['var_name'], name_map['var_lb'], name_map['var_ub']])
+                    title=[name_map['var_name'], name_map['var_lb'], name_map['var_ub']], dtype=[str, float, float], default=[None, 0, 1])
                 excel_design.grid(row=1, column=0)
                 excel_design.set_column(0, [f'x{i + 1}' for i in range(n_var)])
 
@@ -424,9 +442,9 @@ class GUI:
                     '''
                     Save values of design properties to config dict
                     '''
-                    for key, column, dtype, valid_check in zip(['var_name', 'var_lb', 'var_ub'], [0, 1, 2], [str, float, float], [lambda x: x is not None, None, None]):
+                    for key, column in zip(['var_name', 'var_lb', 'var_ub'], [0, 1, 2]):
                         try:
-                            config[key] = excel.get_column(column, dtype, valid_check)
+                            config[key] = excel.get_column(column)
                         except:
                             tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_1)
                             raise Exception()
@@ -448,11 +466,11 @@ class GUI:
                     window_2.resizable(False, False)
 
                     # performance space section
-                    frame_performance = create_labeled_frame(window_2, 0, 0, 'Performance Space')
-                    create_label(frame_performance, 0, 0, 'Enter the properties for objectives:')
+                    frame_performance = create_labeled_frame(master=window_2, row=0, column=0, text='Performance Space')
+                    create_label(master=frame_performance, row=0, column=0, text='Enter the properties for objectives:')
                     n_obj = problem_cfg['n_obj'] if problem_cfg['n_obj'] is not None else 1
                     excel_performance = Excel(master=frame_performance, rows=n_obj, columns=3, width=15,
-                        column_titles=[name_map['obj_name'], name_map['obj_lb'], name_map['obj_ub']])
+                        title=[name_map['obj_name'], name_map['obj_lb'], name_map['obj_ub']], dtype=[str, float, float])
                     excel_performance.grid(row=1, column=0)
                     excel_performance.set_column(0, [f'f{i + 1}' for i in range(n_obj)])
 
@@ -460,9 +478,9 @@ class GUI:
                         '''
                         Save values of performance properties to config dict
                         '''
-                        for key, column, dtype, valid_check in zip(['obj_name', 'obj_lb', 'obj_ub'], [0, 1, 2], [str, float, float], [lambda x: x is not None, None, None]):
+                        for key, column in zip(['obj_name', 'obj_lb', 'obj_ub'], [0, 1, 2]):
                             try:
-                                config[key] = excel.get_column(column, dtype, valid_check)
+                                config[key] = excel.get_column(column)
                             except:
                                 tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_2)
                                 raise Exception()
@@ -491,12 +509,6 @@ class GUI:
                 frame_action.grid(row=1, column=0)
                 create_button(frame_action, 0, 0, 'Continue', gui_set_performance_space)
                 create_button(frame_action, 0, 1, 'Cancel', window_1.destroy)
-
-            # default values
-            widget_map['name'].set('problem name')
-            widget_map['n_constr'].set('0')
-            widget_map['performance'].set('scripts/sample_performance_eval.py')
-            widget_map['constraint'].set('scripts/sample_constraint_eval.py')
 
             # action section
             frame_action = tk.Frame(master=window_0, bg='white')

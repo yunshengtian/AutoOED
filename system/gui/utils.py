@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import (
@@ -34,32 +34,62 @@ def embed_figure(fig, master, toolbar=True):
         toolbar_obj.update()
 
 
-class Entry:
+class Entry(ABC):
     '''
     Entry widget with customized get() and set() method
     '''
-    def __init__(self, widget, valid_check=None):
+    def __init__(self, widget, required=False, default=None, valid_check=None, error_msg=None, changeable=True):
+        '''
+        Input:
+            widget: tkinter Entry or Combobox
+            required: whether the entry value is required
+            default: default value for entry, only works when is not required
+            valid_check: function that checks validity of entry value
+            error_msg: custom error message to display when valid_check fails
+            changeable: whether is changeable after first time being set
+        '''
         self.widget = widget
+        self.required = required
+        self.default = default
         self.valid_check = valid_check
+        self.error_msg = error_msg
+        self.changeable = changeable
 
     def enable(self):
+        '''
+        Enable changing entry value
+        '''
         self.widget.configure(state=tk.NORMAL)
     
     def disable(self):
+        '''
+        Disable changing entry value
+        '''
         self.widget.configure(state=tk.DISABLED)
 
     def get(self):
+        '''
+        Get entry value
+        '''
         val = self.widget.get()
         if val == '':
-            result = None
+            result = None if self.required else self.default
         else:
             result = self._get(val)
-        if self.valid_check is not None and not self.valid_check(result):
+        if self.required:
+            assert result is not None, 'Required value not specified'
+        if result is not None and self.valid_check is not None and not self.valid_check(result):
             raise Exception('Invalid value specified in the entry')
         return result
 
     def set(self, val):
-        new_val = str(self._set(val))
+        '''
+        Set entry value
+        '''
+        if val is None:
+            new_val = ''
+        else:
+            new_val = str(self._set(val))
         if isinstance(self.widget, tk.Entry):
             self.widget.delete(0, tk.END)
             self.widget.insert(0, new_val)
@@ -73,6 +103,15 @@ class Entry:
     @abstractmethod
     def _set(self, val):
         pass
+
+    def get_error_msg(self):
+        '''
+        Get the error message when valid_check fails
+        '''
+        if self.required and self.widget.get() == '':
+            return 'entry cannot be empty'
+        else:
+            return self.error_msg
 
 class StringEntry(Entry):
     '''
@@ -161,37 +200,39 @@ def create_multiple_label(master, text_list, **kwargs):
     for i, text in enumerate(text_list):
         create_label(master=master, row=i, column=0, text=text, **kwargs)
 
-def create_entry(master, row, column, class_type, width=entry_width, valid_check=None, 
+def create_entry(master, row, column, class_type, width=entry_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
     entry = tk.Entry(master=master, bg='white', width=width, justify='right')
     entry.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
-    return class_type(entry, valid_check=valid_check)
+    return class_type(entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
-def create_labeled_entry(master, row, column, text, class_type, width=entry_width, valid_check=None, 
+def create_labeled_entry(master, row, column, text, class_type, width=entry_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='EW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
-    label = tk.Label(master=frame, bg='white', text=text + ': ')
+    label_text = text + ' (*): ' if required else text + ': '
+    label = tk.Label(master=frame, bg='white', text=label_text)
     label.grid(row=0, column=0, sticky='W')
     entry = tk.Entry(master=frame, bg='white', width=width, justify='right')
     entry.grid(row=0, column=1, sticky='E')
-    return class_type(entry, valid_check=valid_check)
+    return class_type(entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
-def create_combobox(master, row, column, values, width=combobox_width, valid_check=None, 
+def create_combobox(master, row, column, values, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
     combobox = ttk.Combobox(master=master, values=values, width=width)
     combobox.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
-    return StringEntry(combobox, valid_check=valid_check)
+    return StringEntry(combobox, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
-def create_labeled_combobox(master, row, column, text, values, width=combobox_width, valid_check=None, 
+def create_labeled_combobox(master, row, column, text, values, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
-    label = tk.Label(master=frame, bg='white', text=text + ': ')
+    label_text = text + ' (*): ' if required else text + ': '
+    label = tk.Label(master=frame, bg='white', text=label_text)
     label.grid(row=0, column=0, sticky='W')
     combobox = ttk.Combobox(master=frame, values=values, width=width)
     combobox.grid(row=0, column=1, sticky='E')
-    return StringEntry(combobox, valid_check=valid_check)
+    return StringEntry(combobox, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 def create_button(master, row, column, text, command=None, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):

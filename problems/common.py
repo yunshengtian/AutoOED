@@ -1,11 +1,11 @@
+import importlib
+import os
+import glob
+import yaml
 import numpy as np
 from pymoo.factory import get_from_list
-from problems import Problem
+from problems import Problem, GeneratedProblem
 from external import lhs
-
-import importlib
-from os.path import dirname, basename, isfile, join
-import glob
 
 
 def get_subclasses(cls):
@@ -22,24 +22,24 @@ def get_subclasses(cls):
     return subclasses
 
 
-def find_all_problem_modules():
+def find_python_problems():
     '''
-    Return a list of module of all problems
+    Find all problems created by python files
+    Output:
+        problems: a dict of {name: python_class} of all python problems
     '''
-    predefined_modules = glob.glob(join(dirname(__file__), "predefined/*.py"))
-    predefined_modules = ['predefined.' + basename(f)[:-3] for f in predefined_modules if isfile(f) and not f.endswith('__init__.py')]
-    custom_modules = glob.glob(join(dirname(__file__), "custom/python/*.py"))
-    custom_modules = ['custom.python.' + basename(f)[:-3] for f in custom_modules if isfile(f) and not f.endswith('__init__.py')]
+    # find modules of python problems
+    predefined_modules = glob.glob(os.path.join(os.path.dirname(__file__), "predefined/*.py"))
+    predefined_modules = ['predefined.' + os.path.basename(f)[:-3] for f in predefined_modules if os.path.isfile(f) and not f.endswith('__init__.py')]
+    custom_modules = glob.glob(os.path.join(os.path.dirname(__file__), "custom/python/*.py"))
+    custom_modules = ['custom.python.' + os.path.basename(f)[:-3] for f in custom_modules if os.path.isfile(f) and not f.endswith('__init__.py')]
     all_modules = predefined_modules + custom_modules
-    return all_modules
 
+    # check if duplicate exists
+    assert len(np.unique(all_modules)) == len(all_modules), 'name conflict exists in defined python problems'
 
-def find_all_problem_classes():
-    '''
-    Return a dict of {name: class} of all problems
-    '''
+    # build problem dict
     problems = {}
-    all_modules = find_all_problem_modules()
     for module in all_modules:
         for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
             key = key.lower()
@@ -48,22 +48,53 @@ def find_all_problem_classes():
     return problems
 
 
+def find_yaml_problems():
+    '''
+    Find all problems created by yaml files
+    Output:
+        problems: a dict of {name: yaml_path} of all yaml problems
+    '''
+    configs = {}
+    config_dir = os.path.join(os.path.dirname(__file__), 'custom', 'yaml')
+    for name in os.listdir(config_dir):
+        if name.endswith('.yml'):
+            configs[name[:-4]] = os.path.join(config_dir, name)
+    return configs
+
+
+def find_all_problems():
+    '''
+    Find all problems created by python and yaml files, also check for name conflict
+    '''
+    python_problems = find_python_problems()
+    yaml_problems = find_yaml_problems()
+    if len(np.unique(list(python_problems.keys()) + list(yaml_problems.keys()))) < len(python_problems) + len(yaml_problems):
+        raise Exception('name conflict exists between defined python problems and yaml problems')
+    else:
+        return python_problems, yaml_problems
+
+
 def get_problem(name, *args, **kwargs):
     '''
     Build problem from name and arguments
     '''
-    problems = find_all_problem_classes()
-    if name not in problems:
+    python_problems, yaml_problems = find_all_problems()
+    if name in python_problems:
+        return python_problems[name](*args, **kwargs)
+    elif name in yaml_problems:
+        with open(yaml_problems[name], 'r') as fp:
+            config = yaml.load(fp, Loader=yaml.FullLoader)
+        return GeneratedProblem(config, *args, **kwargs)
+    else:
         raise Exception(f'Problem {name} not found')
-    return problems[name](*args, **kwargs)
 
 
 def get_problem_list():
     '''
     Get names of available problems
     '''
-    problems = find_all_problem_classes()
-    return list(problems.keys())
+    python_problems, yaml_problems = find_all_problems()
+    return list(python_problems.keys()) + list(yaml_problems.keys())
 
 
 def generate_initial_samples(problem, n_sample):

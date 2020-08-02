@@ -1,10 +1,11 @@
 import numpy as np
 import autograd
-from abc import abstractmethod
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from pymoo.model.problem import Problem as PymooProblem
 from pymoo.model.problem import at_least2d, evaluate_in_parallel
+
+from problems.utils import import_module_from_path
 
 
 class Problem(PymooProblem):
@@ -12,14 +13,41 @@ class Problem(PymooProblem):
     Problem definition built upon Pymoo's Problem class, added some custom features
     '''
     def __init__(self, *args, xl=None, xu=None, var_name=None, obj_name=None, **kwargs):
-        if xl is None: xl = 0
-        if xu is None: xu = 1
-        super().__init__(*args, xl=xl, xu=xu, **kwargs)
+        # set default bounds
+        xl, xu = self._process_bounds(xl, xu)
+
+        # TODO: obj bound is currently not supported
+        if 'fl' in kwargs: kwargs.pop('fl')
+        if 'fu' in kwargs: kwargs.pop('fu')
+
+        PymooProblem.__init__(self, *args, xl=xl, xu=xu, **kwargs)
+
         self.ref_point = None
         self.var_name = var_name if var_name is not None else [f'x{i + 1}' for i in range(self.n_var)]
         self.obj_name = obj_name if obj_name is not None else [f'f{i + 1}' for i in range(self.n_obj)]
 
+    def _process_bounds(self, xl, xu):
+        '''
+        Set default values for bounds if not specified
+        '''
+        if xl is None: xl = 0
+        elif isinstance(xl, list) or isinstance(xl, np.ndarray):
+            xl = np.array(xl)
+            xl[xl == None] = 0
+            xl = xl.astype(float)
+        
+        if xu is None: xu = 1
+        elif isinstance(xu, list) or isinstance(xu, np.ndarray):
+            xu = np.array(xu)
+            xu[xu == None] = 1
+            xu = xu.astype(float)
+        
+        return xl, xu
+
     def set_ref_point(self, ref_point):
+        '''
+        Set reference point for hypervolume calculation
+        '''
         assert len(ref_point) == self.n_obj, f'reference point should have {self.n_obj} dimensions'
         self.ref_point = ref_point
 
@@ -29,11 +57,16 @@ class Problem(PymooProblem):
         if out['G'] is not None:
             out['G'] = np.column_stack([*np.atleast_2d(out['G'])])
 
-    @abstractmethod
     def evaluate_performance(self, x):
-        pass
+        '''
+        Main function for objective evaluation
+        '''
+        raise NotImplementedError
 
     def evaluate_constraint(self, x):
+        '''
+        Main function for constraint evaluation
+        '''
         return None
     
     def evaluate(self,
@@ -172,33 +205,87 @@ class CustomProblem(Problem):
 
     # default values for problem config
     default_config = {
-        'n_var': None, # required
-        'n_obj': None, # required
+        'n_var': 'required',
+        'n_obj': 'required',
         'n_constr': 0, # no constraints by default
-        'var_lb': 0, # 0 as lower bound by default
-        'var_ub': 1, # 1 as upper bound by default
+        'var_lb': 0, # 0 as var lower bound by default
+        'var_ub': 1, # 1 as var upper bound by default
+        'obj_lb': None, # no obj lower bound by default
+        'obj_ub': None, # no obj upper bound by default
     }
 
     # translate config keys to corresponding ones used in pymoo
     config_translate = {
         'var_lb': 'xl',
         'var_ub': 'xu',
+        'obj_lb': 'fl',
+        'obj_ub': 'fu',
     }
 
-    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None):
+    def __init__(self, *args, xl=None, xu=None, **kwargs):
         # fill config with default_config when there are key missings
         for key, value in self.default_config.items():
             if key not in self.config:
-                if value is None:
+                if value == 'required':
                     raise Exception('Invalid config for custom problem, required values are not provided')
                 self.config[key] = value
 
         # allow dynamically changing design bounds
-        if var_lb is not None: self.config['var_lb'] = var_lb
-        if var_ub is not None: self.config['var_ub'] = var_ub
+        if xl is not None: self.config['var_lb'] = xl
+        if xu is not None: self.config['var_ub'] = xu
                 
         # translate config
         for old_key, new_key in self.config_translate.items():
             self.config[new_key] = self.config.pop(old_key)
 
         super().__init__(**self.config)
+
+
+class GeneratedProblem(CustomProblem):
+    '''
+    Generated custom problems from GUI, to be initialized from a config dict
+    '''
+    def __init__(self, config, *args, n_var=None, n_obj=None, xl=None, xu=None, **kwargs):
+        self.raw_config = config.copy()
+        self.config = config.copy()
+        if n_var is not None: self.config['n_var'] = n_var
+        if n_obj is not None: self.config['n_obj'] = n_obj
+
+        # problem name
+        self.problem_name = self.config.pop('name')
+
+        # set evaluation modules
+        self.eval_p_module = import_module_from_path('eval_p', self.config.pop('performance_eval'))
+        if self.config['constraint_eval'] is not None:
+            self.eval_c_module = import_module_from_path('eval_c', self.config.pop('constraint_eval'))
+        else:
+            self.eval_c_module = None
+
+        super().__init__(*args, xl=xl, xu=xu, **kwargs)
+
+    def evaluate_performance(self, x):
+        '''
+        Evaluate objectives from imported module
+        '''
+        return self.eval_p_module.evaluate_performance(x)
+
+    def evaluate_constraint(self, x):
+        '''
+        Evaluate constraints from imported module (if have)
+        '''
+        if self.eval_c_module is not None:
+            return self.eval_c_module.evaluate_constraint(x)
+        else:
+            return None
+
+    def name(self):
+        '''
+        Return problem name
+        '''
+        return self.problem_name
+
+    def export(self):
+        '''
+        Export problem config
+        '''
+        return self.raw_config
