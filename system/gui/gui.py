@@ -131,6 +131,7 @@ class GUI:
         '''
         self.menu_config.add_command(label='Load')
         self.menu_config.add_command(label='Create')
+        self.menu_config.add_command(label='Change')
 
         def gui_load_config():
             '''
@@ -148,9 +149,9 @@ class GUI:
                 
             self._set_config(config)
 
-        def gui_create_config():
+        def gui_build_config_window(change=False):
             '''
-            Create config from popup window
+            Build config GUI
             '''
             # displayed name of each property
             name_map = {
@@ -286,12 +287,25 @@ class GUI:
             create_button(master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
             # load current config values to entry if not first time setting config
-            if self.config is not None:
+            if change:
                 load_curr_config()
+
+        def gui_create_config():
+            '''
+            Create config from GUI
+            '''
+            gui_build_config_window(change=False)
+
+        def gui_change_config():
+            '''
+            Change config from GUI
+            '''
+            gui_build_config_window(change=True)
 
         # link menu command
         self.menu_config.entryconfig(0, command=gui_load_config)
         self.menu_config.entryconfig(1, command=gui_create_config)
+        self.menu_config.entryconfig(2, command=gui_change_config, state=tk.DISABLED)
 
     def _init_problem_menu(self):
         '''
@@ -302,7 +316,7 @@ class GUI:
 
         def gui_create_problem():
             '''
-            Create problem from popup window
+            Create problem from GUI
             '''
             # displayed name of each property
             name_map = {
@@ -654,7 +668,7 @@ class GUI:
             Execute optimization
             '''
             self.menu_config.entryconfig(0, state=tk.DISABLED)
-            self.menu_config.entryconfig(1, state=tk.DISABLED)
+            self.menu_config.entryconfig(2, state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
             worker = Process(target=self.agent_data.optimize, args=(self.config, self.config_id))
             self._start_worker(worker)
@@ -837,6 +851,10 @@ class GUI:
             # disable changing saving location
             self.menu_file.entryconfig(0, state=tk.DISABLED)
 
+            # change config create/change status
+            self.menu_config.entryconfig(1, state=tk.DISABLED)
+            self.menu_config.entryconfig(2, state=tk.NORMAL)
+
             # activate optimization button
             self.button_optimize.configure(state=tk.NORMAL)
             self.button_input.configure(state=tk.NORMAL)
@@ -977,8 +995,8 @@ class GUI:
             self.button_stop.configure(state=tk.DISABLED)
             if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(0, state=tk.NORMAL)
-            if self.menu_config.entrycget(1, 'state') == tk.DISABLED:
-                self.menu_config.entryconfig(1, state=tk.NORMAL)
+            if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
+                self.menu_config.entryconfig(2, state=tk.NORMAL)
 
     def _clear_design_space(self):
         '''
