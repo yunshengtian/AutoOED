@@ -167,8 +167,6 @@ class GUI:
                     'n_obj': 'Number of objectives',
                     'var_lb': 'Lower bound',
                     'var_ub': 'Upper bound',
-                    'var_name': 'Name of design variables',
-                    'obj_name': 'Name of objectives',
                     'ref_point': 'Reference point',
                 },
                 'algorithm': {
@@ -224,14 +222,8 @@ class GUI:
             widget_map['problem']['var_ub'] = create_labeled_entry(
                 master=frame_problem, row=4, column=0, text=name_map['problem']['var_ub'], class_type=FloatListEntry, width=10, 
                 valid_check=lambda x: len(x) in [1, widget_map['problem']['n_var'].get()], error_msg='size of bound mismatches number of design variables') # TODO: default?
-            widget_map['problem']['var_name'] = create_labeled_entry(
-                master=frame_problem, row=5, column=0, text=name_map['problem']['var_name'], class_type=StringListEntry, width=10, 
-                valid_check=lambda x: len(x) == widget_map['problem']['n_var'].get(), error_msg='number of names mismatches number of design variables', changeable=False) # TODO: default?
-            widget_map['problem']['obj_name'] = create_labeled_entry(
-                master=frame_problem, row=6, column=0, text=name_map['problem']['obj_name'], class_type=StringListEntry, width=10, 
-                valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='number of names mismatches number of objectives', changeable=False) # TODO: default?
             widget_map['problem']['ref_point'] = create_labeled_entry(
-                master=frame_problem, row=7, column=0, text=name_map['problem']['ref_point'], class_type=FloatListEntry, width=10, 
+                master=frame_problem, row=5, column=0, text=name_map['problem']['ref_point'], class_type=FloatListEntry, width=10, 
                 valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
 
             # algorithm subsection
