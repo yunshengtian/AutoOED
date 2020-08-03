@@ -421,6 +421,16 @@ class GUI:
                             error_msg = '' if error_msg is None else ': ' + error_msg
                             tk.messagebox.showinfo('Error', f'Invalid value for "{self.name_map[cfg_type][cfg_name]}"' + error_msg, parent=window)
                             return
+
+                # validity check
+                n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
+                if n_var != len(problem_cfg['var_name']):
+                    tk.messagebox.showinfo('Error', 'Number of design variables changed, please reconfigure design space', parent=window)
+                    return
+                if n_obj != len(problem_cfg['obj_name']):
+                    tk.messagebox.showinfo('Error', 'Number of objectives changed, please reconfigure performance space', parent=window)
+                    return
+
                 config['problem'].update(problem_cfg)
 
                 try:
