@@ -46,7 +46,16 @@ class MOO:
         # construct solution
         X_next = res.pop.get('X')
 
-        return self._build_dataframe(X_next)
+        return X_next
+
+    def predict(self, X_init, Y_init, X_next):
+        '''
+        Predict the performance of X_next based on initial data (X_init, Y_init), not supported for moo algorithms
+        '''
+        sample_len = len(X_next)
+        Y_expected = np.ones((sample_len, self.n_obj)) * np.inf
+        Y_uncertainty = np.zeros((sample_len, self.n_obj))
+        return Y_expected, Y_uncertainty
 
     def _get_sampling(self, X, Y):
         '''
@@ -68,26 +77,3 @@ class MOO:
             raise NotImplementedError
 
         return sampling
-
-    def _build_dataframe(self, X):
-        '''
-        Build a dataframe from proposed samples X,
-        where columns are: [x1, x2, ..., f1, f2, ..., expected_f1, expected_f2, ..., uncertianty_f1, uncertainty_f2, ...]
-        '''
-        data = {}
-        sample_len = len(X)
-
-        # design variables
-        for i in range(self.n_var):
-            data[f'x{i + 1}'] = X[:, i]
-
-        # prediction and uncertainty
-        for i in range(self.n_obj):
-            data[f'f{i + 1}'] = np.zeros(sample_len)
-        for i in range(self.n_obj):
-            data[f'expected_f{i + 1}'] = np.ones(sample_len) * np.inf
-        for i in range(self.n_obj):
-            data[f'uncertainty_f{i + 1}'] = np.zeros(sample_len)
-
-        return pd.DataFrame(data=data)
-        
