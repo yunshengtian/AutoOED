@@ -106,3 +106,25 @@ class Excel(tk.Frame):
         for row, v_row in enumerate(val):
             for column, v in enumerate(v_row):
                 self.set(row, column, v)
+
+    def enable(self, row, column):
+        self.entries[row][column].configure(state=tk.NORMAL)
+
+    def enable_row(self, row):
+        for column in range(self.n_column):
+            self.enable(row, column)
+
+    def enable_column(self, column):
+        for row in range(self.n_row):
+            self.enable(row, column)
+
+    def disable(self, row, column):
+        self.entries[row][column].configure(state=tk.DISABLED)
+
+    def disable_row(self, row):
+        for column in range(self.n_column):
+            self.disable(row, column)
+
+    def disable_column(self, column):
+        for row in range(self.n_row):
+            self.disable(row, column)

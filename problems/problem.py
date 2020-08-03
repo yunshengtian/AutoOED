@@ -5,7 +5,7 @@ from multiprocessing.pool import ThreadPool
 from pymoo.model.problem import Problem as PymooProblem
 from pymoo.model.problem import at_least2d, evaluate_in_parallel
 
-from problems.utils import import_module_from_path
+from problems.utils import import_module_from_path, process_problem_config
 
 
 class Problem(PymooProblem):
@@ -203,17 +203,6 @@ class CustomProblem(Problem):
     # main problem config, to be inherited
     config = {}
 
-    # default values for problem config
-    default_config = {
-        'n_var': 'required',
-        'n_obj': 'required',
-        'n_constr': 0, # no constraints by default
-        'var_lb': 0, # 0 as var lower bound by default
-        'var_ub': 1, # 1 as var upper bound by default
-        'obj_lb': None, # no obj lower bound by default
-        'obj_ub': None, # no obj upper bound by default
-    }
-
     # translate config keys to corresponding ones used in pymoo
     config_translate = {
         'var_lb': 'xl',
@@ -223,12 +212,8 @@ class CustomProblem(Problem):
     }
 
     def __init__(self, *args, xl=None, xu=None, **kwargs):
-        # fill config with default_config when there are key missings
-        for key, value in self.default_config.items():
-            if key not in self.config:
-                if value == 'required':
-                    raise Exception('Invalid config for custom problem, required values are not provided')
-                self.config[key] = value
+
+        self.config = process_problem_config(self.config)
 
         # allow dynamically changing design bounds
         if xl is not None: self.config['var_lb'] = xl

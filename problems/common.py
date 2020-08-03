@@ -5,6 +5,7 @@ import yaml
 import numpy as np
 from pymoo.factory import get_from_list
 from problems import Problem, GeneratedProblem
+from problems.utils import process_problem_config
 from external import lhs
 
 
@@ -22,29 +23,61 @@ def get_subclasses(cls):
     return subclasses
 
 
+def find_predefined_python_problems():
+    '''
+    Find all predefined problems created by python files
+    Output:
+        problems: a dict of {name: python_class} of all predefined python problems
+    '''
+    # find modules of predefined problems
+    modules = glob.glob(os.path.join(os.path.dirname(__file__), "predefined/*.py"))
+    modules = ['predefined.' + os.path.basename(f)[:-3] for f in modules if os.path.isfile(f) and not f.endswith('__init__.py')]
+
+    # check if duplicate exists
+    assert len(np.unique(modules)) == len(modules), 'name conflict exists in defined python problems'
+
+    # build problem dict
+    problems = {}
+    for module in modules:
+        for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
+            key = key.lower()
+            if not key.startswith('_') and val in get_subclasses(Problem):
+                problems[key] = val
+    return problems
+
+
+def find_custom_python_problems():
+    '''
+    Find all custom problems created by python files
+    Output:
+        problems: a dict of {name: python_class} of all custom python problems
+    '''
+    # find modules of custom problems
+    modules = glob.glob(os.path.join(os.path.dirname(__file__), "custom/python/*.py"))
+    modules = ['custom.python.' + os.path.basename(f)[:-3] for f in modules if os.path.isfile(f) and not f.endswith('__init__.py')]
+
+    # check if duplicate exists
+    assert len(np.unique(modules)) == len(modules), 'name conflict exists in defined python problems'
+
+    # build problem dict
+    problems = {}
+    for module in modules:
+        for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
+            key = key.lower()
+            if not key.startswith('_') and not key.startswith('exampleproblem') and val in get_subclasses(Problem):
+                problems[key] = val
+    return problems
+
+
 def find_python_problems():
     '''
     Find all problems created by python files
     Output:
         problems: a dict of {name: python_class} of all python problems
     '''
-    # find modules of python problems
-    predefined_modules = glob.glob(os.path.join(os.path.dirname(__file__), "predefined/*.py"))
-    predefined_modules = ['predefined.' + os.path.basename(f)[:-3] for f in predefined_modules if os.path.isfile(f) and not f.endswith('__init__.py')]
-    custom_modules = glob.glob(os.path.join(os.path.dirname(__file__), "custom/python/*.py"))
-    custom_modules = ['custom.python.' + os.path.basename(f)[:-3] for f in custom_modules if os.path.isfile(f) and not f.endswith('__init__.py')]
-    all_modules = predefined_modules + custom_modules
-
-    # check if duplicate exists
-    assert len(np.unique(all_modules)) == len(all_modules), 'name conflict exists in defined python problems'
-
-    # build problem dict
     problems = {}
-    for module in all_modules:
-        for key, val in importlib.import_module(f'problems.{module}').__dict__.items():
-            key = key.lower()
-            if not key.startswith('_') and not key.startswith('exampleproblem') and val in get_subclasses(Problem):
-                problems[key] = val
+    problems.update(find_predefined_python_problems())
+    problems.update(find_custom_python_problems())
     return problems
 
 
@@ -89,6 +122,31 @@ def get_problem(name, *args, **kwargs):
         raise Exception(f'Problem {name} not found')
 
 
+def get_predefined_python_problem_list():
+    '''
+    '''
+    return list(find_predefined_python_problems().keys())
+
+
+def get_custom_python_problem_list():
+    '''
+    '''
+    return list(find_custom_python_problems().keys())
+
+
+def get_python_problem_list():
+    '''
+    '''
+    return list(find_python_problems().keys())
+
+
+def get_yaml_problem_list():
+    '''
+    Get names of available generated problems
+    '''
+    return list(find_yaml_problems().keys())
+
+
 def get_problem_list():
     '''
     Get names of available problems
@@ -97,11 +155,44 @@ def get_problem_list():
     return list(python_problems.keys()) + list(yaml_problems.keys())
 
 
-def get_yaml_problem_list():
+def get_problem_config(name):
     '''
-    Get names of available generated problems
+    Get config dict of problem
     '''
-    return list(find_yaml_problems().keys())
+    assert name in get_problem_list(), f"problem {name} doesn't exist"
+    config = None
+    
+    if name in get_predefined_python_problem_list():
+        problem = get_problem(name)
+        config = {
+            'name': problem.name(),
+            'n_var': problem.n_var,
+            'n_obj': problem.n_obj,
+            'n_constr': problem.n_constr,
+            'var_lb': problem.xl,
+            'var_ub': problem.xu,
+            'obj_lb': None, # NOTE: not supported yet
+            'obj_ub': None, # NOTE: not supported yet
+            'var_name': problem.var_name,
+            'obj_name': problem.obj_name,
+        }
+
+    elif name in get_custom_python_problem_list():
+        problem = get_problem(name)
+        config = problem.config.copy()
+        config.update({'name': problem.name()})
+
+    elif name in get_yaml_problem_list():
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'custom', 'yaml', f'{name}.yml')
+        try:
+            with open(config_path, 'r') as f:
+                config = yaml.load(f, Loader=yaml.FullLoader)
+        except:
+            raise Exception('not a valid config file')
+        if 'performance_eval' in config: config.pop('performance_eval')
+        if 'constraint_eval' in config: config.pop('constraint_eval')
+        
+    return process_problem_config(config)
 
 
 def generate_initial_samples(problem, n_sample):
@@ -151,11 +242,6 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
         problem = get_problem(name, n_var=n_var, n_obj=n_obj, xl=xl, xu=xu)
     except:
         raise NotImplementedError('problem not supported yet!')
-
-    # NOTE: when config mismatch between arguments and problem specification, use problem specification instead
-    config['n_var'], config['n_obj'] = problem.n_var, problem.n_obj
-    if problem.xl is not None: config['xl'] = problem.xl.tolist()
-    if problem.xu is not None: config['xu'] = problem.xu.tolist()
 
     if get_pfront:
         try:
