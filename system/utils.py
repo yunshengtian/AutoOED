@@ -23,7 +23,7 @@ def correct_config(config):
         for key, value in default_config.items():
             if key not in config:
                 if value == 'required':
-                    raise Exception('Required value missing in config')
+                    raise Exception(f'Required value for "{key}" missing in config')
                 else:
                     config[key] = value
             elif config[key] is None:
@@ -47,7 +47,7 @@ def process_config(config):
     correct_config(config)
 
     n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
-    n_process, batch_size = general_cfg['n_process'], general_cfg['batch_size']
+    n_process, batch_size = algo_cfg['n_process'], general_cfg['batch_size']
 
     problem_cfg['n_init_sample'] = general_cfg['n_init_sample'] 
     algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})

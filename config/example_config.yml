@@ -4,7 +4,6 @@ general:
   n_init_sample: 20 # number of initial random samples
   batch_size: 5
   n_iter: 10 # number of algorithm iterations
-  n_process: 1 # number of parallel processes used in algorithm (optional)
 problem: 
   name: zdt1
   n_var: 6
@@ -16,6 +15,7 @@ problem:
   ref_point: [1.0, 6.0] # reference point for hypervolume calculation (optional)
 algorithm: 
   name: tsemo
+  n_process: 1 # number of parallel processes used in algorithm (optional)
   # specific algorithm settings below (optional)
   surrogate:
     name: ts

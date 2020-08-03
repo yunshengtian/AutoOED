@@ -64,8 +64,9 @@ class GUI:
         self.button_optimize = None
         self.button_stop = None
         self.button_input = None
-        self.scrtext_config = None
         self.scrtext_log = None
+        self.entry_batch_size = None
+        self.entry_n_iter = None
 
         # data to be plotted
         self.scatter_x = None
@@ -89,8 +90,7 @@ class GUI:
             'general': {
                 'n_init_sample': 'Number of initial samples',
                 'batch_size': 'Batch size',
-                'n_iter': 'Number of optimization iterations',
-                'n_process': 'Number of optimization processes',
+                'n_iter': 'Number of iterations',
             },
             'problem': {
                 'name': 'Name of problem',
@@ -108,7 +108,8 @@ class GUI:
                 'ref_point': 'Reference point',
             },
             'algorithm': {
-                'name': 'Name of algorithm'
+                'name': 'Name of algorithm',
+                'n_process': 'Number of parallel processes to use',
             },
         }
 
@@ -213,15 +214,6 @@ class GUI:
             widget_map['general']['n_init_sample'] = create_widget('labeled_entry', 
                 master=frame_general, row=0, column=0, text=self.name_map['general']['n_init_sample'], class_type='int', required=True, 
                 valid_check=lambda x: x > 0, error_msg='number of initial samples must be positive', changeable=False)
-            widget_map['general']['batch_size'] = create_widget('labeled_entry', 
-                master=frame_general, row=1, column=0, text=self.name_map['general']['batch_size'], class_type='int', required=True, 
-                valid_check=lambda x: x > 0, error_msg='number of batch size must be positive')
-            widget_map['general']['n_iter'] = create_widget('labeled_entry', 
-                master=frame_general, row=2, column=0, text=self.name_map['general']['n_iter'], class_type='int', required=True, 
-                valid_check=lambda x: x > 0, error_msg='number of optimization iteration must be positive')
-            widget_map['general']['n_process'] = create_widget('labeled_entry', 
-                master=frame_general, row=3, column=0, text=self.name_map['general']['n_process'], class_type='int', default=1, 
-                valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
 
             # problem subsection
             frame_problem = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Problem')
@@ -275,6 +267,10 @@ class GUI:
                 excel_design.grid(row=1, column=0)
                 excel_design.set_column(0, var_name)
                 excel_design.disable_column(0)
+
+                if self.config is not None:
+                    excel_design.set_column(1, self.config['problem']['var_lb'])
+                    excel_design.set_column(2, self.config['problem']['var_ub'])
 
                 def gui_save_design_space():
                     '''
@@ -332,6 +328,10 @@ class GUI:
                 excel_performance.set_column(0, obj_name)
                 excel_performance.disable_column(0)
 
+                if self.config is not None:
+                    excel_performance.set_column(1, self.config['problem']['obj_lb'])
+                    excel_performance.set_column(2, self.config['problem']['obj_ub'])
+
                 def gui_save_performance_space():
                     '''
                     Save performance space parameters
@@ -387,6 +387,9 @@ class GUI:
             widget_map['algorithm']['name'] = create_widget('labeled_combobox', 
                 master=frame_algorithm, row=0, column=0, text=self.name_map['algorithm']['name'], values=get_available_algorithms(), required=True, 
                 valid_check=lambda x: x in get_available_algorithms(), error_msg="algorithm doesn't exist")
+            widget_map['algorithm']['n_process'] = create_widget('labeled_entry', 
+                master=frame_algorithm, row=1, column=0, text=self.name_map['algorithm']['n_process'], class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
 
             def load_curr_config():
                 '''
@@ -910,7 +913,7 @@ class GUI:
 
         # configure slider widget
         frame_slider = tk.Frame(master=frame_figure)
-        frame_slider.grid(row=1, column=0, pady=5, sticky='EW')
+        frame_slider.grid(row=1, column=0, padx=5, pady=5, sticky='EW')
         grid_configure(frame_slider, [0], [1])
         
         label_iter = tk.Label(master=frame_slider, text='Iteration:')
@@ -974,25 +977,48 @@ class GUI:
         Control widgets initialization (optimize, stop, user input, show history)
         '''
         # control overall frame
-        frame_control = tk.Frame(master=self.root)
-        frame_control.grid(row=0, column=1, sticky='NSEW')
+        frame_control = create_widget('labeled_frame', master=self.root, row=0, column=1, text='Control', bg=None)
+
+        widget_map = {}
+        widget_map['batch_size'] = create_widget('labeled_entry', 
+            master=frame_control, row=0, column=0, columnspan=2, text=self.name_map['general']['batch_size'], class_type='int', required=True, required_mark=False,
+            valid_check=lambda x: x > 0, error_msg='number of batch size must be positive', bg=None)
+        widget_map['n_iter'] = create_widget('labeled_entry', 
+            master=frame_control, row=1, column=0, columnspan=2, text=self.name_map['general']['n_iter'], class_type='int', required=True, required_mark=False,
+            valid_check=lambda x: x > 0, error_msg='number of optimization iteration must be positive', bg=None)
+
+        self.entry_batch_size = widget_map['batch_size']
+        self.entry_n_iter = widget_map['n_iter']
+        self.entry_batch_size.disable()
+        self.entry_n_iter.disable()
 
         # optimization command
         self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
-        self.button_optimize.grid(row=0, column=0, padx=5, pady=20, sticky='NSEW')
+        self.button_optimize.grid(row=2, column=0, padx=5, pady=10, sticky='NSEW')
 
         # stop optimization command
         self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
-        self.button_stop.grid(row=0, column=1, padx=5, pady=20, sticky='NSEW')
+        self.button_stop.grid(row=2, column=1, padx=5, pady=10, sticky='NSEW')
 
         # get design variables from user input
         self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
-        self.button_input.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
+        self.button_input.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
 
         def gui_optimize():
             '''
             Execute optimization
             '''
+            config = {}
+            for key in ['batch_size', 'n_iter']:
+                try:
+                    config[key] = widget_map[key].get()
+                except:
+                    error_msg = widget_map[key].get_error_msg()
+                    error_msg = '' if error_msg is None else ': ' + error_msg
+                    tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['general'][key] + '"' + error_msg, parent=self.root)
+                    return
+            self.config['general'].update(config)
+
             self.menu_config.entryconfig(0, state=tk.DISABLED)
             self.menu_config.entryconfig(2, state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
@@ -1097,25 +1123,12 @@ class GUI:
         '''
         Display widgets initialization (config, log)
         '''
-        # configure tab widgets
-        nb = ttk.Notebook(master=self.root)
-        nb.grid(row=1, column=1, sticky='NSEW')
-        frame_config = tk.Frame(master=nb)
-        frame_log = tk.Frame(master=nb)
-        nb.add(child=frame_config, text='Config')
-        nb.add(child=frame_log, text='Log')
-
-        # configure for resolution change
-        grid_configure(frame_config, [0], [0])
+        frame_log = create_widget('labeled_frame', master=self.root, row=1, column=1, text='Log', bg=None)
         grid_configure(frame_log, [0], [0])
-
-        # config display
-        self.scrtext_config = scrolledtext.ScrolledText(master=frame_config, width=10, height=10, state=tk.DISABLED)
-        self.scrtext_config.grid(row=0, column=0, sticky='NSEW')
 
         # log display
         self.scrtext_log = scrolledtext.ScrolledText(master=frame_log, width=10, height=10, state=tk.DISABLED)
-        self.scrtext_log.grid(row=0, column=0, sticky='NSEW')
+        self.scrtext_log.grid(row=0, column=0, sticky='NSEW', padx=5, pady=5)
 
     def _save_config(self, config):
         '''
@@ -1181,17 +1194,23 @@ class GUI:
             self.menu_config.entryconfig(1, state=tk.DISABLED)
             self.menu_config.entryconfig(2, state=tk.NORMAL)
 
-            # activate optimization button
+            # activate optimization widgets
+            self.entry_batch_size.enable()
+            self.entry_n_iter.enable()
             self.button_optimize.configure(state=tk.NORMAL)
             self.button_input.configure(state=tk.NORMAL)
 
-            # refresh config display
-            self.scrtext_config.configure(state=tk.NORMAL)
-            self.scrtext_config.insert(tk.INSERT, yaml.dump(self.config, default_flow_style=False, sort_keys=False))
-            self.scrtext_config.configure(state=tk.DISABLED)
-
             # trigger periodic refresh
             self.root.after(self.refresh_rate, self._refresh)
+
+            try:
+                self.entry_batch_size.set(self.config['general']['batch_size'])
+            except:
+                self.entry_batch_size.set(5)
+            try:
+                self.entry_n_iter.set(self.config['general']['n_iter'])
+            except:
+                self.entry_n_iter.set(1)
 
         else: # user changed config in the middle
             try:
@@ -1205,12 +1224,6 @@ class GUI:
                 return
 
             self.config = config
-
-            # refresh config display
-            self.scrtext_config.configure(state=tk.NORMAL)
-            self.scrtext_config.delete('1.0', tk.END)
-            self.scrtext_config.insert(tk.INSERT, yaml.dump(self.config, default_flow_style=False, sort_keys=False))
-            self.scrtext_config.configure(state=tk.DISABLED)
         
         self._save_config(self.config)
 

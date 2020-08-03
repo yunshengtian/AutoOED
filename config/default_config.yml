@@ -2,9 +2,8 @@
 
 general: 
   n_init_sample: required # number of initial random samples
-  batch_size: required
-  n_iter: required # number of algorithm iterations
-  n_process: 1 # number of parallel processes used in algorithm
+  batch_size: 5
+  n_iter: 1 # number of algorithm iterations
 problem: 
   name: required
   n_var: required
@@ -16,6 +15,7 @@ problem:
   ref_point: null # reference point for hypervolume calculation
 algorithm: 
   name: required
+  n_process: 1 # number of parallel processes used in algorithm
   surrogate:
     name: gp
     n_spectral_pts: 100

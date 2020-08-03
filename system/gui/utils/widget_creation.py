@@ -15,38 +15,38 @@ combobox_width = 10
 
 
 def create_frame(master, row, column, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
-    frame = tk.Frame(master=master, bg='white')
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW', bg='white'):
+    frame = tk.Frame(master=master, bg=bg)
     frame.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return frame
 
 
 def create_labeled_frame(master, row, column, text, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
-    frame = tk.LabelFrame(master=master, bg='white', text=text)
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW', bg='white'):
+    frame = tk.LabelFrame(master=master, bg=bg, text=text)
     frame.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return frame
 
 
 def create_label(master, row, column, text, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
-    label = tk.Label(master=master, bg='white', text=text)
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W', bg='white'):
+    label = tk.Label(master=master, bg=bg, text=text)
     label.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
 
 
 def create_entry(master, row, column, class_type, width=entry_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
-    entry = tk.Entry(master=master, bg='white', width=width, justify='right')
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W', bg='white'):
+    entry = tk.Entry(master=master, bg=bg, width=width, justify='right')
     entry.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
-def create_labeled_entry(master, row, column, text, class_type, width=entry_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='EW'):
-    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+def create_labeled_entry(master, row, column, text, class_type, width=entry_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='EW', bg='white'):
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky, bg)
     grid_configure(frame, [0], [0, 1])
-    label_text = text + ' (*): ' if required else text + ': '
-    label = tk.Label(master=frame, bg='white', text=label_text)
+    label_text = text + ' (*): ' if required and required_mark else text + ': '
+    label = tk.Label(master=frame, bg=bg, text=label_text)
     label.grid(row=0, column=0, sticky='W')
     entry = tk.Entry(master=frame, bg='white', width=width, justify='right')
     entry.grid(row=0, column=1, sticky='E')
@@ -60,12 +60,12 @@ def create_combobox(master, row, column, values, width=combobox_width, required=
     return get_entry('string', combobox, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
-def create_labeled_combobox(master, row, column, text, values, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
-    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+def create_labeled_combobox(master, row, column, text, values, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW', bg='white'):
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky, bg)
     grid_configure(frame, [0], [0, 1])
-    label_text = text + ' (*): ' if required else text + ': '
-    label = tk.Label(master=frame, bg='white', text=label_text)
+    label_text = text + ' (*): ' if required and required_mark else text + ': '
+    label = tk.Label(master=frame, bg=bg, text=label_text)
     label.grid(row=0, column=0, sticky='W')
     combobox = ttk.Combobox(master=frame, values=values, width=width)
     combobox.grid(row=0, column=1, sticky='E')
