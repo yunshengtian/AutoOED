@@ -196,9 +196,11 @@ class GUI:
             # parameter section
             frame_param = tk.Frame(master=window, bg='white')
             frame_param.grid(row=0, column=0)
+            grid_configure(frame_param, [0, 1, 2], [0])
 
             # general subsection
             frame_general = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='General')
+            grid_configure(frame_general, [0, 1, 2, 3], [0])
             widget_map['general']['n_init_sample'] = create_widget('labeled_entry', 
                 master=frame_general, row=0, column=0, text=name_map['general']['n_init_sample'], class_type='int', required=True, 
                 valid_check=lambda x: x > 0, error_msg='number of initial samples must be positive', changeable=False)
@@ -213,7 +215,8 @@ class GUI:
                 valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
 
             # problem subsection
-            frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=1, text='Problem')
+            frame_problem = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Problem')
+            grid_configure(frame_problem, [0, 1, 2, 3, 4, 5], [0])
             widget_map['problem']['name'] = create_widget('labeled_combobox', 
                 master=frame_problem, row=0, column=0, text=name_map['problem']['name'], values=get_problem_list(), required=True, 
                 valid_check=lambda x: x in get_problem_list(), error_msg="problem doesn't exist", changeable=False)
@@ -234,7 +237,8 @@ class GUI:
                 valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
 
             # algorithm subsection
-            frame_algorithm = create_widget('labeled_frame', master=frame_param, row=0, column=2, text='Algorithm')
+            frame_algorithm = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Algorithm')
+            grid_configure(frame_algorithm, [0], [0])
             widget_map['algorithm']['name'] = create_widget('labeled_combobox', 
                 master=frame_algorithm, row=0, column=0, text=name_map['algorithm']['name'], values=get_available_algorithms(), required=True, 
                 valid_check=lambda x: x in get_available_algorithms(), error_msg="algorithm doesn't exist")
