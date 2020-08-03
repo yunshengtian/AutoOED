@@ -14,9 +14,12 @@ from problems.common import build_problem, get_problem_list, get_yaml_problem_li
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent
 from system.utils import process_config, load_config, get_available_algorithms, find_closest_point, check_pareto
-from system.gui.radar import radar_factory
-from system.gui.excel import Excel
-from system.gui.utils import *
+from system.gui.utils.entry import get_entry
+from system.gui.utils.excel import Excel
+from system.gui.utils.listbox import Listbox
+from system.gui.utils.grid import grid_configure, embed_figure
+from system.gui.utils.radar import radar_factory
+from system.gui.utils.widget_creation import create_widget
 
 
 class GUI:
@@ -79,6 +82,7 @@ class GUI:
         self.n_curr_sample = None
         self.curr_iter = tk.IntVar()
         self.max_iter = 0
+        self.in_creating_problem = False
 
         # GUI modules initialization
         self._init_menu()
@@ -194,44 +198,44 @@ class GUI:
             frame_param.grid(row=0, column=0)
 
             # general subsection
-            frame_general = create_labeled_frame(master=frame_param, row=0, column=0, text='General')
-            widget_map['general']['n_init_sample'] = create_labeled_entry(
-                master=frame_general, row=0, column=0, text=name_map['general']['n_init_sample'], class_type=IntEntry, required=True, 
+            frame_general = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='General')
+            widget_map['general']['n_init_sample'] = create_widget('labeled_entry', 
+                master=frame_general, row=0, column=0, text=name_map['general']['n_init_sample'], class_type='int', required=True, 
                 valid_check=lambda x: x > 0, error_msg='number of initial samples must be positive', changeable=False)
-            widget_map['general']['batch_size'] = create_labeled_entry(
-                master=frame_general, row=1, column=0, text=name_map['general']['batch_size'], class_type=IntEntry, required=True, 
+            widget_map['general']['batch_size'] = create_widget('labeled_entry', 
+                master=frame_general, row=1, column=0, text=name_map['general']['batch_size'], class_type='int', required=True, 
                 valid_check=lambda x: x > 0, error_msg='number of batch size must be positive')
-            widget_map['general']['n_iter'] = create_labeled_entry(
-                master=frame_general, row=2, column=0, text=name_map['general']['n_iter'], class_type=IntEntry, required=True, 
+            widget_map['general']['n_iter'] = create_widget('labeled_entry', 
+                master=frame_general, row=2, column=0, text=name_map['general']['n_iter'], class_type='int', required=True, 
                 valid_check=lambda x: x > 0, error_msg='number of optimization iteration must be positive')
-            widget_map['general']['n_process'] = create_labeled_entry(
-                master=frame_general, row=3, column=0, text=name_map['general']['n_process'], class_type=IntEntry, default=1, 
+            widget_map['general']['n_process'] = create_widget('labeled_entry', 
+                master=frame_general, row=3, column=0, text=name_map['general']['n_process'], class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
 
             # problem subsection
-            frame_problem = create_labeled_frame(master=frame_param, row=0, column=1, text='Problem')
-            widget_map['problem']['name'] = create_labeled_combobox(
+            frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=1, text='Problem')
+            widget_map['problem']['name'] = create_widget('labeled_combobox', 
                 master=frame_problem, row=0, column=0, text=name_map['problem']['name'], values=get_problem_list(), required=True, 
                 valid_check=lambda x: x in get_problem_list(), error_msg="problem doesn't exist", changeable=False)
-            widget_map['problem']['n_var'] = create_labeled_entry(
-                master=frame_problem, row=1, column=0, text=name_map['problem']['n_var'], class_type=IntEntry, 
+            widget_map['problem']['n_var'] = create_widget('labeled_entry', 
+                master=frame_problem, row=1, column=0, text=name_map['problem']['n_var'], class_type='int', 
                 valid_check=lambda x: x > 0, error_msg='number of design variables must be positive', changeable=False)
-            widget_map['problem']['n_obj'] = create_labeled_entry(
-                master=frame_problem, row=2, column=0, text=name_map['problem']['n_obj'], class_type=IntEntry, 
+            widget_map['problem']['n_obj'] = create_widget('labeled_entry', 
+                master=frame_problem, row=2, column=0, text=name_map['problem']['n_obj'], class_type='int', 
                 valid_check=lambda x: x > 1, error_msg='number of objectives must be greater than 1', changeable=False)
-            widget_map['problem']['var_lb'] = create_labeled_entry(
-                master=frame_problem, row=3, column=0, text=name_map['problem']['var_lb'], class_type=FloatListEntry, width=10, 
+            widget_map['problem']['var_lb'] = create_widget('labeled_entry', 
+                master=frame_problem, row=3, column=0, text=name_map['problem']['var_lb'], class_type='floatlist', width=10, 
                 valid_check=lambda x: len(x) in [1, widget_map['problem']['n_var'].get()], error_msg='size of bound mismatches number of design variables') # TODO: default?
-            widget_map['problem']['var_ub'] = create_labeled_entry(
-                master=frame_problem, row=4, column=0, text=name_map['problem']['var_ub'], class_type=FloatListEntry, width=10, 
+            widget_map['problem']['var_ub'] = create_widget('labeled_entry', 
+                master=frame_problem, row=4, column=0, text=name_map['problem']['var_ub'], class_type='floatlist', width=10, 
                 valid_check=lambda x: len(x) in [1, widget_map['problem']['n_var'].get()], error_msg='size of bound mismatches number of design variables') # TODO: default?
-            widget_map['problem']['ref_point'] = create_labeled_entry(
-                master=frame_problem, row=5, column=0, text=name_map['problem']['ref_point'], class_type=FloatListEntry, width=10, 
+            widget_map['problem']['ref_point'] = create_widget('labeled_entry', 
+                master=frame_problem, row=5, column=0, text=name_map['problem']['ref_point'], class_type='floatlist', width=10, 
                 valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
 
             # algorithm subsection
-            frame_algorithm = create_labeled_frame(master=frame_param, row=0, column=2, text='Algorithm')
-            widget_map['algorithm']['name'] = create_labeled_combobox(
+            frame_algorithm = create_widget('labeled_frame', master=frame_param, row=0, column=2, text='Algorithm')
+            widget_map['algorithm']['name'] = create_widget('labeled_combobox', 
                 master=frame_algorithm, row=0, column=0, text=name_map['algorithm']['name'], values=get_available_algorithms(), required=True, 
                 valid_check=lambda x: x in get_available_algorithms(), error_msg="algorithm doesn't exist")
 
@@ -278,8 +282,8 @@ class GUI:
             # action section
             frame_action = tk.Frame(master=window, bg='white')
             frame_action.grid(row=1, column=0, columnspan=3)
-            create_button(master=frame_action, row=0, column=0, text='Save', command=gui_save_config)
-            create_button(master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
+            create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_config)
+            create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
             # load current config values to entry if not first time setting config
             if change:
@@ -306,67 +310,77 @@ class GUI:
         '''
         Problem menu initialization
         '''
-        self.menu_problem.add_command(label='Create')
-        self.menu_problem.add_command(label='Change')
         self.menu_problem.add_command(label='Manage')
 
-        def gui_build_problem_window(change=False):
-            '''
-            Build problem GUI
-            '''
-            # displayed name of each property
-            name_map = {
-                'name': 'Name',
-                'n_var': 'Number of design variables',
-                'n_obj': 'Number of objectives',
-                'n_constr': 'Number of constraints',
-                'performance_eval': 'Performance evaluation script',
-                'constraint_eval': 'Constraint evaluation script',
-                'var_name': 'Names',
-                'obj_name': 'Names',
-                'var_lb': 'Lower bound',
-                'var_ub': 'Upper bound',
-                'obj_lb': 'Lower bound',
-                'obj_ub': 'Upper bound',
-            }
+        # displayed name of each property
+        name_map = {
+            'name': 'Name',
+            'n_var': 'Number of design variables',
+            'n_obj': 'Number of objectives',
+            'n_constr': 'Number of constraints',
+            'performance_eval': 'Performance evaluation script',
+            'constraint_eval': 'Constraint evaluation script',
+            'var_name': 'Names',
+            'obj_name': 'Names',
+            'var_lb': 'Lower bound',
+            'var_ub': 'Upper bound',
+            'obj_lb': 'Lower bound',
+            'obj_ub': 'Upper bound',
+        }
 
-            # problem config, structured as a dict
-            problem_cfg = {}
-
-            window_0 = tk.Toplevel(master=self.root)
-            if change:
-                window_0.title('Change Problem')
-            else:
-                window_0.title('Create Problem')
-            window_0.configure(bg='white')
-            window_0.resizable(False, False)
+        def gui_manage_problem():
+            '''
+            Manage problems
+            '''
+            window = tk.Toplevel(master=self.root)
+            window.title('Manage Problem')
+            window.configure(bg='white')
+            window.resizable(False, False)
 
             # problem section
-            frame_problem = create_labeled_frame(master=window_0, row=0, column=0, text='Problem')
+            frame_problem = create_widget('frame', master=window, row=0, column=0)
+            frame_list = create_widget('labeled_frame', master=frame_problem, row=0, column=0, text='Problem List')
+            frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, padx=5, pady=5)
+            frame_list_action = create_widget('frame', master=frame_list, row=1, column=0, padx=0, pady=0)
+            frame_config = create_widget('labeled_frame', master=frame_problem, row=0, column=1, text='Problem Config')
+            frame_config_display = create_widget('frame', master=frame_config, row=0, column=0, padx=0, pady=0)
+            frame_config_action = create_widget('frame', master=frame_config, row=1, column=0, padx=0, pady=0)
+            
+            grid_configure(frame_list, [0], [0])
+            grid_configure(frame_config_action, [0], [0, 1])
+
+            # list subsection
+            listbox_problem = Listbox(master=frame_list_display)
+            listbox_problem.grid()
+            
+            button_create = create_widget('button', master=frame_list_action, row=0, column=0, text='Create')
+            button_delete = create_widget('button', master=frame_list_action, row=0, column=1, text='Delete')
+
+            # config subsection
             widget_map = {}
-            if change:
-                widget_map['name'] = create_labeled_combobox(
-                    master=frame_problem, row=0, column=0, text=name_map['name'], values=get_yaml_problem_list(), width=15, required=True, 
-                    valid_check=lambda x: x in get_yaml_problem_list(), error_msg="problem doesn't exist")
-            else:
-                widget_map['name'] = create_labeled_entry(
-                    master=frame_problem, row=0, column=0, text=name_map['name'], class_type=StringEntry, width=15, required=True, 
-                    valid_check=lambda x: x not in get_problem_list(), error_msg='problem already exists')
-            widget_map['n_var'] = create_labeled_entry(
-                master=frame_problem, row=1, column=0, text=name_map['n_var'], class_type=IntEntry, 
+            widget_map['name'] = create_widget('labeled_entry', 
+                master=frame_config_display, row=0, column=0, text=name_map['name'], class_type='string', width=15, required=True)
+            widget_map['n_var'] = create_widget('labeled_entry', 
+                master=frame_config_display, row=1, column=0, text=name_map['n_var'], class_type='int', required=True,
                 valid_check=lambda x: x > 0, error_msg='number of design variables must be positive')
-            widget_map['n_obj'] = create_labeled_entry(
-                master=frame_problem, row=2, column=0, text=name_map['n_obj'], class_type=IntEntry, 
+            widget_map['n_obj'] = create_widget('labeled_entry', 
+                master=frame_config_display, row=2, column=0, text=name_map['n_obj'], class_type='int', required=True,
                 valid_check=lambda x: x > 1, error_msg='number of objectives must be greater than 1')
-            widget_map['n_constr'] = create_labeled_entry(
-                master=frame_problem, row=3, column=0, text=name_map['n_constr'], class_type=IntEntry, default=0, 
+            widget_map['n_constr'] = create_widget('labeled_entry', 
+                master=frame_config_display, row=3, column=0, text=name_map['n_constr'], class_type='int', default=0, 
                 valid_check=lambda x: x >= 0, error_msg='number of constraints must be positive')
+
+            problem_cfg = {}
+
+            frame_config_space = create_widget('frame', master=frame_config_display, row=4, column=0)
+            button_config_design = create_widget('button', master=frame_config_space, row=0, column=0, text='Configure design space', pady=0)
+            button_config_performance = create_widget('button', master=frame_config_space, row=0, column=1, text='Configure performance space', pady=0)
 
             def gui_set_performance_script():
                 '''
                 Set path of performance evaluation script
                 '''
-                filename = tk.filedialog.askopenfilename(parent=window_0)
+                filename = tk.filedialog.askopenfilename(parent=window)
                 if not isinstance(filename, str) or filename == '': return
                 widget_map['performance_eval'].set(filename)
 
@@ -383,18 +397,20 @@ class GUI:
                     return False
                 return True
 
-            frame_performance_script = create_frame(master=frame_problem, row=4, column=0, padx=0)
-            create_label(master=frame_performance_script, row=0, column=0, text=name_map['performance_eval'] + ' (*): ', columnspan=2)
-            button_performance_browse = create_button(master=frame_performance_script, row=1, column=0, text='Browse', command=gui_set_performance_script, pady=0)
-            widget_map['performance_eval'] = create_entry(
-                master=frame_performance_script, row=1, column=1, class_type=StringEntry, width=30, required=True, 
-                valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside", pady=0)
+            frame_performance_script = create_widget('frame', master=frame_config_display, row=5, column=0, padx=0)
+            create_widget('label', master=frame_performance_script, row=0, column=0, text=name_map['performance_eval'] + ' (*): ', columnspan=2)
+            button_browse_performance = create_widget('button', master=frame_performance_script, row=1, column=0, text='Browse', command=gui_set_performance_script, pady=0)
+            widget_map['performance_eval'] = create_widget('entry', 
+                master=frame_performance_script, row=1, column=1, class_type='string', width=30, required=True, 
+                valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside", 
+                pady=0, sticky='EW')
+            grid_configure(frame_performance_script, [0], [1])
 
             def gui_set_constraint_script():
                 '''
                 Set path of constraint evaluation script
                 '''
-                filename = tk.filedialog.askopenfilename(parent=window_0)
+                filename = tk.filedialog.askopenfilename(parent=window)
                 if not isinstance(filename, str) or filename == '': return
                 widget_map['constraint_eval'].set(filename)
 
@@ -411,25 +427,157 @@ class GUI:
                     return False
                 return True
 
-            frame_constraint_script = create_frame(master=frame_problem, row=5, column=0, padx=0)
-            create_label(master=frame_constraint_script, row=0, column=0, text=name_map['constraint_eval'] + ': ', columnspan=2)
-            button_constraint_browse = create_button(master=frame_constraint_script, row=1, column=0, text='Browse', command=gui_set_constraint_script, pady=0)
-            widget_map['constraint_eval'] = create_entry(
-                master=frame_constraint_script, row=1, column=1, class_type=StringEntry, width=30, 
-                valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside", pady=0)
+            frame_constraint_script = create_widget('frame', master=frame_config_display, row=6, column=0, padx=0)
+            create_widget('label', master=frame_constraint_script, row=0, column=0, text=name_map['constraint_eval'] + ': ', columnspan=2)
+            button_browse_constraint = create_widget('button', master=frame_constraint_script, row=1, column=0, text='Browse', command=gui_set_constraint_script, pady=0)
+            widget_map['constraint_eval'] = create_widget('entry', 
+                master=frame_constraint_script, row=1, column=1, class_type='string', width=30, 
+                valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside", 
+                pady=0, sticky='EW')
+            grid_configure(frame_constraint_script, [0], [1])
+
+            button_save = create_widget('button', master=frame_config_action, row=0, column=0, text='Save')
+            button_cancel = create_widget('button', master=frame_config_action, row=0, column=1, text='Cancel')
+
+            def gui_set_design_space():
+                '''
+                Set design space parameters
+                '''
+                # validity check
+                try:
+                    n_var = widget_map['n_var'].get()
+                except:
+                    error_msg = widget_map['n_var'].get_error_msg()
+                    error_msg = '' if error_msg is None else ': ' + error_msg
+                    tk.messagebox.showinfo('Error', 'Invalid value for "' + name_map['n_var'] + '"' + error_msg, parent=window)
+                    return
+
+                titles = ['var_name', 'var_lb', 'var_ub']
+
+                window_design = tk.Toplevel(master=window)
+                window_design.title('Configure Design Space')
+                window_design.configure(bg='white')
+                window_design.resizable(False, False)
+
+                # design space section
+                frame_design = create_widget('labeled_frame', master=window_design, row=0, column=0, text='Design Space')
+                create_widget('label', master=frame_design, row=0, column=0, text='Enter the properties for design variables:')
+                excel_design = Excel(master=frame_design, rows=n_var, columns=3, width=15,
+                    title=[name_map[title] for title in titles], dtype=[str, float, float], default=[None, 0, 1])
+                excel_design.grid(row=1, column=0)
+                excel_design.set_column(0, [f'x{i + 1}' for i in range(n_var)])
+
+                def gui_save_design_space():
+                    '''
+                    Save design space parameters
+                    '''
+                    temp_cfg = {}
+                    for column, key in enumerate(titles):
+                        try:
+                            temp_cfg[key] = excel_design.get_column(column)
+                        except:
+                            tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_design)
+                            return
+                    for key, val in temp_cfg:
+                        problem_cfg[key] = val
+
+                # action section
+                frame_action = tk.Frame(master=window_design, bg='white')
+                frame_action.grid(row=1, column=0)
+                create_widget('button', frame_action, 0, 0, 'Save', gui_save_design_space)
+                create_widget('button', frame_action, 0, 1, 'Cancel', window_design.destroy)
+
+            def gui_set_performance_space():
+                '''
+                Set performance space parameters
+                '''
+                # validity check
+                try:
+                    n_obj = widget_map['n_obj'].get()
+                except:
+                    error_msg = widget_map['n_obj'].get_error_msg()
+                    error_msg = '' if error_msg is None else ': ' + error_msg
+                    tk.messagebox.showinfo('Error', 'Invalid value for "' + name_map['n_obj'] + '"' + error_msg, parent=window)
+                    return
+
+                titles = ['obj_name', 'obj_lb', 'obj_ub']
+
+                window_performance = tk.Toplevel(master=window)
+                window_performance.title('Configure Performance Space')
+                window_performance.configure(bg='white')
+                window_performance.resizable(False, False)
+
+                # performance space section
+                frame_performance = create_widget('labeled_frame', master=window_performance, row=0, column=0, text='Performance Space')
+                create_widget('label', master=frame_performance, row=0, column=0, text='Enter the properties for objectives:')
+                excel_performance = Excel(master=frame_performance, rows=n_obj, columns=3, width=15,
+                    title=[name_map[title] for title in titles], dtype=[str, float, float])
+                excel_performance.grid(row=1, column=0)
+                excel_performance.set_column(0, [f'f{i + 1}' for i in range(n_obj)])
+
+                def gui_save_performance_space():
+                    '''
+                    Save performance space parameters
+                    '''
+                    temp_cfg = {}
+                    for column, key in enumerate(titles):
+                        try:
+                            temp_cfg[key] = excel.get_column(column)
+                        except:
+                            tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_performance)
+                            return
+                    for key, val in temp_cfg:
+                        problem_cfg[key] = val
+
+                # action section
+                frame_action = tk.Frame(master=window_performance, bg='white')
+                frame_action.grid(row=1, column=0)
+                create_widget('button', frame_action, 0, 0, 'Save', gui_save_performance_space)
+                create_widget('button', frame_action, 0, 1, 'Cancel', window_performance.destroy)
+
+            def exit_creating_problem():
+                '''
+                Exit creating problem status
+                '''
+                self.in_creating_problem = False
+                button_create.configure(state=tk.NORMAL)
+                listbox_problem.delete(tk.END)
+
+            def enable_config_widgets():
+                '''
+                Enable all config widgets
+                '''
+                for button in [button_save, button_cancel, button_config_design, button_config_performance, button_browse_performance, button_browse_constraint]:
+                    button.configure(state=tk.NORMAL)
+                for widget in widget_map.values():
+                    widget.enable()
+                    widget.set(None)
+
+            def disable_config_widgets():
+                '''
+                Disable all config widgets
+                '''
+                for button in [button_save, button_cancel, button_config_design, button_config_performance, button_browse_performance, button_browse_constraint]:
+                    button.configure(state=tk.DISABLED)
+                for widget in widget_map.values():
+                    widget.set(None)
+                    widget.disable()
 
             def save_entry_values(entry_map, config):
                 '''
                 Save values of entries to config dict
                 '''
+                temp_config = {}
                 for name, widget in entry_map.items():
                     try:
-                        config[name] = widget.get()
+                        temp_config[name] = widget.get()
                     except:
                         error_msg = widget.get_error_msg()
                         error_msg = '' if error_msg is None else ': ' + error_msg
-                        tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[name]}"' + error_msg, parent=window_0)
+                        tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[name]}"' + error_msg, parent=window)
                         raise Exception()
+                for key, val in temp_config.items():
+                    config[key] = val
 
             def load_entry_values(entry_map, config):
                 '''
@@ -438,155 +586,137 @@ class GUI:
                 for name, widget in entry_map.items():
                     widget.set(config[name])
 
-            def gui_set_design_space():
+            def gui_save_change():
                 '''
-                Set design space parameters
+                Save changes to problem
                 '''
-                # save current entry values
-                try:
-                    save_entry_values(widget_map, problem_cfg)
-                except:
-                    return
-                window_0.destroy()
-
-                window_1 = tk.Toplevel(master=self.root)
-                window_1.title('Create Problem')
-                window_1.configure(bg='white')
-                window_1.resizable(False, False)
-
-                # design space section
-                frame_design = create_labeled_frame(master=window_1, row=0, column=0, text='Design Space')
-                create_label(master=frame_design, row=0, column=0, text='Enter the properties for design variables:')
-                n_var = problem_cfg['n_var'] if problem_cfg['n_var'] is not None else 1
-                excel_design = Excel(master=frame_design, rows=n_var, columns=3, width=15,
-                    title=[name_map['var_name'], name_map['var_lb'], name_map['var_ub']], dtype=[str, float, float], default=[None, 0, 1])
-                excel_design.grid(row=1, column=0)
-                excel_design.set_column(0, [f'x{i + 1}' for i in range(n_var)])
-
-                def save_design_excel_values(excel, config):
-                    '''
-                    Save values of design properties to config dict
-                    '''
-                    for key, column in zip(['var_name', 'var_lb', 'var_ub'], [0, 1, 2]):
-                        try:
-                            config[key] = excel.get_column(column)
-                        except:
-                            tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_1)
-                            raise Exception()
-
-                def gui_set_performance_space():
-                    '''
-                    Set performance space parameters
-                    '''
-                    # save current entry values
+                if self.in_creating_problem:
+                    # try to save changes
                     try:
-                        save_design_excel_values(excel_design, problem_cfg)
+                        name = widget_map['name'].get()
+                    except:
+                        error_msg = widget_map['name'].get_error_msg()
+                        error_msg = '' if error_msg is None else ': ' + error_msg
+                        tk.messagebox.showinfo('Error', 'Invalid value for "' + name_map['name'] + '"' + error_msg, parent=window)
+                        return
+
+                    if name in get_problem_list():
+                        tk.messagebox.showinfo('Error', f'Problem {name} already exists', parent=window)
+                        return
+                    try:
+                        save_entry_values(widget_map, problem_cfg)
                     except:
                         return
-                    window_1.destroy()
+                    self.agent_problem.save_problem(problem_cfg)
+                    tk.messagebox.showinfo('Success', f'Problem {name} saved', parent=window)
+                    
+                    # reload
+                    exit_creating_problem()
+                    listbox_problem.reload()
+                    listbox_problem.select(name)
+                else:
+                    old_name = listbox_problem.get(tk.ANCHOR)
+                    if_save = tk.messagebox.askquestion('Save Changes', f'Are you sure to save the changes for problem "{old_name}"?', parent=window)
 
-                    window_2 = tk.Toplevel(master=self.root)
-                    window_2.title('Create Problem')
-                    window_2.configure(bg='white')
-                    window_2.resizable(False, False)
-
-                    # performance space section
-                    frame_performance = create_labeled_frame(master=window_2, row=0, column=0, text='Performance Space')
-                    create_label(master=frame_performance, row=0, column=0, text='Enter the properties for objectives:')
-                    n_obj = problem_cfg['n_obj'] if problem_cfg['n_obj'] is not None else 1
-                    excel_performance = Excel(master=frame_performance, rows=n_obj, columns=3, width=15,
-                        title=[name_map['obj_name'], name_map['obj_lb'], name_map['obj_ub']], dtype=[str, float, float])
-                    excel_performance.grid(row=1, column=0)
-                    excel_performance.set_column(0, [f'f{i + 1}' for i in range(n_obj)])
-
-                    def save_performance_excel_values(excel, config):
-                        '''
-                        Save values of performance properties to config dict
-                        '''
-                        for key, column in zip(['obj_name', 'obj_lb', 'obj_ub'], [0, 1, 2]):
-                            try:
-                                config[key] = excel.get_column(column)
-                            except:
-                                tk.messagebox.showinfo('Error', f'Invalid value for "{name_map[key]}"', parent=window_2)
-                                raise Exception()
-
-                    def gui_finish_create_problem():
-                        '''
-                        Finish creating problem
-                        '''
-                        # save current entry values
+                    if if_save == 'yes':
+                        # try to save changes
+                        new_name = widget_map['name'].get()
+                        if old_name != new_name: # problem name changed
+                            if new_name in get_problem_list():
+                                tk.messagebox.showinfo('Error', f'Problem {new_name} already exists', parent=window)
+                                return
                         try:
-                            save_performance_excel_values(excel_performance, problem_cfg)
+                            save_entry_values(widget_map, problem_cfg)
                         except:
                             return
-                        window_2.destroy()
-
+                        if old_name != new_name:
+                            self.agent_problem.remove_problem(old_name)
                         self.agent_problem.save_problem(problem_cfg)
+                        tk.messagebox.showinfo('Success', f'Problem {problem_cfg["name"]} saved', parent=window)
 
-                    # action section
-                    frame_action = tk.Frame(master=window_2, bg='white')
-                    frame_action.grid(row=1, column=0)
-                    create_button(frame_action, 0, 0, 'Finish', gui_finish_create_problem)
-                    create_button(frame_action, 0, 1, 'Cancel', window_2.destroy)
+                        # reload
+                        listbox_problem.reload()
+                        listbox_problem.select(new_name)
+                    else:
+                        # cancel changes
+                        return
 
-                # action section
-                frame_action = tk.Frame(master=window_1, bg='white')
-                frame_action.grid(row=1, column=0)
-                create_button(frame_action, 0, 0, 'Continue', gui_set_performance_space)
-                create_button(frame_action, 0, 1, 'Cancel', window_1.destroy)
+            def gui_cancel_change():
+                '''
+                Cancel changes to problem
+                '''
+                if self.in_creating_problem:
+                    exit_creating_problem()
+                    disable_config_widgets()
+                listbox_problem.select_event()
 
-            # action section
-            frame_action = tk.Frame(master=window_0, bg='white')
-            frame_action.grid(row=1, column=0)
-            button_continue = create_button(frame_action, 0, 0, 'Continue', gui_set_design_space)
-            create_button(frame_action, 0, 1, 'Cancel', window_0.destroy)
+            def gui_create_problem():
+                '''
+                Create new problem
+                '''
+                self.in_creating_problem = True
+                
+                listbox_problem.insert(tk.END, '')
+                listbox_problem.select_clear(0, tk.END)
+                listbox_problem.select_set(tk.END)
 
-            # disable widgets until problem selected
-            if change:
-                for widget_name in ['n_var', 'n_obj', 'n_constr', 'performance_eval', 'constraint_eval']:
-                    widget_map[widget_name].disable()
-                button_performance_browse.configure(state=tk.DISABLED)
-                button_constraint_browse.configure(state=tk.DISABLED)
-                button_continue.configure(state=tk.DISABLED)
+                enable_config_widgets()
+                button_create.configure(state=tk.DISABLED)
+                button_delete.configure(state=tk.DISABLED)
 
-                def gui_problem_selected(event):
-                    '''
-                    Select problem, load problem config, enable widgets
-                    '''
-                    name = widget_map['name'].get()
+            def gui_delete_problem():
+                '''
+                Delete selected problem
+                '''
+                index = int(listbox_problem.curselection()[0])
+                name = listbox_problem.get(index)
+                if_delete = tk.messagebox.askquestion('Delete Problem', f'Are you sure to delete problem "{name}"?', parent=window)
+                if if_delete == 'yes':
+                    listbox_problem.delete(index)
+                    listbox_size = listbox_problem.size()
+                    if listbox_size == 0:
+                        button_delete.configure(state=tk.DISABLED)
+                        disable_config_widgets()
+                    else:
+                        listbox_problem.select_set(min(index, listbox_size - 1))
+                        listbox_problem.select_event()
+                    self.agent_problem.remove_problem(name)
+                else:
+                    return
 
-                    for widget in widget_map.values():
-                        widget.enable()
-                    button_performance_browse.configure(state=tk.NORMAL)
-                    button_constraint_browse.configure(state=tk.NORMAL)
-                    button_continue.configure(state=tk.NORMAL)
+            def gui_select_problem(event):
+                '''
+                Select problem, load problem config
+                '''
+                try:
+                    index = int(event.widget.curselection()[0])
+                except:
+                    return
+                name = event.widget.get(index)
+                if name == '':
+                    return
+                elif self.in_creating_problem:
+                    exit_creating_problem()
 
-                    config = self.agent_problem.load_problem(name)
-                    load_entry_values(widget_map, config)
+                enable_config_widgets()
+                config = self.agent_problem.load_problem(name)
+                load_entry_values(widget_map, config)
 
-                widget_map['name'].widget.bind("<<ComboboxSelected>>", gui_problem_selected)
+                button_delete.configure(state=tk.NORMAL)
 
-        def gui_create_problem():
-            '''
-            Create problem from GUI
-            '''
-            gui_build_problem_window(change=False)
+            listbox_problem.bind_cmd(reload_cmd=get_yaml_problem_list, select_cmd=gui_select_problem)
+            listbox_problem.reload()
 
-        def gui_change_problem():
-            '''
-            Change problem from GUI
-            '''
-            gui_build_problem_window(change=True)
+            button_config_design.configure(command=gui_set_design_space)
+            button_config_performance.configure(command=gui_set_performance_space)
+            button_save.configure(command=gui_save_change)
+            button_cancel.configure(command=gui_cancel_change)
+            button_create.configure(command=gui_create_problem)
+            button_delete.configure(command=gui_delete_problem)
+            button_delete.configure(state=tk.DISABLED)
+            disable_config_widgets()
 
-        def gui_manage_problem():
-            '''
-            Manage created problems (TODO)
-            '''
-            pass
-
-        self.menu_problem.entryconfig(0, command=gui_create_problem)
-        self.menu_problem.entryconfig(1, command=gui_change_problem)
-        self.menu_problem.entryconfig(2, command=gui_manage_problem)
+        self.menu_problem.entryconfig(0, command=gui_manage_problem)
 
     def _init_log_menu(self):
         '''
@@ -750,7 +880,7 @@ class GUI:
             # design variable entry
             entry_x = tk.Entry(master=window, bg='white', width=50)
             entry_x.grid(row=1, column=0, padx=10, sticky='EW')
-            entry_x = FloatListEntry(widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
+            entry_x = get_entry('floatlist', widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
 
             # ask before evaluation checkbox
             ask_var = tk.IntVar()
