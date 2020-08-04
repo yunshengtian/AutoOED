@@ -1237,6 +1237,51 @@ class GUI:
         
         self._save_config(self.config)
 
+    def _log(self, string):
+        '''
+        Log texts to ScrolledText widget for logging
+        '''
+        self.scrtext_log.configure(state=tk.NORMAL)
+        self.scrtext_log.insert(tk.INSERT, string + '\n')
+        self.scrtext_log.configure(state=tk.DISABLED)
+
+    def _refresh(self):
+        '''
+        Refresh current GUI status and redraw if data has changed
+        '''
+        self._check_status()
+        self._redraw()
+        self.root.after(self.refresh_rate, self._refresh)
+
+    def _start_worker(self, worker):
+        '''
+        Start a worker process
+        '''
+        worker.start()
+        self.processes.append([self.process_id, worker])
+        self._log(f'worker {self.process_id} started')
+        self.process_id += 1
+
+    def _check_status(self):
+        '''
+        Check if current processes are alive
+        '''
+        with self.lock:
+            completed_ps = []
+            for p in self.processes:
+                pid, worker = p
+                if not worker.is_alive():
+                    completed_ps.append(p)
+                    self._log(f'worker {pid} completed')
+            for p in completed_ps:
+                self.processes.remove(p)
+        if len(self.processes) == 0:
+            self.button_stop.configure(state=tk.DISABLED)
+            if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
+                self.menu_config.entryconfig(0, state=tk.NORMAL)
+            if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
+                self.menu_config.entryconfig(2, state=tk.NORMAL)
+
     def _init_draw(self, true_pfront):
         '''
         First draw of figures and database viz
@@ -1306,14 +1351,14 @@ class GUI:
         n_var, n_obj = X.shape[1], Y.shape[1]
         titles = [f'x{i + 1}' for i in range(n_var)] + \
             [f'f{i + 1}' for i in range(n_obj)] + \
-            [f'expected_f{i + 1}' for i in range(n_obj)] + \
-            [f'uncertainty_f{i + 1}' for i in range(n_obj)] + \
+            [f'f{i + 1}_expected' for i in range(n_obj)] + \
+            [f'f{i + 1}_uncertainty' for i in range(n_obj)] + \
             ['pareto', 'config_id', 'batch_id']
         key_map = {
             'X': [f'x{i + 1}' for i in range(n_var)],
             'Y': [f'f{i + 1}' for i in range(n_obj)],
-            'Y_expected': [f'expected_f{i + 1}' for i in range(n_obj)],
-            'Y_uncertainty': [f'uncertainty_f{i + 1}' for i in range(n_obj)],
+            'Y_expected': [f'f{i + 1}_expected' for i in range(n_obj)],
+            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(n_obj)],
         }
 
         self.nb_viz.tab(2, state=tk.NORMAL)
@@ -1328,51 +1373,6 @@ class GUI:
             'config_id': np.zeros(self.n_init_sample, dtype=int), 
             'batch_id': np.zeros(self.n_init_sample, dtype=int)
         })
-
-    def _log(self, string):
-        '''
-        Log texts to ScrolledText widget for logging
-        '''
-        self.scrtext_log.configure(state=tk.NORMAL)
-        self.scrtext_log.insert(tk.INSERT, string + '\n')
-        self.scrtext_log.configure(state=tk.DISABLED)
-
-    def _refresh(self):
-        '''
-        Refresh current GUI status and redraw if data has changed
-        '''
-        self._check_status()
-        self._redraw()
-        self.root.after(self.refresh_rate, self._refresh)
-
-    def _start_worker(self, worker):
-        '''
-        Start a worker process
-        '''
-        worker.start()
-        self.processes.append([self.process_id, worker])
-        self._log(f'worker {self.process_id} started')
-        self.process_id += 1
-
-    def _check_status(self):
-        '''
-        Check if current processes are alive
-        '''
-        with self.lock:
-            completed_ps = []
-            for p in self.processes:
-                pid, worker = p
-                if not worker.is_alive():
-                    completed_ps.append(p)
-                    self._log(f'worker {pid} completed')
-            for p in completed_ps:
-                self.processes.remove(p)
-        if len(self.processes) == 0:
-            self.button_stop.configure(state=tk.DISABLED)
-            if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
-                self.menu_config.entryconfig(0, state=tk.NORMAL)
-            if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
-                self.menu_config.entryconfig(2, state=tk.NORMAL)
 
     def _clear_design_space(self):
         '''

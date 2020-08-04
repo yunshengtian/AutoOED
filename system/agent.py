@@ -39,8 +39,8 @@ class DataAgent:
         # keys and associated datatypes of database table
         key_list = [f'x{i + 1} real' for i in range(self.n_var)] + \
             [f'f{i + 1} real' for i in range(self.n_obj)] + \
-            [f'expected_f{i + 1} real' for i in range(self.n_obj)] + \
-            [f'uncertainty_f{i + 1} real' for i in range(self.n_obj)] + \
+            [f'f{i + 1}_expected real' for i in range(self.n_obj)] + \
+            [f'f{i + 1}_uncertainty real' for i in range(self.n_obj)] + \
             ['hv real', 'pred_error real', 'is_pareto boolean', 'config_id integer', 'batch_id integer']
         self.db.create('data', key=key_list)
         self.db.commit()
@@ -49,8 +49,8 @@ class DataAgent:
         self.key_map = {
             'X': [f'x{i + 1}' for i in range(self.n_var)],
             'Y': [f'f{i + 1}' for i in range(self.n_obj)],
-            'Y_expected': [f'expected_f{i + 1}' for i in range(self.n_obj)],
-            'Y_uncertainty': [f'uncertainty_f{i + 1}' for i in range(self.n_obj)],
+            'Y_expected': [f'f{i + 1}_expected' for i in range(self.n_obj)],
+            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.n_obj)],
             'hv': 'hv',
             'pred_error': 'pred_error',
             'is_pareto': 'is_pareto',
