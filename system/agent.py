@@ -27,10 +27,10 @@ class DataAgent:
 
         # create & init database
         db_path = os.path.join(result_dir, 'data.db')
-        self._create_db(db_path)
-        self._init_db(X_init, Y_init)
+        self._create(db_path)
+        self._init(X_init, Y_init)
 
-    def _create_db(self, db_path):
+    def _create(self, db_path):
         '''
         Create database table
         '''
@@ -103,7 +103,7 @@ class DataAgent:
                     result.append(mapped_key)
             return result
 
-    def _init_db(self, X, Y):
+    def _init(self, X, Y):
         '''
         Initialize database table with initial data X, Y
         '''

@@ -17,6 +17,7 @@ from system.utils import process_config, load_config, get_available_algorithms, 
 from system.gui.utils.entry import get_entry
 from system.gui.utils.excel import Excel
 from system.gui.utils.listbox import Listbox
+from system.gui.utils.table import Table
 from system.gui.utils.grid import grid_configure, embed_figure
 from system.gui.utils.radar import radar_factory
 from system.gui.utils.widget_creation import create_widget
@@ -67,6 +68,9 @@ class GUI:
         self.scrtext_log = None
         self.entry_batch_size = None
         self.entry_n_iter = None
+        self.nb_viz = None
+        self.frame_db = None
+        self.table_db = None
 
         # data to be plotted
         self.scatter_x = None
@@ -889,30 +893,36 @@ class GUI:
         '''
         Widgets initialization
         '''
-        self._init_figure_widgets()
+        self._init_viz_widgets()
         self._init_control_widgets()
-        self._init_display_widgets()
+        self._init_log_widgets()
 
-    def _init_figure_widgets(self):
+    def _init_viz_widgets(self):
         '''
-        Figure widgets initialization (visualization, statistics)
+        Visualization widgets initialization (design/performance visualization, statistics, database)
         '''
-        frame_figure = tk.Frame(master=self.root)
-        frame_figure.grid(row=0, column=0, rowspan=2, sticky='NSEW')
-        grid_configure(frame_figure, [0], [0])
+        frame_viz = tk.Frame(master=self.root)
+        frame_viz.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+        grid_configure(frame_viz, [0], [0])
 
         # configure tab widgets
-        nb = ttk.Notebook(master=frame_figure)
-        nb.grid(row=0, column=0, sticky='NSEW')
-        frame_viz = tk.Frame(master=nb)
-        frame_stat = tk.Frame(master=nb)
-        grid_configure(frame_viz, [0], [0])
+        self.nb_viz = ttk.Notebook(master=frame_viz)
+        self.nb_viz.grid(row=0, column=0, sticky='NSEW')
+        frame_plot = tk.Frame(master=self.nb_viz)
+        frame_stat = tk.Frame(master=self.nb_viz)
+        frame_db = tk.Frame(master=self.nb_viz)
+        grid_configure(frame_plot, [0], [0])
         grid_configure(frame_stat, [0], [0])
-        nb.add(child=frame_viz, text='Visualization')
-        nb.add(child=frame_stat, text='Statistics')
+        self.nb_viz.add(child=frame_plot, text='Visualization')
+        self.nb_viz.add(child=frame_stat, text='Statistics')
+        self.nb_viz.add(child=frame_db, text='Database')
+
+        # temporarily disable database tab until data loaded
+        self.nb_viz.tab(2, state=tk.DISABLED)
+        self.frame_db = frame_db
 
         # configure slider widget
-        frame_slider = tk.Frame(master=frame_figure)
+        frame_slider = tk.Frame(master=frame_viz)
         frame_slider.grid(row=1, column=0, padx=5, pady=5, sticky='EW')
         grid_configure(frame_slider, [0], [1])
         
@@ -954,7 +964,7 @@ class GUI:
         self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
 
         # connect matplotlib figure with tkinter GUI
-        embed_figure(self.fig1, frame_viz)
+        embed_figure(self.fig1, frame_plot)
         embed_figure(self.fig2, frame_stat)
 
         def gui_redraw_viz(val):
@@ -1119,7 +1129,7 @@ class GUI:
         self.button_stop.configure(command=gui_stop_optimize)
         self.button_input.configure(command=gui_user_input)
 
-    def _init_display_widgets(self):
+    def _init_log_widgets(self):
         '''
         Display widgets initialization (config, log)
         '''
@@ -1229,7 +1239,7 @@ class GUI:
 
     def _init_draw(self, true_pfront):
         '''
-        First draw of performance space, hypervolume curve and model prediction error
+        First draw of figures and database viz
         '''
         # load from database
         X, Y, hv_value, is_pareto = self.agent_data.load(['X', 'Y', 'hv', 'is_pareto'])
@@ -1291,6 +1301,33 @@ class GUI:
         # refresh figure
         self.fig1.canvas.draw()
         self.fig2.canvas.draw()
+
+        # initialize database viz
+        n_var, n_obj = X.shape[1], Y.shape[1]
+        titles = [f'x{i + 1}' for i in range(n_var)] + \
+            [f'f{i + 1}' for i in range(n_obj)] + \
+            [f'expected_f{i + 1}' for i in range(n_obj)] + \
+            [f'uncertainty_f{i + 1}' for i in range(n_obj)] + \
+            ['pareto', 'config_id', 'batch_id']
+        key_map = {
+            'X': [f'x{i + 1}' for i in range(n_var)],
+            'Y': [f'f{i + 1}' for i in range(n_obj)],
+            'Y_expected': [f'expected_f{i + 1}' for i in range(n_obj)],
+            'Y_uncertainty': [f'uncertainty_f{i + 1}' for i in range(n_obj)],
+        }
+
+        self.nb_viz.tab(2, state=tk.NORMAL)
+        self.table_db = Table(master=self.frame_db, titles=titles)
+        self.table_db.register_key_map(key_map)
+        self.table_db.insert({
+            'X': X, 
+            'Y': Y, 
+            'Y_expected': np.full_like(Y, 'N/A', dtype=object),
+            'Y_uncertainty': np.full_like(Y, 'N/A', dtype=object),
+            'pareto': is_pareto, 
+            'config_id': np.zeros(self.n_init_sample, dtype=int), 
+            'batch_id': np.zeros(self.n_init_sample, dtype=int)
+        })
 
     def _log(self, string):
         '''
@@ -1401,13 +1438,15 @@ class GUI:
 
     def _redraw(self):
         '''
-        Redraw performance space, hypervolume curve and model prediction error
+        Redraw figures and database viz
         '''
         # check if needs redraw
         if self.agent_data.get_sample_num() == self.n_curr_sample: return
 
-        # load from database
-        hv_value, pred_error, batch_id = self.agent_data.load(['hv', 'pred_error', 'batch_id'])
+        # load from database (TODO: optimize)
+        X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id, batch_id = \
+            self.agent_data.load(['X', 'Y', 'Y_expected', 'Y_uncertainty', 'hv', 'pred_error', 'is_pareto', 'config_id', 'batch_id'])
+        n_prev_sample = self.n_curr_sample
         self.n_curr_sample = len(batch_id)
 
         # replot performance space if currently focusing on the lastest iteration
@@ -1434,6 +1473,20 @@ class GUI:
 
         # refresh figure
         self.fig2.canvas.draw()
+
+        # update database viz (TODO: optimize)
+        self.table_db.insert({
+            'X': X[n_prev_sample:self.n_curr_sample], 
+            'Y': Y[n_prev_sample:self.n_curr_sample], 
+            'Y_expected': Y_expected[n_prev_sample:self.n_curr_sample],
+            'Y_uncertainty': Y_uncertainty[n_prev_sample:self.n_curr_sample],
+            'config_id': config_id[n_prev_sample:self.n_curr_sample], 
+            'batch_id': batch_id[n_prev_sample:self.n_curr_sample],
+        })
+
+        self.table_db.update({
+            'pareto': is_pareto,
+        })
 
     def mainloop(self):
         '''
