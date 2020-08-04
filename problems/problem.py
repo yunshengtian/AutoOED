@@ -12,13 +12,11 @@ class Problem(PymooProblem):
     '''
     Problem definition built upon Pymoo's Problem class, added some custom features
     '''
-    def __init__(self, *args, xl=None, xu=None, var_name=None, obj_name=None, **kwargs):
-        # set default bounds
+    def __init__(self, *args, name=None, xl=None, xu=None, fl=None, fu=None, var_name=None, obj_name=None, **kwargs):
+        # set default bounds (TODO: obj bound is currently not supported)
         xl, xu = self._process_bounds(xl, xu)
 
-        # TODO: obj bound is currently not supported
-        if 'fl' in kwargs: kwargs.pop('fl')
-        if 'fu' in kwargs: kwargs.pop('fu')
+        self.name = lambda: self.__class__.__name__ if name is None else name
 
         PymooProblem.__init__(self, *args, xl=xl, xu=xu, **kwargs)
 
@@ -236,15 +234,13 @@ class GeneratedProblem(CustomProblem):
         if n_var is not None: self.config['n_var'] = n_var
         if n_obj is not None: self.config['n_obj'] = n_obj
 
-        # problem name
-        self.problem_name = self.config.pop('name')
-
         # set evaluation modules
         self.eval_p_module = import_module_from_path('eval_p', self.config.pop('performance_eval'))
-        if self.config['constraint_eval'] is not None:
-            self.eval_c_module = import_module_from_path('eval_c', self.config.pop('constraint_eval'))
-        else:
-            self.eval_c_module = None
+        self.eval_c_module = None
+        if 'constraint_eval' in self.config:
+            eval_c_path = self.config.pop('constraint_eval')
+            if eval_c_path is not None:
+                self.eval_c_module = import_module_from_path('eval_c', eval_c_path)
 
         super().__init__(*args, xl=xl, xu=xu, **kwargs)
 
@@ -262,12 +258,6 @@ class GeneratedProblem(CustomProblem):
             return self.eval_c_module.evaluate_constraint(x)
         else:
             return None
-
-    def name(self):
-        '''
-        Return problem name
-        '''
-        return self.problem_name
 
     def export(self):
         '''
