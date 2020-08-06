@@ -14,6 +14,7 @@ from problems.common import build_problem, get_problem_list, get_yaml_problem_li
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent, WorkerAgent
 from system.utils import process_config, load_config, get_available_algorithms, find_closest_point, check_pareto
+from system.gui.utils.button import Button
 from system.gui.utils.entry import get_entry
 from system.gui.utils.excel import Excel
 from system.gui.utils.listbox import Listbox
@@ -179,7 +180,6 @@ class GUI:
                 config = load_config(filename)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid yaml file', parent=self.root)
-                self.button_optimize.configure(state=tk.DISABLED)
                 return
                 
             self._set_config(config)
@@ -363,8 +363,8 @@ class GUI:
             button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Configure performance bounds', command=gui_config_performance, pady=0)
 
             if not change:
-                button_config_design.configure(state=tk.DISABLED)
-                button_config_performance.configure(state=tk.DISABLED)
+                button_config_design.disable()
+                button_config_performance.disable()
 
             def gui_select_problem(event):
                 '''
@@ -372,8 +372,8 @@ class GUI:
                 '''
                 for key in ['n_var', 'n_obj', 'ref_point']:
                     widget_map['problem'][key].enable()
-                button_config_design.configure(state=tk.NORMAL)
-                button_config_performance.configure(state=tk.NORMAL)
+                button_config_design.enable()
+                button_config_performance.enable()
 
                 name = event.widget.get()
                 config = get_problem_config(name)
@@ -693,7 +693,7 @@ class GUI:
                 Exit creating problem status
                 '''
                 self.in_creating_problem = False
-                button_create.configure(state=tk.NORMAL)
+                button_create.enable()
                 listbox_problem.delete(tk.END)
 
             def enable_config_widgets():
@@ -701,7 +701,7 @@ class GUI:
                 Enable all config widgets
                 '''
                 for button in [button_save, button_cancel, button_config_design, button_config_performance, button_browse_performance, button_browse_constraint]:
-                    button.configure(state=tk.NORMAL)
+                    button.enable()
                 for widget in widget_map.values():
                     widget.enable()
                     widget.set(None)
@@ -711,7 +711,7 @@ class GUI:
                 Disable all config widgets
                 '''
                 for button in [button_save, button_cancel, button_config_design, button_config_performance, button_browse_performance, button_browse_constraint]:
-                    button.configure(state=tk.DISABLED)
+                    button.disable()
                 for widget in widget_map.values():
                     widget.set(None)
                     widget.disable()
@@ -814,8 +814,8 @@ class GUI:
                 listbox_problem.select_set(tk.END)
 
                 enable_config_widgets()
-                button_create.configure(state=tk.DISABLED)
-                button_delete.configure(state=tk.DISABLED)
+                button_create.disable()
+                button_delete.disable()
 
             def gui_delete_problem():
                 '''
@@ -828,7 +828,7 @@ class GUI:
                     listbox_problem.delete(index)
                     listbox_size = listbox_problem.size()
                     if listbox_size == 0:
-                        button_delete.configure(state=tk.DISABLED)
+                        button_delete.disable()
                         disable_config_widgets()
                     else:
                         listbox_problem.select_set(min(index, listbox_size - 1))
@@ -855,7 +855,7 @@ class GUI:
                 config = self.agent_problem.load_problem(name)
                 load_entry_values(widget_map, config)
 
-                button_delete.configure(state=tk.NORMAL)
+                button_delete.enable()
 
             listbox_problem.bind_cmd(reload_cmd=get_yaml_problem_list, select_cmd=gui_select_problem)
             listbox_problem.reload()
@@ -866,7 +866,7 @@ class GUI:
             button_cancel.configure(command=gui_cancel_change)
             button_create.configure(command=gui_create_problem)
             button_delete.configure(command=gui_delete_problem)
-            button_delete.configure(state=tk.DISABLED)
+            button_delete.disable()
             disable_config_widgets()
 
         self.menu_problem.entryconfig(0, command=gui_manage_problem)
@@ -1006,15 +1006,15 @@ class GUI:
         self.entry_n_iter.disable()
 
         # optimization command
-        self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
+        self.button_optimize = Button(master=frame_control, text="Optimize", state=tk.DISABLED)
         self.button_optimize.grid(row=3, column=0, padx=5, pady=10, sticky='NSEW')
 
         # stop optimization command
-        self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
+        self.button_stop = Button(master=frame_control, text='Stop', state=tk.DISABLED)
         self.button_stop.grid(row=3, column=1, padx=5, pady=10, sticky='NSEW')
 
         # get design variables from user input
-        self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
+        self.button_input = Button(master=frame_control, text='User Input', state=tk.DISABLED)
         self.button_input.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
 
         def gui_optimize():
@@ -1036,14 +1036,14 @@ class GUI:
             self.menu_config.entryconfig(2, state=tk.DISABLED)
             self.entry_mode.disable()
             if self.entry_mode.get() == 'auto':
-                self.button_optimize.configure(state=tk.DISABLED)
-            self.button_stop.configure(state=tk.NORMAL)
+                self.button_optimize.disable()
+            self.button_stop.enable()
 
             self.agent_worker.set_mode(self.entry_mode.get())
             self.agent_worker.add_worker(target=self.agent_data.optimize, args=(self.config, self.config_id))
 
             if self.agent_worker.full():
-                self.button_optimize.configure(state=tk.DISABLED)
+                self.button_optimize.disable()
 
         def gui_stop_optimize():
             '''
@@ -1051,7 +1051,7 @@ class GUI:
             '''
             self.agent_worker.stop_worker()
             self.entry_mode.enable()
-            self.button_stop.configure(state=tk.DISABLED)
+            self.button_stop.disable()
 
         def gui_user_input():
             '''
@@ -1076,7 +1076,7 @@ class GUI:
             checkbutton_ask.grid(row=2, column=0, padx=10, pady=10)
 
             # add input design variables
-            button_add = tk.Button(master=window, text='Add')
+            button_add = Button(master=window, text='Add')
             button_add.grid(row=3, column=0, ipadx=40, padx=10, pady=10)
 
             def gui_add_user_input():
@@ -1109,11 +1109,11 @@ class GUI:
                     label_y_std.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='W')
 
                     # evaluate button
-                    button_eval = tk.Button(master=window2, text='Evaluate')
+                    button_eval = Button(master=window2, text='Evaluate')
                     button_eval.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
 
                     # cancel button
-                    button_cancel = tk.Button(master=window2, text='Cancel')
+                    button_cancel = Button(master=window2, text='Cancel')
                     button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
 
                     def eval_user_input():
@@ -1224,8 +1224,8 @@ class GUI:
             except:
                 self.entry_n_iter.set(1)
 
-            self.button_optimize.configure(state=tk.NORMAL)
-            self.button_input.configure(state=tk.NORMAL)
+            self.button_optimize.enable()
+            self.button_input.enable()
 
             # build worker agent
             self.agent_worker = WorkerAgent(n_worker=self.config['general']['n_worker'], mode='manual')
@@ -1272,17 +1272,16 @@ class GUI:
         
         # can optimize and load config when worker agent is empty
         if self.agent_worker.empty():
-            if self.button_optimize['state'] == tk.DISABLED:
-                self.button_optimize.configure(state=tk.NORMAL)
-            self.button_stop.configure(state=tk.DISABLED)
+            self.button_optimize.enable()
+            self.button_stop.disable()
             if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(0, state=tk.NORMAL)
             if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(2, state=tk.NORMAL)
 
         # can optimize when worker agent is not full in manual mode
-        if self.entry_mode.get() == 'manual' and not self.agent_worker.full() and self.button_optimize['state'] == tk.DISABLED:
-            self.button_optimize.configure(state=tk.NORMAL)
+        if self.entry_mode.get() == 'manual' and not self.agent_worker.full():
+            self.button_optimize.enable()
 
         self._log(self.agent_worker.read_log())
         self._redraw()

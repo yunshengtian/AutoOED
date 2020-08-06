@@ -5,6 +5,7 @@ Widget creation helper tools
 import tkinter as tk
 from tkinter import ttk
 
+from system.gui.utils.button import Button
 from system.gui.utils.entry import get_entry
 from system.gui.utils.grid import grid_configure
 
@@ -74,7 +75,7 @@ def create_labeled_combobox(master, row, column, text, values, readonly=True, wi
 
 def create_button(master, row, column, text, command=None, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
-    button = tk.Button(master=master, text=text, command=command)
+    button = Button(master=master, text=text, command=command)
     button.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return button
 

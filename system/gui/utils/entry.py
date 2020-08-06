@@ -29,16 +29,17 @@ class Entry(ABC):
         Enable changing entry value
         '''
         if readonly is None: readonly = self.readonly
-        if readonly:
+        if readonly and self.widget['state'] != 'readonly':
             self.widget.configure(state='readonly')
-        else:
+        elif self.widget['state'] != 'normal':
             self.widget.configure(state='normal')
     
     def disable(self):
         '''
         Disable changing entry value
         '''
-        self.widget.configure(state='disabled')
+        if self.widget['state'] != 'disabled':
+            self.widget.configure(state='disabled')
 
     def get(self):
         '''
