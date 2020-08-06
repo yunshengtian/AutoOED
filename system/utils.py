@@ -1,3 +1,5 @@
+import sys
+import signal
 import yaml
 import numpy as np
 import pandas as pd
@@ -6,6 +8,30 @@ from mobo.algorithms import get_algorithm_list as get_algo_list_mobo
 from moo.algorithms import get_algorithm_list as get_algo_list_moo
 from mobo.algorithms import get_algorithm as get_algorithm_mobo
 from moo.algorithms import get_algorithm as get_algorithm_moo
+
+
+class ProcessSafeExit(Exception):
+    '''
+    A safe sigterm exception to avoid deadlock in multiprocessing
+    Example:
+        lock.acquire()
+        try:
+            ... # if sigterm happens here
+        except ProcessSafeExit:
+            lock.release() # release the lock before process terminates
+    '''
+    pass
+
+def process_safe_func(func, *args, **kwargs):
+    try:
+        func(*args, **kwargs)
+    except ProcessSafeExit:
+        sys.exit(0)
+
+def signal_handler(signum, frame):
+    raise ProcessSafeExit()
+
+signal.signal(signal.SIGTERM, signal_handler)
 
 
 def correct_config(config):

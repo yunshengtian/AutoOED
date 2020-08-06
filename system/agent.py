@@ -7,7 +7,7 @@ from pymoo.performance_indicator.hv import Hypervolume
 from problems.common import build_problem
 from system.database import Database
 from system.core import optimize, predict, evaluate
-from system.utils import check_pareto, calc_pred_error
+from system.utils import check_pareto, calc_pred_error, process_safe_func
 
 
 class DataAgent:
@@ -347,7 +347,7 @@ class WorkerAgent:
             target: function that worker needs to execute
             args: arguments to the target function
         '''
-        self.worker_cmd = lambda: Process(target=target, args=args)
+        self.worker_cmd = lambda: Process(target=process_safe_func, args=(target, *args))
         worker = self.worker_cmd()
         with self.lock_worker:
             if len(self.workers_run) < self.n_worker:

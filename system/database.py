@@ -1,6 +1,9 @@
+import sys
 import sqlite3
 import numpy as np
 from multiprocessing import Lock
+
+from system.utils import ProcessSafeExit
 
 
 class Database:
@@ -54,17 +57,23 @@ class Database:
                 # select array with multiple datatypes from multiple columns
                 if lock:
                     self.lock.acquire()
-                result_list = []
-                for key_, dtype_ in zip(key, dtype):
-                    if isinstance(key_, str):
-                        self.cur.execute(f'select {key_} from {table_name}')
-                        result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
-                    elif isinstance(key_, list):
-                        self.cur.execute(f'select {",".join(key_)} from {table_name}')
-                        result = np.array(self.cur.fetchall(), dtype=dtype_)
-                    else:
-                        raise NotImplementedError
-                    result_list.append(result)
+                try:
+                    result_list = []
+                    for key_, dtype_ in zip(key, dtype):
+                        if isinstance(key_, str):
+                            self.cur.execute(f'select {key_} from {table_name}')
+                            result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                        elif isinstance(key_, list):
+                            self.cur.execute(f'select {",".join(key_)} from {table_name}')
+                            result = np.array(self.cur.fetchall(), dtype=dtype_)
+                        else:
+                            raise NotImplementedError
+                        result_list.append(result)
+                except ProcessSafeExit:
+                    if lock:
+                        self.lock.release()
+                    self.quit()
+                    sys.exit(0)
                 if lock:
                     self.lock.release()
                 return result_list
@@ -88,17 +97,23 @@ class Database:
                 # select scalar with multiple datatypes from multiple columns
                 if lock:
                     self.lock.acquire()
-                result_list = []
-                for key_, dtype_ in zip(key, dtype):
-                    if isinstance(key_, str):
-                        self.cur.execute(f'select {key_} from {table_name} order by rowid desc limit 1')
-                        result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
-                    elif isinstance(key_, list):
-                        self.cur.execute(f'select {",".join(key_)} from {table_name} order by rowid desc limit 1')
-                        result = np.array(self.cur.fetchall(), dtype=dtype_)
-                    else:
-                        raise NotImplementedError
-                    result_list.append(result)
+                try:
+                    result_list = []
+                    for key_, dtype_ in zip(key, dtype):
+                        if isinstance(key_, str):
+                            self.cur.execute(f'select {key_} from {table_name} order by rowid desc limit 1')
+                            result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                        elif isinstance(key_, list):
+                            self.cur.execute(f'select {",".join(key_)} from {table_name} order by rowid desc limit 1')
+                            result = np.array(self.cur.fetchall(), dtype=dtype_)
+                        else:
+                            raise NotImplementedError
+                        result_list.append(result)
+                except ProcessSafeExit:
+                    if lock:
+                        self.lock.release()
+                    self.quit()
+                    sys.exit(0)
                 if lock:
                     self.lock.release()
                 return result_list
