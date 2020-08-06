@@ -6,7 +6,7 @@ class Entry(ABC):
     '''
     Entry widget with customized get() and set() method
     '''
-    def __init__(self, widget, required=False, default=None, valid_check=None, error_msg=None, changeable=True):
+    def __init__(self, widget, required=False, default=None, readonly=False, valid_check=None, error_msg=None, changeable=True):
         '''
         Input:
             widget: tkinter Entry or Combobox
@@ -19,21 +19,26 @@ class Entry(ABC):
         self.widget = widget
         self.required = required
         self.default = default
+        self.readonly = readonly
         self.valid_check = valid_check
         self.error_msg = error_msg
         self.changeable = changeable
 
-    def enable(self):
+    def enable(self, readonly=None):
         '''
         Enable changing entry value
         '''
-        self.widget.configure(state=tk.NORMAL)
+        if readonly is None: readonly = self.readonly
+        if readonly:
+            self.widget.configure(state='readonly')
+        else:
+            self.widget.configure(state='normal')
     
     def disable(self):
         '''
         Disable changing entry value
         '''
-        self.widget.configure(state=tk.DISABLED)
+        self.widget.configure(state='disabled')
 
     def get(self):
         '''

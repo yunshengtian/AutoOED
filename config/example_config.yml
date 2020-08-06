@@ -2,6 +2,7 @@
 
 general: 
   n_init_sample: 20 # number of initial random samples
+  n_worker: 5 # max number of evaluation workers
   batch_size: 5
   n_iter: 10 # number of algorithm iterations
 problem: 

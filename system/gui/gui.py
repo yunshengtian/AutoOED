@@ -12,7 +12,7 @@ import numpy as np
 from multiprocessing import Lock, Process
 from problems.common import build_problem, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
-from system.agent import DataAgent, ProblemAgent
+from system.agent import DataAgent, ProblemAgent, WorkerAgent
 from system.utils import process_config, load_config, get_available_algorithms, find_closest_point, check_pareto
 from system.gui.utils.entry import get_entry
 from system.gui.utils.excel import Excel
@@ -50,11 +50,7 @@ class GUI:
         # agent
         self.agent_data = None
         self.agent_problem = ProblemAgent()
-
-        # running processes
-        self.processes = []
-        self.process_id = 0
-        self.lock = Lock()
+        self.agent_worker = None
 
         # config related
         self.config = None
@@ -66,6 +62,7 @@ class GUI:
         self.button_stop = None
         self.button_input = None
         self.scrtext_log = None
+        self.entry_mode = None
         self.entry_batch_size = None
         self.entry_n_iter = None
         self.nb_viz = None
@@ -93,6 +90,7 @@ class GUI:
         self.name_map = {
             'general': {
                 'n_init_sample': 'Number of initial samples',
+                'n_worker': 'Max number of evaluation workers',
                 'batch_size': 'Batch size',
                 'n_iter': 'Number of iterations',
             },
@@ -218,13 +216,15 @@ class GUI:
             widget_map['general']['n_init_sample'] = create_widget('labeled_entry', 
                 master=frame_general, row=0, column=0, text=self.name_map['general']['n_init_sample'], class_type='int', required=True, 
                 valid_check=lambda x: x > 0, error_msg='number of initial samples must be positive', changeable=False)
+            widget_map['general']['n_worker'] = create_widget('labeled_entry',
+                master=frame_general, row=1, column=0, text=self.name_map['general']['n_worker'], class_type='int', default=1,
+                valid_check=lambda x: x > 0, error_msg='max number of evaluation workers must be positive')
 
             # problem subsection
             frame_problem = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Problem')
             grid_configure(frame_problem, [0, 1, 2, 3, 4, 5], [0])
             widget_map['problem']['name'] = create_widget('labeled_combobox', 
-                master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), required=True, 
-                valid_check=lambda x: x in get_problem_list(), error_msg="problem doesn't exist", changeable=False)
+                master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), required=True, changeable=False)
             widget_map['problem']['n_var'] = create_widget('labeled_entry', 
                 master=frame_problem, row=1, column=0, text=self.name_map['problem']['n_var'], class_type='int', required=True,
                 valid_check=lambda x: x > 0, error_msg='number of design variables must be positive', changeable=False)
@@ -389,8 +389,7 @@ class GUI:
             frame_algorithm = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Algorithm')
             grid_configure(frame_algorithm, [0], [0])
             widget_map['algorithm']['name'] = create_widget('labeled_combobox', 
-                master=frame_algorithm, row=0, column=0, text=self.name_map['algorithm']['name'], values=get_available_algorithms(), required=True, 
-                valid_check=lambda x: x in get_available_algorithms(), error_msg="algorithm doesn't exist")
+                master=frame_algorithm, row=0, column=0, text=self.name_map['algorithm']['name'], values=get_available_algorithms(), required=True)
             widget_map['algorithm']['n_process'] = create_widget('labeled_entry', 
                 master=frame_algorithm, row=1, column=0, text=self.name_map['algorithm']['n_process'], class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
@@ -990,29 +989,33 @@ class GUI:
         frame_control = create_widget('labeled_frame', master=self.root, row=0, column=1, text='Control', bg=None)
 
         widget_map = {}
+        widget_map['mode'] = create_widget('labeled_combobox',
+            master=frame_control, row=0, column=0, columnspan=2, text='Optimization mode', values=['manual', 'auto'], required=True, required_mark=False, bg=None)
         widget_map['batch_size'] = create_widget('labeled_entry', 
-            master=frame_control, row=0, column=0, columnspan=2, text=self.name_map['general']['batch_size'], class_type='int', required=True, required_mark=False,
+            master=frame_control, row=1, column=0, columnspan=2, text=self.name_map['general']['batch_size'], class_type='int', required=True, required_mark=False,
             valid_check=lambda x: x > 0, error_msg='number of batch size must be positive', bg=None)
         widget_map['n_iter'] = create_widget('labeled_entry', 
-            master=frame_control, row=1, column=0, columnspan=2, text=self.name_map['general']['n_iter'], class_type='int', required=True, required_mark=False,
+            master=frame_control, row=2, column=0, columnspan=2, text=self.name_map['general']['n_iter'], class_type='int', required=True, required_mark=False,
             valid_check=lambda x: x > 0, error_msg='number of optimization iteration must be positive', bg=None)
 
+        self.entry_mode = widget_map['mode']
         self.entry_batch_size = widget_map['batch_size']
         self.entry_n_iter = widget_map['n_iter']
+        self.entry_mode.disable()
         self.entry_batch_size.disable()
         self.entry_n_iter.disable()
 
         # optimization command
         self.button_optimize = tk.Button(master=frame_control, text="Optimize", state=tk.DISABLED)
-        self.button_optimize.grid(row=2, column=0, padx=5, pady=10, sticky='NSEW')
+        self.button_optimize.grid(row=3, column=0, padx=5, pady=10, sticky='NSEW')
 
         # stop optimization command
         self.button_stop = tk.Button(master=frame_control, text='Stop', state=tk.DISABLED)
-        self.button_stop.grid(row=2, column=1, padx=5, pady=10, sticky='NSEW')
+        self.button_stop.grid(row=3, column=1, padx=5, pady=10, sticky='NSEW')
 
         # get design variables from user input
         self.button_input = tk.Button(master=frame_control, text='User Input', state=tk.DISABLED)
-        self.button_input.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
+        self.button_input.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
 
         def gui_optimize():
             '''
@@ -1031,21 +1034,23 @@ class GUI:
 
             self.menu_config.entryconfig(0, state=tk.DISABLED)
             self.menu_config.entryconfig(2, state=tk.DISABLED)
+            self.entry_mode.disable()
+            if self.entry_mode.get() == 'auto':
+                self.button_optimize.configure(state=tk.DISABLED)
             self.button_stop.configure(state=tk.NORMAL)
-            worker = Process(target=self.agent_data.optimize, args=(self.config, self.config_id))
-            self._start_worker(worker)
+
+            self.agent_worker.set_mode(self.entry_mode.get())
+            self.agent_worker.add_worker(target=self.agent_data.optimize, args=(self.config, self.config_id))
+
+            if self.agent_worker.full():
+                self.button_optimize.configure(state=tk.DISABLED)
 
         def gui_stop_optimize():
             '''
-            Stop optimization
+            Stop optimization (TODO: support stopping individual process)
             '''
-            with self.lock:
-                for p in self.processes:
-                    pid, worker = p
-                    if worker.is_alive():
-                        worker.terminate()
-                        self._log(f'worker {pid} interrupted')
-                self.processes = []
+            self.agent_worker.stop_worker()
+            self.entry_mode.enable()
             self.button_stop.configure(state=tk.DISABLED)
 
         def gui_user_input():
@@ -1112,15 +1117,13 @@ class GUI:
                     button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
 
                     def eval_user_input():
-                        worker = Process(target=self.agent_data.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
-                        self._start_worker(worker)
+                        Process(target=self.agent_data.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)).start()
                         window2.destroy()
 
                     button_eval.configure(command=eval_user_input)
                     button_cancel.configure(command=window2.destroy)
                 else:
-                    worker = Process(target=self.agent_data.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id))
-                    self._start_worker(worker)
+                    Process(target=self.agent_data.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)).start()
 
             button_add.configure(command=gui_add_user_input)
 
@@ -1205,22 +1208,30 @@ class GUI:
             self.menu_config.entryconfig(2, state=tk.NORMAL)
 
             # activate optimization widgets
+            self.entry_mode.enable(readonly=False)
+            self.entry_mode.set('manual')
+            self.entry_mode.enable(readonly=True)
+
             self.entry_batch_size.enable()
-            self.entry_n_iter.enable()
-            self.button_optimize.configure(state=tk.NORMAL)
-            self.button_input.configure(state=tk.NORMAL)
-
-            # trigger periodic refresh
-            self.root.after(self.refresh_rate, self._refresh)
-
             try:
                 self.entry_batch_size.set(self.config['general']['batch_size'])
             except:
                 self.entry_batch_size.set(5)
+
+            self.entry_n_iter.enable()
             try:
                 self.entry_n_iter.set(self.config['general']['n_iter'])
             except:
                 self.entry_n_iter.set(1)
+
+            self.button_optimize.configure(state=tk.NORMAL)
+            self.button_input.configure(state=tk.NORMAL)
+
+            # build worker agent
+            self.agent_worker = WorkerAgent(n_worker=self.config['general']['n_worker'], mode='manual')
+
+            # trigger periodic refresh
+            self.root.after(self.refresh_rate, self._refresh)
 
         else: # user changed config in the middle
             try:
@@ -1234,6 +1245,8 @@ class GUI:
                 return
 
             self.config = config
+
+            self.agent_worker.set_n_worker(self.config['general']['n_worker'])
         
         self._save_config(self.config)
 
@@ -1241,47 +1254,40 @@ class GUI:
         '''
         Log texts to ScrolledText widget for logging
         '''
+        if string == []: return
         self.scrtext_log.configure(state=tk.NORMAL)
-        self.scrtext_log.insert(tk.INSERT, string + '\n')
+        if isinstance(string, str):
+            self.scrtext_log.insert(tk.INSERT, string + '\n')
+        elif isinstance(string, list):
+            self.scrtext_log.insert(tk.INSERT, '\n'.join(string) + '\n')
+        else:
+            raise NotImplementedError
         self.scrtext_log.configure(state=tk.DISABLED)
 
     def _refresh(self):
         '''
         Refresh current GUI status and redraw if data has changed
         '''
-        self._check_status()
-        self._redraw()
-        self.root.after(self.refresh_rate, self._refresh)
-
-    def _start_worker(self, worker):
-        '''
-        Start a worker process
-        '''
-        worker.start()
-        self.processes.append([self.process_id, worker])
-        self._log(f'worker {self.process_id} started')
-        self.process_id += 1
-
-    def _check_status(self):
-        '''
-        Check if current processes are alive
-        '''
-        with self.lock:
-            completed_ps = []
-            for p in self.processes:
-                pid, worker = p
-                if not worker.is_alive():
-                    completed_ps.append(p)
-                    self._log(f'worker {pid} completed')
-            for p in completed_ps:
-                self.processes.remove(p)
-        if len(self.processes) == 0:
+        self.agent_worker.refresh()
+        
+        # can optimize and load config when worker agent is empty
+        if self.agent_worker.empty():
+            if self.button_optimize['state'] == tk.DISABLED:
+                self.button_optimize.configure(state=tk.NORMAL)
             self.button_stop.configure(state=tk.DISABLED)
             if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(0, state=tk.NORMAL)
             if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(2, state=tk.NORMAL)
 
+        # can optimize when worker agent is not full in manual mode
+        if self.entry_mode.get() == 'manual' and not self.agent_worker.full() and self.button_optimize['state'] == tk.DISABLED:
+            self.button_optimize.configure(state=tk.NORMAL)
+
+        self._log(self.agent_worker.read_log())
+        self._redraw()
+        self.root.after(self.refresh_rate, self._refresh)
+        
     def _init_draw(self, true_pfront):
         '''
         First draw of figures and database viz
@@ -1501,9 +1507,8 @@ class GUI:
         if self.agent_data is not None:
             self.agent_data.quit()
 
-        for p in self.processes:
-            _, worker = p
-            worker.terminate()
+        if self.agent_worker is not None:
+            self.agent_worker.quit()
 
         self.root.quit()
         self.root.destroy()

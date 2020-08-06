@@ -1,12 +1,13 @@
 import os
 import numpy as np
 import yaml
+from multiprocessing import Process, Lock
 from pymoo.performance_indicator.hv import Hypervolume
-from system.utils import check_pareto, calc_pred_error
 
 from problems.common import build_problem
 from system.database import Database
 from system.core import optimize, predict, evaluate
+from system.utils import check_pareto, calc_pred_error
 
 
 class DataAgent:
@@ -304,3 +305,144 @@ class ProblemAgent:
             os.remove(config_path)
         except:
             raise Exception("problem doesn't exist")
+
+
+class WorkerAgent:
+    '''
+    Agent scheduling worker processes
+    '''
+    def __init__(self, n_worker, mode):
+        '''
+        Input:
+            n_worker: max number of workers running in parallel
+            mode: 'manual' will only launch worker once when required, 'auto' will launch worker automatically if previously launched worker ends
+        '''
+        assert n_worker > 0
+        self.n_worker = n_worker
+
+        assert mode in ['manual', 'auto']
+        self.mode = mode
+
+        self.workers_run = [] # active workers
+        self.workers_wait = [] # pending workers
+        self.worker_id = -1
+        self.worker_cmd = None # command (function) that generates a worker
+        self.stopped = False
+        
+        self.lock_worker = Lock()
+        self.lock_log = Lock()
+        
+        self.logs = [] # for recording scheduling history
+
+    def _start_worker(self, worker):
+        worker.start()
+        self.worker_id += 1
+        self.workers_run.append([self.worker_id, worker])
+        self._add_log(f'worker {self.worker_id} started')
+
+    def add_worker(self, target, args):
+        '''
+        Add worker process
+        Input:
+            target: function that worker needs to execute
+            args: arguments to the target function
+        '''
+        self.worker_cmd = lambda: Process(target=target, args=args)
+        worker = self.worker_cmd()
+        with self.lock_worker:
+            if len(self.workers_run) < self.n_worker:
+                self._start_worker(worker)
+            else:
+                self.workers_wait.append(worker)
+        self.stopped = False
+
+    def stop_worker(self, worker_id=None):
+        '''
+        Stop the running worker(s)
+        Input:
+            worker_id: the id of worker to be stopped, if None then stop all the workers
+        '''
+        with self.lock_worker:
+            stopped = []
+
+            # check for workers to stop
+            for w in self.workers_run:
+                wid, worker = w
+                if (worker_id is None or wid == worker_id) and worker.is_alive():
+                    worker.terminate()
+                    stopped.append(w)
+                    self._add_log(f'worker {wid} stopped')
+                    if worker_id is not None:
+                        break
+            
+            # remove stopped workers
+            for w in stopped:
+                self.workers_run.remove(w)
+            
+            # stop waiting workers
+            if worker_id is None:
+                self.workers_wait = []
+                self.stopped = True
+
+    def refresh(self):
+        '''
+        Refresh the status of running/waiting workers, launch workers if in auto mode, need to be called periodically
+        '''
+        with self.lock_worker:
+            completed = []
+
+            # check for completed workers
+            for w in self.workers_run:
+                wid, worker = w
+                if not worker.is_alive():
+                    completed.append(w)
+                    self._add_log(f'worker {wid} completed')
+            
+            # remove completed workers
+            for w in completed:
+                self.workers_run.remove(w)
+
+            # launch waiting workers
+            while len(self.workers_run) < self.n_worker and len(self.workers_wait) > 0:
+                self._start_worker(self.workers_wait.pop(0))
+
+            # automatically launch new workers
+            if self.mode == 'auto' and not self.stopped:
+                while len(self.workers_run) < self.n_worker:
+                    self._start_worker(self.worker_cmd())
+
+    def empty(self):
+        '''
+        Check if there are running workers
+        '''
+        return len(self.workers_run) == 0
+
+    def full(self):
+        '''
+        Check if number of running workers reaches maximum
+        '''
+        return len(self.workers_run) == self.n_worker
+
+    def set_n_worker(self, n_worker):
+        assert n_worker > 0
+        self.n_worker = n_worker
+
+    def set_mode(self, mode):
+        assert mode in ['manual', 'auto']
+        self.mode = mode
+
+    def _add_log(self, log):
+        with self.lock_log:
+            self.logs.append(log)
+
+    def read_log(self):
+        '''
+        Read and clear logs
+        '''
+        with self.lock_log:
+            logs = self.logs.copy()
+            self.logs = []
+        return logs
+
+    def quit(self):
+        self.stop_worker()

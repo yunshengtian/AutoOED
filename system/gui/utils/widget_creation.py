@@ -53,23 +53,23 @@ def create_labeled_entry(master, row, column, text, class_type, width=entry_widt
     return get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
-def create_combobox(master, row, column, values, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
+def create_combobox(master, row, column, values, readonly=True, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
-    combobox = ttk.Combobox(master=master, values=values, width=width)
+    combobox = ttk.Combobox(master=master, values=values, state='readonly' if readonly else None, width=width)
     combobox.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
-    return get_entry('string', combobox, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
+    return get_entry('string', combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
-def create_labeled_combobox(master, row, column, text, values, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
+def create_labeled_combobox(master, row, column, text, values, readonly=True, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW', bg='white'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky, bg)
     grid_configure(frame, [0], [0, 1])
     label_text = text + ' (*): ' if required and required_mark else text + ': '
     label = tk.Label(master=frame, bg=bg, text=label_text)
     label.grid(row=0, column=0, sticky='W')
-    combobox = ttk.Combobox(master=frame, values=values, width=width)
+    combobox = ttk.Combobox(master=frame, values=values, state='readonly' if readonly else None, width=width)
     combobox.grid(row=0, column=1, sticky='E')
-    return get_entry('string', combobox, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
+    return get_entry('string', combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
 def create_button(master, row, column, text, command=None, 
