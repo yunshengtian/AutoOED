@@ -36,14 +36,14 @@ def predict(config, X_init, Y_init, X_next):
     return Y_expected, Y_uncertainty
 
 
-def evaluate(config, X_next):
+def evaluate(config, x_next):
     '''
-    Evaluate performance of X_next
+    Evaluate performance of x_next
     '''
     # build problem
     problem = build_problem(config['problem'])
 
-    # evaluate X_next with real problem
-    Y_next = np.column_stack(problem.evaluate_performance(X_next))
+    # evaluate x_next with real problem
+    y_next = np.array(problem.evaluate_performance(x_next))
 
-    return Y_next
+    return y_next

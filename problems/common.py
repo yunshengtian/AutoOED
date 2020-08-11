@@ -211,7 +211,7 @@ def generate_initial_samples(problem, n_sample):
     while len(X_feasible) < n_sample:
         X = lhs(problem.n_var, n_sample)
         X = problem.xl + X * (problem.xu - problem.xl)
-        Y = np.column_stack(problem.evaluate_performance(X)) # TODO
+        Y = np.array([problem.evaluate_performance(x) for x in X]) # TODO
         feasible = problem.evaluate_feasible(X)
         X_feasible = np.vstack([X_feasible, X[feasible]])
         Y_feasible = np.vstack([Y_feasible, Y[feasible]])

@@ -17,8 +17,8 @@ class ZDT1(ZDT):
         return np.array([x, 1 - np.sqrt(x)]).T
 
     def evaluate_performance(self, x):
-        f1 = x[:, 0]
-        g = 1 + 9.0 / (self.n_var - 1) * np.sum(x[:, 1:], axis=1)
+        f1 = x[0]
+        g = 1 + 9.0 / (self.n_var - 1) * np.sum(x[1:])
         f2 = g * (1 - np.power((f1 / g), 0.5))
         return f1, f2
 
@@ -29,8 +29,8 @@ class ZDT2(ZDT):
         return np.array([x, 1 - np.power(x, 2)]).T
 
     def evaluate_performance(self, x):
-        f1 = x[:, 0]
-        c = np.sum(x[:, 1:], axis=1)
+        f1 = x[0]
+        c = np.sum(x[1:])
         g = 1.0 + 9.0 * c / (self.n_var - 1)
         f2 = g * (1 - np.power((f1 * 1.0 / g), 2))
         return f1, f2
@@ -60,8 +60,8 @@ class ZDT3(ZDT):
         return pf
 
     def evaluate_performance(self, x):
-        f1 = x[:, 0]
-        c = np.sum(x[:, 1:], axis=1)
+        f1 = x[0]
+        c = np.sum(x[1:])
         g = 1.0 + 9.0 * c / (self.n_var - 1)
         f2 = g * (1 - np.power(f1 * 1.0 / g, 0.5) - (f1 * 1.0 / g) * np.sin(10 * np.pi * f1))
         return f1, f2

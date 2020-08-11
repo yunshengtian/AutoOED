@@ -14,7 +14,7 @@ class OKA1(Problem):
     
     def evaluate_performance(self, x):
         sin, cos = np.sin(np.pi / 12), np.cos(np.pi / 12)
-        x1, x2 = x[:, 0], x[:, 1]
+        x1, x2 = x[0], x[1]
         x1_ = cos * x1 - sin * x2
         x2_ = sin * x1 + cos * x2
 
@@ -42,7 +42,7 @@ class OKA2(Problem):
         self.xu = np.array([np.pi, 5.0, 5.0]) if xu is None else xu
     
     def evaluate_performance(self, x):
-        x1, x2, x3 = x[:, 0], x[:, 1], x[:, 2]
+        x1, x2, x3 = x[0], x[1], x[2]
 
         f1 = x1
         f2 = 1 - (x1 + np.pi) ** 2 / (4 * np.pi ** 2) + \

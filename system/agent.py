@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import yaml
-from multiprocessing import Process, Lock
+from multiprocessing import Process, Queue, Lock
 from pymoo.performance_indicator.hv import Hypervolume
 
 from problems.common import build_problem
@@ -72,37 +72,37 @@ class DataAgent:
             'batch_id': int,
         }
 
-    def _mapped_keys(self, keys, flatten=False):
+    def _map_key(self, key, flatten=False):
         '''
         Get mapped keys from self.key_map
         '''
-        if not flatten:
-            return [self.key_map[key] for key in keys]
+        if isinstance(key, str):
+            return self.key_map[key]
+        elif isinstance(key, list):
+            if not flatten:
+                return [self.key_map[k] for k in key]
+            else:
+                result = []
+                for k in key:
+                    mapped_key = self.key_map[k]
+                    if isinstance(mapped_key, list):
+                        result.extend(mapped_key)
+                    else:
+                        result.append(mapped_key)
+                return result
         else:
-            result = []
-            for key in keys:
-                mapped_key = self.key_map[key]
-                if isinstance(mapped_key, list):
-                    result.extend(mapped_key)
-                else:
-                    result.append(mapped_key)
-            return result
+            raise NotImplementedError
 
-    def _mapped_types(self, keys, flatten=False):
+    def _map_type(self, key):
         '''
         Get mapped types from self.type_map
         '''
-        if not flatten:
-            return [self.type_map[key] for key in keys]
+        if isinstance(key, str):
+            return self.type_map[key]
+        elif isinstance(key, list):
+            return [self.type_map[k] for k in key]
         else:
-            result = []
-            for key in keys:
-                mapped_key = self.type_map[key]
-                if isinstance(mapped_key, list):
-                    result.extend(mapped_key)
-                else:
-                    result.append(mapped_key)
-            return result
+            raise NotImplementedError
 
     def _init(self, X, Y):
         '''
@@ -134,15 +134,15 @@ class DataAgent:
         with self.db.get_lock():
             batch_id = self.db.select_last('data', key='batch_id', dtype=int, lock=False) + 1
             batch_id = np.full(sample_len, batch_id)
-            self.db.insert('data', key=self._mapped_keys(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
+            self.db.insert('data', key=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
                 data=[X, Y_expected, Y_uncertainty, config_id, batch_id])
             last_rowid = self.db.get_last_rowid('data')
             self.db.commit()
             
         rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
-        return rowids
+        return rowids.tolist()
 
-    def _update(self, Y, rowids):
+    def _update(self, y, rowid):
         '''
         Update evaluation result to database
         Input:
@@ -150,33 +150,29 @@ class DataAgent:
         '''
         with self.db.get_lock():
             all_Y, all_Y_expected = self.load(['Y', 'Y_expected'], valid_only=False, lock=False)
-            all_Y[rowids - 1] = Y
+            all_Y[rowid - 1] = y
             valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
             all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
 
-            # compute associated values based on evaluation data (hv, pred_error, is_pareto)
-            sample_len, all_len = len(rowids), len(all_Y)
-            hv_value = np.full(sample_len, self.hv.calc(all_Y_valid))
+            # compute associated values based on evaluation data (hv, pred_error, is_pareto) (TODO: speed optimization)
+            hv_value = self.hv.calc(all_Y_valid)
             pred_error = calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])
-            pred_error = np.full(sample_len, pred_error)
-            is_pareto = np.full(all_len, False)
+            is_pareto = np.full(len(all_Y), False)
             is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
 
-            for i, rowid in enumerate(rowids.tolist()):
-                self.db.update('data', key=self._mapped_keys(['Y', 'hv', 'pred_error'], flatten=True), 
-                    data=[Y[i], hv_value[i], pred_error[i]], rowid=rowid)
+            self.db.update('data', key=self._map_key(['Y', 'hv', 'pred_error'], flatten=True), data=[y, hv_value, pred_error], rowid=rowid)
             self.db.update('data', key='is_pareto', data=False, rowid=None)
             self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
             self.db.commit()
 
-    def load(self, keys, valid_only=True, lock=True):
+    def load(self, keys, valid_only=True, rowid=None, lock=True):
         '''
         Load array from database table
         Input:
             valid_only: if only keeps valid data, i.e., filled data, without nan
         '''
-        result = self.db.select('data', key=self._mapped_keys(keys), dtype=self._mapped_types(keys), lock=lock)
+        result = self.db.select('data', key=self._map_key(keys), dtype=self._map_type(keys), rowid=rowid, lock=lock)
         if valid_only:
             if isinstance(result, list):
                 isnan = None
@@ -215,37 +211,38 @@ class DataAgent:
 
         return Y_expected, Y_uncertainty
 
-    def update(self, config, X_next, Y_expected, Y_uncertainty, config_id):
+    def evaluate(self, config, rowid):
         '''
-        Update given data to database
         '''
+        # load design variables
+        x_next = self.load('X', valid_only=False, rowid=rowid).squeeze()
+
+        # run evaluation
+        y_next = evaluate(config, x_next)
+
+        # update evaluation result to database
+        self._update(y_next, rowid)
+
+    def optimize(self, config, config_id, queue=None):
+        '''
+        Optimization
+        '''
+        # read current data from database
+        X, Y = self.load(['X', 'Y'])
+
+        # optimize for best X_next
+        X_next = optimize(config, X, Y)
+
+        # predict performance of X_next
+        Y_expected, Y_uncertainty = self.predict(config, X_next)
+
         # insert optimization and prediction result to database
         rowids = self._insert(X_next, Y_expected, Y_uncertainty, config_id)
-        
-        # run evaluation
-        Y_next = evaluate(config, X_next)
-        
-        # update evaluation result to database
-        self._update(Y_next, rowids)
 
-    def optimize(self, config, config_id):
-        '''
-        Automatic execution of optimization workflow
-        '''
-        # run several iterations
-        for _ in range(config['general']['n_iter']):
-
-            # read current data from database
-            X, Y = self.load(['X', 'Y'])
-
-            # optimize for best X_next
-            X_next = optimize(config, X, Y)
-
-            # predict performance of X_next
-            Y_expected, Y_uncertainty = self.predict(config, X_next)
-
-            # update X_next related data to database
-            self.update(config, X_next, Y_expected, Y_uncertainty, config_id)
+        if queue is None:
+            return rowids
+        else:
+            queue.put(rowids)
 
     def quit(self):
         '''
@@ -309,127 +306,209 @@ class ProblemAgent:
 
 class WorkerAgent:
     '''
-    Agent scheduling worker processes
+    Agent scheduling optimization & evaluation worker processes
     '''
-    def __init__(self, n_worker, mode):
+    def __init__(self, mode, config, agent_data):
         '''
         Input:
-            n_worker: max number of workers running in parallel
+            n_worker: max number of evaluation workers running in parallel
             mode: 'manual' will only launch worker once when required, 'auto' will launch worker automatically if previously launched worker ends
         '''
-        assert n_worker > 0
-        self.n_worker = n_worker
+        self.set_mode(mode)
+        self.set_config(config, 0)
 
-        assert mode in ['manual', 'auto']
-        self.mode = mode
+        self.agent_data = agent_data
 
-        self.workers_run = [] # active workers
-        self.workers_wait = [] # pending workers
-        self.worker_id = -1
-        self.worker_cmd = None # command (function) that generates a worker
+        self.opt_workers_run = []
+        self.opt_workers_wait = []
+        self.opt_worker_id = -1
+        self.opt_worker_cmd = None
+
+        self.eval_workers_run = [] # active workers
+        self.eval_workers_wait = [] # pending workers
+        self.eval_worker_id = -1
+        self.eval_worker_cmd = None # command (function) that generates a worker
+
         self.stopped = False
+
+        self.queue = Queue()
         
-        self.lock_worker = Lock()
+        self.lock_opt_worker = Lock()
+        self.lock_eval_worker = Lock()
         self.lock_log = Lock()
         
         self.logs = [] # for recording scheduling history
 
-    def _start_worker(self, worker):
-        worker.start()
-        self.worker_id += 1
-        self.workers_run.append([self.worker_id, worker])
-        self._add_log(f'worker {self.worker_id} started')
+    def set_mode(self, mode):
+        assert mode in ['manual', 'auto']
+        self.mode = mode
 
-    def add_worker(self, target, args):
+    def set_config(self, config, config_id):
         '''
-        Add worker process
+        '''
+        self.config = config.copy()
+        self.config_id = config_id
+
+    def _start_opt_worker(self):
+        '''
+        '''
+        if len(self.opt_workers_wait) == 0: return False
+        worker, n_iter, curr_iter = self.opt_workers_wait.pop(0)
+        curr_iter += 1
+        if curr_iter > n_iter: return False
+        worker.start()
+        self.opt_worker_id += 1
+        self.opt_workers_run.append([self.opt_worker_id, worker, n_iter, curr_iter])
+        self._add_log(f'optimization worker {self.opt_worker_id} started')
+        self._queue_opt_worker(n_iter, curr_iter)
+        return True
+
+    def _start_eval_worker(self):
+        '''
+        '''
+        if len(self.eval_workers_run) >= self.config['general']['n_worker'] or len(self.eval_workers_wait) == 0: return False
+        worker = self.eval_workers_wait.pop(0)
+        worker.start()
+        self.eval_worker_id += 1
+        self.eval_workers_run.append([self.eval_worker_id, worker])
+        self._add_log(f'evaluation worker {self.eval_worker_id} started')
+        return True
+        
+    def _queue_opt_worker(self, n_iter, curr_iter):
+        '''
+        '''
+        worker = self.opt_worker_cmd()
+        self.opt_workers_wait.append([worker, n_iter, curr_iter])
+
+    def add_opt_worker(self):
+        '''
+        Add optimization worker process
+        '''
+        n_iter = self.config['general']['n_iter']
+        self.opt_worker_cmd = lambda: Process(target=process_safe_func, args=(self.agent_data.optimize, self.config, self.config_id, self.queue))
+        with self.lock_opt_worker:
+            self._queue_opt_worker(n_iter, 0)
+            self._start_opt_worker()
+
+    def add_eval_worker(self, rowid):
+        '''
+        Add evaluation worker process
         Input:
             target: function that worker needs to execute
             args: arguments to the target function
         '''
-        self.worker_cmd = lambda: Process(target=process_safe_func, args=(target, *args))
-        worker = self.worker_cmd()
-        with self.lock_worker:
-            if len(self.workers_run) < self.n_worker:
-                self._start_worker(worker)
-            else:
-                self.workers_wait.append(worker)
+        worker = Process(target=process_safe_func, args=(self.agent_data.evaluate, self.config, rowid))
+        with self.lock_eval_worker:
+            self.eval_workers_wait.append(worker)
+            self._start_eval_worker()
         self.stopped = False
 
-    def stop_worker(self, worker_id=None):
+    def stop_opt_worker(self, worker_id=None):
         '''
-        Stop the running worker(s)
+        Stop the running optimization worker(s)
         Input:
             worker_id: the id of worker to be stopped, if None then stop all the workers
         '''
-        with self.lock_worker:
-            stopped = []
+        with self.lock_opt_worker:
+            for w in self.opt_workers_run:
+                wid, worker, _, _ = w
+                if (worker_id is None or wid == worker_id) and worker.is_alive():
+                    worker.terminate()
+                    self._add_log(f'optimization worker {wid} stopped')
+                    if worker_id is not None:
+                        self.opt_workers_run.remove(w)
+                        break
+            if worker_id is None:
+                self.opt_workers_run = []
+                self.opt_workers_wait = []
 
-            # check for workers to stop
-            for w in self.workers_run:
+    def stop_eval_worker(self, worker_id=None):
+        '''
+        Stop the running evaluation worker(s)
+        Input:
+            worker_id: the id of worker to be stopped, if None then stop all the workers
+        '''
+        with self.lock_eval_worker:
+            for w in self.eval_workers_run:
                 wid, worker = w
                 if (worker_id is None or wid == worker_id) and worker.is_alive():
                     worker.terminate()
-                    stopped.append(w)
-                    self._add_log(f'worker {wid} stopped')
+                    self._add_log(f'evaluation worker {wid} stopped')
                     if worker_id is not None:
+                        self.eval_workers_run.remove(w)
                         break
-            
-            # remove stopped workers
-            for w in stopped:
-                self.workers_run.remove(w)
-            
-            # stop waiting workers
             if worker_id is None:
-                self.workers_wait = []
+                self.eval_workers_run = []
+                self.eval_workers_wait = []
                 self.stopped = True
+
+    def stop_worker(self):
+        self.stop_opt_worker()
+        self.stop_eval_worker()
 
     def refresh(self):
         '''
         Refresh the status of running/waiting workers, launch workers if in auto mode, need to be called periodically
         '''
-        with self.lock_worker:
-            completed = []
+        with self.lock_eval_worker:
+            completed_eval = []
 
-            # check for completed workers
-            for w in self.workers_run:
+            # check for completed evaluation workers
+            for w in self.eval_workers_run:
                 wid, worker = w
                 if not worker.is_alive():
-                    completed.append(w)
-                    self._add_log(f'worker {wid} completed')
+                    completed_eval.append(w)
+                    self._add_log(f'evaluation worker {wid} completed')
             
-            # remove completed workers
-            for w in completed:
-                self.workers_run.remove(w)
+            # remove completed evaluation workers
+            for w in completed_eval:
+                self.eval_workers_run.remove(w)
 
-            # launch waiting workers
-            while len(self.workers_run) < self.n_worker and len(self.workers_wait) > 0:
-                self._start_worker(self.workers_wait.pop(0))
+            # launch waiting evaluation workers
+            while self._start_eval_worker():
+                pass
 
-            # automatically launch new workers
+        with self.lock_opt_worker:
+            completed_opt = []
+
+            # check for completed optimization workers
+            for w in self.opt_workers_run:
+                wid, worker, _, _ = w
+                if not worker.is_alive():
+                    completed_opt.append(w)
+                    self._add_log(f'optimization worker {wid} completed')
+            
+            # remove completed optimization workers
+            for w in completed_opt:
+                self.opt_workers_run.remove(w)
+
+            # launch evaluation workers for completed optimization workers
+            for _ in completed_opt:
+                rowids = self.queue.get()
+                for rowid in rowids:
+                    self.add_eval_worker(rowid)
+
+            # launch optimization workers if all iterations are not finished
+            for _ in completed_opt:
+                self._start_opt_worker()
+
+            # launch new optimization workers in auto mode
             if self.mode == 'auto' and not self.stopped:
-                while len(self.workers_run) < self.n_worker:
-                    self._start_worker(self.worker_cmd())
+                while len(self.opt_workers_run) * self.config['general']['batch_size'] < self.config['general']['n_worker'] - len(self.eval_workers_run):
+                    self._queue_opt_worker(1, 0)
+                    self._start_opt_worker()
 
     def empty(self):
         '''
-        Check if there are running workers
+        Check if there are running optimization or evaluation workers
         '''
-        return len(self.workers_run) == 0
+        return len(self.opt_workers_run) == 0 and len(self.eval_workers_run) == 0
 
     def full(self):
         '''
-        Check if number of running workers reaches maximum
+        Check if number of running evaluation workers reaches maximum
         '''
-        return len(self.workers_run) == self.n_worker
-
-    def set_n_worker(self, n_worker):
-        assert n_worker > 0
-        self.n_worker = n_worker
-
-    def set_mode(self, mode):
-        assert mode in ['manual', 'auto']
-        self.mode = mode
+        return len(self.eval_workers_run) == self.config['general']['n_worker']
 
     def _add_log(self, log):
         with self.lock_log:
@@ -445,4 +524,5 @@ class WorkerAgent:
         return logs
 
     def quit(self):
-        self.stop_worker()
+        self.stop_opt_worker()
+        self.stop_eval_worker()

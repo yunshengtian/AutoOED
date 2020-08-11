@@ -13,8 +13,8 @@ class VLMOP2(Problem):
 
     def evaluate_performance(self, x):
         n = self.n_var
-        f1 = 1 - np.exp(-np.sum((x - 1 / np.sqrt(n)) ** 2, axis=1))
-        f2 = 1 - np.exp(-np.sum((x + 1 / np.sqrt(n)) ** 2, axis=1))
+        f1 = 1 - np.exp(-np.sum((x - 1 / np.sqrt(n)) ** 2))
+        f2 = 1 - np.exp(-np.sum((x + 1 / np.sqrt(n)) ** 2))
         return f1, f2
 
     def _calc_pareto_front(self, n_pareto_points=100):
@@ -23,7 +23,7 @@ class VLMOP2(Problem):
         x = np.linspace(-1 / np.sqrt(n), 1 / np.sqrt(n), n_pareto_points)
         x_all = np.column_stack([x] * n)
 
-        return self.evaluate(x_all, return_values_of=['F'])
+        return np.array([self.evaluate_performance(x_) for x_ in x_all])
 
 
 class VLMOP3(Problem):
@@ -36,7 +36,7 @@ class VLMOP3(Problem):
         super().__init__(n_var=2, n_obj=3, xl=xl, xu=xu, type_var=np.double)
 
     def evaluate_performance(self, x):
-        x1, x2 = x[:, 0], x[:, 1]
+        x1, x2 = x[0], x[1]
 
         f1 = 0.5 * (x1 ** 2 + x2 ** 2) + np.sin(x1 ** 2 + x2 ** 2)
         f2 = (3 * x1 - 2 * x2 + 4) ** 2 / 8 + (x1 - x2 + 1) ** 2 / 27 + 15

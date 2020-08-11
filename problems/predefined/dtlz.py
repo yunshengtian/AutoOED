@@ -18,20 +18,20 @@ class DTLZ(Problem):
 
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=0, xl=xl, xu=xu, type_var=np.double)
 
-    def g1(self, X_M):
-        return 100 * (self.k + np.sum(np.square(X_M - 0.5) - np.cos(20 * np.pi * (X_M - 0.5)), axis=1))
+    def g1(self, x_m):
+        return 100 * (self.k + np.sum(np.square(x_m - 0.5) - np.cos(20 * np.pi * (x_m - 0.5))))
 
-    def g2(self, X_M):
-        return np.sum(np.square(X_M - 0.5), axis=1)
+    def g2(self, x_m):
+        return np.sum(np.square(x_m - 0.5))
 
-    def obj_func(self, X_, g, alpha=1):
+    def obj_func(self, x_, g, alpha=1):
         f = []
 
         for i in range(0, self.n_obj):
             _f = (1 + g)
-            _f *= np.prod(np.cos(np.power(X_[:, :X_.shape[1] - i], alpha) * np.pi / 2.0), axis=1)
+            _f *= np.prod(np.cos(np.power(x_[:x_.shape[0] - i], alpha) * np.pi / 2.0))
             if i > 0:
-                _f *= np.sin(np.power(X_[:, X_.shape[1] - i], alpha) * np.pi / 2.0)
+                _f *= np.sin(np.power(x_[x_.shape[0] - i], alpha) * np.pi / 2.0)
 
             f.append(_f)
 
@@ -53,15 +53,15 @@ class DTLZ1(DTLZ):
         return 0.5 * ref_dirs
 
     def evaluate_performance(self, x):
-        X_, X_M = x[:, :self.n_obj - 1], x[:, self.n_obj - 1:]
-        g = self.g1(X_M)
+        x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
+        g = self.g1(x_m)
 
         f = []
         for i in range(0, self.n_obj):
             _f = 0.5 * (1 + g)
-            _f *= np.prod(X_[:, :X_.shape[1] - i], axis=1)
+            _f *= np.prod(x_[:x_.shape[0] - i])
             if i > 0:
-                _f *= 1 - X_[:, X_.shape[1] - i]
+                _f *= 1 - x_[x_.shape[0] - i]
             f.append(_f)
         return f
 
@@ -76,9 +76,9 @@ class DTLZ2(DTLZ):
         return generic_sphere(ref_dirs)
 
     def evaluate_performance(self, x):
-        X_, X_M = x[:, :self.n_obj - 1], x[:, self.n_obj - 1:]
-        g = self.g2(X_M)
-        return self.obj_func(X_, g, alpha=1)
+        x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
+        g = self.g2(x_m)
+        return self.obj_func(x_, g, alpha=1)
 
 
 class DTLZ3(DTLZ):
@@ -91,9 +91,9 @@ class DTLZ3(DTLZ):
         return generic_sphere(ref_dirs)
 
     def evaluate_performance(self, x):
-        X_, X_M = x[:, :self.n_obj - 1], x[:, self.n_obj - 1:]
-        g = self.g1(X_M)
-        return self.obj_func(X_, g, alpha=1)
+        x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
+        g = self.g1(x_m)
+        return self.obj_func(x_, g, alpha=1)
 
 
 class DTLZ4(DTLZ):
@@ -108,9 +108,9 @@ class DTLZ4(DTLZ):
         return generic_sphere(ref_dirs)
 
     def evaluate_performance(self, x):
-        X_, X_M = x[:, :self.n_obj - 1], x[:, self.n_obj - 1:]
-        g = self.g2(X_M)
-        return self.obj_func(X_, g, alpha=self.alpha)
+        x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
+        g = self.g2(x_m)
+        return self.obj_func(x_, g, alpha=self.alpha)
 
 
 class DTLZ5(DTLZ):
@@ -124,11 +124,11 @@ class DTLZ5(DTLZ):
             raise Exception("Not implemented yet.")
 
     def evaluate_performance(self, x):
-        X_, X_M = x[:, :self.n_obj - 1], x[:, self.n_obj - 1:]
-        g = self.g2(X_M)
+        x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
+        g = self.g2(x_m)
 
-        theta = 1 / (2 * (1 + g[:, None])) * (1 + 2 * g[:, None] * X_)
-        theta = np.column_stack([x[:, 0], theta[:, 1:]])
+        theta = 1 / (2 * (1 + g)) * (1 + 2 * g * x_)
+        theta = np.concatenate([x[0], theta[1:]])
 
         return self.obj_func(theta, g)
 
@@ -144,11 +144,11 @@ class DTLZ6(DTLZ):
             raise Exception("Not implemented yet.")
 
     def evaluate_performance(self, x):
-        X_, X_M = x[:, :self.n_obj - 1], x[:, self.n_obj - 1:]
-        g = np.sum(np.power(X_M, 0.1), axis=1)
+        x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
+        g = np.sum(np.power(x_m, 0.1))
 
-        theta = 1 / (2 * (1 + g[:, None])) * (1 + 2 * g[:, None] * X_)
-        theta = np.column_stack([x[:, 0], theta[:, 1:]])
+        theta = 1 / (2 * (1 + g)) * (1 + 2 * g * x_)
+        theta = np.concatenate([x[0], theta[1:]])
 
         return self.obj_func(theta, g)
 

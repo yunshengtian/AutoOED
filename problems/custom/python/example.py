@@ -77,7 +77,7 @@ class ExampleProblem3(CustomProblem):
         return f1, f2, f3
 
     def evaluate_constraint(self, x):
-        x1, x2, x3, x4 = x[:, 0], x[:, 1], x[:, 2], x[:, 3]
+        x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
         g1 = x1 + x2 - 1 # x1 + x2 < 1
         g2 = (x2 + x3 - 2) ** 2 - 1e-5 # x2 + x3 = 2
         return g1, g2

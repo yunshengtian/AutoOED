@@ -61,7 +61,6 @@ class GUI:
         # event widgets
         self.button_optimize = None
         self.button_stop = None
-        self.button_input = None
         self.scrtext_log = None
         self.entry_mode = None
         self.entry_batch_size = None
@@ -438,12 +437,6 @@ class GUI:
                     return
 
                 config['problem'].update(problem_cfg)
-
-                try:
-                    config = process_config(config)
-                except:
-                    tk.messagebox.showinfo('Error', 'Invalid configurations', parent=window)
-                    return
 
                 self._set_config(config, window)
                 window.destroy()
@@ -1013,24 +1006,21 @@ class GUI:
         self.button_stop = Button(master=frame_control, text='Stop', state=tk.DISABLED)
         self.button_stop.grid(row=3, column=1, padx=5, pady=10, sticky='NSEW')
 
-        # get design variables from user input
-        self.button_input = Button(master=frame_control, text='User Input', state=tk.DISABLED)
-        self.button_input.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky='NSEW')
-
         def gui_optimize():
             '''
             Execute optimization
             '''
-            config = {}
+            config = self.config.copy()
             for key in ['batch_size', 'n_iter']:
                 try:
-                    config[key] = widget_map[key].get()
+                    config['general'][key] = widget_map[key].get()
                 except:
                     error_msg = widget_map[key].get_error_msg()
                     error_msg = '' if error_msg is None else ': ' + error_msg
                     tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['general'][key] + '"' + error_msg, parent=self.root)
                     return
-            self.config['general'].update(config)
+
+            self._set_config(config)
 
             self.menu_config.entryconfig(0, state=tk.DISABLED)
             self.menu_config.entryconfig(2, state=tk.DISABLED)
@@ -1040,10 +1030,8 @@ class GUI:
             self.button_stop.enable()
 
             self.agent_worker.set_mode(self.entry_mode.get())
-            self.agent_worker.add_worker(target=self.agent_data.optimize, args=(self.config, self.config_id))
-
-            if self.agent_worker.full():
-                self.button_optimize.disable()
+            self.agent_worker.set_config(self.config, self.config_id)
+            self.agent_worker.add_opt_worker()
 
         def gui_stop_optimize():
             '''
@@ -1053,84 +1041,9 @@ class GUI:
             self.entry_mode.enable()
             self.button_stop.disable()
 
-        def gui_user_input():
-            '''
-            Getting design variables from user input
-            '''
-            window = tk.Toplevel(master=self.root)
-            window.title('User Input')
-            window.configure(bg='white')
-
-            # description label
-            label_x = tk.Label(master=window, bg='white', text='Design variable values (seperated by ","):')
-            label_x.grid(row=0, column=0, padx=10, pady=10, sticky='W')
-
-            # design variable entry
-            entry_x = tk.Entry(master=window, bg='white', width=50)
-            entry_x.grid(row=1, column=0, padx=10, sticky='EW')
-            entry_x = get_entry('floatlist', widget=entry_x, valid_check=lambda x: len(x) == self.config['problem']['n_var'])
-
-            # ask before evaluation checkbox
-            ask_var = tk.IntVar()
-            checkbutton_ask = tk.Checkbutton(master=window, bg='white', text='Ask before evaluation', variable=ask_var)
-            checkbutton_ask.grid(row=2, column=0, padx=10, pady=10)
-
-            # add input design variables
-            button_add = Button(master=window, text='Add')
-            button_add.grid(row=3, column=0, ipadx=40, padx=10, pady=10)
-
-            def gui_add_user_input():
-                '''
-                Predict performance of user inputted design variables, optionally do real evaluation and add to database
-                '''
-                # TODO: add batch input support
-                try:
-                    X_next = np.atleast_2d(entry_x.get())
-                except:
-                    tk.messagebox.showinfo('Error', 'Invalid design values', parent=window)
-                    return
-
-                ask = ask_var.get() == 1
-                window.destroy()
-
-                Y_expected, Y_uncertainty = self.agent_data.predict(self.config, X_next)
-
-                if ask:
-                    window2 = tk.Toplevel(master=self.root)
-                    window2.title('Prediction Completed')
-                    window2.configure(bg='white')
-
-                    # Y_expected description
-                    label_y_mean = tk.Label(master=window2, bg='white', text=f'Y_expected: ({",".join([str(y) for y in Y_expected.squeeze()])})')
-                    label_y_mean.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky='W')
-
-                    # Y_uncertainty description
-                    label_y_std = tk.Label(master=window2, bg='white', text=f'Y_uncertainty: ({",".join([str(y) for y in Y_uncertainty.squeeze()])})')
-                    label_y_std.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='W')
-
-                    # evaluate button
-                    button_eval = Button(master=window2, text='Evaluate')
-                    button_eval.grid(row=2, column=0, ipadx=30, padx=10, pady=10)
-
-                    # cancel button
-                    button_cancel = Button(master=window2, text='Cancel')
-                    button_cancel.grid(row=2, column=1, ipadx=30, padx=10, pady=10)
-
-                    def eval_user_input():
-                        Process(target=self.agent_data.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)).start()
-                        window2.destroy()
-
-                    button_eval.configure(command=eval_user_input)
-                    button_cancel.configure(command=window2.destroy)
-                else:
-                    Process(target=self.agent_data.update, args=(self.config, X_next, Y_expected, Y_uncertainty, self.config_id)).start()
-
-            button_add.configure(command=gui_add_user_input)
-
         # link to commands
         self.button_optimize.configure(command=gui_optimize)
         self.button_stop.configure(command=gui_stop_optimize)
-        self.button_input.configure(command=gui_user_input)
 
     def _init_log_widgets(self):
         '''
@@ -1155,8 +1068,16 @@ class GUI:
         '''
         Setting configurations
         '''
-        # update raw config (config will be processed and changed later in build_problem())
+        try:
+            config = process_config(config)
+        except:
+            tk.messagebox.showinfo('Error', 'Invalid configurations', parent=window)
+            return
+
+        # update raw config (config will be processed and changed later in build_problem()) (TODO: check)
         self.config_raw = config.copy()
+        
+        old_config = None if self.config is None else self.config.copy()
 
         # set parent window for displaying potential error messagebox
         if window is None: window = self.root
@@ -1174,12 +1095,15 @@ class GUI:
             # initialize problem and data storage (agent)
             try:
                 problem, true_pfront = build_problem(config['problem'], get_pfront=True)
-                self.agent_data = DataAgent(config, self.result_dir)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration', parent=window)
                 return
 
             self.config = config
+
+            # build agents
+            self.agent_data = DataAgent(config=config, result_dir=self.result_dir)
+            self.agent_worker = WorkerAgent(mode='manual', config=config, agent_data=self.agent_data)
 
             n_var, var_name, obj_name = problem.n_var, problem.var_name, problem.obj_name
             self.var_lb, self.var_ub = problem.xl, problem.xu
@@ -1225,10 +1149,6 @@ class GUI:
                 self.entry_n_iter.set(1)
 
             self.button_optimize.enable()
-            self.button_input.enable()
-
-            # build worker agent
-            self.agent_worker = WorkerAgent(n_worker=self.config['general']['n_worker'], mode='manual')
 
             # trigger periodic refresh
             self.root.after(self.refresh_rate, self._refresh)
@@ -1245,10 +1165,10 @@ class GUI:
                 return
 
             self.config = config
-
-            self.agent_worker.set_n_worker(self.config['general']['n_worker'])
         
-        self._save_config(self.config)
+        if self.config != old_config:
+            self._save_config(self.config)
+            self.agent_worker.set_config(self.config, self.config_id)
 
     def _log(self, string):
         '''
@@ -1272,16 +1192,11 @@ class GUI:
         
         # can optimize and load config when worker agent is empty
         if self.agent_worker.empty():
-            self.button_optimize.enable()
             self.button_stop.disable()
             if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(0, state=tk.NORMAL)
             if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(2, state=tk.NORMAL)
-
-        # can optimize when worker agent is not full in manual mode
-        if self.entry_mode.get() == 'manual' and not self.agent_worker.full():
-            self.button_optimize.enable()
 
         self._log(self.agent_worker.read_log())
         self._redraw()

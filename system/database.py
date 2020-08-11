@@ -40,18 +40,25 @@ class Database:
         else:
             raise NotImplementedError
 
-    def select(self, table_name, key, dtype, lock=True):
+    def select(self, table_name, key, dtype, rowid=None, lock=True):
         '''
         Select array data from all rows of the table
         '''
+        if rowid is None:
+            row_cond = ''
+        elif isinstance(rowid, int):
+            row_cond = f' where rowid = {rowid}'
+        else:
+            raise NotImplementedError
+
         if isinstance(key, str):
             # select array from single column
-            self.cur.execute(f'select {key} from {table_name}')
+            self.cur.execute(f'select {key} from {table_name}' + row_cond)
             return np.array(self.cur.fetchall(), dtype=dtype).squeeze()
         elif isinstance(key, list):
             if isinstance(dtype, type):
                 # select array with single datatype from multiple columns
-                self.cur.execute(f'select {",".join(key)} from {table_name}')
+                self.cur.execute(f'select {",".join(key)} from {table_name}' + row_cond)
                 return np.array(self.cur.fetchall(), dtype=dtype)
             elif isinstance(dtype, list):
                 # select array with multiple datatypes from multiple columns
@@ -61,10 +68,10 @@ class Database:
                     result_list = []
                     for key_, dtype_ in zip(key, dtype):
                         if isinstance(key_, str):
-                            self.cur.execute(f'select {key_} from {table_name}')
+                            self.cur.execute(f'select {key_} from {table_name}' + row_cond)
                             result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
                         elif isinstance(key_, list):
-                            self.cur.execute(f'select {",".join(key_)} from {table_name}')
+                            self.cur.execute(f'select {",".join(key_)} from {table_name}' + row_cond)
                             result = np.array(self.cur.fetchall(), dtype=dtype_)
                         else:
                             raise NotImplementedError
