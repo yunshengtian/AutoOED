@@ -213,6 +213,7 @@ class DataAgent:
 
     def evaluate(self, config, rowid):
         '''
+        Evaluation of design variables given the associated rowid in database
         '''
         # load design variables
         x_next = self.load('X', valid_only=False, rowid=rowid).squeeze()
@@ -225,7 +226,7 @@ class DataAgent:
 
     def optimize(self, config, config_id, queue=None):
         '''
-        Optimization
+        Optimization of next batch of samples to evaluate, stored in 'rowids' rows in database
         '''
         # read current data from database
         X, Y = self.load(['X', 'Y'])
@@ -319,17 +320,17 @@ class WorkerAgent:
 
         self.agent_data = agent_data
 
-        self.opt_workers_run = []
-        self.opt_workers_wait = []
+        self.opt_workers_run = [] # active optimization workers
+        self.opt_workers_wait = [] # pending optimization workers
         self.opt_worker_id = -1
-        self.opt_worker_cmd = None
+        self.opt_worker_cmd = None # command (function) that generates an optimization worker
 
-        self.eval_workers_run = [] # active workers
-        self.eval_workers_wait = [] # pending workers
+        self.eval_workers_run = [] # active optimization workers
+        self.eval_workers_wait = [] # pending optimization workers
         self.eval_worker_id = -1
-        self.eval_worker_cmd = None # command (function) that generates a worker
+        self.eval_worker_cmd = None # command (function) that generates an evaluation worker
 
-        self.stopped = False
+        self.stopped = False # whether is stopped by user
 
         self.queue = Queue()
         
@@ -345,12 +346,14 @@ class WorkerAgent:
 
     def set_config(self, config, config_id):
         '''
+        Required to set correct configurations before optimization / evaluation
         '''
         self.config = config.copy()
         self.config_id = config_id
 
     def _start_opt_worker(self):
         '''
+        Start an optimization worker
         '''
         if len(self.opt_workers_wait) == 0: return False
         worker, n_iter, curr_iter = self.opt_workers_wait.pop(0)
@@ -365,6 +368,7 @@ class WorkerAgent:
 
     def _start_eval_worker(self):
         '''
+        Start an evaluation worker
         '''
         if len(self.eval_workers_run) >= self.config['general']['n_worker'] or len(self.eval_workers_wait) == 0: return False
         worker = self.eval_workers_wait.pop(0)
@@ -376,26 +380,25 @@ class WorkerAgent:
         
     def _queue_opt_worker(self, n_iter, curr_iter):
         '''
+        Queue an optimization worker
         '''
         worker = self.opt_worker_cmd()
         self.opt_workers_wait.append([worker, n_iter, curr_iter])
 
     def add_opt_worker(self):
         '''
-        Add optimization worker process
+        Add an optimization worker process
         '''
         n_iter = self.config['general']['n_iter']
         self.opt_worker_cmd = lambda: Process(target=process_safe_func, args=(self.agent_data.optimize, self.config, self.config_id, self.queue))
         with self.lock_opt_worker:
             self._queue_opt_worker(n_iter, 0)
             self._start_opt_worker()
+        self.stopped = False
 
     def add_eval_worker(self, rowid):
         '''
-        Add evaluation worker process
-        Input:
-            target: function that worker needs to execute
-            args: arguments to the target function
+        Add an evaluation worker process
         '''
         worker = Process(target=process_safe_func, args=(self.agent_data.evaluate, self.config, rowid))
         with self.lock_eval_worker:
@@ -440,11 +443,14 @@ class WorkerAgent:
             if worker_id is None:
                 self.eval_workers_run = []
                 self.eval_workers_wait = []
-                self.stopped = True
 
     def stop_worker(self):
+        '''
+        Stop all the optimization and evaluation workers
+        '''
         self.stop_opt_worker()
         self.stop_eval_worker()
+        self.stopped = True
 
     def refresh(self):
         '''
@@ -524,5 +530,4 @@ class WorkerAgent:
         return logs
 
     def quit(self):
-        self.stop_opt_worker()
-        self.stop_eval_worker()
+        self.stop_worker()

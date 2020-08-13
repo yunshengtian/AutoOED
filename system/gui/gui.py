@@ -913,16 +913,6 @@ class GUI:
         self.nb_viz.tab(2, state=tk.DISABLED)
         self.frame_db = frame_db
 
-        # configure slider widget
-        frame_slider = tk.Frame(master=frame_viz)
-        frame_slider.grid(row=1, column=0, padx=5, pady=5, sticky='EW')
-        grid_configure(frame_slider, [0], [1])
-        
-        label_iter = tk.Label(master=frame_slider, text='Iteration:')
-        label_iter.grid(row=0, column=0, sticky='EW')
-        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
-        self.scale_iter.grid(row=0, column=1, sticky='EW')
-
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
         self.fig1 = plt.figure(figsize=(10, 5))
         self.gs1 = GridSpec(1, 2, figure=self.fig1, width_ratios=[3, 2])
@@ -958,6 +948,16 @@ class GUI:
         # connect matplotlib figure with tkinter GUI
         embed_figure(self.fig1, frame_plot)
         embed_figure(self.fig2, frame_stat)
+
+        # configure slider widget
+        frame_slider = tk.Frame(master=frame_plot)
+        frame_slider.grid(row=2, column=0, padx=5, pady=0, sticky='EW')
+        grid_configure(frame_slider, [0], [1])
+        
+        label_iter = tk.Label(master=frame_slider, text='Iteration:')
+        label_iter.grid(row=0, column=0, sticky='EW')
+        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
+        self.scale_iter.grid(row=0, column=1, sticky='EW')
 
         def gui_redraw_viz(val):
             '''
@@ -1192,6 +1192,7 @@ class GUI:
         
         # can optimize and load config when worker agent is empty
         if self.agent_worker.empty():
+            self.entry_mode.enable()
             self.button_stop.disable()
             if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(0, state=tk.NORMAL)
