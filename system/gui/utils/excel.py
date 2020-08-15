@@ -72,7 +72,10 @@ class Excel(tk.Frame):
     def get(self, row, column):
         val = self.entries[row][column].get()
         if val == '':
-            result = None if self.required[column] else self.default[column]
+            if self.required[column]:
+                raise Exception(f'Required value for column {column} not specified')
+            else:
+                result = self.default[column]
         else:
             try:
                 result = self.dtype[column](val)
@@ -90,6 +93,13 @@ class Excel(tk.Frame):
 
     def get_all(self):
         return [[self.get(row, column) for column in range(self.n_column)] for row in range(self.n_row)]
+    
+    def get_grid(self, row_start=None, row_end=None, column_start=None, column_end=None):
+        if row_start is None: row_start = 0
+        if row_end is None: row_end = self.n_row - 1
+        if column_start is None: column_start = 0
+        if column_end is None: column_end = self.n_column - 1
+        return [[self.get(row, column) for column in range(column_start, column_end + 1)] for row in range(row_start, row_end + 1)]
 
     def set(self, row, column, val):
         self.entries[row][column].delete(0, tk.END)

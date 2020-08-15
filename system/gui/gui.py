@@ -1024,9 +1024,11 @@ class GUI:
                 if_eval = var_eval.get() == 1 # TODO: fail when no eval script is linked
                 window.destroy()
 
+                # predict, add result to database
                 rowids = self.agent_data.predict(self.config, self.config_id, X_next)
                 self.opt_completed = True
 
+                # call evaluation worker
                 if if_eval:
                     for rowid in rowids:
                         self.agent_worker.add_eval_worker(rowid)
@@ -1035,9 +1037,77 @@ class GUI:
             create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_add_design)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
+        def gui_enter_performance():
+            '''
+            Enter performance values from database panel
+            '''
+            window = tk.Toplevel(master=frame_db)
+            window.title('Enter Performance Values')
+            window.configure(bg='white')
+            window.resizable(False, False)
+
+            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
+            entry_n_row = create_widget('labeled_entry',
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
+            entry_n_row.set(1)
+            button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
+
+            n_obj, obj_name = self.config['problem']['n_obj'], self.config['problem']['obj_name']
+            excel_performance = Excel(master=window, rows=1, columns=n_obj + 1, width=10, 
+                title=['Row number'] + obj_name, dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows] + [None] * n_obj)
+            excel_performance.grid(row=1, column=0)
+
+            def gui_update_table():
+                '''
+                Update excel table of design variables to be added
+                '''
+                n_row = entry_n_row.get()
+                excel_performance.update_n_row(n_row)
+
+            button_n_row.configure(command=gui_update_table)
+
+            def gui_add_performance():
+                '''
+                Add performance values
+                '''
+                try:
+                    rowids = excel_performance.get_column(0)
+                    if len(np.unique(rowids)) != len(rowids):
+                        raise Exception('Duplicate row numbers')
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid row numbers', parent=window)
+                    return
+
+                # check for overwriting
+                overwrite = False
+                for rowid in rowids:
+                    for name in obj_name:
+                        if self.table_db.get(rowid - 1, name) != 'N/A':
+                            overwrite = True
+                if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=window) == 'no': return
+
+                try:
+                    Y = excel_performance.get_grid(column_start=1)
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid performance values', parent=window)
+                    return
+                
+                window.destroy()
+
+                # update database
+                self.agent_data.update_batch(Y, rowids, recompute_stat=False)
+
+                # update table gui
+                self.table_db.update({'Y': Y}, rowids=rowids)
+            
+            frame_action = create_widget('frame', master=window, row=2, column=0, sticky='NS', pady=0)
+            create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_add_performance)
+            create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
+
         frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, bg=None)
         self.button_enter_design = create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
-        self.button_enter_performance = create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values')
+        self.button_enter_performance = create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values', command=gui_enter_performance)
         self.button_evaluate = create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Evaluate')
 
         frame_db_table = create_widget('frame', master=frame_db, row=1, column=0)

@@ -171,16 +171,11 @@ class Database:
 
         if isinstance(key, str):
             # update single scalar to single column
-            self.cur.executemany(f'update {table_name} set {key} = ?' + condition, [[data]])
+            self.cur.executemany(f'update {table_name} set {key} = ?' + condition, np.atleast_2d(np.array(data, dtype=object)))
         elif isinstance(key, list):
             # update multiple scalars to multiple columns
-            flattened_data = []
-            for d in data:
-                if isinstance(d, list) or isinstance(d, np.ndarray):
-                    flattened_data.extend(d)
-                else:
-                    flattened_data.append(d)
-            self.cur.executemany(f'update {table_name} set ({",".join(key)}) = ({",".join(["?"] * len(flattened_data))})' + condition, [flattened_data])
+            flattened_data = np.atleast_2d(np.hstack(np.array(data, dtype=object)))
+            self.cur.executemany(f'update {table_name} set ({",".join(key)}) = ({",".join(["?"] * flattened_data.shape[1])})' + condition, flattened_data)
         else:
             raise NotImplementedError
 

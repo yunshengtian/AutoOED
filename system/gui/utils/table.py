@@ -59,7 +59,7 @@ class Table:
         for key, val in data.items():
             if isinstance(val, np.ndarray): val = val.tolist()
 
-            row_range = range(len(val)) if rowids is None else rowids
+            row_range = range(len(val)) if rowids is None else np.array(rowids) - 1
 
             for i, row in enumerate(row_range):
                 if self.key_map is not None and key in self.key_map:
@@ -68,3 +68,11 @@ class Table:
                         self.model.data[row][mapped_key] = self._process_val(val[i][j])
                 else:
                     self.model.data[row][key] = self._process_val(val[i])
+
+        self.table.redrawTable()
+
+    def get(self, row, column):
+        '''
+        Get the cell value
+        '''
+        return self.table.model.data[row][column]

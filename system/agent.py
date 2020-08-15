@@ -122,7 +122,7 @@ class DataAgent:
             self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id, batch_id])
             self.db.commit()
 
-    def _insert(self, X, Y_expected, Y_uncertainty, config_id):
+    def insert(self, X, Y_expected, Y_uncertainty, config_id):
         '''
         Insert optimization result to database
         Input:
@@ -142,11 +142,11 @@ class DataAgent:
         rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
         return rowids.tolist()
 
-    def _update(self, y, rowid):
+    def update(self, y, rowid, recompute_stat=True):
         '''
         Update evaluation result to database
         Input:
-            rowids: row indices to be updated
+            rowid: row index to be updated (count from 1)
         '''
         with self.db.get_lock():
             all_Y, all_Y_expected = self.load(['Y', 'Y_expected'], valid_only=False, lock=False)
@@ -155,13 +155,45 @@ class DataAgent:
             all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
 
             # compute associated values based on evaluation data (hv, pred_error, is_pareto) (TODO: speed optimization)
-            hv_value = self.hv.calc(all_Y_valid)
-            pred_error = calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])
+            if recompute_stat:
+                hv_value = self.hv.calc(all_Y_valid)
+                pred_error = calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])
             is_pareto = np.full(len(all_Y), False)
             is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
 
-            self.db.update('data', key=self._map_key(['Y', 'hv', 'pred_error'], flatten=True), data=[y, hv_value, pred_error], rowid=rowid)
+            if recompute_stat:
+                self.db.update('data', key=self._map_key(['Y', 'hv', 'pred_error'], flatten=True), data=[y, hv_value, pred_error], rowid=rowid)
+            else:
+                self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid)
+            self.db.update('data', key='is_pareto', data=False, rowid=None)
+            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
+            self.db.commit()
+
+    def update_batch(self, Y, rowids, recompute_stat=True):
+        '''
+        Update batch evaluation result to database
+        Input:
+            rowids: row indices to be updated (count from 1)
+        '''
+        with self.db.get_lock():
+            all_Y, all_Y_expected = self.load(['Y', 'Y_expected'], valid_only=False, lock=False)
+            all_Y[np.array(rowids) - 1] = Y
+            valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
+            all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
+
+            # compute associated values based on evaluation data (hv, pred_error, is_pareto) (TODO: speed optimization)
+            if recompute_stat:
+                hv_value = [self.hv.calc(all_Y_valid)] * len(rowids)
+                pred_error = [calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])] * len(rowids)
+            is_pareto = np.full(len(all_Y), False)
+            is_pareto[valid_idx] = check_pareto(all_Y_valid)
+            pareto_id = np.where(is_pareto)[0] + 1
+
+            if recompute_stat:
+                self.db.update('data', key=self._map_key(['Y', 'hv', 'pred_error'], flatten=True), data=[Y, hv_value, pred_error], rowid=rowids)
+            else:
+                self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids)
             self.db.update('data', key='is_pareto', data=False, rowid=None)
             self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
             self.db.commit()
@@ -222,7 +254,7 @@ class DataAgent:
         y_next = evaluate(config, x_next)
 
         # update evaluation result to database
-        self._update(y_next, rowid)
+        self.update(y_next, rowid)
 
     def optimize(self, config, config_id, queue=None):
         '''
@@ -238,7 +270,7 @@ class DataAgent:
         Y_expected, Y_uncertainty = self._predict(config, X_next)
 
         # insert optimization and prediction result to database
-        rowids = self._insert(X_next, Y_expected, Y_uncertainty, config_id)
+        rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
 
         if queue is None:
             return rowids
@@ -253,7 +285,7 @@ class DataAgent:
         Y_expected, Y_uncertainty = self._predict(config, X_next)
 
         # insert design variables and prediction result to database
-        rowids = self._insert(X_next, Y_expected, Y_uncertainty, config_id)
+        rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
 
         if queue is None:
             return rowids
