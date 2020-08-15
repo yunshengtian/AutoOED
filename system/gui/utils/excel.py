@@ -20,17 +20,18 @@ class Excel(tk.Frame):
         super().__init__(master)
         self.n_row = rows
         self.n_column = columns
+        self.width = width
         self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
 
         # make titles
         if title is not None:
             for column in range(self.n_column):
-                self._make_entry(0, column + 1, width, title[column], False) 
+                self._make_entry(0, column + 1, self.width, title[column], False) 
 
         # make entries
         for row in range(self.n_row):
             for column in range(self.n_column):
-                self.entries[row][column] = self._make_entry(row + 1, column + 1, width, '', True)
+                self.entries[row][column] = self._make_entry(row + 1, column + 1, self.width, '', True)
 
         # set data types
         if dtype is None:
@@ -128,3 +129,12 @@ class Excel(tk.Frame):
     def disable_column(self, column):
         for row in range(self.n_row):
             self.disable(row, column)
+
+    def update_n_row(self, n_row):
+        self.n_row = n_row
+        self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
+
+        # make entries
+        for row in range(self.n_row):
+            for column in range(self.n_column):
+                self.entries[row][column] = self._make_entry(row + 1, column + 1, self.width, '', True)

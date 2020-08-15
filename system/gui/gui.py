@@ -81,10 +81,12 @@ class GUI:
 
         # status variables
         self.n_init_sample = None
-        self.n_curr_sample = None
+        self.n_sample = None
+        self.n_valid_sample = None
         self.curr_iter = tk.IntVar()
         self.max_iter = 0
         self.in_creating_problem = False
+        self.db_status = 0
 
         # displayed name of each property in config
         self.name_map = {
@@ -905,13 +907,13 @@ class GUI:
         frame_db = tk.Frame(master=self.nb_viz)
         grid_configure(frame_plot, [0], [0])
         grid_configure(frame_stat, [0], [0])
+        grid_configure(frame_db, [1], [0])
         self.nb_viz.add(child=frame_plot, text='Visualization')
         self.nb_viz.add(child=frame_stat, text='Statistics')
         self.nb_viz.add(child=frame_db, text='Database')
 
         # temporarily disable database tab until data loaded
         self.nb_viz.tab(2, state=tk.DISABLED)
-        self.frame_db = frame_db
 
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
         self.fig1 = plt.figure(figsize=(10, 5))
@@ -973,6 +975,73 @@ class GUI:
             self._redraw_performance_space(curr_iter)
 
         self.scale_iter.configure(command=gui_redraw_viz)
+
+        def gui_enter_design():
+            '''
+            Enter design variables from database panel
+            '''
+            window = tk.Toplevel(master=frame_db)
+            window.title('Enter Design Variables')
+            window.configure(bg='white')
+            window.resizable(False, False)
+
+            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
+            entry_n_row = create_widget('labeled_entry',
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
+            entry_n_row.set(1)
+            button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
+
+            n_var, var_name = self.config['problem']['n_var'], self.config['problem']['var_name']
+            var_lb, var_ub = self.config['problem']['var_lb'], self.config['problem']['var_ub']
+            excel_design = Excel(master=window, rows=1, columns=n_var, width=10, 
+                title=var_name, dtype=[float] * n_var, default=None, required=[True] * n_var, valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)])
+            excel_design.grid(row=1, column=0)
+
+            def gui_update_table():
+                '''
+                Update excel table of design variables to be added
+                '''
+                n_row = entry_n_row.get()
+                excel_design.update_n_row(n_row)
+
+            button_n_row.configure(command=gui_update_table)
+
+            var_eval = tk.IntVar()
+            checkbutton_eval = tk.Checkbutton(master=window, text='Automatically evaluate', variable=var_eval, bg='white')
+            checkbutton_eval.grid(row=2, column=0, pady=10, sticky='NS')
+
+            def gui_add_design():
+                '''
+                Add input design variables, then predict (and evaluate)
+                '''
+                try:
+                    X_next = np.atleast_2d(excel_design.get_all())
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid design values', parent=window)
+                    return
+
+                if_eval = var_eval.get() == 1 # TODO: fail when no eval script is linked
+                window.destroy()
+
+                rowids = self.agent_data.predict(self.config, self.config_id, X_next)
+                self.opt_completed = True
+
+                if if_eval:
+                    for rowid in rowids:
+                        self.agent_worker.add_eval_worker(rowid)
+
+            frame_action = create_widget('frame', master=window, row=3, column=0, sticky='NS', pady=0)
+            create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_add_design)
+            create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
+
+        frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, bg=None)
+        self.button_enter_design = create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
+        self.button_enter_performance = create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values')
+        self.button_evaluate = create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Evaluate')
+
+        frame_db_table = create_widget('frame', master=frame_db, row=1, column=0)
+        self.frame_db_table = frame_db_table
 
     def _init_control_widgets(self):
         '''
@@ -1212,7 +1281,8 @@ class GUI:
 
         # update status
         self.n_init_sample = len(Y)
-        self.n_curr_sample = self.n_init_sample
+        self.n_sample = self.n_init_sample
+        self.n_valid_sample = self.n_init_sample
 
         # plot performance space
         if true_pfront is not None:
@@ -1283,7 +1353,7 @@ class GUI:
         }
 
         self.nb_viz.tab(2, state=tk.NORMAL)
-        self.table_db = Table(master=self.frame_db, titles=titles)
+        self.table_db = Table(master=self.frame_db_table, titles=titles)
         self.table_db.register_key_map(key_map)
         self.table_db.insert({
             'X': X, 
@@ -1361,53 +1431,75 @@ class GUI:
         '''
         Redraw figures and database viz
         '''
-        # check if needs redraw
-        if self.agent_data.get_sample_num() == self.n_curr_sample: return
-
-        # load from database (TODO: optimize)
+        # check if database was updated
+        db_status = self.agent_data.get_status()
+        if db_status == self.db_status: return
+        self.db_status = db_status
+        
+        # load from database
         X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id, batch_id = \
-            self.agent_data.load(['X', 'Y', 'Y_expected', 'Y_uncertainty', 'hv', 'pred_error', 'is_pareto', 'config_id', 'batch_id'])
-        n_prev_sample = self.n_curr_sample
-        self.n_curr_sample = len(batch_id)
+            self.agent_data.load(['X', 'Y', 'Y_expected', 'Y_uncertainty', 'hv', 'pred_error', 'is_pareto', 'config_id', 'batch_id'], valid_only=False)
 
-        # replot performance space if currently focusing on the lastest iteration
-        if self.curr_iter.get() == self.max_iter:
-            self.max_iter = batch_id[-1]
-            self.scale_iter.configure(to=self.max_iter)
-            self.curr_iter.set(self.max_iter)
-            self._redraw_performance_space()
-        else:
-            self.max_iter = batch_id[-1]
-            self.scale_iter.configure(to=self.max_iter)
-            
-        # replot hypervolume curve
-        self.line_hv.set_data(list(range(self.n_curr_sample)), hv_value)
-        self.ax21.relim()
-        self.ax21.autoscale_view()
-        self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
+        # check if any completed optimization
+        n_curr_sample = len(X)
+        n_prev_sample = self.n_sample
+        self.n_sample = n_curr_sample
+        opt_completed = (n_prev_sample < n_curr_sample)
 
-        # replot prediction error curve
-        self.line_error.set_data(list(range(self.n_init_sample, self.n_curr_sample)), pred_error[self.n_init_sample:])
-        self.ax22.relim()
-        self.ax22.autoscale_view()
-        self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[-1])
+        # check if any completed evaluation
+        valid_idx = ~np.isnan(Y).any(axis=1)
+        n_curr_valid_sample = int(np.sum(valid_idx))
+        n_prev_valid_sample = self.n_valid_sample
+        self.n_valid_sample = n_curr_valid_sample
+        eval_completed = (n_prev_valid_sample < n_curr_valid_sample)
 
-        # refresh figure
-        self.fig2.canvas.draw()
+        # replot if evaluation completed
+        if eval_completed:
+            # replot performance space if currently focusing on the lastest iteration
+            if self.curr_iter.get() == self.max_iter:
+                self.max_iter = batch_id[valid_idx][-1]
+                self.scale_iter.configure(to=self.max_iter)
+                self.curr_iter.set(self.max_iter)
+                self._redraw_performance_space()
+            else:
+                self.max_iter = batch_id[valid_idx][-1]
+                self.scale_iter.configure(to=self.max_iter)
+                
+            # replot hypervolume curve
+            self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value[valid_idx])
+            self.ax21.relim()
+            self.ax21.autoscale_view()
+            self.ax21.set_title('Hypervolume: %.2f' % hv_value[valid_idx][-1])
 
-        # update database viz (TODO: optimize)
-        self.table_db.insert({
-            'X': X[n_prev_sample:self.n_curr_sample], 
-            'Y': Y[n_prev_sample:self.n_curr_sample], 
-            'Y_expected': Y_expected[n_prev_sample:self.n_curr_sample],
-            'Y_uncertainty': Y_uncertainty[n_prev_sample:self.n_curr_sample],
-            'config_id': config_id[n_prev_sample:self.n_curr_sample], 
-            'batch_id': batch_id[n_prev_sample:self.n_curr_sample],
-        })
+            # replot prediction error curve
+            self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error[valid_idx][self.n_init_sample:])
+            self.ax22.relim()
+            self.ax22.autoscale_view()
+            self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[valid_idx][-1])
 
-        self.table_db.update({
-            'pareto': is_pareto,
-        })
+            # refresh figure
+            self.fig2.canvas.draw()
+        
+        # insert to table if optimization completed (TODO: optimize)
+        if opt_completed:
+            self.table_db.insert({
+                # confirmed value
+                'X': X[n_prev_sample:], 
+                'Y_expected': Y_expected[n_prev_sample:],
+                'Y_uncertainty': Y_uncertainty[n_prev_sample:],
+                'config_id': config_id[n_prev_sample:], 
+                'batch_id': batch_id[n_prev_sample:],
+                # unconfirmed value
+                'Y': np.ones_like(Y_expected[n_prev_sample:]) * np.nan,
+                'pareto': np.zeros_like(batch_id[n_prev_sample:], dtype=bool),
+            })
+
+        # update table if evaluation completed (TODO: optimize)
+        if eval_completed:
+            self.table_db.update({
+                'Y': Y, 
+                'pareto': is_pareto,
+            })
 
     def mainloop(self):
         '''

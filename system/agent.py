@@ -199,7 +199,7 @@ class DataAgent:
         '''
         return self.db.get_last_rowid('data')
 
-    def predict(self, config, X_next):
+    def _predict(self, config, X_next):
         '''
         Performance prediction of given design variables X_next
         '''
@@ -235,7 +235,7 @@ class DataAgent:
         X_next = optimize(config, X, Y)
 
         # predict performance of X_next
-        Y_expected, Y_uncertainty = self.predict(config, X_next)
+        Y_expected, Y_uncertainty = self._predict(config, X_next)
 
         # insert optimization and prediction result to database
         rowids = self._insert(X_next, Y_expected, Y_uncertainty, config_id)
@@ -244,6 +244,27 @@ class DataAgent:
             return rowids
         else:
             queue.put(rowids)
+
+    def predict(self, config, config_id, X_next, queue=None):
+        '''
+        Performance prediction of given design variables X_next, stored in 'rowids' rows in database
+        '''
+        # predict performance of given input X_next
+        Y_expected, Y_uncertainty = self._predict(config, X_next)
+
+        # insert design variables and prediction result to database
+        rowids = self._insert(X_next, Y_expected, Y_uncertainty, config_id)
+
+        if queue is None:
+            return rowids
+        else:
+            queue.put(rowids)
+
+    def get_status(self):
+        '''
+        Get the status id of database
+        '''
+        return self.db.status.value
 
     def quit(self):
         '''

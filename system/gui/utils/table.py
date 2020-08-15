@@ -1,7 +1,6 @@
 import numpy as np
 from tkintertable import TableCanvas, TableModel
 
-
 class Table:
     '''
     Excel-like table in tkinter gui
@@ -11,6 +10,7 @@ class Table:
         for title in titles:
             self.model.addColumn(colname=title)
         self.table = TableCanvas(parent=master, model=self.model, read_only=True)
+        self.table.setSelectedRow(-1)
         self.table.show()
         
         self.n_rows = 0
@@ -24,7 +24,8 @@ class Table:
             if val == True: return 'True'
             else: return 'False'
         elif isinstance(val, float):
-            return round(val, 4)
+            if np.isnan(val): return 'N/A'
+            else: return round(val, 4)
         else:
             return val
 

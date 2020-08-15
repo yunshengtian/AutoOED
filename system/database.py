@@ -1,7 +1,7 @@
 import sys
 import sqlite3
 import numpy as np
-from multiprocessing import Lock
+from multiprocessing import Lock, Value
 
 from system.utils import ProcessSafeExit
 
@@ -19,6 +19,7 @@ class Database:
         self.cur = self.conn.cursor()
         self.alive = True
         self.lock = Lock()
+        self.status = Value('i', 0) # status id detecting database change (increase 1 when database changes)
     
     def get_lock(self):
         '''
@@ -131,6 +132,9 @@ class Database:
         '''
         Insert array data to table
         '''
+        with self.status.get_lock():
+            self.status.value += 1
+
         if isinstance(key, str):
             # insert single array into single column
             self.cur.executemany(f'insert into {table_name} ({key}) values (?)', data)
@@ -150,6 +154,9 @@ class Database:
         Update scalar data to table
         NOTE: updating different values to different rows is not supported
         '''
+        with self.status.get_lock():
+            self.status.value += 1
+
         if isinstance(rowid, int):
             # update single row
             condition = f' where rowid = {rowid}'
