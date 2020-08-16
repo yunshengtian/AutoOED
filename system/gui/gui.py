@@ -214,16 +214,9 @@ class GUI:
 
             # TODO: set default values visible
 
-            # general subsection
-            frame_general = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='General')
-            grid_configure(frame_general, [0, 1, 2, 3], [0])
-            widget_map['general']['n_worker'] = create_widget('labeled_entry',
-                master=frame_general, row=1, column=0, text=self.name_map['general']['n_worker'], class_type='int', default=1,
-                valid_check=lambda x: x > 0, error_msg='max number of evaluation workers must be positive')
-
             # problem subsection
-            frame_problem = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Problem')
-            grid_configure(frame_problem, [0, 1, 2, 3, 4, 5], [0])
+            frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='Problem')
+            grid_configure(frame_problem, [0, 1, 2, 3, 4, 5, 6, 7], [0])
             widget_map['problem']['name'] = create_widget('labeled_combobox', 
                 master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), required=True, changeable=False)
             widget_map['problem']['n_var'] = create_widget('labeled_entry', 
@@ -434,13 +427,20 @@ class GUI:
             widget_map['problem']['name'].widget.bind('<<ComboboxSelected>>', gui_select_problem)
 
             # algorithm subsection
-            frame_algorithm = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Algorithm')
+            frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')
             grid_configure(frame_algorithm, [0], [0])
             widget_map['algorithm']['name'] = create_widget('labeled_combobox', 
                 master=frame_algorithm, row=0, column=0, text=self.name_map['algorithm']['name'], values=get_available_algorithms(), required=True)
             widget_map['algorithm']['n_process'] = create_widget('labeled_entry', 
                 master=frame_algorithm, row=1, column=0, text=self.name_map['algorithm']['n_process'], class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
+
+            # evaluation subsection
+            frame_general = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Evaluation')
+            grid_configure(frame_general, [0], [0])
+            widget_map['general']['n_worker'] = create_widget('labeled_entry',
+                master=frame_general, row=1, column=0, text=self.name_map['general']['n_worker'], class_type='int', default=1,
+                valid_check=lambda x: x > 0, error_msg='max number of evaluation workers must be positive')
 
             def load_curr_config():
                 '''
