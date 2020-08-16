@@ -402,11 +402,11 @@ class WorkerAgent:
         Start an evaluation worker
         '''
         if len(self.eval_workers_run) >= self.config['general']['n_worker'] or len(self.eval_workers_wait) == 0: return False
-        worker = self.eval_workers_wait.pop(0)
+        worker, rowid = self.eval_workers_wait.pop(0)
         worker.start()
         self.eval_worker_id += 1
-        self.eval_workers_run.append([self.eval_worker_id, worker])
-        self._add_log(f'evaluation worker {self.eval_worker_id} started')
+        self.eval_workers_run.append([self.eval_worker_id, worker, rowid])
+        self._add_log(f'evaluation worker {self.eval_worker_id} started' + f'/{rowid}') # NOTE: for passing rowid to gui for updating status
         return True
         
     def _queue_opt_worker(self, n_iter, curr_iter):
@@ -433,7 +433,7 @@ class WorkerAgent:
         '''
         worker = Process(target=process_safe_func, args=(self.agent_data.evaluate, self.config, rowid))
         with self.lock_eval_worker:
-            self.eval_workers_wait.append(worker)
+            self.eval_workers_wait.append([worker, rowid])
             self._start_eval_worker()
         self.stopped = False
 
@@ -464,10 +464,10 @@ class WorkerAgent:
         '''
         with self.lock_eval_worker:
             for w in self.eval_workers_run:
-                wid, worker = w
+                wid, worker, rowid = w
                 if (worker_id is None or wid == worker_id) and worker.is_alive():
                     worker.terminate()
-                    self._add_log(f'evaluation worker {wid} stopped')
+                    self._add_log(f'evaluation worker {wid} stopped' + f'/{rowid}')
                     if worker_id is not None:
                         self.eval_workers_run.remove(w)
                         break
@@ -492,10 +492,10 @@ class WorkerAgent:
 
             # check for completed evaluation workers
             for w in self.eval_workers_run:
-                wid, worker = w
+                wid, worker, rowid = w
                 if not worker.is_alive():
                     completed_eval.append(w)
-                    self._add_log(f'evaluation worker {wid} completed')
+                    self._add_log(f'evaluation worker {wid} completed' + f'/{rowid}')
             
             # remove completed evaluation workers
             for w in completed_eval:

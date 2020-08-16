@@ -9,7 +9,7 @@ class Table:
         self.model = TableModel()
         for title in titles:
             self.model.addColumn(colname=title)
-        self.table = TableCanvas(parent=master, model=self.model, read_only=True)
+        self.table = TableCanvas(parent=master, model=self.model, cellwidth=110, read_only=True)
         self.table.setSelectedRow(-1)
         self.table.show()
         
@@ -76,3 +76,9 @@ class Table:
         Get the cell value
         '''
         return self.table.model.data[row][column]
+
+    def get_column(self, column):
+        '''
+        Get values of a column
+        '''
+        return [self.get(row, column) for row in range(self.n_rows)]

@@ -87,6 +87,7 @@ class GUI:
         self.max_iter = 0
         self.in_creating_problem = False
         self.db_status = 0
+        self.worker_rowid_map = {}
 
         # displayed name of each property in config
         self.name_map = {
@@ -1052,8 +1053,8 @@ class GUI:
 
             frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
             entry_n_row = create_widget('labeled_entry',
-                master=frame_n_row, row=0, column=0, text='Row number', class_type='int', default=1, 
-                valid_check=lambda x: x > 0, error_msg='row number must be positive')
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
@@ -1113,8 +1114,8 @@ class GUI:
 
             frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
             entry_n_row = create_widget('labeled_entry',
-                master=frame_n_row, row=0, column=0, text='Row number', class_type='int', default=1, 
-                valid_check=lambda x: x > 0, error_msg='row number must be positive')
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
@@ -1161,7 +1162,7 @@ class GUI:
                 window.destroy()
 
                 # update database
-                self.agent_data.update_batch(Y, rowids, recompute_stat=False)
+                self.agent_data.update_batch(Y, rowids)
 
                 # update table gui
                 self.table_db.update({'Y': Y}, rowids=rowids)
@@ -1181,8 +1182,8 @@ class GUI:
 
             frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
             entry_n_row = create_widget('labeled_entry',
-                master=frame_n_row, row=0, column=0, text='Row number', class_type='int', default=1, 
-                valid_check=lambda x: x > 0, error_msg='row number must be positive')
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
@@ -1449,8 +1450,32 @@ class GUI:
             if self.menu_config.entrycget(2, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(2, state=tk.NORMAL)
 
-        self._log(self.agent_worker.read_log())
+        # post-process worker logs
+        log_list = []
+        status, rowids = [], []
+        for log in self.agent_worker.read_log():
+            log = log.split('/')
+            log_text = log[0]
+            log_list.append(log_text)
+
+            # evaluation worker log, update database table status
+            if len(log) > 1:
+                rowid = int(log[1])
+                if log_text.endswith('started'):
+                    status.append('evaluating')
+                elif log_text.endswith('stopped'):
+                    status.append('unevaluated')
+                elif log_text.endswith('completed'):
+                    status.append('evaluated')
+                else:
+                    raise NotImplementedError
+                rowids.append(rowid)
+
+        # log display, update visualization
+        self._log(log_list)
         self._redraw()
+        self.table_db.update({'status': status}, rowids)
+        
         self.root.after(self.refresh_rate, self._refresh)
         
     def _init_draw(self, true_pfront):
@@ -1522,7 +1547,7 @@ class GUI:
 
         # initialize database viz
         n_var, n_obj = X.shape[1], Y.shape[1]
-        titles = [f'x{i + 1}' for i in range(n_var)] + \
+        titles = ['status'] + [f'x{i + 1}' for i in range(n_var)] + \
             [f'f{i + 1}' for i in range(n_obj)] + \
             [f'f{i + 1}_expected' for i in range(n_obj)] + \
             [f'f{i + 1}_uncertainty' for i in range(n_obj)] + \
@@ -1538,6 +1563,7 @@ class GUI:
         self.table_db = Table(master=self.frame_db_table, titles=titles)
         self.table_db.register_key_map(key_map)
         self.table_db.insert({
+            'status': ['evaluated'] * self.n_init_sample,
             'X': X, 
             'Y': Y, 
             'Y_expected': np.full_like(Y, 'N/A', dtype=object),
@@ -1670,6 +1696,7 @@ class GUI:
         
         # insert to table if optimization completed (TODO: optimize)
         if opt_completed:
+            insert_len = len(Y_expected[n_prev_sample:])
             self.table_db.insert({
                 # confirmed value
                 'X': X[n_prev_sample:], 
@@ -1678,8 +1705,9 @@ class GUI:
                 'config_id': config_id[n_prev_sample:], 
                 'batch_id': batch_id[n_prev_sample:],
                 # unconfirmed value
+                'status': ['unevaluated'] * insert_len,
                 'Y': np.ones_like(Y_expected[n_prev_sample:]) * np.nan,
-                'pareto': np.zeros_like(batch_id[n_prev_sample:], dtype=bool),
+                'pareto': [False] * insert_len,
             })
 
         # update table if evaluation completed (TODO: optimize)
