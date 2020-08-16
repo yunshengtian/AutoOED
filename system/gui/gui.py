@@ -61,6 +61,7 @@ class GUI:
         # event widgets
         self.button_optimize = None
         self.button_stop = None
+        self.button_stopcri = None
         self.scrtext_log = None
         self.entry_mode = None
         self.entry_batch_size = None
@@ -87,7 +88,7 @@ class GUI:
         self.max_iter = 0
         self.in_creating_problem = False
         self.db_status = 0
-        self.worker_rowid_map = {}
+        self.stop_criterion = {}
 
         # displayed name of each property in config
         self.name_map = {
@@ -290,8 +291,8 @@ class GUI:
                 # action section
                 frame_action = tk.Frame(master=window_design, bg='white')
                 frame_action.grid(row=1, column=0)
-                create_widget('button', frame_action, 0, 0, 'Save', gui_save_design_space)
-                create_widget('button', frame_action, 0, 1, 'Cancel', window_design.destroy)
+                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_design_space)
+                create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_design.destroy)
 
             def gui_config_performance():
                 '''
@@ -350,12 +351,13 @@ class GUI:
                 # action section
                 frame_action = tk.Frame(master=window_performance, bg='white')
                 frame_action.grid(row=1, column=0)
-                create_widget('button', frame_action, 0, 0, 'Save', gui_save_performance_space)
-                create_widget('button', frame_action, 0, 1, 'Cancel', window_performance.destroy)
+                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_performance_space)
+                create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_performance.destroy)
 
-            frame_space = create_widget('frame', master=frame_problem, row=4, column=0)
-            button_config_design = create_widget('button', master=frame_space, row=4, column=0, text='Configure design bounds', command=gui_config_design, pady=0)
-            button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Configure performance bounds', command=gui_config_performance, pady=0)
+            frame_space = tk.Frame(master=frame_problem, bg='white')
+            frame_space.grid(row=4, column=0)
+            button_config_design = create_widget('button', master=frame_space, row=4, column=0, text='Configure design bounds', command=gui_config_design)
+            button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Configure performance bounds', command=gui_config_performance)
 
             def gui_set_x_init():
                 '''
@@ -568,10 +570,9 @@ class GUI:
             frame_list_action = create_widget('frame', master=frame_list, row=1, column=0, padx=0, pady=0)
             frame_config = create_widget('labeled_frame', master=frame_problem, row=0, column=1, text='Problem Config')
             frame_config_display = create_widget('frame', master=frame_config, row=0, column=0, padx=0, pady=0)
-            frame_config_action = create_widget('frame', master=frame_config, row=1, column=0, padx=0, pady=0)
+            frame_config_action = create_widget('frame', master=frame_config, row=1, column=0, padx=0, pady=0, sticky=None)
             
             grid_configure(frame_list, [0], [0])
-            grid_configure(frame_config_action, [0], [0, 1])
 
             # list subsection
             listbox_problem = Listbox(master=frame_list_display)
@@ -596,9 +597,10 @@ class GUI:
 
             problem_cfg = {}
 
-            frame_config_space = create_widget('frame', master=frame_config_display, row=4, column=0, padx=0)
-            button_config_design = create_widget('button', master=frame_config_space, row=0, column=0, text='Configure design space', pady=0)
-            button_config_performance = create_widget('button', master=frame_config_space, row=0, column=1, text='Configure performance space', pady=0)
+            frame_config_space = tk.Frame(master=frame_config_display, bg='white')
+            frame_config_space.grid(row=4, column=0)
+            button_config_design = create_widget('button', master=frame_config_space, row=0, column=0, text='Configure design space')
+            button_config_performance = create_widget('button', master=frame_config_space, row=0, column=1, text='Configure performance space')
 
             def gui_set_performance_script():
                 '''
@@ -698,8 +700,8 @@ class GUI:
                 # action section
                 frame_action = tk.Frame(master=window_design, bg='white')
                 frame_action.grid(row=1, column=0)
-                create_widget('button', frame_action, 0, 0, 'Save', gui_save_design_space)
-                create_widget('button', frame_action, 0, 1, 'Cancel', window_design.destroy)
+                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_design_space)
+                create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_design.destroy)
 
             def gui_set_performance_space():
                 '''
@@ -746,8 +748,8 @@ class GUI:
                 # action section
                 frame_action = tk.Frame(master=window_performance, bg='white')
                 frame_action.grid(row=1, column=0)
-                create_widget('button', frame_action, 0, 0, 'Save', gui_save_performance_space)
-                create_widget('button', frame_action, 0, 1, 'Cancel', window_performance.destroy)
+                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_performance_space)
+                create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_performance.destroy)
 
             def exit_creating_problem():
                 '''
@@ -1051,7 +1053,7 @@ class GUI:
             window.configure(bg='white')
             window.resizable(False, False)
 
-            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
+            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky=None, pady=0)
             entry_n_row = create_widget('labeled_entry',
                 master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
@@ -1073,9 +1075,10 @@ class GUI:
 
             button_n_row.configure(command=gui_update_table)
 
+            frame_eval = create_widget('frame', master=window, row=2, column=0, sticky=None)
             var_eval = tk.IntVar()
-            checkbutton_eval = tk.Checkbutton(master=window, text='Automatically evaluate', variable=var_eval, bg='white')
-            checkbutton_eval.grid(row=2, column=0, pady=10, sticky='NS')
+            tk.Checkbutton(master=frame_eval, variable=var_eval, bg='white', highlightthickness=0, bd=0).grid(row=0, column=0)
+            tk.Label(master=frame_eval, text='Automatically evaluate', bg='white').grid(row=0, column=1)
 
             def gui_add_design():
                 '''
@@ -1099,7 +1102,7 @@ class GUI:
                     for rowid in rowids:
                         self.agent_worker.add_eval_worker(rowid)
 
-            frame_action = create_widget('frame', master=window, row=3, column=0, sticky='NS', pady=0)
+            frame_action = create_widget('frame', master=window, row=3, column=0, sticky=None, pady=0)
             create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_add_design)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
@@ -1112,7 +1115,7 @@ class GUI:
             window.configure(bg='white')
             window.resizable(False, False)
 
-            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
+            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky=None, pady=0)
             entry_n_row = create_widget('labeled_entry',
                 master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
@@ -1167,7 +1170,7 @@ class GUI:
                 # update table gui
                 self.table_db.update({'Y': Y}, rowids=rowids)
             
-            frame_action = create_widget('frame', master=window, row=2, column=0, sticky='NS', pady=0)
+            frame_action = create_widget('frame', master=window, row=2, column=0, sticky=None, pady=0)
             create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_add_performance)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
         
@@ -1180,7 +1183,7 @@ class GUI:
             window.configure(bg='white')
             window.resizable(False, False)
 
-            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky='NS', pady=0)
+            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky=None, pady=0)
             entry_n_row = create_widget('labeled_entry',
                 master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
@@ -1215,11 +1218,11 @@ class GUI:
                 for rowid in rowids:
                     self.agent_worker.add_eval_worker(rowid)
 
-            frame_action = create_widget('frame', master=window, row=2, column=0, sticky='NS', pady=0)
+            frame_action = create_widget('frame', master=window, row=2, column=0, sticky=None, pady=0)
             create_widget('button', master=frame_action, row=0, column=0, text='Evaluate', command=gui_start_evaluate)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
-        frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, bg=None)
+        frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, bg=None, sticky=None)
         self.button_enter_design = create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
         self.button_enter_performance = create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values', command=gui_enter_performance)
         self.button_evaluate = create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Evaluate', command=gui_evaluate)
@@ -1244,20 +1247,98 @@ class GUI:
             master=frame_control, row=2, column=0, columnspan=2, text=self.name_map['general']['n_iter'], class_type='int', required=True, required_mark=False,
             valid_check=lambda x: x > 0, error_msg='number of optimization iteration must be positive', bg=None)
 
+        def gui_set_stop_criterion():
+            '''
+            Set stopping criterion for optimization
+            '''
+            window = tk.Toplevel(master=self.root)
+            window.title('Stopping Criterion')
+            window.configure(bg='white')
+            window.resizable(False, False)
+
+            frame_options = create_widget('frame', master=window, row=0, column=0, padx=0, pady=0)
+            name_options = {'time': 'Time', 'n_sample': 'Number of samples', 'hv_value': 'Hypervolume value', 'hv_conv': 'Hypervolume convergence'}
+            var_options = {}
+            entry_options = {}
+
+            frame_time = create_widget('frame', master=frame_options, row=0, column=0)
+            var_options['time'] = tk.IntVar()
+            tk.Checkbutton(master=frame_time, variable=var_options['time'], bg='white', highlightthickness=0, bd=0).grid(row=0, column=0, sticky='W')
+            tk.Label(master=frame_time, text=name_options['time'] + ': stop when optimization time reaches', bg='white').grid(row=0, column=1, sticky='W')
+            entry_options['time'] = create_widget('entry', master=frame_time, row=0, column=2, class_type='float', 
+                required=True, valid_check=lambda x: x > 0, error_msg='time limit must be positive', pady=0)
+            tk.Label(master=frame_time, text='seconds', bg='white').grid(row=0, column=3, sticky='W')
+
+            frame_n_sample = create_widget('frame', master=frame_options, row=1, column=0)
+            var_options['n_sample'] = tk.IntVar()
+            tk.Checkbutton(master=frame_n_sample, variable=var_options['n_sample'], bg='white', highlightthickness=0, bd=0).grid(row=0, column=0, sticky='W')
+            tk.Label(master=frame_n_sample, text=name_options['n_sample'] + ': stop when number of samples reaches', bg='white').grid(row=0, column=1, sticky='W')
+            entry_options['n_sample'] = create_widget('entry', master=frame_n_sample, row=0, column=2, class_type='int', 
+                required=True, valid_check=lambda x: x > 0, error_msg='number of samples must be positive', pady=0)
+
+            frame_hv_value = create_widget('frame', master=frame_options, row=2, column=0)
+            var_options['hv_value'] = tk.IntVar()
+            tk.Checkbutton(master=frame_hv_value, variable=var_options['hv_value'], bg='white', highlightthickness=0, bd=0).grid(row=0, column=0, sticky='W')
+            tk.Label(master=frame_hv_value, text=name_options['hv_value'] + ': stop when hypervolume reaches', bg='white').grid(row=0, column=1, sticky='W')
+            entry_options['hv_value'] = create_widget('entry', master=frame_hv_value, row=0, column=2, class_type='float', 
+                required=True, valid_check=lambda x: x > 0, error_msg='hypervolume value must be positive', pady=0)
+
+            frame_hv_conv = create_widget('frame', master=frame_options, row=3, column=0)
+            var_options['hv_conv'] = tk.IntVar()
+            tk.Checkbutton(master=frame_hv_conv, variable=var_options['hv_conv'], bg='white', highlightthickness=0, bd=0).grid(row=0, column=0, sticky='W')
+            tk.Label(master=frame_hv_conv, text=name_options['hv_conv'] + ': stop when hypervolume stops to improve over past', bg='white').grid(row=0, column=1, sticky='W')
+            entry_options['hv_conv'] = create_widget('entry', master=frame_hv_conv, row=0, column=2, class_type='float', 
+                required=True, valid_check=lambda x: x > 0 and x < 100, error_msg='percentage must be between 0~100', pady=0)
+            tk.Label(master=frame_hv_conv, text='% number of samples', bg='white').grid(row=0, column=3, sticky='W')
+
+            def load_stop_criterion():
+                '''
+                Load current stopping criterion
+                '''
+                for key, val in self.stop_criterion.items():
+                    var_options[key].set(1)
+                    entry_options[key].set(val)
+
+            def gui_save_stop_criterion():
+                '''
+                Save stopping criterion
+                '''
+                self.stop_criterion = {}
+                for key in ['time', 'n_sample', 'hv_value', 'hv_conv']:
+                    if var_options[key].get() == 1:
+                        try:
+                            self.stop_criterion[key] = entry_options[key].get()
+                        except:
+                            error_msg = entry_options[key].get_error_msg()
+                            error_msg = '' if error_msg is None else ': ' + error_msg
+                            tk.messagebox.showinfo('Error', f'Invalid value for "{name_options[key]}"' + error_msg, parent=window)
+                            return
+                window.destroy()
+
+            frame_action = create_widget('frame', master=window, row=1, column=0, pady=0, sticky=None)
+            create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_stop_criterion)
+            create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
+
+            load_stop_criterion()
+
+        self.button_stopcri = create_widget('labeled_button', master=frame_control, row=3, column=0, columnspan=2, 
+            label_text='Stopping criterion', button_text='Set', command=gui_set_stop_criterion, bg=None, pady=5)
+
         self.entry_mode = widget_map['mode']
         self.entry_batch_size = widget_map['batch_size']
         self.entry_n_iter = widget_map['n_iter']
         self.entry_mode.disable()
         self.entry_batch_size.disable()
         self.entry_n_iter.disable()
+        self.button_stopcri.disable()
 
         # optimization command
         self.button_optimize = Button(master=frame_control, text="Optimize", state=tk.DISABLED)
-        self.button_optimize.grid(row=3, column=0, padx=5, pady=10, sticky='NSEW')
+        self.button_optimize.grid(row=4, column=0, padx=5, pady=10, sticky='NSEW')
 
         # stop optimization command
         self.button_stop = Button(master=frame_control, text='Stop', state=tk.DISABLED)
-        self.button_stop.grid(row=3, column=1, padx=5, pady=10, sticky='NSEW')
+        self.button_stop.grid(row=4, column=1, padx=5, pady=10, sticky='NSEW')
 
         def gui_optimize():
             '''
@@ -1402,6 +1483,7 @@ class GUI:
                 self.entry_n_iter.set(1)
 
             self.button_optimize.enable()
+            self.button_stopcri.enable()
 
             # trigger periodic refresh
             self.root.after(self.refresh_rate, self._refresh)
@@ -1475,6 +1557,8 @@ class GUI:
         self._log(log_list)
         self._redraw()
         self.table_db.update({'status': status}, rowids)
+
+        # TODO: check stopping criterion
         
         self.root.after(self.refresh_rate, self._refresh)
         
