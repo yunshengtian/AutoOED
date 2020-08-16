@@ -80,6 +80,20 @@ def create_button(master, row, column, text, command=None,
     return button
 
 
+def create_labeled_button_entry(master, row, column, label_text, button_text, command=None, width=entry_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True,
+        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW', bg='white'):
+    frame = create_frame(master, row, column, rowspan, columnspan, 0, pady / 2, sticky, bg)
+    grid_configure(frame, [0], [1])
+    label_text = label_text + ' (*): ' if required and required_mark else label_text + ': '
+    label = tk.Label(master=frame, bg=bg, text=label_text)
+    label.grid(row=0, column=0, columnspan=2, sticky='W', padx=padx, pady=pady / 2)
+    button = Button(master=frame, text=button_text, command=command)
+    button.grid(row=1, column=0, padx=padx)
+    entry = tk.Entry(master=frame, bg='white', width=width, justify='right')
+    entry.grid(row=1, column=1, sticky='EW', padx=padx)
+    return button, get_entry('string', entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
+
+
 def create_widget(name, *args, **kwargs):
     '''
     Create widget by name and other arguments
@@ -93,5 +107,6 @@ def create_widget(name, *args, **kwargs):
         'combobox': create_combobox,
         'labeled_combobox': create_labeled_combobox,
         'button': create_button,
+        'labeled_button_entry': create_labeled_button_entry,
     }
     return factory[name](*args, **kwargs)

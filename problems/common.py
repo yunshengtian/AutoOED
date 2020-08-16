@@ -175,6 +175,7 @@ def get_problem_config(name):
             'obj_ub': None, # NOTE: not supported yet
             'var_name': problem.var_name,
             'obj_name': problem.obj_name,
+            'init_sample_path': None,
         }
 
     elif name in get_custom_python_problem_list():
@@ -197,12 +198,12 @@ def get_problem_config(name):
 
 def generate_initial_samples(problem, n_sample):
     '''
-    Generate feasible initial samples.
+    Generate feasible random initial samples
     Input:
         problem: the optimization problem
         n_sample: number of initial samples
     Output:
-        X, Y: initial samples (design parameters, performances)
+        X, Y: initial samples (design parameters, performance values)
     '''
     X_feasible = np.zeros((0, problem.n_var))
     Y_feasible = np.zeros((0, problem.n_obj))
@@ -211,13 +212,54 @@ def generate_initial_samples(problem, n_sample):
     while len(X_feasible) < n_sample:
         X = lhs(problem.n_var, n_sample)
         X = problem.xl + X * (problem.xu - problem.xl)
-        Y = np.array([problem.evaluate_performance(x) for x in X]) # TODO
+        Y = np.array([problem.evaluate_performance(x) for x in X]) # TODO: optimize
         feasible = problem.evaluate_feasible(X)
         X_feasible = np.vstack([X_feasible, X[feasible]])
         Y_feasible = np.vstack([Y_feasible, Y[feasible]])
     
     indices = np.random.permutation(np.arange(len(X_feasible)))[:n_sample]
     X, Y = X_feasible[indices], Y_feasible[indices]
+    return X, Y
+
+
+def load_initial_samples(problem, init_sample_path):
+    '''
+    Load provided initial samples from file
+    Input:
+        problem: the optimization problem
+        init_sample_path: path of provided initial samples
+    Output:
+        X, Y: initial samples (design parameters, performance values)
+    '''
+    assert init_sample_path is not None or problem.init_sample_path is not None, 'path of initial samples is not provided'
+    # use problem default path if not specified
+    if init_sample_path is None:
+        init_sample_path = problem.init_sample_path
+
+    if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
+        X_path, Y_path = init_sample_path[0], init_sample_path[1] # initial X and initial Y are both provided
+    elif isinstance(init_sample_path, str):
+        X_path, Y_path = init_sample_path, None # only initial X is provided, initial Y needs to be evaluated
+    else:
+        raise Exception('path of initial samples must be specified as 1) a list [x_path, y_path]; or 2) a string x_path')
+
+    def load_from_file(path):
+        # NOTE: currently only support npy and csv format for initial sample path
+        try:
+            if path.endswith('.npy'):
+                return np.load(path)
+            elif path.endswith('.csv'):
+                return np.genfromtxt(path, delimiter=',')
+            else:
+                raise NotImplementedError
+        except:
+            raise Exception(f'failed to load initial samples from path {path}')
+
+    X = load_from_file(X_path)
+    if Y_path is None:
+        Y = np.array([problem.evaluate_performance(x) for x in X]) # TODO: optimize
+    else:
+        Y = load_from_file(Y_path)
     return X, Y
 
 
@@ -235,7 +277,6 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
     name, n_var, n_obj, ref_point = config['name'], config['n_var'], config['n_obj'], config['ref_point']
     xl, xu = config['var_lb'], config['var_ub']
     # NOTE: either set ref_point from config file, or set from init random/provided samples
-    # TODO: support provided init samples
 
     # build problem
     try:
@@ -243,14 +284,34 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
     except:
         raise NotImplementedError('problem not supported yet!')
 
+    # getting true pareto front
     if get_pfront:
         try:
             pareto_front = problem.pareto_front()
         except:
             pareto_front = None
 
+    # getting initial samples
     if get_init_samples:
-        X_init, Y_init = generate_initial_samples(problem, config['n_init_sample'])
+        random_init = config['n_init_sample'] > 0
+        provided_init = config['init_sample_path'] is not None or problem.init_sample_path is not None
+        assert random_init or provided_init, 'neither number of random initial samples nor path of provided initial samples is provided'
+        
+        if random_init:
+            X_init_random, Y_init_random = generate_initial_samples(problem, config['n_init_sample'])
+        if provided_init:
+            X_init_provided, Y_init_provided = load_initial_samples(problem, config['init_sample_path'])
+        
+        if random_init and provided_init:
+            X_init = np.vstack([X_init_random, X_init_provided])
+            Y_init = np.vstack([Y_init_random, Y_init_provided])
+        elif random_init:
+            X_init, Y_init = X_init_random, Y_init_random
+        elif provided_init:
+            X_init, Y_init = X_init_provided, Y_init_provided
+        else:
+            raise NotImplementedError
+
         if ref_point is None:
             ref_point = np.max(Y_init, axis=0)
             config['ref_point'] = ref_point.tolist() # update reference point in config

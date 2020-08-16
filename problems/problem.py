@@ -9,7 +9,7 @@ class Problem(PymooProblem, ABC):
     '''
     Real problem definition built upon Pymoo's Problem class, added some custom features
     '''
-    def __init__(self, *args, name=None, xl=None, xu=None, fl=None, fu=None, var_name=None, obj_name=None, **kwargs):
+    def __init__(self, *args, name=None, xl=None, xu=None, fl=None, fu=None, var_name=None, obj_name=None, init_sample_path=None, **kwargs):
         # set default bounds (TODO: obj bound is currently not supported)
         xl, xu = self._process_bounds(xl, xu)
 
@@ -20,6 +20,7 @@ class Problem(PymooProblem, ABC):
         self.ref_point = None
         self.var_name = var_name if var_name is not None else [f'x{i + 1}' for i in range(self.n_var)]
         self.obj_name = obj_name if obj_name is not None else [f'f{i + 1}' for i in range(self.n_obj)]
+        self.init_sample_path = init_sample_path
 
     def _process_bounds(self, xl, xu):
         '''

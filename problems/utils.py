@@ -26,6 +26,7 @@ def process_problem_config(config):
         'var_ub': 1, # 1 as var upper bound by default
         'obj_lb': None, # no obj lower bound by default
         'obj_ub': None, # no obj upper bound by default
+        'init_sample_path': None, # no provided initial sample path by default
     }
 
     # fill config with default_config when there are key missings

@@ -1,7 +1,6 @@
 # example configuration file
 
 general: 
-  n_init_sample: 20 # number of initial random samples
   n_worker: 5 # max number of evaluation workers
   batch_size: 5
   n_iter: 10 # number of algorithm iterations
@@ -14,6 +13,8 @@ problem:
   var_name: [x1, x2, x3, x4, x5, x6] # name of design variables (optional)
   obj_name: [f1, f2] # name of performance objectives (optional)
   ref_point: [1.0, 6.0] # reference point for hypervolume calculation (optional)
+  n_init_sample: 20 # number of random initial samples
+  init_sample_path: null # path of provided initial samples
 algorithm: 
   name: tsemo
   n_process: 1 # number of parallel processes used in algorithm (optional)

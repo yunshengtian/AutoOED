@@ -91,7 +91,6 @@ class GUI:
         # displayed name of each property in config
         self.name_map = {
             'general': {
-                'n_init_sample': 'Number of initial samples',
                 'n_worker': 'Max number of evaluation workers',
                 'batch_size': 'Batch size',
                 'n_iter': 'Number of iterations',
@@ -110,6 +109,8 @@ class GUI:
                 'var_name': 'Names',
                 'obj_name': 'Names',
                 'ref_point': 'Reference point',
+                'n_init_sample': 'Number of random initial samples',
+                'init_sample_path': 'Path of provided initial samples',
             },
             'algorithm': {
                 'name': 'Name of algorithm',
@@ -211,12 +212,11 @@ class GUI:
             frame_param.grid(row=0, column=0)
             grid_configure(frame_param, [0, 1, 2], [0])
 
+            # TODO: set default values visible
+
             # general subsection
             frame_general = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='General')
             grid_configure(frame_general, [0, 1, 2, 3], [0])
-            widget_map['general']['n_init_sample'] = create_widget('labeled_entry', 
-                master=frame_general, row=0, column=0, text=self.name_map['general']['n_init_sample'], class_type='int', required=True, 
-                valid_check=lambda x: x > 0, error_msg='number of initial samples must be positive', changeable=False)
             widget_map['general']['n_worker'] = create_widget('labeled_entry',
                 master=frame_general, row=1, column=0, text=self.name_map['general']['n_worker'], class_type='int', default=1,
                 valid_check=lambda x: x > 0, error_msg='max number of evaluation workers must be positive')
@@ -363,18 +363,53 @@ class GUI:
             button_config_design = create_widget('button', master=frame_space, row=4, column=0, text='Configure design bounds', command=gui_config_design, pady=0)
             button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Configure performance bounds', command=gui_config_performance, pady=0)
 
+            def gui_set_x_init():
+                '''
+                Set path of provided initial design variables
+                '''
+                filename = tk.filedialog.askopenfilename(parent=window)
+                if not isinstance(filename, str) or filename == '': return
+                widget_x_init.set(filename)
+
+            def gui_set_y_init():
+                '''
+                Set path of provided initial performance values
+                '''
+                filename = tk.filedialog.askopenfilename(parent=window)
+                if not isinstance(filename, str) or filename == '': return
+                widget_y_init.set(filename)
+
+            widget_map['problem']['n_init_sample'] = create_widget('labeled_entry', 
+                master=frame_problem, row=5, column=0, text=self.name_map['problem']['n_init_sample'], class_type='int', default=0, 
+                valid_check=lambda x: x >= 0, error_msg='number of initial samples cannot be negative', changeable=False)
+            button_browse_x_init, widget_x_init = create_widget('labeled_button_entry',
+                master=frame_problem, row=6, column=0, label_text='Path of provided initial design variables', button_text='Browse', command=gui_set_x_init, 
+                width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
+            button_browse_y_init, widget_y_init = create_widget('labeled_button_entry',
+                master=frame_problem, row=7, column=0, label_text='Path of provided initial performance values', button_text='Browse', command=gui_set_y_init, 
+                width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
+
             if not change:
                 button_config_design.disable()
                 button_config_performance.disable()
+                widget_map['problem']['n_init_sample'].disable()
+                button_browse_x_init.disable()
+                button_browse_y_init.disable()
+                widget_x_init.disable()
+                widget_y_init.disable()
 
             def gui_select_problem(event):
                 '''
                 Select problem to configure
                 '''
-                for key in ['n_var', 'n_obj', 'ref_point']:
+                for key in ['n_var', 'n_obj', 'ref_point', 'n_init_sample']:
                     widget_map['problem'][key].enable()
                 button_config_design.enable()
                 button_config_performance.enable()
+                button_browse_x_init.enable()
+                button_browse_y_init.enable()
+                widget_x_init.enable()
+                widget_y_init.enable()
 
                 name = event.widget.get()
                 config = get_problem_config(name)
@@ -383,6 +418,18 @@ class GUI:
                 
                 for key in ['var_name', 'var_lb', 'var_ub', 'obj_name', 'obj_lb', 'obj_ub']:
                     problem_cfg.update({key: config[key]})
+                
+                init_sample_path = config['init_sample_path']
+                if init_sample_path is not None:
+                    if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
+                        x_init_path, y_init_path = init_sample_path[0], init_sample_path[1]
+                        widget_x_init.set(x_init_path)
+                        widget_y_init.set(y_init_path)
+                    elif isinstance(init_sample_path, str):
+                        x_init_path = init_sample_path
+                        widget_x_init.set(x_init_path)
+                    else:
+                        tk.messagebox.showinfo('Error', 'Error in problem definition: init_sample_path must be specified as 1) a list [x_path, y_path]; or 2) a string x_path', parent=window)
 
             widget_map['problem']['name'].widget.bind('<<ComboboxSelected>>', gui_select_problem)
 
@@ -418,15 +465,43 @@ class GUI:
                     'algorithm': {},
                 }
 
+                def gui_show_widget_error(widget, name):
+                    '''
+                    Show error messagebox if value of widget is not valid
+                    '''
+                    error_msg = widget.get_error_msg()
+                    error_msg = '' if error_msg is None else ': ' + error_msg
+                    tk.messagebox.showinfo('Error', f'Invalid value for "{name}"' + error_msg, parent=window)
+
+                # specifically deal with provided initial samples
+                try:
+                    x_init_path = widget_x_init.get()
+                except:
+                    gui_show_widget_error(widget_x_init, 'Path of provided initial design variables')
+                    return
+                try:
+                    y_init_path = widget_y_init.get()
+                except:
+                    gui_show_widget_error(widget_y_init, 'Path of provided initial performance values')
+                    return
+
+                if x_init_path is None and y_init_path is None: # no path of initial samples is provided
+                    config['problem']['init_sample_path'] = None
+                elif x_init_path is None: # only path of initial Y is provided, error
+                    tk.messagebox.showinfo('Error', 'Only path of initial performance values is provided', parent=window)
+                    return
+                elif y_init_path is None: # only path of initial X is provided
+                    config['problem']['init_sample_path'] = x_init_path
+                else: # both path of initial X and initial Y are provided
+                    config['problem']['init_sample_path'] = [x_init_path, y_init_path]
+
                 # set config values from widgets
                 for cfg_type, val_map in widget_map.items():
                     for cfg_name, widget in val_map.items():
                         try:
                             config[cfg_type][cfg_name] = widget.get()
                         except:
-                            error_msg = widget.get_error_msg()
-                            error_msg = '' if error_msg is None else ': ' + error_msg
-                            tk.messagebox.showinfo('Error', f'Invalid value for "{self.name_map[cfg_type][cfg_name]}"' + error_msg, parent=window)
+                            gui_show_widget_error(widget, self.name_map[cfg_type][cfg_name])
                             return
 
                 # validity check
@@ -520,7 +595,7 @@ class GUI:
 
             problem_cfg = {}
 
-            frame_config_space = create_widget('frame', master=frame_config_display, row=4, column=0)
+            frame_config_space = create_widget('frame', master=frame_config_display, row=4, column=0, padx=0)
             button_config_design = create_widget('button', master=frame_config_space, row=0, column=0, text='Configure design space', pady=0)
             button_config_performance = create_widget('button', master=frame_config_space, row=0, column=1, text='Configure performance space', pady=0)
 
@@ -545,14 +620,9 @@ class GUI:
                     return False
                 return True
 
-            frame_performance_script = create_widget('frame', master=frame_config_display, row=5, column=0, padx=0)
-            create_widget('label', master=frame_performance_script, row=0, column=0, text=self.name_map['problem']['performance_eval'] + ' (*): ', columnspan=2)
-            button_browse_performance = create_widget('button', master=frame_performance_script, row=1, column=0, text='Browse', command=gui_set_performance_script, pady=0)
-            widget_map['performance_eval'] = create_widget('entry', 
-                master=frame_performance_script, row=1, column=1, class_type='string', width=30, required=True, 
-                valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside", 
-                pady=0, sticky='EW')
-            grid_configure(frame_performance_script, [0], [1])
+            button_browse_performance, widget_map['performance_eval'] = create_widget('labeled_button_entry',
+                master=frame_config_display, row=5, column=0, label_text=self.name_map['problem']['performance_eval'], button_text='Browse', command=gui_set_performance_script,
+                width=30, required=True, valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside")
 
             def gui_set_constraint_script():
                 '''
@@ -575,14 +645,9 @@ class GUI:
                     return False
                 return True
 
-            frame_constraint_script = create_widget('frame', master=frame_config_display, row=6, column=0, padx=0)
-            create_widget('label', master=frame_constraint_script, row=0, column=0, text=self.name_map['problem']['constraint_eval'] + ': ', columnspan=2)
-            button_browse_constraint = create_widget('button', master=frame_constraint_script, row=1, column=0, text='Browse', command=gui_set_constraint_script, pady=0)
-            widget_map['constraint_eval'] = create_widget('entry', 
-                master=frame_constraint_script, row=1, column=1, class_type='string', width=30, 
-                valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside", 
-                pady=0, sticky='EW')
-            grid_configure(frame_constraint_script, [0], [1])
+            button_browse_constraint, widget_map['constraint_eval'] = create_widget('labeled_button_entry',
+                master=frame_config_display, row=6, column=0, label_text=self.name_map['problem']['constraint_eval'], button_text='Browse', command=gui_set_constraint_script,
+                width=30, valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside")
 
             button_save = create_widget('button', master=frame_config_action, row=0, column=0, text='Save')
             button_cancel = create_widget('button', master=frame_config_action, row=0, column=1, text='Cancel')
@@ -1343,9 +1408,7 @@ class GUI:
         else: # user changed config in the middle
             try:
                 # some keys cannot be changed
-                for key in ['n_init_sample']:
-                    assert self.config_raw['general'][key] == config['general'][key]
-                for key in ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'ref_point']: # TODO
+                for key in ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'ref_point', 'n_init_sample']: # TODO
                     assert self.config_raw['problem'][key] == config['problem'][key]           
             except:
                 tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading', parent=window)

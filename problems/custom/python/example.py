@@ -14,6 +14,7 @@ Problem configuration is defined as a 'config' dict, where each key means:
     obj_ub: upper bounds of objectives
     var_name: names of design variables
     obj_name: names of objectives
+    init_sample_path: path of provided initial samples
 
 Default values if not specifed in problem config:
     n_constr: 0
@@ -23,6 +24,7 @@ Default values if not specifed in problem config:
     obj_ub: None
     var_name: ['x1', ..., 'x{n_var}']
     obj_name: ['f1', ..., 'f{n_obj}']
+    init_sample_path: None
 '''
 
 class ExampleProblem1(CustomProblem):

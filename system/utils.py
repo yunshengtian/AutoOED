@@ -75,7 +75,6 @@ def process_config(config):
     n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
     n_process, batch_size = algo_cfg['n_process'], general_cfg['batch_size']
 
-    problem_cfg['n_init_sample'] = general_cfg['n_init_sample'] 
     algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})
     algo_cfg['solver'].update({'n_obj': n_obj, 'n_process': n_process, 'batch_size': batch_size})
     algo_cfg['selection'].update({'batch_size': batch_size})
