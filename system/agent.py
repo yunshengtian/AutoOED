@@ -2,12 +2,11 @@ import os
 import numpy as np
 import yaml
 from multiprocessing import Process, Queue, Lock
-from pymoo.performance_indicator.hv import Hypervolume
 
 from problems.common import build_problem
 from system.database import Database
 from system.core import optimize, predict, evaluate
-from system.utils import check_pareto, calc_pred_error, process_safe_func
+from system.utils import check_pareto, process_safe_func
 
 
 class DataAgent:
@@ -23,7 +22,6 @@ class DataAgent:
 
         self.n_var = problem.n_var
         self.n_obj = problem.n_obj
-        self.hv = Hypervolume(ref_point=problem.ref_point) # hypervolume calculator
         self.n_init_sample = None
 
         # create & init database
@@ -42,7 +40,7 @@ class DataAgent:
             [f'f{i + 1} real' for i in range(self.n_obj)] + \
             [f'f{i + 1}_expected real' for i in range(self.n_obj)] + \
             [f'f{i + 1}_uncertainty real' for i in range(self.n_obj)] + \
-            ['hv real', 'pred_error real', 'is_pareto boolean', 'config_id integer', 'batch_id integer']
+            ['is_pareto boolean', 'config_id integer', 'batch_id integer']
         self.db.create('data', key=key_list)
         self.db.commit()
 
@@ -52,8 +50,6 @@ class DataAgent:
             'Y': [f'f{i + 1}' for i in range(self.n_obj)],
             'Y_expected': [f'f{i + 1}_expected' for i in range(self.n_obj)],
             'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.n_obj)],
-            'hv': 'hv',
-            'pred_error': 'pred_error',
             'is_pareto': 'is_pareto',
             'config_id': 'config_id',
             'batch_id': 'batch_id',
@@ -65,8 +61,6 @@ class DataAgent:
             'Y': float,
             'Y_expected': float,
             'Y_uncertainty': float,
-            'hv': float,
-            'pred_error': float,
             'is_pareto': bool,
             'config_id': int,
             'batch_id': int,
@@ -112,14 +106,12 @@ class DataAgent:
         Y_expected = np.zeros((self.n_init_sample, self.n_obj))
         Y_uncertainty = np.zeros((self.n_init_sample, self.n_obj))
 
-        hv_value = np.full(self.n_init_sample, self.hv.calc(Y))
-        pred_error = np.ones(self.n_init_sample) * 100
         is_pareto = check_pareto(Y)
         config_id = np.zeros(self.n_init_sample, dtype=int)
         batch_id = np.zeros(self.n_init_sample, dtype=int)
 
         with self.db.get_lock():
-            self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id, batch_id])
+            self.db.insert('data', key=None, data=[X, Y, Y_expected, Y_uncertainty, is_pareto, config_id, batch_id])
             self.db.commit()
 
     def insert(self, X, Y_expected, Y_uncertainty, config_id):
@@ -142,58 +134,44 @@ class DataAgent:
         rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
         return rowids.tolist()
 
-    def update(self, y, rowid, recompute_stat=True):
+    def update(self, y, rowid):
         '''
         Update evaluation result to database
         Input:
             rowid: row index to be updated (count from 1)
         '''
         with self.db.get_lock():
-            all_Y, all_Y_expected = self.load(['Y', 'Y_expected'], valid_only=False, lock=False)
+            all_Y = self.load('Y', valid_only=False, lock=False)
             all_Y[rowid - 1] = y
             valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
-            all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
+            all_Y_valid = all_Y[valid_idx]
 
-            # compute associated values based on evaluation data (hv, pred_error, is_pareto) (TODO: speed optimization)
-            if recompute_stat:
-                hv_value = self.hv.calc(all_Y_valid)
-                pred_error = calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])
             is_pareto = np.full(len(all_Y), False)
             is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
 
-            if recompute_stat:
-                self.db.update('data', key=self._map_key(['Y', 'hv', 'pred_error'], flatten=True), data=[y, hv_value, pred_error], rowid=rowid)
-            else:
-                self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid)
+            self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid)
             self.db.update('data', key='is_pareto', data=False, rowid=None)
             self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
             self.db.commit()
 
-    def update_batch(self, Y, rowids, recompute_stat=True):
+    def update_batch(self, Y, rowids):
         '''
         Update batch evaluation result to database
         Input:
             rowids: row indices to be updated (count from 1)
         '''
         with self.db.get_lock():
-            all_Y, all_Y_expected = self.load(['Y', 'Y_expected'], valid_only=False, lock=False)
+            all_Y = self.load('Y', valid_only=False, lock=False)
             all_Y[np.array(rowids) - 1] = Y
             valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
-            all_Y_valid, all_Y_expected_valid = all_Y[valid_idx], all_Y_expected[valid_idx]
+            all_Y_valid = all_Y[valid_idx]
 
-            # compute associated values based on evaluation data (hv, pred_error, is_pareto) (TODO: speed optimization)
-            if recompute_stat:
-                hv_value = [self.hv.calc(all_Y_valid)] * len(rowids)
-                pred_error = [calc_pred_error(all_Y_valid[self.n_init_sample:], all_Y_expected_valid[self.n_init_sample:])] * len(rowids)
             is_pareto = np.full(len(all_Y), False)
             is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
 
-            if recompute_stat:
-                self.db.update('data', key=self._map_key(['Y', 'hv', 'pred_error'], flatten=True), data=[Y, hv_value, pred_error], rowid=rowids)
-            else:
-                self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids)
+            self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids)
             self.db.update('data', key='is_pareto', data=False, rowid=None)
             self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
             self.db.commit()

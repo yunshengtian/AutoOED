@@ -3,6 +3,7 @@ import signal
 import yaml
 import numpy as np
 import pandas as pd
+from pymoo.performance_indicator.hv import Hypervolume
 from problems.common import build_problem
 from mobo.algorithms import get_algorithm_list as get_algo_list_mobo
 from moo.algorithms import get_algorithm_list as get_algo_list_moo
@@ -123,6 +124,13 @@ def check_pareto(Y):
         if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
             is_pareto[idx] = True
     return is_pareto
+
+
+def calc_hypervolume(Y, ref_point):
+    '''
+    Calculate hypervolume
+    '''
+    return Hypervolume(ref_point=ref_point).calc(Y)
 
 
 def calc_pred_error(Y, Y_expected):

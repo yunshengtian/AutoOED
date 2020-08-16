@@ -13,7 +13,7 @@ from multiprocessing import Lock, Process
 from problems.common import build_problem, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent, WorkerAgent
-from system.utils import process_config, load_config, get_available_algorithms, find_closest_point, check_pareto
+from system.utils import process_config, load_config, get_available_algorithms, calc_hypervolume, calc_pred_error, find_closest_point, check_pareto
 from system.gui.utils.button import Button
 from system.gui.utils.entry import get_entry
 from system.gui.utils.excel import Excel
@@ -1458,7 +1458,7 @@ class GUI:
         First draw of figures and database viz
         '''
         # load from database
-        X, Y, hv_value, is_pareto = self.agent_data.load(['X', 'Y', 'hv', 'is_pareto'])
+        X, Y, is_pareto = self.agent_data.load(['X', 'Y', 'is_pareto'])
 
         # update status
         self.n_init_sample = len(Y)
@@ -1477,6 +1477,7 @@ class GUI:
         self.line_y_pred_list = []
 
         # plot hypervolume curve
+        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point']))
         self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
         self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
 
@@ -1618,8 +1619,8 @@ class GUI:
         self.db_status = db_status
         
         # load from database
-        X, Y, Y_expected, Y_uncertainty, hv_value, pred_error, is_pareto, config_id, batch_id = \
-            self.agent_data.load(['X', 'Y', 'Y_expected', 'Y_uncertainty', 'hv', 'pred_error', 'is_pareto', 'config_id', 'batch_id'], valid_only=False)
+        X, Y, Y_expected, Y_uncertainty, is_pareto, config_id, batch_id = \
+            self.agent_data.load(['X', 'Y', 'Y_expected', 'Y_uncertainty', 'is_pareto', 'config_id', 'batch_id'], valid_only=False)
 
         # check if any completed optimization
         n_curr_sample = len(X)
@@ -1647,16 +1648,22 @@ class GUI:
                 self.scale_iter.configure(to=self.max_iter)
                 
             # replot hypervolume curve
-            self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value[valid_idx])
+            line_hv_y = self.line_hv.get_ydata()
+            hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'])
+            hv_value = np.concatenate([line_hv_y, np.full(self.n_valid_sample - len(line_hv_y), hv_value)])
+            self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value)
             self.ax21.relim()
             self.ax21.autoscale_view()
-            self.ax21.set_title('Hypervolume: %.2f' % hv_value[valid_idx][-1])
+            self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
 
             # replot prediction error curve
-            self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error[valid_idx][self.n_init_sample:])
+            line_error_y = self.line_error.get_ydata()
+            pred_error = calc_pred_error(Y[valid_idx][self.n_init_sample:], Y_expected[valid_idx][self.n_init_sample:])
+            pred_error = np.concatenate([line_error_y, np.full(self.n_valid_sample - self.n_init_sample - len(line_error_y), pred_error)])
+            self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error)
             self.ax22.relim()
             self.ax22.autoscale_view()
-            self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[valid_idx][-1])
+            self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[-1])
 
             # refresh figure
             self.fig2.canvas.draw()
