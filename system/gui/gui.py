@@ -9,6 +9,7 @@ from matplotlib.backend_bases import MouseButton
 import os
 import yaml
 import numpy as np
+from time import time
 from multiprocessing import Lock, Process
 from problems.common import build_problem, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
@@ -89,6 +90,7 @@ class GUI:
         self.in_creating_problem = False
         self.db_status = 0
         self.stop_criterion = {}
+        self.timestamp = None
 
         # displayed name of each property in config
         self.name_map = {
@@ -1264,7 +1266,7 @@ class GUI:
             frame_time = create_widget('frame', master=frame_options, row=0, column=0)
             var_options['time'] = tk.IntVar()
             tk.Checkbutton(master=frame_time, variable=var_options['time'], bg='white', highlightthickness=0, bd=0).grid(row=0, column=0, sticky='W')
-            tk.Label(master=frame_time, text=name_options['time'] + ': stop when optimization time reaches', bg='white').grid(row=0, column=1, sticky='W')
+            tk.Label(master=frame_time, text=name_options['time'] + ': stop after', bg='white').grid(row=0, column=1, sticky='W')
             entry_options['time'] = create_widget('entry', master=frame_time, row=0, column=2, class_type='float', 
                 required=True, valid_check=lambda x: x > 0, error_msg='time limit must be positive', pady=0)
             tk.Label(master=frame_time, text='seconds', bg='white').grid(row=0, column=3, sticky='W')
@@ -1297,6 +1299,10 @@ class GUI:
                 '''
                 for key, val in self.stop_criterion.items():
                     var_options[key].set(1)
+                    if key == 'time':
+                        val -= time() - self.timestamp
+                        self.stop_criterion[key] = val
+                        self.timestamp = time()
                     entry_options[key].set(val)
 
             def gui_save_stop_criterion():
@@ -1313,6 +1319,8 @@ class GUI:
                             error_msg = '' if error_msg is None else ': ' + error_msg
                             tk.messagebox.showinfo('Error', f'Invalid value for "{name_options[key]}"' + error_msg, parent=window)
                             return
+                        if key == 'time':
+                            self.timestamp = time()
                 window.destroy()
 
             frame_action = create_widget('frame', master=window, row=1, column=0, pady=0, sticky=None)
@@ -1553,14 +1561,43 @@ class GUI:
                     raise NotImplementedError
                 rowids.append(rowid)
 
-        # log display, update visualization
+        # log display, update visualization, check stopping criterion
         self._log(log_list)
         self._redraw()
         self.table_db.update({'status': status}, rowids)
-
-        # TODO: check stopping criterion
+        self._check_stop_criterion()
         
+        # trigger another refresh
         self.root.after(self.refresh_rate, self._refresh)
+
+    def _check_stop_criterion(self):
+        '''
+        Check if stopping criterion is met
+        '''
+        stop = False
+        for key, val in self.stop_criterion.items():
+            if key == 'time': # optimization & evaluation time
+                if time() - self.timestamp >= val:
+                    stop = True
+                    self.timestamp = None
+            elif key == 'n_sample': # number of samples
+                if self.n_valid_sample >= val:
+                    stop = True
+            elif key == 'hv_value': # hypervolume value
+                if self.line_hv.get_ydata()[-1] >= val:
+                    stop = True
+            elif key == 'hv_conv': # hypervolume convergence
+                hv_history = self.line_hv.get_ydata()
+                checkpoint = np.clip(int(self.n_valid_sample * val / 100.0), 1, self.n_valid_sample - 1)
+                if hv_history[-checkpoint] == hv_history[-1]:
+                    stop = True
+            else:
+                raise NotImplementedError
+        
+        if stop:
+            self.stop_criterion = {}
+            self.agent_worker.stop_worker()
+            self._log('stopping criterion is met')
         
     def _init_draw(self, true_pfront):
         '''
