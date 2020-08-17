@@ -64,7 +64,7 @@ class Entry(ABC):
             new_val = ''
         else:
             new_val = str(self._set(val))
-        if isinstance(self.widget, tk.Entry):
+        if type(self.widget) == tk.Entry:
             self.widget.delete(0, tk.END)
             self.widget.insert(0, new_val)
         else:

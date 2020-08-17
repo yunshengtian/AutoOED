@@ -222,7 +222,7 @@ class GUI:
             frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='Problem')
             grid_configure(frame_problem, [0, 1, 2, 3, 4, 5, 6, 7], [0])
             widget_map['problem']['name'] = create_widget('labeled_combobox', 
-                master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), required=True, changeable=False)
+                master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), width=15, required=True, changeable=False)
             widget_map['problem']['n_var'] = create_widget('labeled_entry', 
                 master=frame_problem, row=1, column=0, text=self.name_map['problem']['n_var'], class_type='int', required=True,
                 valid_check=lambda x: x > 0, error_msg='number of design variables must be positive', changeable=False)
@@ -257,13 +257,13 @@ class GUI:
                 titles = ['var_name', 'var_lb', 'var_ub']
 
                 window_design = tk.Toplevel(master=window)
-                window_design.title('Configure Design Space')
+                window_design.title('Set Design Bounds')
                 window_design.configure(bg='white')
                 window_design.resizable(False, False)
 
                 # design space section
-                frame_design = create_widget('labeled_frame', master=window_design, row=0, column=0, text='Design Space')
-                create_widget('label', master=frame_design, row=0, column=0, text='Enter the properties for design variables:')
+                frame_design = create_widget('frame', master=window_design, row=0, column=0)
+                create_widget('label', master=frame_design, row=0, column=0, text='Enter the bounds for design variables:')
                 excel_design = Excel(master=frame_design, rows=n_var, columns=3, width=15,
                     title=[self.name_map['problem'][title] for title in titles], dtype=[str, float, float], default=[None, 0, 1])
                 excel_design.grid(row=1, column=0)
@@ -317,13 +317,13 @@ class GUI:
                 titles = ['obj_name', 'obj_lb', 'obj_ub']
 
                 window_performance = tk.Toplevel(master=window)
-                window_performance.title('Configure Performance Space')
+                window_performance.title('Set Performance Bounds')
                 window_performance.configure(bg='white')
                 window_performance.resizable(False, False)
 
                 # performance space section
-                frame_performance = create_widget('labeled_frame', master=window_performance, row=0, column=0, text='Performance Space')
-                create_widget('label', master=frame_performance, row=0, column=0, text='Enter the properties for performance variables:')
+                frame_performance = create_widget('frame', master=window_performance, row=0, column=0)
+                create_widget('label', master=frame_performance, row=0, column=0, text='Enter the bounds for performance values:')
                 excel_performance = Excel(master=frame_performance, rows=n_obj, columns=3, width=15,
                     title=[self.name_map['problem'][title] for title in titles], dtype=[str, float, float])
                 excel_performance.grid(row=1, column=0)
@@ -331,8 +331,10 @@ class GUI:
                 excel_performance.disable_column(0)
 
                 if self.config is not None:
-                    excel_performance.set_column(1, self.config['problem']['obj_lb'])
-                    excel_performance.set_column(2, self.config['problem']['obj_ub'])
+                    if 'obj_lb' in self.config['problem']:
+                        excel_performance.set_column(1, self.config['problem']['obj_lb'])
+                    if 'obj_ub' in self.config['problem']:
+                        excel_performance.set_column(2, self.config['problem']['obj_ub'])
 
                 def gui_save_performance_space():
                     '''
@@ -358,8 +360,8 @@ class GUI:
 
             frame_space = tk.Frame(master=frame_problem, bg='white')
             frame_space.grid(row=4, column=0)
-            button_config_design = create_widget('button', master=frame_space, row=4, column=0, text='Configure design bounds', command=gui_config_design)
-            button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Configure performance bounds', command=gui_config_performance)
+            button_config_design = create_widget('button', master=frame_space, row=4, column=0, text='Set design bounds', command=gui_config_design)
+            button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Set performance bounds', command=gui_config_performance)
 
             def gui_set_x_init():
                 '''
@@ -685,6 +687,11 @@ class GUI:
                 excel_design.grid(row=1, column=0)
                 excel_design.set_column(0, [f'x{i + 1}' for i in range(n_var)])
 
+                # load configured design space
+                for column, key in enumerate(titles):
+                    if key in problem_cfg:
+                        excel_design.set_column(column, problem_cfg[key])
+
                 def gui_save_design_space():
                     '''
                     Save design space parameters
@@ -696,6 +703,9 @@ class GUI:
                         except:
                             tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem'][key] + '"', parent=window_design)
                             return
+
+                    window_design.destroy()
+
                     for key, val in temp_cfg.items():
                         problem_cfg[key] = val
 
@@ -733,6 +743,11 @@ class GUI:
                 excel_performance.grid(row=1, column=0)
                 excel_performance.set_column(0, [f'f{i + 1}' for i in range(n_obj)])
 
+                # load configured performance space
+                for column, key in enumerate(titles):
+                    if key in problem_cfg:
+                        excel_performance.set_column(column, problem_cfg[key])
+
                 def gui_save_performance_space():
                     '''
                     Save performance space parameters
@@ -740,10 +755,13 @@ class GUI:
                     temp_cfg = {}
                     for column, key in enumerate(titles):
                         try:
-                            temp_cfg[key] = excel.get_column(column)
+                            temp_cfg[key] = excel_performance.get_column(column)
                         except:
                             tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem'][key] + '"', parent=window_performance)
                             return
+                    
+                    window_performance.destroy()
+
                     for key, val in temp_cfg.items():
                         problem_cfg[key] = val
 
@@ -1282,6 +1300,7 @@ class GUI:
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
         frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, bg=None, sticky=None)
+        grid_configure(frame_db_ctrl, [0], [0, 1, 2, 3])
         create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
         create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values', command=gui_enter_performance)
         create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Start Evaluation', command=gui_start_evaluate)
@@ -1582,6 +1601,7 @@ class GUI:
         else:
             raise NotImplementedError
         self.scrtext_log.configure(state=tk.DISABLED)
+        self.scrtext_log.yview_pickplace('end')
 
     def _refresh(self):
         '''

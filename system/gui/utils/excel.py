@@ -102,18 +102,22 @@ class Excel(tk.Frame):
         return [[self.get(row, column) for column in range(column_start, column_end + 1)] for row in range(row_start, row_end + 1)]
 
     def set(self, row, column, val):
+        if val is None: return
         self.entries[row][column].delete(0, tk.END)
         self.entries[row][column].insert(0, str(val))
 
     def set_row(self, row, val):
+        if val is None: return
         for column, v in enumerate(val):
             self.set(row, column, v)
     
     def set_column(self, column, val):
+        if val is None: return
         for row, v in enumerate(val):
             self.set(row, column, v)
 
     def set_all(self, val):
+        if val is None: return
         for row, v_row in enumerate(val):
             for column, v in enumerate(v_row):
                 self.set(row, column, v)
