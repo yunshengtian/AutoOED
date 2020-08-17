@@ -135,9 +135,9 @@ def calc_hypervolume(Y, ref_point):
 
 def calc_pred_error(Y, Y_expected):
     '''
-    Calculate averaged relative prediction error (in %)
+    Calculate average prediction error
     '''
-    pred_error = np.sum(np.linalg.norm(Y - Y_expected, axis=1) / np.linalg.norm(Y)) / len(Y) * 100.0
+    pred_error = np.sum(np.linalg.norm(Y - Y_expected, axis=1)) / len(Y)
     return pred_error
 
 

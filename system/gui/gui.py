@@ -1032,7 +1032,7 @@ class GUI:
         self.ax22 = self.fig2.add_subplot(122)
         self.ax22.set_title('Model Prediction Error')
         self.ax22.set_xlabel('Evaluations')
-        self.ax22.set_ylabel('Averaged Relative Error (%)')
+        self.ax22.set_ylabel('Average Error')
         self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
 
         # connect matplotlib figure with tkinter GUI
@@ -1612,6 +1612,7 @@ class GUI:
         # can optimize and load config when worker agent is empty
         if self.agent_worker.empty():
             self.entry_mode.enable()
+            self.button_optimize.enable()
             self.button_stop.disable()
             if self.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.menu_config.entryconfig(0, state=tk.NORMAL)
@@ -1888,7 +1889,7 @@ class GUI:
             self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error)
             self.ax22.relim()
             self.ax22.autoscale_view()
-            self.ax22.set_title('Model Prediction Error: %.2f%%' % pred_error[-1])
+            self.ax22.set_title('Model Prediction Error: %.2f' % pred_error[-1])
 
             # refresh figure
             self.fig2.canvas.draw()
