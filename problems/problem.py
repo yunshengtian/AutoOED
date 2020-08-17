@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
 import numpy as np
 from pymoo.model.problem import Problem as PymooProblem
 
 from problems.utils import import_module_from_path, process_problem_config
 
 
-class Problem(PymooProblem, ABC):
+class Problem(PymooProblem):
     '''
     Real problem definition built upon Pymoo's Problem class, added some custom features
     '''
@@ -47,12 +46,11 @@ class Problem(PymooProblem, ABC):
         assert len(ref_point) == self.n_obj, f'reference point should have {self.n_obj} dimensions'
         self.ref_point = ref_point
 
-    @abstractmethod
     def evaluate_performance(self, x):
         '''
         Main function for objective evaluation
         '''
-        raise NotImplementedError
+        return None
 
     def evaluate_constraint(self, x):
         '''
@@ -124,7 +122,12 @@ class GeneratedProblem(CustomProblem):
         if n_obj is not None: self.config['n_obj'] = n_obj
 
         # set evaluation modules
-        self.eval_p_module = import_module_from_path('eval_p', self.config.pop('performance_eval'))
+        self.eval_p_module = None
+        if 'performance_eval' in self.config:
+            eval_p_path = self.config.pop('performance_eval')
+            if eval_p_path is not None:
+                self.eval_p_module = import_module_from_path('eval_p', eval_p_path)
+
         self.eval_c_module = None
         if 'constraint_eval' in self.config:
             eval_c_path = self.config.pop('constraint_eval')
@@ -137,7 +140,10 @@ class GeneratedProblem(CustomProblem):
         '''
         Evaluate objectives from imported module
         '''
-        return self.eval_p_module.evaluate_performance(x)
+        if self.eval_p_module is not None:
+            return self.eval_p_module.evaluate_performance(x)
+        else:
+            return None
 
     def evaluate_constraint(self, x):
         '''

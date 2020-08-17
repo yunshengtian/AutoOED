@@ -629,7 +629,7 @@ class GUI:
 
             button_browse_performance, widget_map['performance_eval'] = create_widget('labeled_button_entry',
                 master=frame_config_display, row=5, column=0, label_text=self.name_map['problem']['performance_eval'], button_text='Browse', command=gui_set_performance_script,
-                width=30, required=True, valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside")
+                width=30, valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside")
 
             def gui_set_constraint_script():
                 '''
