@@ -1,0 +1,35 @@
+# example configuration file
+
+general: 
+  n_worker: 5 # max number of evaluation workers
+  batch_size: 5
+  n_iter: 10 # number of algorithm iterations
+problem: 
+  name: battery design
+  n_var: 6
+  n_obj: 2
+  var_lb: [0, 0, 0, 0, 0, 0] # lower bound of design variables (optional)
+  var_ub: [1, 1, 1, 1, 1, 1] # upper bound of design variables (optional)
+  var_name: [x1, x2, x3, x4, x5, x6] # name of design variables (optional)
+  obj_name: [safety, energy efficiency] # name of performance objectives (optional)
+  ref_point: [1.0, 1.0] # reference point for hypervolume calculation (optional)
+  n_init_sample: 20 # number of random initial samples
+  init_sample_path: null # path of provided initial samples
+algorithm: 
+  name: tsemo
+  n_process: 1 # number of parallel processes used in algorithm (optional)
+  # specific algorithm settings below (optional)
+  surrogate:
+    name: ts
+    n_spectral_pts: 100
+    nu: 5
+    mean_sample: false
+  acquisition:
+    name: identity
+  solver:
+    name: nsga2
+    pop_size: 100
+    n_gen: 200
+    pop_init_method: nds
+  selection:
+    name: hvi
