@@ -1176,12 +1176,12 @@ class GUI:
             create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_add_performance)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
         
-        def gui_evaluate():
+        def gui_start_evaluate():
             '''
-            Manually call evaluation workers for certain rows from database panel (TODO: disable when no eval script linked)
+            Manually start evaluation workers for certain rows from database panel (TODO: disable when no eval script linked)
             '''
             window = tk.Toplevel(master=frame_db)
-            window.title('Enter Row Numbers')
+            window.title('Start Evaluation')
             window.configure(bg='white')
             window.resizable(False, False)
 
@@ -1205,9 +1205,66 @@ class GUI:
 
             button_n_row.configure(command=gui_update_table)
             
-            def gui_start_evaluate():
+            def gui_start_eval_worker():
                 '''
-                Call evaluation workers
+                Start evaluation workers
+                '''
+                try:
+                    rowids = excel_rowid.get_column(0)
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid row numbers', parent=window)
+                    return
+
+                # check for overwriting
+                overwrite = False
+                obj_name = self.config['problem']['obj_name']
+                for rowid in rowids:
+                    for name in obj_name:
+                        if self.table_db.get(rowid - 1, name) != 'N/A':
+                            overwrite = True
+                if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=window) == 'no': return
+
+                window.destroy()
+
+                for rowid in rowids:
+                    self.agent_worker.add_eval_worker(rowid)
+
+            frame_action = create_widget('frame', master=window, row=2, column=0, sticky=None, pady=0)
+            create_widget('button', master=frame_action, row=0, column=0, text='Evaluate', command=gui_start_eval_worker)
+            create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
+
+        def gui_stop_evaluate():
+            '''
+            Manually stop evaluation workers for certain rows from database panel (TODO: disable when no eval script linked)
+            '''
+            window = tk.Toplevel(master=frame_db)
+            window.title('Stop Evaluation')
+            window.configure(bg='white')
+            window.resizable(False, False)
+
+            frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky=None, pady=0)
+            entry_n_row = create_widget('labeled_entry',
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
+            entry_n_row.set(1)
+            button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
+
+            excel_rowid = Excel(master=window, rows=1, columns=1, width=10, 
+                title=['Row number'], dtype=[int], default=None, required=[True], valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows])
+            excel_rowid.grid(row=1, column=0)
+
+            def gui_update_table():
+                '''
+                Update excel table of design variables to be added
+                '''
+                n_row = entry_n_row.get()
+                excel_rowid.update_n_row(n_row)
+
+            button_n_row.configure(command=gui_update_table)
+
+            def gui_stop_eval_worker():
+                '''
+                Stop evaluation workers
                 '''
                 try:
                     rowids = excel_rowid.get_column(0)
@@ -1218,16 +1275,17 @@ class GUI:
                 window.destroy()
 
                 for rowid in rowids:
-                    self.agent_worker.add_eval_worker(rowid)
+                    self.agent_worker.stop_eval_worker(rowid)
 
             frame_action = create_widget('frame', master=window, row=2, column=0, sticky=None, pady=0)
-            create_widget('button', master=frame_action, row=0, column=0, text='Evaluate', command=gui_start_evaluate)
+            create_widget('button', master=frame_action, row=0, column=0, text='Stop', command=gui_stop_eval_worker)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
         frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, bg=None, sticky=None)
-        self.button_enter_design = create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
-        self.button_enter_performance = create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values', command=gui_enter_performance)
-        self.button_evaluate = create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Evaluate', command=gui_evaluate)
+        create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
+        create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values', command=gui_enter_performance)
+        create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Start Evaluation', command=gui_start_evaluate)
+        create_widget('button', master=frame_db_ctrl, row=0, column=3, text='Stop Evaluation', command=gui_stop_evaluate)
 
         frame_db_table = create_widget('frame', master=frame_db, row=1, column=0)
         self.frame_db_table = frame_db_table
