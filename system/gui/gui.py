@@ -517,6 +517,10 @@ class GUI:
                     tk.messagebox.showinfo('Error', 'Number of objectives changed, please reconfigure performance space', parent=window)
                     return
 
+                if x_init_path is None and widget_map['problem']['n_init_sample'].get() == 0:
+                    tk.messagebox.showinfo('Error', 'Either number of initial samples or path of initial design variables needs to be provided', parent=window)
+                    return
+
                 config['problem'].update(problem_cfg)
 
                 self._set_config(config, window)
