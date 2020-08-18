@@ -54,7 +54,7 @@ class Table:
 
     def update(self, data, rowids=None):
         '''
-        Update rows of the table
+        Update rows of the table (TODO: support single rowid)
         '''
         for key, val in data.items():
             if isinstance(val, np.ndarray): val = val.tolist()

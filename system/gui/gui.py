@@ -91,6 +91,7 @@ class GUI:
         self.db_status = 0
         self.stop_criterion = {}
         self.timestamp = None
+        self.pfront_limit = None
 
         # displayed name of each property in config
         self.name_map = {
@@ -1077,10 +1078,10 @@ class GUI:
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
-            n_var, var_name = self.config['problem']['n_var'], self.config['problem']['var_name']
+            n_var = self.config['problem']['n_var']
             var_lb, var_ub = self.config['problem']['var_lb'], self.config['problem']['var_ub']
             excel_design = Excel(master=window, rows=1, columns=n_var, width=10, 
-                title=var_name, dtype=[float] * n_var, default=None, required=[True] * n_var, valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)])
+                title=[f'x{i + 1}' for i in range(n_var)], dtype=[float] * n_var, default=None, required=[True] * n_var, valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)])
             excel_design.grid(row=1, column=0)
 
             def gui_update_table():
@@ -1138,9 +1139,9 @@ class GUI:
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
-            n_obj, obj_name = self.config['problem']['n_obj'], self.config['problem']['obj_name']
+            n_obj = self.config['problem']['n_obj']
             excel_performance = Excel(master=window, rows=1, columns=n_obj + 1, width=10, 
-                title=['Row number'] + obj_name, dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows] + [None] * n_obj)
+                title=['Row number'] + [f'f{i + 1}' for i in range(n_obj)], dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows] + [None] * n_obj)
             excel_performance.grid(row=1, column=0)
 
             def gui_update_table():
@@ -1167,8 +1168,8 @@ class GUI:
                 # check for overwriting
                 overwrite = False
                 for rowid in rowids:
-                    for name in obj_name:
-                        if self.table_db.get(rowid - 1, name) != 'N/A':
+                    for i in range(n_obj):
+                        if self.table_db.get(rowid - 1, f'f{i + 1}') != 'N/A':
                             overwrite = True
                 if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=window) == 'no': return
 
@@ -1230,10 +1231,10 @@ class GUI:
 
                 # check for overwriting
                 overwrite = False
-                obj_name = self.config['problem']['obj_name']
+                n_obj = self.config['problem']['n_obj']
                 for rowid in rowids:
-                    for name in obj_name:
-                        if self.table_db.get(rowid - 1, name) != 'N/A':
+                    for i in range(n_obj):
+                        if self.table_db.get(rowid - 1, f'f{i + 1}') != 'N/A':
                             overwrite = True
                 if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=window) == 'no': return
 
@@ -1529,7 +1530,7 @@ class GUI:
             self.fig1.delaxes(self.ax12)
             self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
             self.ax12.set_xticks(self.theta)
-            self.ax12.set_varlabels([f'{var_name[i]}\n[{self.var_lb[i]},{self.var_ub[i]}]' for i in range(n_var)])
+            self.ax12.set_varlabels([f'{var_name[i]}\n[{np.round(self.var_lb[i], 4)},{np.round(self.var_ub[i], 4)}]' for i in range(n_var)])
             self.ax12.set_yticklabels([])
             self.ax12.set_title('Design Space', position=(0.5, 1.1))
             self.ax12.set_ylim(0, 1)
@@ -1615,6 +1616,7 @@ class GUI:
         # post-process worker logs
         log_list = []
         status, rowids = [], []
+        evaluated = False
         for log in self.agent_worker.read_log():
             log = log.split('/')
             log_text = log[0]
@@ -1629,14 +1631,29 @@ class GUI:
                     status.append('unevaluated')
                 elif log_text.endswith('completed'):
                     status.append('evaluated')
+                    evaluated = True
                 else:
                     raise NotImplementedError
                 rowids.append(rowid)
 
-        # log display, update visualization, check stopping criterion
+        # log display
         self._log(log_list)
-        self._redraw()
-        self.table_db.update({'status': status}, rowids)
+
+        # update visualization
+        self._redraw(evaluated)
+
+        # update database table status (TODO: optimize)
+        if evaluated:
+            for s, rowid in zip(status, rowids):
+                if s == 'evaluated':
+                    Y = self.agent_data.load('Y', rowid=rowid)
+                    self.table_db.update({'status': [s], 'Y': Y}, [rowid])
+                else:
+                    self.table_db.update({'status': [s]}, [rowid])
+        else:
+            self.table_db.update({'status': status}, rowids)
+
+        # check stopping criterion
         self._check_stop_criterion()
         
         # trigger another refresh
@@ -1682,6 +1699,10 @@ class GUI:
         self.n_init_sample = len(Y)
         self.n_sample = self.n_init_sample
         self.n_valid_sample = self.n_init_sample
+
+        # calculate pfront limit (for rescale plot afterwards)
+        if true_pfront is not None:
+            self.pfront_limit = [np.min(true_pfront, axis=1), np.max(true_pfront, axis=1)]
 
         # plot performance space
         if true_pfront is not None:
@@ -1795,17 +1816,15 @@ class GUI:
         self.scatter_y.set_offsets(Y)
         self.scatter_y_pareto.set_offsets(Y[is_pareto])
         
-        # rescale plot
+        # rescale plot according to Y and true_pfront
         x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
+        x_min, x_max = min(x_min, self.pfront_limit[0][0]), max(x_max, self.pfront_limit[1][0])
         y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
+        y_min, y_max = min(y_min, self.pfront_limit[0][1]), max(y_max, self.pfront_limit[1][1])
         x_offset = (x_max - x_min) / 20
         y_offset = (y_max - y_min) / 20
-        curr_x_min, curr_x_max = self.ax11.get_xlim()
-        curr_y_min, curr_y_max = self.ax11.get_ylim()
-        x_min, x_max = min(x_min - x_offset, curr_x_min), max(x_max + x_offset, curr_x_max)
-        y_min, y_max = min(y_min - y_offset, curr_y_min), max(y_max + y_offset, curr_y_max)
-        self.ax11.set_xlim(x_min, x_max)
-        self.ax11.set_ylim(y_min, y_max)
+        self.ax11.set_xlim(x_min - x_offset, x_max + x_offset)
+        self.ax11.set_ylim(y_min - y_offset, y_max + y_offset)
 
         # replot new evaluated & predicted points
         if self.scatter_y_new is not None:
@@ -1828,7 +1847,7 @@ class GUI:
 
         self.fig1.canvas.draw()
 
-    def _redraw(self):
+    def _redraw(self, evaluated=False):
         '''
         Redraw figures and database viz
         '''
@@ -1852,7 +1871,7 @@ class GUI:
         n_curr_valid_sample = int(np.sum(valid_idx))
         n_prev_valid_sample = self.n_valid_sample
         self.n_valid_sample = n_curr_valid_sample
-        eval_completed = (n_prev_valid_sample < n_curr_valid_sample)
+        eval_completed = (n_prev_valid_sample < n_curr_valid_sample) or evaluated
 
         # replot if evaluation completed
         if eval_completed:

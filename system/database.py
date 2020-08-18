@@ -49,6 +49,8 @@ class Database:
             row_cond = ''
         elif isinstance(rowid, int):
             row_cond = f' where rowid = {rowid}'
+        elif isinstance(rowid, list) or isinstance(rowid, np.ndarray):
+            row_cond = f' where rowid in ({",".join(np.array(rowid, dtype=str))})'
         else:
             raise NotImplementedError
 
