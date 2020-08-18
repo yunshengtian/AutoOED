@@ -1718,7 +1718,7 @@ class GUI:
         # plot hypervolume curve
         hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point']))
         self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
-        self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
+        self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
 
         # plot prediction error curve
         self.line_error = self.ax22.plot([], [])[0]
@@ -1818,9 +1818,10 @@ class GUI:
         
         # rescale plot according to Y and true_pfront
         x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
-        x_min, x_max = min(x_min, self.pfront_limit[0][0]), max(x_max, self.pfront_limit[1][0])
         y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
-        y_min, y_max = min(y_min, self.pfront_limit[0][1]), max(y_max, self.pfront_limit[1][1])
+        if self.pfront_limit is not None:
+            x_min, x_max = min(x_min, self.pfront_limit[0][0]), max(x_max, self.pfront_limit[1][0])
+            y_min, y_max = min(y_min, self.pfront_limit[0][1]), max(y_max, self.pfront_limit[1][1])
         x_offset = (x_max - x_min) / 20
         y_offset = (y_max - y_min) / 20
         self.ax11.set_xlim(x_min - x_offset, x_max + x_offset)
@@ -1892,7 +1893,7 @@ class GUI:
             self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value)
             self.ax21.relim()
             self.ax21.autoscale_view()
-            self.ax21.set_title('Hypervolume: %.2f' % hv_value[-1])
+            self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
 
             # replot prediction error curve
             line_error_y = self.line_error.get_ydata()
@@ -1901,7 +1902,7 @@ class GUI:
             self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error)
             self.ax22.relim()
             self.ax22.autoscale_view()
-            self.ax22.set_title('Model Prediction Error: %.2f' % pred_error[-1])
+            self.ax22.set_title('Model Prediction Error: %.4f' % pred_error[-1])
 
             # refresh figure
             self.fig2.canvas.draw()
