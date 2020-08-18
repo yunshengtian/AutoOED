@@ -43,7 +43,6 @@ def div(x1, x2):
 class RE1(RE):
     '''
     Four bar truss design
-    NOTE: the provided true pareto front approximation of this problem might be wrong
     '''
     n_var = 4
     n_obj = 2
