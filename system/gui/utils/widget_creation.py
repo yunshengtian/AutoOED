@@ -11,53 +11,55 @@ from system.gui.utils.grid import grid_configure
 
 
 # predefined formatting
+padx = 10
+pady = 10
 combobox_width = 10
 entry_width = 5
 
 
 def create_label(master, row, column, text, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='W'):
     label = tk.Label(master=master, text=text)
     label.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
 
 
 def create_frame(master, row, column, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = tk.Frame(master=master)
     frame.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return frame
 
 
 def create_combobox(master, row, column, values, readonly=True, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='W'):
     combobox = ttk.Combobox(master=master, values=values, state='readonly' if readonly else None, width=width, justify='right')
     combobox.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return get_entry('string', combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
 def create_button(master, row, column, text, command=None, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     button = Button(master=master, text=text, command=command)
     button.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return button
 
 
 def create_entry(master, row, column, class_type, width=entry_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='W'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='W'):
     entry = tk.Entry(master=master, width=width, justify='right')
     entry.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
 def create_labeled_frame(master, row, column, text, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = tk.LabelFrame(master=master, text=text)
     frame.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return frame
 
 
 def create_labeled_combobox(master, row, column, text, values, readonly=True, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = text + ' (*): ' if required and required_mark else text + ': '
@@ -69,7 +71,7 @@ def create_labeled_combobox(master, row, column, text, values, readonly=True, wi
 
 
 def create_labeled_button(master, row, column, label_text, button_text, command=None, required=False, required_mark=True,
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = label_text + ' (*): ' if required and required_mark else label_text + ': '
@@ -81,7 +83,7 @@ def create_labeled_button(master, row, column, label_text, button_text, command=
 
 
 def create_labeled_entry(master, row, column, text, class_type, width=entry_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='EW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='EW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = text + ' (*): ' if required and required_mark else text + ': '
@@ -93,7 +95,7 @@ def create_labeled_entry(master, row, column, text, class_type, width=entry_widt
 
 
 def create_labeled_button_entry(master, row, column, label_text, button_text, command=None, width=entry_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True,
-        rowspan=1, columnspan=1, padx=10, pady=10, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = create_frame(master, row, column, rowspan, columnspan, 0, pady / 2, sticky)
     grid_configure(frame, [0], [1])
     label_text = label_text + ' (*): ' if required and required_mark else label_text + ': '
