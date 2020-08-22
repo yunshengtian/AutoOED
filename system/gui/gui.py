@@ -68,6 +68,8 @@ class GUI:
         self.entry_batch_size = None
         self.entry_n_iter = None
         self.nb_viz = None
+        self.frame_plot = None
+        self.frame_stat = None
         self.frame_db = None
         self.table_db = None
 
@@ -91,6 +93,7 @@ class GUI:
         self.db_status = 0
         self.stop_criterion = {}
         self.timestamp = None
+        self.true_pfront = None
         self.pfront_limit = None
 
         # displayed name of each property in config
@@ -974,13 +977,13 @@ class GUI:
         '''
         Widgets initialization
         '''
-        self._init_viz_widgets()
+        self._init_tab_widgets()
         self._init_control_widgets()
         self._init_log_widgets()
 
-    def _init_viz_widgets(self):
+    def _init_tab_widgets(self):
         '''
-        Visualization widgets initialization (design/performance visualization, statistics, database)
+        Tab widgets initialization (for visualization)
         '''
         frame_viz = tk.Frame(master=self.root)
         frame_viz.grid(row=0, column=0, rowspan=2, sticky='NSEW')
@@ -989,19 +992,26 @@ class GUI:
         # configure tab widgets
         self.nb_viz = ttk.Notebook(master=frame_viz)
         self.nb_viz.grid(row=0, column=0, sticky='NSEW')
-        frame_plot = tk.Frame(master=self.nb_viz)
-        frame_stat = tk.Frame(master=self.nb_viz)
-        frame_db = tk.Frame(master=self.nb_viz)
-        grid_configure(frame_plot, [0], [0])
-        grid_configure(frame_stat, [0], [0])
-        grid_configure(frame_db, [1], [0])
-        self.nb_viz.add(child=frame_plot, text='Visualization')
-        self.nb_viz.add(child=frame_stat, text='Statistics')
-        self.nb_viz.add(child=frame_db, text='Database')
+        self.frame_plot = tk.Frame(master=self.nb_viz)
+        self.frame_stat = tk.Frame(master=self.nb_viz)
+        self.frame_db = tk.Frame(master=self.nb_viz)
+        self.nb_viz.add(child=self.frame_plot, text='Visualization')
+        self.nb_viz.add(child=self.frame_stat, text='Statistics')
+        self.nb_viz.add(child=self.frame_db, text='Database')
 
-        # temporarily disable database tab until data loaded
+        # temporarily disable tabs until data loaded
+        self.nb_viz.tab(0, state=tk.DISABLED)
+        self.nb_viz.tab(1, state=tk.DISABLED)
         self.nb_viz.tab(2, state=tk.DISABLED)
 
+    def _init_viz_widgets(self):
+        '''
+        Visualization widgets initialization (design/performance space, statistics, database)
+        '''
+        grid_configure(self.frame_plot, [0], [0])
+        grid_configure(self.frame_stat, [0], [0])
+        grid_configure(self.frame_db, [1], [0])
+        
         # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
         self.fig1 = plt.figure(figsize=(10, 5))
         self.gs1 = GridSpec(1, 2, figure=self.fig1, width_ratios=[3, 2])
@@ -1035,11 +1045,11 @@ class GUI:
         self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
 
         # connect matplotlib figure with tkinter GUI
-        embed_figure(self.fig1, frame_plot)
-        embed_figure(self.fig2, frame_stat)
+        embed_figure(self.fig1, self.frame_plot)
+        embed_figure(self.fig2, self.frame_stat)
 
         # configure slider widget
-        frame_slider = tk.Frame(master=frame_plot)
+        frame_slider = tk.Frame(master=self.frame_plot)
         frame_slider.grid(row=2, column=0, padx=5, pady=0, sticky='EW')
         grid_configure(frame_slider, [0], [1])
         
@@ -1063,11 +1073,78 @@ class GUI:
 
         self.scale_iter.configure(command=gui_redraw_viz)
 
+        # load from database
+        X, Y, is_pareto = self.agent_data.load(['X', 'Y', 'is_pareto'])
+
+        # update status
+        self.n_init_sample = len(Y)
+        self.n_sample = self.n_init_sample
+        self.n_valid_sample = self.n_init_sample
+
+        # calculate pfront limit (for rescale plot afterwards)
+        if self.true_pfront is not None:
+            self.pfront_limit = [np.min(self.true_pfront, axis=1), np.max(self.true_pfront, axis=1)]
+
+        # plot performance space
+        if self.true_pfront is not None:
+            self.ax11.scatter(*self.true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
+        self.scatter_x = X
+        self.scatter_y = self.ax11.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
+        self.scatter_y_pareto = self.ax11.scatter(*Y[is_pareto].T, color='red', s=10, label='Approximated Pareto front')
+        self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated points')
+        self.scatter_y_pred = self.ax11.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted points')
+        self.ax11.legend(loc='upper right')
+        self.line_y_pred_list = []
+
+        # plot hypervolume curve
+        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point']))
+        self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
+        self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
+
+        # plot prediction error curve
+        self.line_error = self.ax22.plot([], [])[0]
+
+         # mouse clicking event
+        def check_design_values(event):
+            if event.inaxes != self.ax11: return
+
+            if event.button == MouseButton.LEFT and event.dblclick: # check certain design values
+                # find nearest performance values with associated design values
+                loc = [event.xdata, event.ydata]
+                all_y = self.scatter_y._offsets
+                closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
+                closest_x = self.scatter_x[closest_idx]
+                x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(self.config['problem']['var_name'], closest_x)])
+
+                # clear checked design values
+                self._clear_design_space()
+
+                # plot checked design values (TODO: fix annotation location)
+                y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
+                text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
+                self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
+                    bbox=dict(boxstyle="round", fc="w", alpha=0.7),
+                    arrowprops=dict(arrowstyle="->"))
+                transformed_x = (np.array(closest_x) - self.var_lb) / (self.var_ub - self.var_lb)
+                self.line_x = self.ax12.plot(self.theta, transformed_x)[0]
+                self.fill_x = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
+
+            elif event.button == MouseButton.RIGHT: # clear checked design values
+                self._clear_design_space()
+                
+            self.fig1.canvas.draw()
+        
+        self.fig1.canvas.mpl_connect('button_press_event', check_design_values)
+
+        # refresh figure
+        self.fig1.canvas.draw()
+        self.fig2.canvas.draw()
+
         def gui_enter_design():
             '''
             Enter design variables from database panel
             '''
-            window = tk.Toplevel(master=frame_db)
+            window = tk.Toplevel(master=self.frame_db)
             window.title('Enter Design Variables')
             window.resizable(False, False)
 
@@ -1132,7 +1209,7 @@ class GUI:
             '''
             Enter performance values at certain rows from database panel
             '''
-            window = tk.Toplevel(master=frame_db)
+            window = tk.Toplevel(master=self.frame_db)
             window.title('Enter Performance Values')
             window.resizable(False, False)
 
@@ -1199,7 +1276,7 @@ class GUI:
             '''
             Manually start evaluation workers for certain rows from database panel (TODO: disable when no eval script linked)
             '''
-            window = tk.Toplevel(master=frame_db)
+            window = tk.Toplevel(master=self.frame_db)
             window.title('Start Evaluation')
             window.resizable(False, False)
 
@@ -1255,7 +1332,7 @@ class GUI:
             '''
             Manually stop evaluation workers for certain rows from database panel (TODO: disable when no eval script linked)
             '''
-            window = tk.Toplevel(master=frame_db)
+            window = tk.Toplevel(master=self.frame_db)
             window.title('Stop Evaluation')
             window.resizable(False, False)
 
@@ -1298,15 +1375,47 @@ class GUI:
             create_widget('button', master=frame_action, row=0, column=0, text='Stop', command=gui_stop_eval_worker)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
-        frame_db_ctrl = create_widget('frame', master=frame_db, row=0, column=0, sticky=None)
+        frame_db_ctrl = create_widget('frame', master=self.frame_db, row=0, column=0, sticky=None)
         grid_configure(frame_db_ctrl, [0], [0, 1, 2, 3])
         create_widget('button', master=frame_db_ctrl, row=0, column=0, text='Enter Design Variables', command=gui_enter_design)
         create_widget('button', master=frame_db_ctrl, row=0, column=1, text='Enter Performance Values', command=gui_enter_performance)
         create_widget('button', master=frame_db_ctrl, row=0, column=2, text='Start Evaluation', command=gui_start_evaluate)
         create_widget('button', master=frame_db_ctrl, row=0, column=3, text='Stop Evaluation', command=gui_stop_evaluate)
 
-        frame_db_table = create_widget('frame', master=frame_db, row=1, column=0)
-        self.frame_db_table = frame_db_table
+        self.frame_db_table = create_widget('frame', master=self.frame_db, row=1, column=0)
+        
+        # initialize database table
+        n_var, n_obj = X.shape[1], Y.shape[1]
+        titles = ['status'] + [f'x{i + 1}' for i in range(n_var)] + \
+            [f'f{i + 1}' for i in range(n_obj)] + \
+            [f'f{i + 1}_expected' for i in range(n_obj)] + \
+            [f'f{i + 1}_uncertainty' for i in range(n_obj)] + \
+            ['pareto', 'config_id', 'batch_id']
+        key_map = {
+            'X': [f'x{i + 1}' for i in range(n_var)],
+            'Y': [f'f{i + 1}' for i in range(n_obj)],
+            'Y_expected': [f'f{i + 1}_expected' for i in range(n_obj)],
+            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(n_obj)],
+        }
+
+        self.table_db = Table(master=self.frame_db_table, titles=titles)
+        self.table_db.register_key_map(key_map)
+        self.table_db.insert({
+            'status': ['evaluated'] * self.n_init_sample,
+            'X': X, 
+            'Y': Y, 
+            'Y_expected': np.full_like(Y, 'N/A', dtype=object),
+            'Y_uncertainty': np.full_like(Y, 'N/A', dtype=object),
+            'pareto': is_pareto, 
+            'config_id': np.zeros(self.n_init_sample, dtype=int), 
+            'batch_id': np.zeros(self.n_init_sample, dtype=int)
+        })
+
+        # activate visualization tabs
+        self.nb_viz.tab(0, state=tk.NORMAL)
+        self.nb_viz.tab(1, state=tk.NORMAL)
+        self.nb_viz.tab(2, state=tk.NORMAL)
+        self.nb_viz.select(0)
 
     def _init_control_widgets(self):
         '''
@@ -1511,7 +1620,7 @@ class GUI:
 
             # initialize problem and data storage (agent)
             try:
-                problem, true_pfront = build_problem(config['problem'], get_pfront=True)
+                problem, self.true_pfront = build_problem(config['problem'], get_pfront=True)
             except:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration', parent=window)
                 return
@@ -1526,6 +1635,9 @@ class GUI:
             self.var_lb, self.var_ub = problem.xl, problem.xu
             if self.var_lb is None: self.var_lb = np.zeros(n_var)
             if self.var_ub is None: self.var_ub = np.ones(n_var)
+
+            # initialize visualization widgets
+            self._init_viz_widgets()
             
             # update plot
             self.ax11.set_xlabel(obj_name[0])
@@ -1538,8 +1650,6 @@ class GUI:
             self.ax12.set_yticklabels([])
             self.ax12.set_title('Design Space', position=(0.5, 1.1))
             self.ax12.set_ylim(0, 1)
-
-            self._init_draw(true_pfront)
 
             # disable changing saving location
             self.menu_file.entryconfig(0, state=tk.DISABLED)
@@ -1691,105 +1801,6 @@ class GUI:
             self.stop_criterion = {}
             self.agent_worker.stop_worker()
             self._log('stopping criterion is met')
-        
-    def _init_draw(self, true_pfront):
-        '''
-        First draw of figures and database viz
-        '''
-        # load from database
-        X, Y, is_pareto = self.agent_data.load(['X', 'Y', 'is_pareto'])
-
-        # update status
-        self.n_init_sample = len(Y)
-        self.n_sample = self.n_init_sample
-        self.n_valid_sample = self.n_init_sample
-
-        # calculate pfront limit (for rescale plot afterwards)
-        if true_pfront is not None:
-            self.pfront_limit = [np.min(true_pfront, axis=1), np.max(true_pfront, axis=1)]
-
-        # plot performance space
-        if true_pfront is not None:
-            self.ax11.scatter(*true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
-        self.scatter_x = X
-        self.scatter_y = self.ax11.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
-        self.scatter_y_pareto = self.ax11.scatter(*Y[is_pareto].T, color='red', s=10, label='Approximated Pareto front')
-        self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated points')
-        self.scatter_y_pred = self.ax11.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted points')
-        self.ax11.legend(loc='upper right')
-        self.line_y_pred_list = []
-
-        # plot hypervolume curve
-        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point']))
-        self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
-        self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
-
-        # plot prediction error curve
-        self.line_error = self.ax22.plot([], [])[0]
-
-         # mouse clicking event
-        def check_design_values(event):
-            if event.inaxes != self.ax11: return
-
-            if event.button == MouseButton.LEFT and event.dblclick: # check certain design values
-                # find nearest performance values with associated design values
-                loc = [event.xdata, event.ydata]
-                all_y = self.scatter_y._offsets
-                closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
-                closest_x = self.scatter_x[closest_idx]
-                x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(self.config['problem']['var_name'], closest_x)])
-
-                # clear checked design values
-                self._clear_design_space()
-
-                # plot checked design values (TODO: fix annotation location)
-                y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
-                text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
-                self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
-                    bbox=dict(boxstyle="round", fc="w", alpha=0.7),
-                    arrowprops=dict(arrowstyle="->"))
-                transformed_x = (np.array(closest_x) - self.var_lb) / (self.var_ub - self.var_lb)
-                self.line_x = self.ax12.plot(self.theta, transformed_x)[0]
-                self.fill_x = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
-
-            elif event.button == MouseButton.RIGHT: # clear checked design values
-                self._clear_design_space()
-                
-            self.fig1.canvas.draw()
-        
-        self.fig1.canvas.mpl_connect('button_press_event', check_design_values)
-
-        # refresh figure
-        self.fig1.canvas.draw()
-        self.fig2.canvas.draw()
-
-        # initialize database viz
-        n_var, n_obj = X.shape[1], Y.shape[1]
-        titles = ['status'] + [f'x{i + 1}' for i in range(n_var)] + \
-            [f'f{i + 1}' for i in range(n_obj)] + \
-            [f'f{i + 1}_expected' for i in range(n_obj)] + \
-            [f'f{i + 1}_uncertainty' for i in range(n_obj)] + \
-            ['pareto', 'config_id', 'batch_id']
-        key_map = {
-            'X': [f'x{i + 1}' for i in range(n_var)],
-            'Y': [f'f{i + 1}' for i in range(n_obj)],
-            'Y_expected': [f'f{i + 1}_expected' for i in range(n_obj)],
-            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(n_obj)],
-        }
-
-        self.nb_viz.tab(2, state=tk.NORMAL)
-        self.table_db = Table(master=self.frame_db_table, titles=titles)
-        self.table_db.register_key_map(key_map)
-        self.table_db.insert({
-            'status': ['evaluated'] * self.n_init_sample,
-            'X': X, 
-            'Y': Y, 
-            'Y_expected': np.full_like(Y, 'N/A', dtype=object),
-            'Y_uncertainty': np.full_like(Y, 'N/A', dtype=object),
-            'pareto': is_pareto, 
-            'config_id': np.zeros(self.n_init_sample, dtype=int), 
-            'batch_id': np.zeros(self.n_init_sample, dtype=int)
-        })
 
     def _clear_design_space(self):
         '''
