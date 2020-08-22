@@ -1080,6 +1080,10 @@ class GUI:
 
             n_var = self.config['problem']['n_var']
             var_lb, var_ub = self.config['problem']['var_lb'], self.config['problem']['var_ub']
+            if not (isinstance(var_lb, list) or isinstance(var_lb, np.ndarray)):
+                var_lb = [var_lb] * n_var
+            if not (isinstance(var_ub, list) or isinstance(var_ub, np.ndarray)):
+                var_ub = [var_ub] * n_var
             excel_design = Excel(master=window, rows=1, columns=n_var, width=10, 
                 title=[f'x{i + 1}' for i in range(n_var)], dtype=[float] * n_var, default=None, required=[True] * n_var, valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)])
             excel_design.grid(row=1, column=0)
