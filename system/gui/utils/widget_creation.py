@@ -30,11 +30,11 @@ def create_frame(master, row, column,
     return frame
 
 
-def create_combobox(master, row, column, values, readonly=True, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
+def create_combobox(master, row, column, values, class_type='string', readonly=True, width=combobox_width, required=False, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='W'):
     combobox = ttk.Combobox(master=master, values=values, state='readonly' if readonly else None, width=width, justify='right')
     combobox.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
-    return get_entry('string', combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
+    return get_entry(class_type, combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
 def create_button(master, row, column, text, command=None, 
@@ -51,6 +51,15 @@ def create_entry(master, row, column, class_type, width=entry_width, required=Fa
     return get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
+def create_checkbutton(master, row, column, text,
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky=None):
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+    var = tk.IntVar()
+    tk.Checkbutton(master=frame, variable=var, highlightthickness=0, bd=0).grid(row=0, column=0)
+    tk.Label(master=frame, text=text).grid(row=0, column=1)
+    return get_entry('checkbutton', var, frame)
+
+
 def create_labeled_frame(master, row, column, text, 
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = tk.LabelFrame(master=master, text=text)
@@ -58,7 +67,7 @@ def create_labeled_frame(master, row, column, text,
     return frame
 
 
-def create_labeled_combobox(master, row, column, text, values, readonly=True, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
+def create_labeled_combobox(master, row, column, text, values, class_type='string', readonly=True, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, changeable=True, 
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
@@ -67,7 +76,7 @@ def create_labeled_combobox(master, row, column, text, values, readonly=True, wi
     label.grid(row=0, column=0, sticky='W')
     combobox = ttk.Combobox(master=frame, values=values, state='readonly' if readonly else None, width=width, justify='right')
     combobox.grid(row=0, column=1, sticky='E')
-    return get_entry('string', combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
+    return get_entry(class_type, combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
 def create_labeled_button(master, row, column, label_text, button_text, command=None, required=False, required_mark=True,
@@ -118,6 +127,7 @@ def create_widget(name, *args, **kwargs):
         'combobox': create_combobox,
         'button': create_button,
         'entry': create_entry,
+        'checkbutton': create_checkbutton,
         'labeled_frame': create_labeled_frame,
         'labeled_combobox': create_labeled_combobox,
         'labeled_button': create_labeled_button,

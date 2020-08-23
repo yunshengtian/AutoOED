@@ -101,7 +101,15 @@ class GUI:
         self.true_pfront = None
         self.pfront_limit = None
 
-        # displayed name of each property in config
+        # GUI modules initialization
+        self._init_mapping()
+        self._init_menu()
+        self._init_widgets()
+
+    def _init_mapping(self):
+        '''
+        Mapping initialization
+        '''
         self.name_map = {
             'general': {
                 'n_worker': 'Max number of evaluation workers',
@@ -131,9 +139,65 @@ class GUI:
             },
         }
 
-        # GUI modules initialization
-        self._init_menu()
-        self._init_widgets()
+        self.name_map_algo = {
+            'surrogate': {
+                'name': 'Name',
+                'nu': 'Type of Matern kernel',
+                'n_spectral_pts': 'Number of points for spectral sampling',
+                'mean_sample': 'Use mean sample for Thompson sampling',
+            },
+            'acquisition': {
+                'name': 'Name',
+            },
+            'solver': {
+                'name': 'Name',
+                'n_gen': 'Number of generations',
+                'pop_size': 'Population size',
+                'pop_init_method': 'Population initialization method',
+            },
+            'selection': {
+                'name': 'Name',
+            },
+        }
+
+        self.value_map_algo = {
+            'surrogate': {
+                'name': {
+                    'Gaussian Process': 'gp',
+                    'Thompson Sampling': 'ts',
+                },
+                'nu': [1, 3, 5, -1],
+            },
+            'acquisition': {
+                'name': {
+                    'Identity': 'identity',
+                    'Probability of Improvement': 'pi',
+                    'Expected Improvement': 'ei',
+                    'Upper Confidence Bound': 'ucb',
+                    'Lower Confidence Bound': 'lcb',
+                },
+            },
+            'solver': {
+                'name': {
+                    'NSGA-II': 'nsga2',
+                    'MOEA/D': 'moead',
+                    'ParEGO Solver': 'parego',
+                },
+                'pop_init_method': {
+                    'Random': 'random',
+                    'Non-Dominated Sort': 'nds',
+                    'Latin-Hypercube Sampling': 'lhs',
+                },
+            },
+            'selection': {
+                'name': {
+                    'Hypervolume Improvement': 'hvi',
+                    'Uncertainty': 'uncertainty',
+                    'Random': 'random',
+                    'MOEA/D Selection': 'moead',
+                },
+            },
+        }
 
     def _init_menu(self):
         '''
@@ -447,6 +511,114 @@ class GUI:
             widget_map['algorithm']['n_process'] = create_widget('labeled_entry', 
                 master=frame_algorithm, row=1, column=0, text=self.name_map['algorithm']['n_process'], class_type='int', default=1, 
                 valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
+
+            def gui_select_algorithm(event):
+                '''
+                Select algorithm
+                '''
+                button_advanced.enable()
+
+            widget_map['algorithm']['name'].widget.bind('<<ComboboxSelected>>', gui_select_algorithm)
+
+            def gui_set_advanced():
+                '''
+                Set advanced settings of algorithm
+                '''
+                window_advanced = tk.Toplevel(master=window)
+                window_advanced.title('Advanced Settings')
+                window_advanced.resizable(False, False)
+
+                widget_map_algo = {
+                    'surrogate': {}, 
+                    'acquisition': {}, 
+                    'solver': {},
+                    'selection': {},
+                }
+
+                # parameter section
+                frame_param_algo = tk.Frame(master=window_advanced)
+                frame_param_algo.grid(row=0, column=0)
+                grid_configure(frame_param_algo, [0, 1, 2], [0])
+
+                # TODO: decouple setting default values from widgets creation
+
+                # surrogate model subsection
+                frame_surrogate = create_widget('labeled_frame', master=frame_param_algo, row=0, column=0, text='Surrogate Model')
+                grid_configure(frame_surrogate, [0, 1, 2, 3], [0])
+                widget_map_algo['surrogate']['name'] = create_widget('labeled_combobox',
+                    master=frame_surrogate, row=0, column=0, width=20, text=self.name_map_algo['surrogate']['name'], 
+                    values=list(self.value_map_algo['surrogate']['name'].keys()), required=True)
+                widget_map_algo['surrogate']['nu'] = create_widget('labeled_combobox',
+                    master=frame_surrogate, row=1, column=0, width=5, text=self.name_map_algo['surrogate']['nu'], values=self.value_map_algo['surrogate']['nu'],
+                    class_type='int', default=5)
+
+                def gui_select_surrogate(event):
+                    '''
+                    Select surrogate model type
+                    '''
+                    name = event.widget.get()
+                    if name == 'Gaussian Process':
+                        if 'n_spectral_pts' in widget_map_algo['surrogate']:
+                            widget_map_algo['surrogate'].pop('n_spectral_pts').destroy()
+                        if 'mean_sample' in widget_map_algo['surrogate']:
+                            widget_map_algo['surrogate'].pop('mean_sample').master.destroy()
+                    elif name == 'Thompson Sampling':
+                        if 'n_spectral_pts' not in widget_map_algo['surrogate']:
+                            widget_map_algo['surrogate']['n_spectral_pts'] = create_widget('labeled_entry',
+                                master=frame_surrogate, row=2, column=0, text=self.name_map_algo['surrogate']['n_spectral_pts'], class_type='int', default=100,
+                                valid_check=lambda x: x > 0, error_msg='number of spectral sampling points must be positive')
+                        if 'mean_sample' not in widget_map_algo['surrogate']:
+                            widget_map_algo['surrogate']['mean_sample'] = create_widget('checkbutton',
+                                master=frame_surrogate, row=3, column=0, text=self.name_map_algo['surrogate']['mean_sample'])
+                    else:
+                        raise NotImplementedError
+
+                widget_map_algo['surrogate']['name'].widget.bind('<<ComboboxSelected>>', gui_select_surrogate)
+
+                # acquisition function subsection
+                frame_acquisition = create_widget('labeled_frame', master=frame_param_algo, row=1, column=0, text='Acquisition Function')
+                grid_configure(frame_acquisition, [0], [0])
+                widget_map_algo['acquisition']['name'] = create_widget('labeled_combobox',
+                    master=frame_acquisition, row=0, column=0, width=25, text=self.name_map_algo['acquisition']['name'], 
+                    values=list(self.value_map_algo['acquisition']['name'].keys()), required=True)
+
+                # multi-objective solver subsection
+                frame_solver = create_widget('labeled_frame', master=frame_param_algo, row=2, column=0, text='Multi-Objective Solver')
+                grid_configure(frame_solver, [0, 1, 2, 3], [0])
+                widget_map_algo['solver']['name'] = create_widget('labeled_combobox',
+                    master=frame_solver, row=0, column=0, width=15, text=self.name_map_algo['solver']['name'], 
+                    values=list(self.value_map_algo['solver']['name'].keys()), required=True)
+                widget_map_algo['solver']['n_gen'] = create_widget('labeled_entry',
+                    master=frame_solver, row=1, column=0, text=self.name_map_algo['solver']['n_gen'], class_type='int', default=200,
+                    valid_check=lambda x: x > 0, error_msg='number of generations must be positive')
+                widget_map_algo['solver']['pop_size'] = create_widget('labeled_entry',
+                    master=frame_solver, row=2, column=0, text=self.name_map_algo['solver']['pop_size'], class_type='int', default=100,
+                    valid_check=lambda x: x > 0, error_msg='population size must be positive')
+                widget_map_algo['solver']['pop_init_method'] = create_widget('labeled_combobox',
+                    master=frame_solver, row=3, column=0, width=25, text=self.name_map_algo['solver']['pop_init_method'], 
+                    values=list(self.value_map_algo['solver']['pop_init_method'].keys()), default='Non-Dominated Sort')
+
+                # selection method subsection
+                frame_selection = create_widget('labeled_frame', master=frame_param_algo, row=3, column=0, text='Selection Method')
+                grid_configure(frame_selection, [0], [0])
+                widget_map_algo['selection']['name'] = create_widget('labeled_combobox',
+                    master=frame_selection, row=0, column=0, width=25, text=self.name_map_algo['selection']['name'], 
+                    values=list(self.value_map_algo['selection']['name'].keys()), required=True)
+
+                def gui_save_advanced():
+                    '''
+                    Save advanced settings of algorithm
+                    '''
+                    window_advanced.destroy()
+
+                # action section
+                frame_action = tk.Frame(master=window_advanced)
+                frame_action.grid(row=1, column=0)
+                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_advanced)
+                create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_advanced.destroy)
+
+            button_advanced = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', command=gui_set_advanced, sticky=None)
+            button_advanced.disable()
 
             # evaluation subsection
             frame_general = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Evaluation')
@@ -1259,10 +1431,7 @@ class GUI:
 
             button_n_row.configure(command=gui_update_table)
 
-            frame_eval = create_widget('frame', master=window, row=2, column=0, sticky=None)
-            var_eval = tk.IntVar()
-            tk.Checkbutton(master=frame_eval, variable=var_eval, highlightthickness=0, bd=0).grid(row=0, column=0)
-            tk.Label(master=frame_eval, text='Automatically evaluate').grid(row=0, column=1)
+            var_eval = create_widget('checkbutton', master=window, row=2, column=0, text='Automatically evaluate')
 
             def gui_add_design():
                 '''

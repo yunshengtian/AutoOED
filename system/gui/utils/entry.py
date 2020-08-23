@@ -87,6 +87,12 @@ class Entry(ABC):
         else:
             return self.error_msg
 
+    def destroy(self):
+        '''
+        Destroy widget
+        '''
+        self.widget.master.destroy()
+
 
 class StringEntry(Entry):
     '''
@@ -154,6 +160,35 @@ class FloatListEntry(Entry):
         return ','.join([str(float(num)) for num in val])
 
 
+class CheckbuttonEntry(Entry):
+    '''
+    Entry for checkbutton
+    '''
+    def __init__(self, var, master):
+        self.var = var
+        self.master = master
+        self.readonly = False
+    
+    def get(self):
+        '''
+        Get entry value
+        '''
+        val = self.var.get() == 1
+        return val
+
+    def set(self, val):
+        '''
+        Set entry value
+        '''
+        self.var.set(int(val))
+
+    def _get(self):
+        pass
+
+    def _set(self):
+        pass
+
+
 def get_entry(name, *args, **kwargs):
     '''
     Create entry by name and other arguments
@@ -165,5 +200,6 @@ def get_entry(name, *args, **kwargs):
         'stringlist': StringListEntry,
         'intlist': IntListEntry,
         'floatlist': FloatListEntry,
+        'checkbutton': CheckbuttonEntry,
     }
     return factory[name](*args, **kwargs)
