@@ -1104,13 +1104,16 @@ class GUI:
             self.pfront_limit = [np.min(self.true_pfront, axis=1), np.max(self.true_pfront, axis=1)]
 
         # plot performance space
+        scatter_list = []
         if self.true_pfront is not None:
-            self.ax11.scatter(*self.true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
+            scatter_pfront = self.ax11.scatter(*self.true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
+            scatter_list.append(scatter_pfront)
         self.scatter_x = X
         self.scatter_y = self.ax11.scatter(*Y.T, color='blue', s=10, label='Evaluated')
         self.scatter_y_pareto = self.ax11.scatter(*Y[is_pareto].T, color='red', s=10, label='Pareto front')
         self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated')
-        self.scatter_y_pred = self.ax11.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted')
+        self.scatter_y_pred = self.ax11.scatter([], [], facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted')
+        scatter_list.extend([self.scatter_y, self.scatter_y_pareto, self.scatter_y_new, self.scatter_y_pred])
         self.line_y_pred_list = []
 
         # plot hypervolume curve
@@ -1121,8 +1124,10 @@ class GUI:
         # plot prediction error curve
         self.line_error = self.ax22.plot([], [])[0]
 
-         # mouse clicking event
         def check_design_values(event):
+            '''
+            Mouse clicking event, for checking design values
+            '''
             if event.inaxes != self.ax11: return
 
             if event.button == MouseButton.LEFT and event.dblclick: # check certain design values
@@ -1153,8 +1158,35 @@ class GUI:
         
         self.fig1.canvas.mpl_connect('button_press_event', check_design_values)
 
+        # set pick event on legend to enable/disable certain visualization
+        legend = self.fig1.legend(loc='lower center', ncol=5)
+        picker_map = {}
+        for plot_obj, leg_obj, text in zip(scatter_list, legend.legendHandles, legend.get_texts()):
+            leg_obj.set_picker(True)
+            text.set_picker(True)
+            picker_map[leg_obj] = plot_obj
+            picker_map[text] = plot_obj
+
+        def toggle_visibility(event):
+            '''
+            Toggle visibility of plotted objs
+            '''
+            plot_obj = picker_map[event.artist]
+            vis = not plot_obj.get_visible()
+            plot_obj.set_visible(vis)
+
+            if not self.scatter_y_new.get_visible() or not self.scatter_y_pred.get_visible():
+                for line in self.line_y_pred_list:
+                    line.set_visible(False)
+            if self.scatter_y_new.get_visible() and self.scatter_y_pred.get_visible():
+                for line in self.line_y_pred_list:
+                    line.set_visible(True)
+
+            self.fig1.canvas.draw()
+        
+        self.fig1.canvas.mpl_connect('pick_event', toggle_visibility)
+
         # adjust layout
-        self.fig1.legend(loc='lower center', ncol=5)
         self.fig1.subplots_adjust(bottom=0.15)
         self.fig2.tight_layout()
 
@@ -1833,8 +1865,13 @@ class GUI:
         
         # replot evaluated & pareto points
         self.scatter_x = X
-        self.scatter_y._offsets_3d = Y
-        self.scatter_y_pareto._offsets_3d = Y[is_pareto]
+        n_obj = Y.shape[1]
+        if n_obj == 2:
+            self.scatter_y.set_offsets(Y)
+            self.scatter_y_pareto.set_offsets(Y[is_pareto])
+        elif n_obj == 3:
+            self.scatter_y._offsets_3d = Y
+            self.scatter_y_pareto._offsets_3d = Y[is_pareto]
         
         # rescale plot according to Y and true_pfront
         n_obj = self.config['problem']['n_obj']
@@ -1853,20 +1890,23 @@ class GUI:
         if n_obj == 3: self.ax11.set_zlim(z_min - z_offset, z_max + z_offset)
 
         # replot new evaluated & predicted points
-        if self.scatter_y_new is not None:
+        try:
             self.scatter_y_new.remove()
-            self.scatter_y_new = None
-        if self.scatter_y_pred is not None:
             self.scatter_y_pred.remove()
-            self.scatter_y_pred = None
+        except:
+            pass
         for line in self.line_y_pred_list:
             line.remove()
         self.line_y_pred_list = []
 
         if batch_id[-1] > 0:
             last_batch_idx = np.where(batch_id == batch_id[-1])[0]
-            self.scatter_y_new = self.ax11.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
-            self.scatter_y_pred = self.ax11.scatter(*Y_expected[last_batch_idx].T, facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted points')
+            if n_obj == 2:
+                self.scatter_y_new.set_offsets(Y[last_batch_idx])
+                self.scatter_y_pred.set_offsets(Y_expected[last_batch_idx])
+            elif n_obj == 3:
+                self.scatter_y._offsets_3d = Y[last_batch_idx]
+                self.scatter_y_pareto._offsets_3d = Y_expected[last_batch_idx]
             for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
                 line = self.ax11.plot(*[[y[i], y_expected[i]] for i in range(n_obj)], '--', color='m', alpha=0.5)[0]
                 self.line_y_pred_list.append(line)
