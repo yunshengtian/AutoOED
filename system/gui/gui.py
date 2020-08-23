@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, scrolledtext
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import MaxNLocator
@@ -1004,31 +1005,52 @@ class GUI:
         self.nb_viz.tab(1, state=tk.DISABLED)
         self.nb_viz.tab(2, state=tk.DISABLED)
 
-    def _init_viz_widgets(self):
+    def _init_viz_widgets(self, problem):
         '''
         Visualization widgets initialization (design/performance space, statistics, database)
         '''
+        n_var, n_obj = problem.n_var, problem.n_obj
+        var_name, obj_name = problem.var_name, problem.obj_name
+        var_lb, var_ub = problem.xl, problem.xu
+        if var_lb is None: var_lb = np.zeros(n_var)
+        if var_ub is None: var_ub = np.ones(n_var)
+
+        assert n_obj in [2, 3], 'only 2 and 3 objectives are supported' # TODO
+
         grid_configure(self.frame_plot, [0], [0])
         grid_configure(self.frame_stat, [0], [0])
         grid_configure(self.frame_db, [1], [0])
         
-        # figure placeholder in GUI (NOTE: only 2-dim performance space is supported)
+        # figure placeholder in GUI
         self.fig1 = plt.figure(figsize=(10, 5))
         self.gs1 = GridSpec(1, 2, figure=self.fig1, width_ratios=[3, 2])
         self.fig2 = plt.figure(figsize=(10, 5))
 
+        # connect matplotlib figure with tkinter GUI
+        embed_figure(self.fig1, self.frame_plot)
+        embed_figure(self.fig2, self.frame_stat)
+
         # performance space figure
-        self.ax11 = self.fig1.add_subplot(self.gs1[0])
-        self.ax11.set_title('Performance Space')
+        if n_obj == 2:
+            self.ax11 = self.fig1.add_subplot(self.gs1[0])
+        elif n_obj == 3:
+            self.ax11 = self.fig1.add_subplot(self.gs1[0], projection='3d')
+        else:
+            raise NotImplementedError
+        self.ax11.set_title('Performance Space', position=(0.5, 1.02))
+        self.ax11.set_xlabel(obj_name[0])
+        self.ax11.set_ylabel(obj_name[1])
+        if n_obj == 3:
+            self.ax11.set_zlabel(obj_name[2])
 
         # design space figure
-        n_var_init = 5
-        self.theta = radar_factory(n_var_init)
+        self.theta = radar_factory(n_var)
         self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
         self.ax12.set_xticks(self.theta)
-        self.ax12.set_varlabels([f'x{i + 1}' for i in range(n_var_init)])
+        self.ax12.set_varlabels([f'{var_name[i]}\n[{np.round(var_lb[i], 4)},{np.round(var_ub[i], 4)}]' for i in range(n_var)])
         self.ax12.set_yticklabels([])
         self.ax12.set_title('Design Space', position=(0.5, 1.1))
+        self.ax12.set_ylim(0, 1)
 
         # hypervolume curve figure
         self.ax21 = self.fig2.add_subplot(121)
@@ -1043,10 +1065,6 @@ class GUI:
         self.ax22.set_xlabel('Evaluations')
         self.ax22.set_ylabel('Average Error')
         self.ax22.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-        # connect matplotlib figure with tkinter GUI
-        embed_figure(self.fig1, self.frame_plot)
-        embed_figure(self.fig2, self.frame_stat)
 
         # configure slider widget
         frame_slider = tk.Frame(master=self.frame_plot)
@@ -1087,13 +1105,12 @@ class GUI:
 
         # plot performance space
         if self.true_pfront is not None:
-            self.ax11.scatter(*self.true_pfront.T, color='gray', s=5, label='True Pareto front') # plot true pareto front
+            self.ax11.scatter(*self.true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
         self.scatter_x = X
-        self.scatter_y = self.ax11.scatter(*Y.T, color='blue', s=10, label='Evaluated points')
-        self.scatter_y_pareto = self.ax11.scatter(*Y[is_pareto].T, color='red', s=10, label='Approximated Pareto front')
-        self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated points')
-        self.scatter_y_pred = self.ax11.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted points')
-        self.ax11.legend(loc='upper right')
+        self.scatter_y = self.ax11.scatter(*Y.T, color='blue', s=10, label='Evaluated')
+        self.scatter_y_pareto = self.ax11.scatter(*Y[is_pareto].T, color='red', s=10, label='Pareto front')
+        self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated')
+        self.scatter_y_pred = self.ax11.scatter([], [], facecolors='none', edgecolors='m', s=15, label='New predicted')
         self.line_y_pred_list = []
 
         # plot hypervolume curve
@@ -1114,7 +1131,7 @@ class GUI:
                 all_y = self.scatter_y._offsets
                 closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
                 closest_x = self.scatter_x[closest_idx]
-                x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(self.config['problem']['var_name'], closest_x)])
+                x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(var_name, closest_x)])
 
                 # clear checked design values
                 self._clear_design_space()
@@ -1125,7 +1142,7 @@ class GUI:
                 self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
                     bbox=dict(boxstyle="round", fc="w", alpha=0.7),
                     arrowprops=dict(arrowstyle="->"))
-                transformed_x = (np.array(closest_x) - self.var_lb) / (self.var_ub - self.var_lb)
+                transformed_x = (np.array(closest_x) - var_lb) / (var_ub - var_lb)
                 self.line_x = self.ax12.plot(self.theta, transformed_x)[0]
                 self.fill_x = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
 
@@ -1135,6 +1152,11 @@ class GUI:
             self.fig1.canvas.draw()
         
         self.fig1.canvas.mpl_connect('button_press_event', check_design_values)
+
+        # adjust layout
+        self.fig1.legend(loc='lower center', ncol=5)
+        self.fig1.subplots_adjust(bottom=0.15)
+        self.fig2.tight_layout()
 
         # refresh figure
         self.fig1.canvas.draw()
@@ -1629,27 +1651,10 @@ class GUI:
 
             # build agents
             self.agent_data = DataAgent(config=config, result_dir=self.result_dir)
-            self.agent_worker = WorkerAgent(mode='manual', config=config, agent_data=self.agent_data)
-
-            n_var, var_name, obj_name = problem.n_var, problem.var_name, problem.obj_name
-            self.var_lb, self.var_ub = problem.xl, problem.xu
-            if self.var_lb is None: self.var_lb = np.zeros(n_var)
-            if self.var_ub is None: self.var_ub = np.ones(n_var)
+            self.agent_worker = WorkerAgent(mode='manual', config=config, agent_data=self.agent_data)            
 
             # initialize visualization widgets
-            self._init_viz_widgets()
-            
-            # update plot
-            self.ax11.set_xlabel(obj_name[0])
-            self.ax11.set_ylabel(obj_name[1])
-            self.theta = radar_factory(n_var)
-            self.fig1.delaxes(self.ax12)
-            self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
-            self.ax12.set_xticks(self.theta)
-            self.ax12.set_varlabels([f'{var_name[i]}\n[{np.round(self.var_lb[i], 4)},{np.round(self.var_ub[i], 4)}]' for i in range(n_var)])
-            self.ax12.set_yticklabels([])
-            self.ax12.set_title('Design Space', position=(0.5, 1.1))
-            self.ax12.set_ylim(0, 1)
+            self._init_viz_widgets(problem)
 
             # disable changing saving location
             self.menu_file.entryconfig(0, state=tk.DISABLED)
@@ -1828,19 +1833,24 @@ class GUI:
         
         # replot evaluated & pareto points
         self.scatter_x = X
-        self.scatter_y.set_offsets(Y)
-        self.scatter_y_pareto.set_offsets(Y[is_pareto])
+        self.scatter_y._offsets_3d = Y
+        self.scatter_y_pareto._offsets_3d = Y[is_pareto]
         
         # rescale plot according to Y and true_pfront
+        n_obj = self.config['problem']['n_obj']
         x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
         y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
+        if n_obj == 3: z_min, z_max = np.min(Y[:, 2]), np.max(Y[:, 2])
         if self.pfront_limit is not None:
             x_min, x_max = min(x_min, self.pfront_limit[0][0]), max(x_max, self.pfront_limit[1][0])
             y_min, y_max = min(y_min, self.pfront_limit[0][1]), max(y_max, self.pfront_limit[1][1])
+            if n_obj == 3: z_min, z_max = min(z_min, self.pfront_limit[0][2]), max(z_max, self.pfront_limit[1][2])
         x_offset = (x_max - x_min) / 20
         y_offset = (y_max - y_min) / 20
+        if n_obj == 3: z_offset = (z_max - z_min) / 20
         self.ax11.set_xlim(x_min - x_offset, x_max + x_offset)
         self.ax11.set_ylim(y_min - y_offset, y_max + y_offset)
+        if n_obj == 3: self.ax11.set_zlim(z_min - z_offset, z_max + z_offset)
 
         # replot new evaluated & predicted points
         if self.scatter_y_new is not None:
@@ -1856,9 +1866,9 @@ class GUI:
         if batch_id[-1] > 0:
             last_batch_idx = np.where(batch_id == batch_id[-1])[0]
             self.scatter_y_new = self.ax11.scatter(*Y[last_batch_idx].T, color='m', s=10, label='New evaluated points')
-            self.scatter_y_pred = self.ax11.scatter(*Y_expected[last_batch_idx].T, facecolors='none', edgecolors='m', s=15, label='New predicted points')
+            self.scatter_y_pred = self.ax11.scatter(*Y_expected[last_batch_idx].T, facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted points')
             for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
-                line = self.ax11.plot([y[0], y_expected[0]], [y[1], y_expected[1]], '--', color='m', alpha=0.5)[0]
+                line = self.ax11.plot(*[[y[i], y_expected[i]] for i in range(n_obj)], '--', color='m', alpha=0.5)[0]
                 self.line_y_pred_list.append(line)
 
         self.fig1.canvas.draw()
