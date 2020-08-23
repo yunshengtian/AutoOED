@@ -226,7 +226,7 @@ class DataAgent:
         Evaluation of design variables given the associated rowid in database
         '''
         # load design variables
-        x_next = self.load('X', valid_only=False, rowid=rowid).squeeze()
+        x_next = self.load('X', valid_only=False, rowid=rowid)[0]
 
         # run evaluation
         y_next = evaluate(config, x_next)

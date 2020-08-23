@@ -12,6 +12,7 @@ import yaml
 import numpy as np
 from time import time
 from multiprocessing import Lock, Process
+from adjustText import adjust_text
 from problems.common import build_problem, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent, WorkerAgent
@@ -78,9 +79,12 @@ class GUI:
         self.scatter_x = None
         self.scatter_y = None
         self.scatter_y_pareto = None
-        self.annotate = None
+        self.line_y_pred_list = []
+        self.scatter_selected = None
         self.line_x = None
         self.fill_x = None
+        self.bar_x = None
+        self.text_x = []
         self.line_hv = None
         self.line_error = None
 
@@ -1037,20 +1041,37 @@ class GUI:
             self.ax11 = self.fig1.add_subplot(self.gs1[0], projection='3d')
         else:
             raise NotImplementedError
-        self.ax11.set_title('Performance Space', position=(0.5, 1.02))
+        self.ax11.set_title('Performance Space')
         self.ax11.set_xlabel(obj_name[0])
         self.ax11.set_ylabel(obj_name[1])
         if n_obj == 3:
             self.ax11.set_zlabel(obj_name[2])
 
         # design space figure
-        self.theta = radar_factory(n_var)
-        self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
-        self.ax12.set_xticks(self.theta)
-        self.ax12.set_varlabels([f'{var_name[i]}\n[{np.round(var_lb[i], 4)},{np.round(var_ub[i], 4)}]' for i in range(n_var)])
-        self.ax12.set_yticklabels([])
-        self.ax12.set_title('Design Space', position=(0.5, 1.1))
-        self.ax12.set_ylim(0, 1)
+        if n_var > 2:
+            self.theta = radar_factory(n_var)
+            self.ax12 = self.fig1.add_subplot(self.gs1[1], projection='radar')
+            self.ax12.set_xticks(self.theta)
+            self.ax12.set_varlabels(var_name)
+            self.ax12.set_yticklabels([])
+            self.ax12.set_title('Design Space', position=(0.5, 1.1))
+            self.ax12.set_ylim(0, 1)
+        else:
+            self.ax12 = self.fig1.add_subplot(self.gs1[1])
+            for spine in self.ax12.spines.values():
+                spine.set_visible(False)
+            self.ax12.get_xaxis().set_ticks([])
+            self.ax12.get_yaxis().set_ticks([])
+            xticks = [0] if n_var == 1 else [-1, 1]
+            self.ax12.bar(xticks, [1] * n_var, color='g', alpha=0.2)
+            self.ax12.set_xticks(xticks)
+            for i in range(n_var):
+                self.ax12.text(xticks[i] - 0.5, 0, str(var_lb[i]), horizontalalignment='right', verticalalignment='center')
+                self.ax12.text(xticks[i] - 0.5, 1, str(var_ub[i]), horizontalalignment='right', verticalalignment='center')
+            self.ax12.set_xticklabels(var_name)
+            self.ax12.set_title('Design Space')
+            self.ax12.set_xlim(-3, 3)
+            self.ax12.set_ylim(0, 1.04)
 
         # hypervolume curve figure
         self.ax21 = self.fig2.add_subplot(121)
@@ -1114,7 +1135,6 @@ class GUI:
         self.scatter_y_new = self.ax11.scatter([], [], color='m', s=10, label='New evaluated')
         self.scatter_y_pred = self.ax11.scatter([], [], facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted')
         scatter_list.extend([self.scatter_y, self.scatter_y_pareto, self.scatter_y_new, self.scatter_y_pred])
-        self.line_y_pred_list = []
 
         # plot hypervolume curve
         hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point']))
@@ -1136,20 +1156,31 @@ class GUI:
                 all_y = self.scatter_y._offsets
                 closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
                 closest_x = self.scatter_x[closest_idx]
-                x_str = '\n'.join([f'{name}: {val:.4g}' for name, val in zip(var_name, closest_x)])
+                if n_obj == 3:
+                    closest_y = np.array(self.scatter_y._offsets3d).T[closest_idx]
 
                 # clear checked design values
                 self._clear_design_space()
 
-                # plot checked design values (TODO: fix annotation location)
-                y_range = np.max(all_y, axis=0) - np.min(all_y, axis=0)
-                text_loc = [closest_y[i] + 0.05 * y_range[i] for i in range(2)]
-                self.annotate = self.ax11.annotate(x_str, xy=closest_y, xytext=text_loc,
-                    bbox=dict(boxstyle="round", fc="w", alpha=0.7),
-                    arrowprops=dict(arrowstyle="->"))
+                # highlight selected point
+                self.scatter_selected = self.ax11.scatter(*closest_y, s=50, facecolors=(0, 0, 0, 0), edgecolors='g', linewidths=2)
+
+                # plot checked design values as radar plot or bar chart
                 transformed_x = (np.array(closest_x) - var_lb) / (var_ub - var_lb)
-                self.line_x = self.ax12.plot(self.theta, transformed_x)[0]
-                self.fill_x = self.ax12.fill(self.theta, transformed_x, alpha=0.2)[0]
+                if n_var > 2:
+                    self.line_x = self.ax12.plot(self.theta, transformed_x, color='g')[0]
+                    self.fill_x = self.ax12.fill(self.theta, transformed_x, color='g', alpha=0.2)[0]
+                    self.text_x = []
+                    for i in range(n_var):
+                        text = self.ax12.text(self.theta[i], transformed_x[i], f'{closest_x[i]:.4g}', horizontalalignment='center', verticalalignment='bottom')
+                        self.text_x.append(text)
+                else:
+                    self.bar_x = self.ax12.bar(xticks, transformed_x, color='g')
+                    self.text_x = []
+                    for i in range(n_var):
+                        text = self.ax12.text(xticks[i], transformed_x[i], f'{closest_x[i]:.4g}', horizontalalignment='center', verticalalignment='bottom')
+                        self.text_x.append(text)
+                adjust_text(self.text_x, add_objects=self.ax12.xaxis.get_ticklabels())
 
             elif event.button == MouseButton.RIGHT: # clear checked design values
                 self._clear_design_space()
@@ -1841,17 +1872,23 @@ class GUI:
 
     def _clear_design_space(self):
         '''
-        Clear design space value and annotation
+        Clear design space plot
         '''
-        if self.annotate is not None:
-            self.annotate.remove()
-            self.annotate = None
+        if self.scatter_selected is not None:
+            self.scatter_selected.remove()
+            self.scatter_selected = None
         if self.line_x is not None:
             self.line_x.remove()
             self.line_x = None
         if self.fill_x is not None:
             self.fill_x.remove()
             self.fill_x = None
+        if self.bar_x is not None:
+            self.bar_x.remove()
+            self.bar_x = None
+        for text in self.text_x:
+            text.remove()
+        self.text_x = []
 
     def _redraw_performance_space(self, draw_iter=None):
         '''
