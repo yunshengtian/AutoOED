@@ -12,7 +12,7 @@ conda activate mobo
 Or directly install major dependencies from pip:
 
 ```
-pip install numpy scipy argparse autograd cma cython matplotlib pandas pymoo pymop pyyaml sklearn adjusttext
+pip install numpy scipy argparse autograd cma cython matplotlib pandas pymoo pymop pyyaml sklearn
 ```
 
 Tested with Python 3.7 on Ubuntu 18.04.
