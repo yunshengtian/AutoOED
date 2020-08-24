@@ -46,11 +46,13 @@ class Problem(PymooProblem):
         assert len(ref_point) == self.n_obj, f'reference point should have {self.n_obj} dimensions'
         self.ref_point = ref_point
 
+    """
     def evaluate_performance(self, x):
         '''
         Main function for objective evaluation
         '''
         return None
+    """
 
     def evaluate_constraint(self, x):
         '''
@@ -122,40 +124,17 @@ class GeneratedProblem(CustomProblem):
         if n_obj is not None: self.config['n_obj'] = n_obj
 
         # set evaluation modules
-        self.eval_p_module = None
         if 'performance_eval' in self.config:
             eval_p_path = self.config.pop('performance_eval')
             if eval_p_path is not None:
-                self.eval_p_module = import_module_from_path('eval_p', eval_p_path)
+                eval_p_module = import_module_from_path('eval_p', eval_p_path)
+                self.evaluate_performance = eval_p_module.evaluate_performance
 
-        self.eval_c_module = None
         if 'constraint_eval' in self.config:
             eval_c_path = self.config.pop('constraint_eval')
             if eval_c_path is not None:
-                self.eval_c_module = import_module_from_path('eval_c', eval_c_path)
+                eval_c_module = import_module_from_path('eval_c', eval_c_path)
+                self.evaluate_constraint = eval_c_module.evaluate_constraint
 
         super().__init__(*args, xl=xl, xu=xu, **kwargs)
 
-    def evaluate_performance(self, x):
-        '''
-        Evaluate objectives from imported module
-        '''
-        if self.eval_p_module is not None:
-            return self.eval_p_module.evaluate_performance(x)
-        else:
-            return None
-
-    def evaluate_constraint(self, x):
-        '''
-        Evaluate constraints from imported module (if have)
-        '''
-        if self.eval_c_module is not None:
-            return self.eval_c_module.evaluate_constraint(x)
-        else:
-            return None
-
-    def export(self):
-        '''
-        Export problem config
-        '''
-        return self.raw_config

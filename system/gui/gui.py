@@ -10,10 +10,10 @@ from matplotlib.backend_bases import MouseButton
 import os
 import yaml
 import numpy as np
-from time import time
+from time import time, sleep
 from multiprocessing import Lock, Process
 from adjustText import adjust_text
-from problems.common import build_problem, get_problem_list, get_yaml_problem_list, get_problem_config
+from problems.common import build_problem, get_initial_samples, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent, WorkerAgent
 from system.utils import process_config, load_config, get_available_algorithms, calc_hypervolume, calc_pred_error, find_closest_point, check_pareto
@@ -562,7 +562,7 @@ class GUI:
                     valid_check=lambda x: x > 0, error_msg='number of spectral sampling points must be positive')
                 widget_map_algo['surrogate']['mean_sample'] = create_widget('checkbutton',
                     master=frame_surrogate, row=3, column=0, text=self.name_map_algo['surrogate']['mean_sample'])
-                    
+
                 surrogate_ts_visible = [False]
                 widget_map_algo['surrogate']['n_spectral_pts'].widget.master.grid_remove()
                 widget_map_algo['surrogate']['mean_sample'].master.grid_remove()
@@ -1927,8 +1927,22 @@ class GUI:
             self.config = config
 
             # build agents
-            self.agent_data = DataAgent(config=config, result_dir=self.result_dir)
-            self.agent_worker = WorkerAgent(mode='manual', config=config, agent_data=self.agent_data)            
+            self.agent_data = DataAgent(n_var=problem.n_var, n_obj=problem.n_obj, result_dir=self.result_dir)
+            self.agent_worker = WorkerAgent(mode='manual', config=config, agent_data=self.agent_data, eval=hasattr(problem, 'evaluate_performance'))
+
+            # data initialization
+            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(config['problem'], problem)
+            if X_init_evaluated is not None:
+                self.agent_data.initialize(X_init_evaluated, Y_init_evaluated)
+            if X_init_unevaluated is not None:
+                rowids = self.agent_data.initialize(X_init_unevaluated)
+                for rowid in rowids:
+                    self.agent_worker.add_eval_worker(rowid)
+                
+                # wait until initialization is completed
+                while not self.agent_worker.empty():
+                    self.agent_worker.refresh()
+                    sleep(self.refresh_rate / 1000.0)
 
             # initialize visualization widgets
             self._init_viz_widgets(problem)
@@ -2201,27 +2215,28 @@ class GUI:
             else:
                 self.max_iter = batch_id[valid_idx][-1]
                 self.scale_iter.configure(to=self.max_iter)
-                
-            # replot hypervolume curve
-            line_hv_y = self.line_hv.get_ydata()
-            hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'])
-            hv_value = np.concatenate([line_hv_y, np.full(self.n_valid_sample - len(line_hv_y), hv_value)])
-            self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value)
-            self.ax21.relim()
-            self.ax21.autoscale_view()
-            self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
 
-            # replot prediction error curve
-            line_error_y = self.line_error.get_ydata()
-            pred_error = calc_pred_error(Y[valid_idx][self.n_init_sample:], Y_expected[valid_idx][self.n_init_sample:])
-            pred_error = np.concatenate([line_error_y, np.full(self.n_valid_sample - self.n_init_sample - len(line_error_y), pred_error)])
-            self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error)
-            self.ax22.relim()
-            self.ax22.autoscale_view()
-            self.ax22.set_title('Model Prediction Error: %.4f' % pred_error[-1])
+            if batch_id[-1] > 0:
+                # replot hypervolume curve
+                line_hv_y = self.line_hv.get_ydata()
+                hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'])
+                hv_value = np.concatenate([line_hv_y, np.full(self.n_valid_sample - len(line_hv_y), hv_value)])
+                self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value)
+                self.ax21.relim()
+                self.ax21.autoscale_view()
+                self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
 
-            # refresh figure
-            self.fig2.canvas.draw()
+                # replot prediction error curve
+                line_error_y = self.line_error.get_ydata()
+                pred_error = calc_pred_error(Y[valid_idx][self.n_init_sample:], Y_expected[valid_idx][self.n_init_sample:])
+                pred_error = np.concatenate([line_error_y, np.full(self.n_valid_sample - self.n_init_sample - len(line_error_y), pred_error)])
+                self.line_error.set_data(list(range(self.n_init_sample, self.n_valid_sample)), pred_error)
+                self.ax22.relim()
+                self.ax22.autoscale_view()
+                self.ax22.set_title('Model Prediction Error: %.4f' % pred_error[-1])
+
+                # refresh figure
+                self.fig2.canvas.draw()
         
         # insert to table if optimization completed (TODO: optimize)
         if opt_completed:

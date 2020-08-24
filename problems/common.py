@@ -196,33 +196,29 @@ def get_problem_config(name):
     return process_problem_config(config)
 
 
-def generate_initial_samples(problem, n_sample):
+def generate_random_initial_samples(problem, n_sample):
     '''
     Generate feasible random initial samples
     Input:
         problem: the optimization problem
         n_sample: number of initial samples
     Output:
-        X, Y: initial samples (design parameters, performance values)
+        X: initial samples (design parameters)
     '''
     X_feasible = np.zeros((0, problem.n_var))
-    Y_feasible = np.zeros((0, problem.n_obj))
 
     # NOTE: when it's really hard to get feasible samples, the program hangs here
     while len(X_feasible) < n_sample:
-        X = lhs(problem.n_var, n_sample)
+        X = lhs(problem.n_var, n_sample) # TODO: support other types of initialization
         X = problem.xl + X * (problem.xu - problem.xl)
-        Y = np.array([problem.evaluate_performance(x) for x in X]) # TODO: optimize
-        feasible = problem.evaluate_feasible(X)
+        feasible = problem.evaluate_feasible(X) # NOTE: assume constraint evaluation is fast
         X_feasible = np.vstack([X_feasible, X[feasible]])
-        Y_feasible = np.vstack([Y_feasible, Y[feasible]])
-    
-    indices = np.random.permutation(np.arange(len(X_feasible)))[:n_sample]
-    X, Y = X_feasible[indices], Y_feasible[indices]
-    return X, Y
+
+    X = X_feasible[:n_sample]
+    return X
 
 
-def load_initial_samples(problem, init_sample_path):
+def load_provided_initial_samples(problem, init_sample_path):
     '''
     Load provided initial samples from file
     Input:
@@ -256,27 +252,22 @@ def load_initial_samples(problem, init_sample_path):
             raise Exception(f'failed to load initial samples from path {path}')
 
     X = load_from_file(X_path)
-    if Y_path is None:
-        Y = np.array([problem.evaluate_performance(x) for x in X]) # TODO: optimize
-    else:
-        Y = load_from_file(Y_path)
+    Y = load_from_file(Y_path) if Y_path is not None else None
     return X, Y
 
 
-def build_problem(config, get_pfront=False, get_init_samples=False):
+def build_problem(config, get_pfront=False):
     '''
-    Build optimization problem from name, get initial samples
+    Build optimization problem
     Input:
-        name: name of the problem (supports ZDT1-6, DTLZ1-7)
-        n_var: number of design variables
-        n_obj: number of objectives
+        config: problem configuration
+        get_pfront: if return predefined true Pareto front of the problem
     Output:
         problem: the optimization problem
-        pareto_front: the true pareto front of the problem (if defined, otherwise None)
+        pareto_front: the true Pareto front of the problem (if defined, otherwise None)
     '''
-    name, n_var, n_obj, ref_point = config['name'], config['n_var'], config['n_obj'], config['ref_point']
+    name, n_var, n_obj = config['name'], config['n_var'], config['n_obj']
     xl, xu = config['var_lb'], config['var_ub']
-    # NOTE: either set ref_point from config file, or set from init random/provided samples
 
     # build problem
     try:
@@ -291,39 +282,41 @@ def build_problem(config, get_pfront=False, get_init_samples=False):
         except:
             pareto_front = None
 
-    # getting initial samples
-    if get_init_samples:
-        random_init = config['n_init_sample'] > 0
-        provided_init = config['init_sample_path'] is not None or problem.init_sample_path is not None
-        assert random_init or provided_init, 'neither number of random initial samples nor path of provided initial samples is provided'
-        
-        if random_init:
-            X_init_random, Y_init_random = generate_initial_samples(problem, config['n_init_sample'])
-        if provided_init:
-            X_init_provided, Y_init_provided = load_initial_samples(problem, config['init_sample_path'])
-        
-        if random_init and provided_init:
-            X_init = np.vstack([X_init_random, X_init_provided])
-            Y_init = np.vstack([Y_init_random, Y_init_provided])
-        elif random_init:
-            X_init, Y_init = X_init_random, Y_init_random
-        elif provided_init:
-            X_init, Y_init = X_init_provided, Y_init_provided
-        else:
-            raise NotImplementedError
-
-        if ref_point is None:
-            ref_point = np.max(Y_init, axis=0)
-            config['ref_point'] = ref_point.tolist() # update reference point in config
-
-    if ref_point is not None:
-        problem.set_ref_point(ref_point)
-    
-    if not get_pfront and not get_init_samples:
-        return problem
-    elif get_pfront and get_init_samples:
-        return problem, pareto_front, X_init, Y_init
-    elif get_pfront:
+    if get_pfront:
         return problem, pareto_front
-    elif get_init_samples:
-        return problem, X_init, Y_init
+    else:
+        return problem
+
+
+def get_initial_samples(config, problem):
+    '''
+    Getting initial samples of the problem
+    Input:
+        config: problem configuration
+        problem: the optimization problem
+    Output:
+        X_init_evaluated:
+        X_init_unevaluated:
+        Y_init_evaluated:
+    '''
+    X_init_evaluated, X_init_unevaluated, Y_init_evaluated = None, None, None
+
+    random_init = config['n_init_sample'] > 0
+    provided_init = config['init_sample_path'] is not None or problem.init_sample_path is not None
+    assert random_init or provided_init, 'neither number of random initial samples nor path of provided initial samples is provided'
+    
+    if random_init:
+        X_init_unevaluated = generate_random_initial_samples(problem, config['n_init_sample'])
+
+    if provided_init:
+        X_init_provided, Y_init_provided = load_provided_initial_samples(problem, config['init_sample_path'])
+        if Y_init_provided is None:
+            if random_init:
+                X_init_unevaluated = np.vstack([X_init_unevaluated, X_init_provided])
+            else:
+                X_init_unevaluated = X_init_provided
+        else:
+            X_init_evaluated = X_init_provided
+            Y_init_evaluated = Y_init_provided
+    
+    return X_init_evaluated, X_init_unevaluated, Y_init_evaluated
