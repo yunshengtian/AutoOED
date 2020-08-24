@@ -24,7 +24,7 @@ from system.gui.utils.listbox import Listbox
 from system.gui.utils.table import Table
 from system.gui.utils.grid import grid_configure, embed_figure
 from system.gui.utils.radar import radar_factory
-from system.gui.utils.widget_creation import create_widget
+from system.gui.utils.widget_creation import create_widget, show_widget_error
 
 
 class GUI:
@@ -163,41 +163,46 @@ class GUI:
         self.value_map_algo = {
             'surrogate': {
                 'name': {
-                    'Gaussian Process': 'gp',
-                    'Thompson Sampling': 'ts',
+                    'gp': 'Gaussian Process',
+                    'ts': 'Thompson Sampling',
                 },
-                'nu': [1, 3, 5, -1],
             },
             'acquisition': {
                 'name': {
-                    'Identity': 'identity',
-                    'Probability of Improvement': 'pi',
-                    'Expected Improvement': 'ei',
-                    'Upper Confidence Bound': 'ucb',
-                    'Lower Confidence Bound': 'lcb',
+                    'identity': 'Identity',
+                    'pi': 'Probability of Improvement',
+                    'ei': 'Expected Improvement',
+                    'ucb': 'Upper Confidence Bound',
+                    'lcb': 'Lower Confidence Bound',
                 },
             },
             'solver': {
                 'name': {
-                    'NSGA-II': 'nsga2',
-                    'MOEA/D': 'moead',
-                    'ParEGO Solver': 'parego',
+                    'nsga2': 'NSGA-II',
+                    'moead': 'MOEA/D',
+                    'parego': 'ParEGO Solver',
                 },
                 'pop_init_method': {
-                    'Random': 'random',
-                    'Non-Dominated Sort': 'nds',
-                    'Latin-Hypercube Sampling': 'lhs',
+                    'random': 'Random',
+                    'nds': 'Non-Dominated Sort',
+                    'lhs': 'Latin-Hypercube Sampling',
                 },
             },
             'selection': {
                 'name': {
-                    'Hypervolume Improvement': 'hvi',
-                    'Uncertainty': 'uncertainty',
-                    'Random': 'random',
-                    'MOEA/D Selection': 'moead',
+                    'hvi': 'Hypervolume Improvement',
+                    'uncertainty': 'Uncertainty',
+                    'random': 'Random',
+                    'moead': 'MOEA/D Selection',
                 },
             },
         }
+
+        self.value_inv_map_algo = {}
+        for cfg_type, val_map in self.value_map_algo.items():
+            self.value_inv_map_algo[cfg_type] = {}
+            for key, value_map in val_map.items():
+                self.value_inv_map_algo[cfg_type][key] = {v: k for k, v in value_map.items()}
 
     def _init_menu(self):
         '''
@@ -275,6 +280,7 @@ class GUI:
             }
 
             problem_cfg = {} # store other problem configs that cannot be obtained by widget.get()
+            algo_cfg = {} # store advanced config of algorithm
 
             window = tk.Toplevel(master=self.root)
             if change:
@@ -547,10 +553,19 @@ class GUI:
                 grid_configure(frame_surrogate, [0, 1, 2, 3], [0])
                 widget_map_algo['surrogate']['name'] = create_widget('labeled_combobox',
                     master=frame_surrogate, row=0, column=0, width=20, text=self.name_map_algo['surrogate']['name'], 
-                    values=list(self.value_map_algo['surrogate']['name'].keys()), required=True)
+                    values=list(self.value_map_algo['surrogate']['name'].values()), required=True)
                 widget_map_algo['surrogate']['nu'] = create_widget('labeled_combobox',
-                    master=frame_surrogate, row=1, column=0, width=5, text=self.name_map_algo['surrogate']['nu'], values=self.value_map_algo['surrogate']['nu'],
+                    master=frame_surrogate, row=1, column=0, width=5, text=self.name_map_algo['surrogate']['nu'], values=[1, 3, 5, -1],
                     class_type='int', default=5)
+                widget_map_algo['surrogate']['n_spectral_pts'] = create_widget('labeled_entry',
+                    master=frame_surrogate, row=2, column=0, text=self.name_map_algo['surrogate']['n_spectral_pts'], class_type='int', default=100,
+                    valid_check=lambda x: x > 0, error_msg='number of spectral sampling points must be positive')
+                widget_map_algo['surrogate']['mean_sample'] = create_widget('checkbutton',
+                    master=frame_surrogate, row=3, column=0, text=self.name_map_algo['surrogate']['mean_sample'])
+                    
+                surrogate_ts_visible = [False]
+                widget_map_algo['surrogate']['n_spectral_pts'].widget.master.grid_remove()
+                widget_map_algo['surrogate']['mean_sample'].master.grid_remove()
 
                 def gui_select_surrogate(event):
                     '''
@@ -558,18 +573,15 @@ class GUI:
                     '''
                     name = event.widget.get()
                     if name == 'Gaussian Process':
-                        if 'n_spectral_pts' in widget_map_algo['surrogate']:
-                            widget_map_algo['surrogate'].pop('n_spectral_pts').destroy()
-                        if 'mean_sample' in widget_map_algo['surrogate']:
-                            widget_map_algo['surrogate'].pop('mean_sample').master.destroy()
+                        if surrogate_ts_visible[0]:
+                            widget_map_algo['surrogate']['n_spectral_pts'].widget.master.grid_remove()
+                            widget_map_algo['surrogate']['mean_sample'].master.grid_remove()
+                            surrogate_ts_visible[0] = False
                     elif name == 'Thompson Sampling':
-                        if 'n_spectral_pts' not in widget_map_algo['surrogate']:
-                            widget_map_algo['surrogate']['n_spectral_pts'] = create_widget('labeled_entry',
-                                master=frame_surrogate, row=2, column=0, text=self.name_map_algo['surrogate']['n_spectral_pts'], class_type='int', default=100,
-                                valid_check=lambda x: x > 0, error_msg='number of spectral sampling points must be positive')
-                        if 'mean_sample' not in widget_map_algo['surrogate']:
-                            widget_map_algo['surrogate']['mean_sample'] = create_widget('checkbutton',
-                                master=frame_surrogate, row=3, column=0, text=self.name_map_algo['surrogate']['mean_sample'])
+                        if not surrogate_ts_visible[0]:
+                            widget_map_algo['surrogate']['n_spectral_pts'].widget.master.grid()
+                            widget_map_algo['surrogate']['mean_sample'].master.grid()
+                            surrogate_ts_visible[0] = True
                     else:
                         raise NotImplementedError
 
@@ -580,14 +592,14 @@ class GUI:
                 grid_configure(frame_acquisition, [0], [0])
                 widget_map_algo['acquisition']['name'] = create_widget('labeled_combobox',
                     master=frame_acquisition, row=0, column=0, width=25, text=self.name_map_algo['acquisition']['name'], 
-                    values=list(self.value_map_algo['acquisition']['name'].keys()), required=True)
+                    values=list(self.value_map_algo['acquisition']['name'].values()), required=True)
 
                 # multi-objective solver subsection
                 frame_solver = create_widget('labeled_frame', master=frame_param_algo, row=2, column=0, text='Multi-Objective Solver')
                 grid_configure(frame_solver, [0, 1, 2, 3], [0])
                 widget_map_algo['solver']['name'] = create_widget('labeled_combobox',
                     master=frame_solver, row=0, column=0, width=15, text=self.name_map_algo['solver']['name'], 
-                    values=list(self.value_map_algo['solver']['name'].keys()), required=True)
+                    values=list(self.value_map_algo['solver']['name'].values()), required=True)
                 widget_map_algo['solver']['n_gen'] = create_widget('labeled_entry',
                     master=frame_solver, row=1, column=0, text=self.name_map_algo['solver']['n_gen'], class_type='int', default=200,
                     valid_check=lambda x: x > 0, error_msg='number of generations must be positive')
@@ -596,26 +608,65 @@ class GUI:
                     valid_check=lambda x: x > 0, error_msg='population size must be positive')
                 widget_map_algo['solver']['pop_init_method'] = create_widget('labeled_combobox',
                     master=frame_solver, row=3, column=0, width=25, text=self.name_map_algo['solver']['pop_init_method'], 
-                    values=list(self.value_map_algo['solver']['pop_init_method'].keys()), default='Non-Dominated Sort')
+                    values=list(self.value_map_algo['solver']['pop_init_method'].values()), default='Non-Dominated Sort')
 
                 # selection method subsection
                 frame_selection = create_widget('labeled_frame', master=frame_param_algo, row=3, column=0, text='Selection Method')
                 grid_configure(frame_selection, [0], [0])
                 widget_map_algo['selection']['name'] = create_widget('labeled_combobox',
                     master=frame_selection, row=0, column=0, width=25, text=self.name_map_algo['selection']['name'], 
-                    values=list(self.value_map_algo['selection']['name'].keys()), required=True)
+                    values=list(self.value_map_algo['selection']['name'].values()), required=True)
 
-                def gui_save_advanced():
+                def load_curr_config_algo():
+                    '''
+                    Load advanced settings of algorithm
+                    '''
+                    if algo_cfg == {}:
+                        algo_cfg.update(self.config['algorithm'])
+                        algo_cfg.pop('name')
+                        algo_cfg.pop('n_process')
+                    for cfg_type, val_map in widget_map_algo.items():
+                        for cfg_name, widget in val_map.items():
+                            if cfg_name not in algo_cfg[cfg_type]: continue
+                            val = algo_cfg[cfg_type][cfg_name]
+                            if cfg_name in self.value_map_algo[cfg_type]:
+                                widget.set(self.value_map_algo[cfg_type][cfg_name][val])
+                            else:
+                                widget.set(val)
+                    
+                    widget_map_algo['surrogate']['name'].select()
+
+                def gui_save_config_algo():
                     '''
                     Save advanced settings of algorithm
                     '''
+                    temp_cfg = {}
+                    for cfg_type, val_map in widget_map_algo.items():
+                        temp_cfg[cfg_type] = {}
+                        for cfg_name, widget in val_map.items():
+                            try:
+                                val = widget.get()
+                            except:
+                                show_widget_error(master=window_advanced, widget=widget, name=self.name_map_algo[cfg_type][cfg_name])
+                                return
+                            if cfg_name in self.value_inv_map_algo[cfg_type]:
+                                val = self.value_inv_map_algo[cfg_type][cfg_name][val]
+                            temp_cfg[cfg_type][cfg_name] = val
+
                     window_advanced.destroy()
+
+                    for key, val in temp_cfg.items():
+                        algo_cfg[key] = val
 
                 # action section
                 frame_action = tk.Frame(master=window_advanced)
                 frame_action.grid(row=1, column=0)
-                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_advanced)
+                create_widget('button', master=frame_action, row=0, column=0, text='Save', command=gui_save_config_algo)
                 create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_advanced.destroy)
+
+                # load current config values to entry if not first time setting config
+                if change and widget_map['algorithm']['name'].get() == self.config['algorithm']['name']:
+                    load_curr_config_algo()
 
             button_advanced = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', command=gui_set_advanced, sticky=None)
             button_advanced.disable()
@@ -637,6 +688,7 @@ class GUI:
                         widget.set(self.config[cfg_type][cfg_name])
                         if not widget.changeable:
                             widget.disable()
+                button_advanced.enable()
                 problem_cfg.clear()
                 problem_cfg.update(self.config['problem'])
 
@@ -650,24 +702,16 @@ class GUI:
                     'algorithm': {},
                 }
 
-                def gui_show_widget_error(widget, name):
-                    '''
-                    Show error messagebox if value of widget is not valid
-                    '''
-                    error_msg = widget.get_error_msg()
-                    error_msg = '' if error_msg is None else ': ' + error_msg
-                    tk.messagebox.showinfo('Error', f'Invalid value for "{name}"' + error_msg, parent=window)
-
                 # specifically deal with provided initial samples
                 try:
                     x_init_path = widget_x_init.get()
                 except:
-                    gui_show_widget_error(widget_x_init, 'Path of provided initial design variables')
+                    show_widget_error(master=window, widget=widget_x_init, name='Path of provided initial design variables')
                     return
                 try:
                     y_init_path = widget_y_init.get()
                 except:
-                    gui_show_widget_error(widget_y_init, 'Path of provided initial performance values')
+                    show_widget_error(master=window, widget=widget_y_init, name='Path of provided initial performance values')
                     return
 
                 if x_init_path is None and y_init_path is None: # no path of initial samples is provided
@@ -686,7 +730,7 @@ class GUI:
                         try:
                             config[cfg_type][cfg_name] = widget.get()
                         except:
-                            gui_show_widget_error(widget, self.name_map[cfg_type][cfg_name])
+                            show_widget_error(master=window, widget=widget, name=self.name_map[cfg_type][cfg_name])
                             return
 
                 # validity check
@@ -703,6 +747,7 @@ class GUI:
                     return
 
                 config['problem'].update(problem_cfg)
+                config['algorithm'].update(algo_cfg)
 
                 self._set_config(config, window)
                 window.destroy()

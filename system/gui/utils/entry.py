@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import tkinter as tk
+from tkinter import ttk
 
 
 class Entry(ABC):
@@ -70,6 +71,15 @@ class Entry(ABC):
         else:
             self.widget.set(new_val)
 
+    def select(self):
+        '''
+        Generate select event
+        '''
+        if type(self.widget) == ttk.Combobox:
+            curr_idx = self.widget['values'].index(self.widget.get()) # NOTE: assume all combobox values are unique
+            self.widget.current(curr_idx)
+            self.widget.event_generate('<<ComboboxSelected>>')
+
     @abstractmethod
     def _get(self, val):
         pass
@@ -86,12 +96,6 @@ class Entry(ABC):
             return 'entry cannot be empty'
         else:
             return self.error_msg
-
-    def destroy(self):
-        '''
-        Destroy widget
-        '''
-        self.widget.master.destroy()
 
 
 class StringEntry(Entry):
