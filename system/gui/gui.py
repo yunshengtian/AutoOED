@@ -12,7 +12,6 @@ import yaml
 import numpy as np
 from time import time, sleep
 from multiprocessing import Lock, Process
-from adjustText import adjust_text
 from problems.common import build_problem, get_initial_samples, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent, WorkerAgent
@@ -1387,17 +1386,13 @@ class GUI:
                 if n_var > 2:
                     self.line_x = self.ax12.plot(self.theta, transformed_x, color='g')[0]
                     self.fill_x = self.ax12.fill(self.theta, transformed_x, color='g', alpha=0.2)[0]
-                    self.text_x = []
-                    for i in range(n_var):
-                        text = self.ax12.text(self.theta[i], transformed_x[i], f'{closest_x[i]:.4g}', horizontalalignment='center', verticalalignment='bottom')
-                        self.text_x.append(text)
+                    self.ax12.set_varlabels([f'{var_name[i]}\n{closest_x[i]:.4g}' for i in range(n_var)])
                 else:
                     self.bar_x = self.ax12.bar(xticks, transformed_x, color='g')
                     self.text_x = []
                     for i in range(n_var):
                         text = self.ax12.text(xticks[i], transformed_x[i], f'{closest_x[i]:.4g}', horizontalalignment='center', verticalalignment='bottom')
                         self.text_x.append(text)
-                adjust_text(self.text_x, add_objects=self.ax12.xaxis.get_ticklabels())
 
             elif event.button == MouseButton.RIGHT: # clear checked design values
                 self._clear_design_space()
@@ -1899,7 +1894,7 @@ class GUI:
             tk.messagebox.showinfo('Error', 'Invalid configurations', parent=window)
             return
 
-        # update raw config (config will be processed and changed later in build_problem()) (TODO: check)
+        # update raw config (config will be processed and changed later)
         self.config_raw = config.copy()
         
         old_config = None if self.config is None else self.config.copy()
@@ -1944,6 +1939,12 @@ class GUI:
                     self.agent_worker.refresh()
                     sleep(self.refresh_rate / 1000.0)
 
+            # calculate reference point
+            if self.config['problem']['ref_point'] is None:
+                Y = self.agent_data.load('Y')
+                ref_point = np.max(Y, axis=0).tolist()
+                self.config['problem']['ref_point'] = ref_point
+
             # initialize visualization widgets
             self._init_viz_widgets(problem)
 
@@ -1980,8 +1981,11 @@ class GUI:
         else: # user changed config in the middle
             try:
                 # some keys cannot be changed
-                for key in ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'ref_point', 'n_init_sample']: # TODO
-                    assert self.config_raw['problem'][key] == config['problem'][key]           
+                unchanged_keys = ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'n_init_sample']
+                if self.config_raw['problem']['ref_point'] is not None:
+                    unchanged_keys.append('ref_point')
+                for key in unchanged_keys:
+                    assert self.config_raw['problem'][key] == config['problem'][key]
             except:
                 tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading', parent=window)
                 return
@@ -2105,18 +2109,24 @@ class GUI:
         if self.scatter_selected is not None:
             self.scatter_selected.remove()
             self.scatter_selected = None
-        if self.line_x is not None:
-            self.line_x.remove()
-            self.line_x = None
-        if self.fill_x is not None:
-            self.fill_x.remove()
-            self.fill_x = None
-        if self.bar_x is not None:
-            self.bar_x.remove()
-            self.bar_x = None
-        for text in self.text_x:
-            text.remove()
-        self.text_x = []
+            
+        n_var, var_name = self.config['problem']['n_var'], self.config['problem']['var_name']
+
+        if n_var > 2:
+            self.ax12.set_varlabels(var_name)
+            if self.line_x is not None:
+                self.line_x.remove()
+                self.line_x = None
+            if self.fill_x is not None:
+                self.fill_x.remove()
+                self.fill_x = None
+        else:
+            if self.bar_x is not None:
+                self.bar_x.remove()
+                self.bar_x = None
+            for text in self.text_x:
+                text.remove()
+            self.text_x = []
 
     def _redraw_performance_space(self, draw_iter=None):
         '''
