@@ -24,6 +24,7 @@ from system.gui.utils.table import Table
 from system.gui.utils.grid import grid_configure, embed_figure
 from system.gui.utils.radar import radar_factory
 from system.gui.utils.widget_creation import create_widget, show_widget_error
+from system.gui.utils.image import ImageFrame
 
 
 class GUI:
@@ -73,6 +74,7 @@ class GUI:
         self.frame_stat = None
         self.frame_db = None
         self.table_db = None
+        self.image_tutorial = None
 
         # data to be plotted
         self.scatter_x = None
@@ -1225,6 +1227,10 @@ class GUI:
         self.nb_viz.tab(1, state=tk.DISABLED)
         self.nb_viz.tab(2, state=tk.DISABLED)
 
+        # initialize tutorial image
+        self.image_tutorial = ImageFrame(master=self.root, img_path='./tutorial.png')
+        self.image_tutorial.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+
     def _init_viz_widgets(self, problem):
         '''
         Visualization widgets initialization (design/performance space, statistics, database)
@@ -1920,6 +1926,9 @@ class GUI:
                 return
 
             self.config = config
+
+            # remove tutorial image
+            self.image_tutorial.destroy()
 
             # build agents
             self.agent_data = DataAgent(n_var=problem.n_var, n_obj=problem.n_obj, result_dir=self.result_dir)
