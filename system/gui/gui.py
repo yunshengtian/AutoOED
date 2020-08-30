@@ -166,6 +166,7 @@ class GUI:
                 'name': {
                     'gp': 'Gaussian Process',
                     'ts': 'Thompson Sampling',
+                    'nn': 'Neural Network',
                 },
             },
             'acquisition': {
@@ -573,7 +574,7 @@ class GUI:
                     Select surrogate model type
                     '''
                     name = event.widget.get()
-                    if name == 'Gaussian Process':
+                    if name == 'Gaussian Process' or name == 'Neural Network': # TODO
                         if surrogate_ts_visible[0]:
                             widget_map_algo['surrogate']['n_spectral_pts'].widget.master.grid_remove()
                             widget_map_algo['surrogate']['mean_sample'].master.grid_remove()
