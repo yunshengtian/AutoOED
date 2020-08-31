@@ -12,19 +12,18 @@ def daemon_func(data_path, task_queue, result_queue):
     '''
     conn = sqlite3.connect(data_path)
     cur = conn.cursor()
+    alive = True
 
-    while True:
-        # receive command
-        msg = task_queue.get()
+    def execute_cmd(msg):
         cmd, args = None, None
-        if isinstance(msg, str):
+        if isinstance(msg, str): # command without argument
             cmd = msg
-        elif isinstance(msg, list):
+        elif isinstance(msg, list): # command with arguments
             cmd, *args = msg
         else:
             raise NotImplementedError
-        
-        # execute command
+
+        alive = True
         if cmd == 'execute':
             cur.execute(*args)
         elif cmd == 'executemany':
@@ -35,11 +34,20 @@ def daemon_func(data_path, task_queue, result_queue):
             result_queue.put(cur.fetchall())
         elif cmd == 'commit':
             conn.commit()
-        elif cmd == 'quit':
+        elif msg == 'quit':
             conn.close()
-            return
+            alive = False
         else:
             raise NotImplementedError
+        return alive
+
+    while alive:
+        msg = task_queue.get()
+        if isinstance(msg, tuple): # multiple commands
+            for m in msg:
+                alive = execute_cmd(m)
+        else: # a single commmand
+            alive = execute_cmd(msg)
 
 
 class Database:
@@ -102,29 +110,26 @@ class Database:
 
         if lock:
             self.lock.acquire()
+
         try:
             if isinstance(key, str):
                 # select array from single column
-                self.task_queue.put(['execute', f'select {key} from {table_name}' + row_cond])
-                self.task_queue.put('fetchall')
+                self.task_queue.put((['execute', f'select {key} from {table_name}' + row_cond], 'fetchall'))
                 result = np.array(self.result_queue.get(), dtype=dtype).squeeze()
             elif isinstance(key, list):
                 if isinstance(dtype, type):
                     # select array with single datatype from multiple columns
-                    self.task_queue.put(['execute', f'select {",".join(key)} from {table_name}' + row_cond])
-                    self.task_queue.put('fetchall')
+                    self.task_queue.put((['execute', f'select {",".join(key)} from {table_name}' + row_cond], 'fetchall'))
                     result = np.array(self.result_queue.get(), dtype=dtype)
                 elif isinstance(dtype, list):
                     # select array with multiple datatypes from multiple columns
                     result = []
                     for key_, dtype_ in zip(key, dtype):
                         if isinstance(key_, str):
-                            self.task_queue.put(['execute', f'select {key_} from {table_name}' + row_cond])
-                            self.task_queue.put('fetchall')
+                            self.task_queue.put((['execute', f'select {key_} from {table_name}' + row_cond], 'fetchall'))
                             res = np.array(self.result_queue.get(), dtype=dtype_).squeeze()
                         elif isinstance(key_, list):
-                            self.task_queue.put(['execute', f'select {",".join(key_)} from {table_name}' + row_cond])
-                            self.task_queue.put('fetchall')
+                            self.task_queue.put((['execute', f'select {",".join(key_)} from {table_name}' + row_cond], 'fetchall'))
                             res = np.array(self.result_queue.get(), dtype=dtype_)
                         else:
                             raise NotImplementedError
@@ -136,6 +141,7 @@ class Database:
                 self.lock.release()
             self.quit()
             sys.exit(0)
+
         if lock:
             self.lock.release()
         
@@ -149,29 +155,26 @@ class Database:
 
         if lock:
             self.lock.acquire()
+
         try:
             if isinstance(key, str):
                 # select scalar from single column
-                self.task_queue.put(['execute', f'select {key} from {table_name} order by rowid desc limit 1'])
-                self.task_queue.put('fetchall')
+                self.task_queue.put((['execute', f'select {key} from {table_name} order by rowid desc limit 1'], 'fetchall'))
                 result = np.array(self.result_queue.get(), dtype=dtype).squeeze()
             elif isinstance(key, list):
                 if isinstance(dtype, type):
                     # select scalar with single datatype from multiple columns
-                    self.task_queue.put(['execute', f'select {",".join(key)} from {table_name} order by rowid desc limit 1'])
-                    self.task_queue.put('fetchall')
+                    self.task_queue.put((['execute', f'select {",".join(key)} from {table_name} order by rowid desc limit 1'], 'fetchall'))
                     result = np.array(self.result_queue.get(), dtype=dtype)
                 elif isinstance(dtype, list):
                     # select scalar with multiple datatypes from multiple columns
                     result = []
                     for key_, dtype_ in zip(key, dtype):
                         if isinstance(key_, str):
-                            self.task_queue.put(['execute', f'select {key_} from {table_name} order by rowid desc limit 1'])
-                            self.task_queue.put('fetchall')
+                            self.task_queue.put((['execute', f'select {key_} from {table_name} order by rowid desc limit 1'], 'fetchall'))
                             res = np.array(self.result_queue.get(), dtype=dtype_).squeeze()
                         elif isinstance(key_, list):
-                            self.task_queue.put(['execute', f'select {",".join(key_)} from {table_name} order by rowid desc limit 1'])
-                            self.task_queue.put('fetchall')
+                            self.task_queue.put((['execute', f'select {",".join(key_)} from {table_name} order by rowid desc limit 1'], 'fetchall'))
                             res = np.array(self.result_queue.get(), dtype=dtype_)
                         else:
                             raise NotImplementedError
@@ -183,6 +186,7 @@ class Database:
                 self.lock.release()
             self.quit()
             sys.exit(0)
+
         if lock:
             self.lock.release()
         
@@ -258,8 +262,7 @@ class Database:
         if lock:
             self.lock.acquire()
 
-        self.task_queue.put(['execute', f'select max(rowid) from {table_name}'])
-        self.task_queue.put('fetchone')
+        self.task_queue.put((['execute', f'select max(rowid) from {table_name}'], 'fetchone'))
         result = self.result_queue.get()[0]
 
         if lock:

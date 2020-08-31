@@ -2045,6 +2045,8 @@ class GUI:
             log_text = log[0]
             log_list.append(log_text)
 
+            if not log_text.startswith('evaluation'): continue
+
             # evaluation worker log, update database table status
             if len(log) > 1:
                 rowid = int(log[1])
