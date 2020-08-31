@@ -109,10 +109,10 @@ class DataAgent:
         with self.db.get_lock():
             if Y is None:
                 self.db.insert('data', key=self._map_key(['X', 'Y_uncertainty', 'Y_expected', 'config_id', 'batch_id'], flatten=True),
-                    data=[X, Y_uncertainty, Y_expected, config_id, batch_id])
+                    data=[X, Y_uncertainty, Y_expected, config_id, batch_id], lock=False)
             else:
-                self.db.insert('data', key=None, data=[X, Y, Y_uncertainty, Y_expected, is_pareto, config_id, batch_id])
-            last_rowid = self.db.get_last_rowid('data')
+                self.db.insert('data', key=None, data=[X, Y, Y_uncertainty, Y_expected, is_pareto, config_id, batch_id], lock=False)
+            last_rowid = self.db.get_last_rowid('data', lock=False)
             self.db.commit()
 
         rowids = np.arange(last_rowid - n_init_sample, last_rowid, dtype=int) + 1
@@ -131,8 +131,8 @@ class DataAgent:
             batch_id = self.db.select_last('data', key='batch_id', dtype=int, lock=False) + 1
             batch_id = np.full(sample_len, batch_id)
             self.db.insert('data', key=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
-                data=[X, Y_expected, Y_uncertainty, config_id, batch_id])
-            last_rowid = self.db.get_last_rowid('data')
+                data=[X, Y_expected, Y_uncertainty, config_id, batch_id], lock=False)
+            last_rowid = self.db.get_last_rowid('data', lock=False)
             self.db.commit()
             
         rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
@@ -154,9 +154,9 @@ class DataAgent:
             is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
 
-            self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid)
-            self.db.update('data', key='is_pareto', data=False, rowid=None)
-            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
+            self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid, lock=False)
+            self.db.update('data', key='is_pareto', data=False, rowid=None, lock=False)
+            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id, lock=False)
             self.db.commit()
 
     def update_batch(self, Y, rowids):
@@ -175,9 +175,9 @@ class DataAgent:
             is_pareto[valid_idx] = check_pareto(all_Y_valid)
             pareto_id = np.where(is_pareto)[0] + 1
 
-            self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids)
-            self.db.update('data', key='is_pareto', data=False, rowid=None)
-            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id)
+            self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids, lock=False)
+            self.db.update('data', key='is_pareto', data=False, rowid=None, lock=False)
+            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id, lock=False)
             self.db.commit()
 
     def load(self, keys, valid_only=True, rowid=None, lock=True):

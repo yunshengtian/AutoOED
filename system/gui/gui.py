@@ -11,7 +11,6 @@ import os
 import yaml
 import numpy as np
 from time import time, sleep
-from multiprocessing import Lock, Process
 from problems.common import build_problem, get_initial_samples, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, ProblemAgent, WorkerAgent

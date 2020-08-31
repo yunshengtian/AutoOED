@@ -1,9 +1,45 @@
 import sys
 import sqlite3
 import numpy as np
-from multiprocessing import Lock, Value
+from multiprocessing import Lock, Value, Process, Queue
 
 from system.utils import ProcessSafeExit
+
+
+def daemon_func(data_path, task_queue, result_queue):
+    '''
+    Daemon process for serial database interaction
+    '''
+    conn = sqlite3.connect(data_path)
+    cur = conn.cursor()
+
+    while True:
+        # receive command
+        msg = task_queue.get()
+        cmd, args = None, None
+        if isinstance(msg, str):
+            cmd = msg
+        elif isinstance(msg, list):
+            cmd, *args = msg
+        else:
+            raise NotImplementedError
+        
+        # execute command
+        if cmd == 'execute':
+            cur.execute(*args)
+        elif cmd == 'executemany':
+            cur.executemany(*args)
+        elif cmd == 'fetchone':
+            result_queue.put(cur.fetchone())
+        elif cmd == 'fetchall':
+            result_queue.put(cur.fetchall())
+        elif cmd == 'commit':
+            conn.commit()
+        elif cmd == 'quit':
+            conn.close()
+            return
+        else:
+            raise NotImplementedError
 
 
 class Database:
@@ -15,11 +51,13 @@ class Database:
         Input:
             data_path: file path to database
         '''
-        self.conn = sqlite3.connect(data_path)
-        self.cur = self.conn.cursor()
-        self.alive = True
         self.lock = Lock()
         self.status = Value('i', 0) # status id detecting database change (increase 1 when database changes)
+
+        self.task_queue = Queue()
+        self.result_queue = Queue()
+        self.daemon = Process(target=daemon_func, args=(data_path, self.task_queue, self.result_queue))
+        self.daemon.start()
     
     def get_lock(self):
         '''
@@ -28,18 +66,24 @@ class Database:
         '''
         return self.lock
 
-    def create(self, table_name, key):
+    def create(self, table_name, key, lock=True):
         '''
         Create table in database
         '''
+        if lock:
+            self.lock.acquire()
+
         if isinstance(key, str):
             # create table with single key
-            self.cur.execute(f'create table {table_name} ({key})')
+            self.task_queue.put(['execute', f'create table {table_name} ({key})'])
         elif isinstance(key, list):
             # create table with multiple keys
-            self.cur.execute(f'create table {table_name} ({",".join(key)})')
+            self.task_queue.put(['execute', f'create table {table_name} ({",".join(key)})'])
         else:
             raise NotImplementedError
+
+        if lock:
+            self.lock.release()
 
     def select(self, table_name, key, dtype, rowid=None, lock=True):
         '''
@@ -54,104 +98,124 @@ class Database:
         else:
             raise NotImplementedError
 
-        if isinstance(key, str):
-            # select array from single column
-            self.cur.execute(f'select {key} from {table_name}' + row_cond)
-            return np.array(self.cur.fetchall(), dtype=dtype).squeeze()
-        elif isinstance(key, list):
-            if isinstance(dtype, type):
-                # select array with single datatype from multiple columns
-                self.cur.execute(f'select {",".join(key)} from {table_name}' + row_cond)
-                return np.array(self.cur.fetchall(), dtype=dtype)
-            elif isinstance(dtype, list):
-                # select array with multiple datatypes from multiple columns
-                if lock:
-                    self.lock.acquire()
-                try:
-                    result_list = []
+        result = None
+
+        if lock:
+            self.lock.acquire()
+        try:
+            if isinstance(key, str):
+                # select array from single column
+                self.task_queue.put(['execute', f'select {key} from {table_name}' + row_cond])
+                self.task_queue.put('fetchall')
+                result = np.array(self.result_queue.get(), dtype=dtype).squeeze()
+            elif isinstance(key, list):
+                if isinstance(dtype, type):
+                    # select array with single datatype from multiple columns
+                    self.task_queue.put(['execute', f'select {",".join(key)} from {table_name}' + row_cond])
+                    self.task_queue.put('fetchall')
+                    result = np.array(self.result_queue.get(), dtype=dtype)
+                elif isinstance(dtype, list):
+                    # select array with multiple datatypes from multiple columns
+                    result = []
                     for key_, dtype_ in zip(key, dtype):
                         if isinstance(key_, str):
-                            self.cur.execute(f'select {key_} from {table_name}' + row_cond)
-                            result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                            self.task_queue.put(['execute', f'select {key_} from {table_name}' + row_cond])
+                            self.task_queue.put('fetchall')
+                            res = np.array(self.result_queue.get(), dtype=dtype_).squeeze()
                         elif isinstance(key_, list):
-                            self.cur.execute(f'select {",".join(key_)} from {table_name}' + row_cond)
-                            result = np.array(self.cur.fetchall(), dtype=dtype_)
+                            self.task_queue.put(['execute', f'select {",".join(key_)} from {table_name}' + row_cond])
+                            self.task_queue.put('fetchall')
+                            res = np.array(self.result_queue.get(), dtype=dtype_)
                         else:
                             raise NotImplementedError
-                        result_list.append(result)
-                except ProcessSafeExit:
-                    if lock:
-                        self.lock.release()
-                    self.quit()
-                    sys.exit(0)
-                if lock:
-                    self.lock.release()
-                return result_list
-        else:
-            raise NotImplementedError
+                        result.append(res)
+            else:
+                raise NotImplementedError
+        except ProcessSafeExit:
+            if lock:
+                self.lock.release()
+            self.quit()
+            sys.exit(0)
+        if lock:
+            self.lock.release()
+        
+        return result
 
     def select_last(self, table_name, key, dtype, lock=True):
         '''
         Select scalar data from the last row of the table
         '''
-        if isinstance(key, str):
-            # select scalar from single column
-            self.cur.execute(f'select {key} from {table_name} order by rowid desc limit 1')
-            return np.array(self.cur.fetchall(), dtype=dtype).squeeze()
-        elif isinstance(key, list):
-            if isinstance(dtype, type):
-                # select scalar with single datatype from multiple columns
-                self.cur.execute(f'select {",".join(key)} from {table_name} order by rowid desc limit 1')
-                return np.array(self.cur.fetchall(), dtype=dtype)
-            elif isinstance(dtype, list):
-                # select scalar with multiple datatypes from multiple columns
-                if lock:
-                    self.lock.acquire()
-                try:
-                    result_list = []
+        result = None
+
+        if lock:
+            self.lock.acquire()
+        try:
+            if isinstance(key, str):
+                # select scalar from single column
+                self.task_queue.put(['execute', f'select {key} from {table_name} order by rowid desc limit 1'])
+                self.task_queue.put('fetchall')
+                result = np.array(self.result_queue.get(), dtype=dtype).squeeze()
+            elif isinstance(key, list):
+                if isinstance(dtype, type):
+                    # select scalar with single datatype from multiple columns
+                    self.task_queue.put(['execute', f'select {",".join(key)} from {table_name} order by rowid desc limit 1'])
+                    self.task_queue.put('fetchall')
+                    result = np.array(self.result_queue.get(), dtype=dtype)
+                elif isinstance(dtype, list):
+                    # select scalar with multiple datatypes from multiple columns
+                    result = []
                     for key_, dtype_ in zip(key, dtype):
                         if isinstance(key_, str):
-                            self.cur.execute(f'select {key_} from {table_name} order by rowid desc limit 1')
-                            result = np.array(self.cur.fetchall(), dtype=dtype_).squeeze()
+                            self.task_queue.put(['execute', f'select {key_} from {table_name} order by rowid desc limit 1'])
+                            self.task_queue.put('fetchall')
+                            res = np.array(self.result_queue.get(), dtype=dtype_).squeeze()
                         elif isinstance(key_, list):
-                            self.cur.execute(f'select {",".join(key_)} from {table_name} order by rowid desc limit 1')
-                            result = np.array(self.cur.fetchall(), dtype=dtype_)
+                            self.task_queue.put(['execute', f'select {",".join(key_)} from {table_name} order by rowid desc limit 1'])
+                            self.task_queue.put('fetchall')
+                            res = np.array(self.result_queue.get(), dtype=dtype_)
                         else:
                             raise NotImplementedError
-                        result_list.append(result)
-                except ProcessSafeExit:
-                    if lock:
-                        self.lock.release()
-                    self.quit()
-                    sys.exit(0)
-                if lock:
-                    self.lock.release()
-                return result_list
-        else:
-            raise NotImplementedError
+                        result.append(res)
+            else:
+                raise NotImplementedError
+        except ProcessSafeExit:
+            if lock:
+                self.lock.release()
+            self.quit()
+            sys.exit(0)
+        if lock:
+            self.lock.release()
+        
+        return result
 
-    def insert(self, table_name, key, data):
+    def insert(self, table_name, key, data, lock=True):
         '''
         Insert array data to table
         '''
         with self.status.get_lock():
             self.status.value += 1
 
+        if lock:
+            self.lock.acquire()
+
         if isinstance(key, str):
             # insert single array into single column
-            self.cur.executemany(f'insert into {table_name} ({key}) values (?)', data)
+            self.task_queue.put(['executemany', f'insert into {table_name} ({key}) values (?)', data])
         elif isinstance(key, list):
             # insert multiple array to multiple columns
             data = np.column_stack([np.array(arr, dtype=object) for arr in data])
-            self.cur.executemany(f'insert into {table_name} ({",".join(key)}) values ({",".join(["?"] * data.shape[1])})', data)
+            self.task_queue.put(['executemany', f'insert into {table_name} ({",".join(key)}) values ({",".join(["?"] * data.shape[1])})', data])
         elif key is None:
             # insert multiple array to all columns
             data = np.column_stack([np.array(arr, dtype=object) for arr in data])
-            self.cur.executemany(f'insert into {table_name} values ({",".join(["?"] * data.shape[1])})', data)
+            self.task_queue.put(['executemany', f'insert into {table_name} values ({",".join(["?"] * data.shape[1])})', data])
         else:
             raise NotImplementedError
+        
+        if lock:
+            self.lock.release()
 
-    def update(self, table_name, key, data, rowid):
+    def update(self, table_name, key, data, rowid, lock=True):
         '''
         Update scalar data to table
         NOTE: updating different values to different rows is not supported
@@ -171,31 +235,46 @@ class Database:
         else:
             raise NotImplementedError
 
+        if lock:
+            self.lock.acquire()
+
         if isinstance(key, str):
             # update single scalar to single column
-            self.cur.executemany(f'update {table_name} set {key} = ?' + condition, np.atleast_2d(np.array(data, dtype=object)))
+            self.task_queue.put(['executemany', f'update {table_name} set {key} = ?' + condition, np.atleast_2d(np.array(data, dtype=object))])
         elif isinstance(key, list):
             # update multiple scalars to multiple columns
             flattened_data = np.atleast_2d(np.hstack(np.array(data, dtype=object)))
-            self.cur.executemany(f'update {table_name} set ({",".join(key)}) = ({",".join(["?"] * flattened_data.shape[1])})' + condition, flattened_data)
+            self.task_queue.put(['executemany', f'update {table_name} set ({",".join(key)}) = ({",".join(["?"] * flattened_data.shape[1])})' + condition, flattened_data])
         else:
             raise NotImplementedError
+        
+        if lock:
+            self.lock.release()
+
+    def get_last_rowid(self, table_name, lock=True):
+        '''
+        Get the last rowid from database (i.e., number of rows in database)
+        '''
+        if lock:
+            self.lock.acquire()
+
+        self.task_queue.put(['execute', f'select max(rowid) from {table_name}'])
+        self.task_queue.put('fetchone')
+        result = self.result_queue.get()[0]
+
+        if lock:
+            self.lock.release()
+
+        return result
 
     def commit(self):
         '''
         Commit changes to database, prevent losing unsaved changes
         '''
-        self.conn.commit()
-
-    def get_last_rowid(self, table_name):
-        '''
-        Get the last rowid from database (i.e., number of rows in database)
-        '''
-        self.cur.execute(f'select max(rowid) from {table_name}')
-        return self.cur.fetchone()[0]
+        self.task_queue.put('commit')
 
     def quit(self):
         '''
         Quit database
         '''
-        self.conn.close()
+        self.task_queue.put('quit')
