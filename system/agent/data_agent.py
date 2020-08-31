@@ -184,24 +184,21 @@ class DataAgent:
         '''
         Load array from database table
         Input:
-            valid_only: if only keeps valid data, i.e., filled data, without nan
+            valid_only: if only keeps valid data (evaluated data)
         '''
         result = self.db.select('data', key=self._map_key(keys), dtype=self._map_type(keys), rowid=rowid, lock=lock)
         if valid_only:
             if isinstance(result, list):
-                isnan = None
-                for res in result:
-                    assert len(res.shape) in [1, 2]
-                    curr_isnan = np.isnan(res) if len(res.shape) == 1 else np.isnan(res).any(axis=1)
-                    if isnan is None:
-                        isnan = curr_isnan
-                    else:
-                        isnan = np.logical_or(isnan, curr_isnan)
+                if 'Y' not in keys:
+                    return result
+                Y_idx = keys.index('Y')
+                isnan = np.isnan(result[Y_idx]).any(axis=1)
                 valid_idx = np.where(~isnan)[0]
                 return [res[valid_idx] for res in result]
             else:
-                assert len(result.shape) in [1, 2]
-                isnan = np.isnan(result) if len(result.shape) == 1 else np.isnan(result).any(axis=1)
+                if 'Y' != keys:
+                    return result
+                isnan = np.isnan(result).any(axis=1)
                 valid_idx = np.where(~isnan)[0]
                 return result[valid_idx]
         else:
