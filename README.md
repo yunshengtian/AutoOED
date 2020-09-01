@@ -1,4 +1,6 @@
-# MOBO-System
+# OpenMOBO
+
+Open-source software for multi-objective Bayesian optimization (MOBO).
 
 ## Installation
 
@@ -20,8 +22,8 @@ Tested with Python 3.7 on Ubuntu 18.04.
 ## Getting Started
 
 ```
-python run.py
+python run_server.py
 ```
 
-This command will run MOBO optimization using configurations specified from GUI interaction, with interactive tkinter-based GUI and SQLite database for data storage.
+This command will run server program of MOBO optimization.
 
