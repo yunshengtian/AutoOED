@@ -14,7 +14,7 @@ from time import time, sleep
 from problems.common import build_problem, get_initial_samples, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, WorkerAgent
-from system.manager import ProblemManager, WorkerManager
+from system.manager import ProblemManager, WorkerManager, RequestManager
 from system.utils import process_config, load_config, get_available_algorithms, calc_hypervolume, calc_pred_error, find_closest_point, check_pareto
 from system.gui.utils.button import Button
 from system.gui.utils.entry import get_entry
@@ -29,7 +29,7 @@ from system.gui.utils.image import ImageFrame
 
 class ServerGUI:
     '''
-    Interactive local tkinter-based GUI
+    Server GUI
     '''
     def __init__(self):
         '''
@@ -58,6 +58,7 @@ class ServerGUI:
         # manager
         self.manager_problem = ProblemManager()
         self.manager_worker = WorkerManager()
+        self.manager_request = RequestManager()
 
         # config related
         self.config = None
@@ -99,7 +100,6 @@ class ServerGUI:
         self.curr_iter = tk.IntVar()
         self.max_iter = 0
         self.in_creating_problem = False
-        self.in_creating_worker = False
         self.db_status = 0
         self.stop_criterion = {}
         self.timestamp = None
@@ -213,7 +213,8 @@ class ServerGUI:
         self.name_map_worker = {
             'id': 'ID',
             'name': 'Name',
-            'timeout': 'Default timeout (s)',
+            'address': 'IP address',
+            'description': 'Description',
         }
 
     def _init_menu(self):
@@ -1197,7 +1198,8 @@ class ServerGUI:
         '''
         Worker menu initialization
         '''
-        self.menu_worker.add_command(label='Manage')
+        self.menu_worker.add_command(label='Manage Worker')
+        self.menu_worker.add_command(label='Manage Request')
 
         def gui_manage_worker():
             '''
@@ -1211,7 +1213,6 @@ class ServerGUI:
             frame_worker = create_widget('frame', master=window, row=0, column=0)
             frame_list = create_widget('labeled_frame', master=frame_worker, row=0, column=0, text='Worker List')
             frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, padx=5, pady=5)
-            frame_list_action = create_widget('frame', master=frame_list, row=1, column=0, padx=0, pady=0)
             frame_config = create_widget('labeled_frame', master=frame_worker, row=0, column=1, text='Worker Config')
             frame_config_display = create_widget('frame', master=frame_config, row=0, column=0, padx=0, pady=0)
             frame_config_action = create_widget('frame', master=frame_config, row=1, column=0, padx=0, pady=0, sticky=None)
@@ -1222,37 +1223,133 @@ class ServerGUI:
             # list subsection
             listbox_worker = Listbox(master=frame_list_display)
             listbox_worker.grid()
-            
-            button_create = create_widget('button', master=frame_list_action, row=0, column=0, text='Create')
-            button_delete = create_widget('button', master=frame_list_action, row=0, column=1, text='Delete')
 
             # config subsection
-            worker_cfg = {}
             widget_map = {}
-
             widget_map['id'] = create_widget('labeled_entry', master=frame_config_display, row=0, column=0, text=self.name_map_worker['id'],
-                class_type='string', width=10, required=True, valid_check=lambda x: x not in self.manager_worker.list_worker(), error_msg='duplicate worker ID')
+                class_type='string', width=10)
             widget_map['name'] = create_widget('labeled_entry', master=frame_config_display, row=1, column=0, text=self.name_map_worker['name'],
                 class_type='string', width=10)
-            widget_map['timeout'] = create_widget('labeled_entry', master=frame_config_display, row=2, column=0, text=self.name_map_worker['timeout'],
-                class_type='float', width=10, valid_check=lambda x: x > 0, error_msg='timeout must be positive')
+            widget_map['address'] = create_widget('labeled_entry', master=frame_config_display, row=2, column=0, text=self.name_map_worker['address'],
+                class_type='string', width=10)
+            widget_map['description'] = create_widget('labeled_text', master=frame_config_display, row=3, column=0, text=self.name_map_worker['description'],
+                width=30, height=20)
 
-            button_save = create_widget('button', master=frame_config_action, row=0, column=0, text='Save')
-            button_cancel = create_widget('button', master=frame_config_action, row=0, column=1, text='Cancel')
-
-            def exit_creating_worker():
-                '''
-                Exit creating worker status
-                '''
-                self.in_creating_worker = False
-                button_create.enable()
-                listbox_worker.delete(tk.END)
+            button_remove = create_widget('button', master=frame_config_action, row=0, column=0, text='Remove')
 
             def enable_config_widgets():
                 '''
                 Enable all config widgets
                 '''
-                for button in [button_save, button_cancel]:
+                button_remove.enable()
+                for widget in widget_map.values():
+                    widget.enable()
+                    widget.set(None)
+
+            def disable_config_widgets():
+                '''
+                Disable all config widgets
+                '''
+                button_remove.disable()
+                for widget in widget_map.values():
+                    widget.set(None)
+                    widget.disable()
+
+            def load_entry_values(entry_map, config):
+                '''
+                Load values of entries from config dict
+                '''
+                for name, widget in entry_map.items():
+                    widget.set(config[name])
+            
+            def gui_remove_worker():
+                '''
+                Remove selected worker
+                '''
+                index = int(listbox_worker.curselection()[0])
+                wid = listbox_worker.get(index)
+                if_remove = tk.messagebox.askquestion('Remove Worker', f'Are you sure to remove worker "{wid}"?', parent=window)
+                if if_remove == 'yes':
+                    listbox_worker.delete(index)
+                    listbox_size = listbox_worker.size()
+                    if listbox_size == 0:
+                        button_remove.disable()
+                        disable_config_widgets()
+                    else:
+                        listbox_worker.select_set(min(index, listbox_size - 1))
+                        listbox_worker.select_event()
+                    self.manager_worker.remove_worker(wid)
+                    # TODO: notify client the removal
+                else:
+                    return
+
+            def gui_select_worker(event):
+                '''
+                Select worker, load worker config
+                '''
+                try:
+                    index = int(event.widget.curselection()[0])
+                except:
+                    return
+                wid = event.widget.get(index)
+                if wid == '':
+                    return
+
+                enable_config_widgets()
+                config = self.manager_worker.load_worker(wid)
+                load_entry_values(widget_map, config)
+
+                button_remove.enable()
+
+            listbox_worker.bind_cmd(reload_cmd=self.manager_worker.list_worker, select_cmd=gui_select_worker)
+            listbox_worker.reload()
+
+            button_remove.configure(command=gui_remove_worker)
+            button_remove.disable()
+            disable_config_widgets()
+
+        def gui_manage_request():
+            '''
+            Manage requests
+            '''
+            window = tk.Toplevel(master=self.root)
+            window.title('Manage Request')
+            window.resizable(False, False)
+
+            # worker section
+            frame_request = create_widget('frame', master=window, row=0, column=0)
+            frame_list = create_widget('labeled_frame', master=frame_request, row=0, column=0, text='Request List')
+            frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, padx=5, pady=5)
+            frame_config = create_widget('labeled_frame', master=frame_request, row=0, column=1, text='Worker Config')
+            frame_config_display = create_widget('frame', master=frame_config, row=0, column=0, padx=0, pady=0)
+            frame_config_action = create_widget('frame', master=frame_config, row=1, column=0, padx=0, pady=0, sticky=None)
+            
+            grid_configure(frame_list, [0], [0])
+            grid_configure(frame_config, [0], [0])
+
+            # list subsection
+            listbox_request = Listbox(master=frame_list_display)
+            listbox_request.grid()
+
+            # config subsection
+            widget_map = {}
+            widget_map['id'] = create_widget('labeled_entry', master=frame_config_display, row=0, column=0, text=self.name_map_worker['id'],
+                class_type='string', width=10)
+            widget_map['name'] = create_widget('labeled_entry', master=frame_config_display, row=1, column=0, text=self.name_map_worker['name'],
+                class_type='string', width=10)
+            widget_map['address'] = create_widget('labeled_entry', master=frame_config_display, row=2, column=0, text=self.name_map_worker['address'],
+                class_type='string', width=10)
+            widget_map['description'] = create_widget('labeled_text', master=frame_config_display, row=3, column=0, text=self.name_map_worker['description'],
+                width=30, height=20)
+
+            button_approve = create_widget('button', master=frame_config_action, row=0, column=0, text='Approve')
+            button_decline = create_widget('button', master=frame_config_action, row=0, column=1, text='Decline')
+
+            def enable_config_widgets():
+                '''
+                Enable all config widgets
+                '''
+                for button in [button_approve, button_decline]:
                     button.enable()
                 for widget in widget_map.values():
                     widget.enable()
@@ -1262,7 +1359,7 @@ class ServerGUI:
                 '''
                 Disable all config widgets
                 '''
-                for button in [button_save, button_cancel]:
+                for button in [button_approve, button_decline]:
                     button.disable()
                 for widget in widget_map.values():
                     widget.set(None)
@@ -1291,93 +1388,54 @@ class ServerGUI:
                 for name, widget in entry_map.items():
                     widget.set(config[name])
 
-            def gui_save_change():
+            def gui_approve_request():
                 '''
-                Save changes to worker
+                Approve selected request
                 '''
-                if self.in_creating_worker:
-                    # try to save changes
-                    try:
-                        save_entry_values(widget_map, worker_cfg)
-                    except:
-                        return
-                    self.manager_worker.save_worker(worker_cfg)
-                    wid = worker_cfg['id']
-                    tk.messagebox.showinfo('Success', f'Worker {wid} saved', parent=window)
-                    
-                    # reload
-                    exit_creating_worker()
-                    listbox_worker.reload()
-                    listbox_worker.select(wid)
-                else:
-                    old_wid = listbox_worker.get(tk.ANCHOR)
-                    if_save = tk.messagebox.askquestion('Save Changes', f'Are you sure to save the changes for worker "{old_wid}"?', parent=window)
-
-                    if if_save == 'yes':
-                        # try to save changes
-                        try:
-                            save_entry_values(widget_map, worker_cfg)
-                        except:
-                            return
-                        new_wid = worker_cfg['id']
-                        if old_wid != new_wid:
-                            self.manager_worker.remove_worker(old_wid)
-                        self.manager_worker.save_worker(new_wid)
-                        tk.messagebox.showinfo('Success', f'Worker {new_wid} saved', parent=window)
-
-                        # reload
-                        listbox_worker.reload()
-                        listbox_worker.select(new_wid)
-                    else:
-                        # cancel changes
-                        return
-
-            def gui_cancel_change():
-                '''
-                Cancel changes to worker
-                '''
-                if self.in_creating_worker:
-                    exit_creating_worker()
+                # remove from the listbox
+                index = int(listbox_request.curselection()[0])
+                wid = listbox_request.get(index)
+                listbox_request.delete(index)
+                listbox_size = listbox_request.size()
+                if listbox_size == 0:
                     disable_config_widgets()
-                listbox_worker.select_event()
-
-            def gui_create_worker():
-                '''
-                Create new worker
-                '''
-                self.in_creating_worker = True
-                
-                listbox_worker.insert(tk.END, '')
-                listbox_worker.select_clear(0, tk.END)
-                listbox_worker.select_set(tk.END)
-
-                enable_config_widgets()
-                button_create.disable()
-                button_delete.disable()
-
-            def gui_delete_worker():
-                '''
-                Delete selected worker
-                '''
-                index = int(listbox_worker.curselection()[0])
-                wid = listbox_worker.get(index)
-                if_delete = tk.messagebox.askquestion('Delete Worker', f'Are you sure to delete worker "{wid}"?', parent=window)
-                if if_delete == 'yes':
-                    listbox_worker.delete(index)
-                    listbox_size = listbox_worker.size()
-                    if listbox_size == 0:
-                        button_delete.disable()
-                        disable_config_widgets()
-                    else:
-                        listbox_worker.select_set(min(index, listbox_size - 1))
-                        listbox_worker.select_event()
-                    self.manager_worker.remove_worker(wid)
                 else:
-                    return
+                    listbox_request.select_set(min(index, listbox_size - 1))
+                    listbox_request.select_event()
 
-            def gui_select_worker(event):
+                # remove request
+                self.manager_request.remove_request(wid)
+
+                # save request as worker
+                worker_cfg = {}
+                save_entry_values(widget_map, worker_cfg)
+                self.manager_worker.save_worker(worker_cfg)
+
+                # TODO: notify client the approve
+
+            def gui_decline_request():
                 '''
-                Select worker, load worker config
+                Decline selected request
+                '''
+                # remove from the listbox
+                index = int(listbox_request.curselection()[0])
+                wid = listbox_request.get(index)
+                listbox_request.delete(index)
+                listbox_size = listbox_request.size()
+                if listbox_size == 0:
+                    disable_config_widgets()
+                else:
+                    listbox_request.select_set(min(index, listbox_size - 1))
+                    listbox_request.select_event()
+
+                # remove request
+                self.manager_request.remove_request(wid)
+
+                # TODO: notify client the decline
+
+            def gui_select_request(event):
+                '''
+                Select request, load request config
                 '''
                 try:
                     index = int(event.widget.curselection()[0])
@@ -1386,27 +1444,23 @@ class ServerGUI:
                 wid = event.widget.get(index)
                 if wid == '':
                     return
-                elif self.in_creating_worker:
-                    exit_creating_worker()
 
                 enable_config_widgets()
-                config = self.manager_worker.load_worker(wid)
+                config = self.manager_request.load_request(wid)
                 load_entry_values(widget_map, config)
 
-                button_delete.enable()
+            listbox_request.bind_cmd(reload_cmd=self.manager_request.list_request, select_cmd=gui_select_request)
+            listbox_request.reload()
 
-            listbox_worker.bind_cmd(reload_cmd=self.manager_worker.list_worker, select_cmd=gui_select_worker)
-            listbox_worker.reload()
-
-            button_save.configure(command=gui_save_change)
-            button_cancel.configure(command=gui_cancel_change)
-            button_create.configure(command=gui_create_worker)
-            button_delete.configure(command=gui_delete_worker)
-            button_delete.disable()
+            button_approve.configure(command=gui_approve_request)
+            button_decline.configure(command=gui_decline_request)
+            button_approve.disable()
+            button_decline.disable()
             disable_config_widgets()
 
         # link menu command
         self.menu_worker.entryconfig(0, command=gui_manage_worker)
+        self.menu_worker.entryconfig(1, command=gui_manage_request)
 
     def _init_log_menu(self):
         '''
@@ -1806,7 +1860,7 @@ class ServerGUI:
             Manually start local evaluation workers for certain rows from database panel (TODO: disable when no eval script linked)
             '''
             window = tk.Toplevel(master=self.frame_db)
-            window.title('Start Local Evaluation')
+            window.title('Local Evaluation')
             window.resizable(False, False)
 
             frame_n_row = create_widget('frame', master=window, row=0, column=0, sticky=None, pady=0)
@@ -1829,9 +1883,9 @@ class ServerGUI:
 
             button_n_row.configure(command=gui_update_table)
             
-            def gui_start_eval_worker():
+            def gui_start_local_worker():
                 '''
-                Start evaluation workers
+                Start local evaluation workers
                 '''
                 try:
                     rowids = excel_rowid.get_column(0)
@@ -1854,7 +1908,7 @@ class ServerGUI:
                     self.agent_worker.add_eval_worker(rowid)
 
             frame_action = create_widget('frame', master=window, row=2, column=0, sticky=None, pady=0)
-            create_widget('button', master=frame_action, row=0, column=0, text='Evaluate', command=gui_start_eval_worker)
+            create_widget('button', master=frame_action, row=0, column=0, text='Start', command=gui_start_local_worker)
             create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
         def gui_start_remote_evaluate():
@@ -1862,10 +1916,72 @@ class ServerGUI:
             Manually start remote evaluation workers for certain rows from database panel
             '''
             window = tk.Toplevel(master=self.frame_db)
-            window.title('Start Remote Evaluation')
+            window.title('Remote Evaluation')
             window.resizable(False, False)
 
-            # TODO
+            frame_worker = create_widget('frame', master=window, row=0, column=0, sticky=None, pady=0)
+            combobox_worker = create_widget('labeled_combobox', master=frame_worker, row=0, column=0, text='Remote worker ID', values=self.manager_worker.list_worker(),
+                required=True, required_mark=False)
+
+            frame_n_row = create_widget('frame', master=window, row=1, column=0, sticky=None, pady=0)
+            entry_n_row = create_widget('labeled_entry',
+                master=frame_n_row, row=0, column=0, text='Number of rows', class_type='int', default=1, 
+                valid_check=lambda x: x > 0, error_msg='number of rows must be positive')
+            entry_n_row.set(1)
+            button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
+
+            excel_rowid = Excel(master=window, rows=1, columns=1, width=10, 
+                title=['Row number'], dtype=[int], default=None, required=[True], valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows])
+            excel_rowid.grid(row=2, column=0)
+
+            def gui_update_table():
+                '''
+                Update excel table of design variables to be added
+                '''
+                n_row = entry_n_row.get()
+                excel_rowid.update_n_row(n_row)
+
+            button_n_row.configure(command=gui_update_table)
+
+            def gui_start_remote_worker():
+                '''
+                Start remote evaluation workers
+                '''
+                try:
+                    wid = combobox_worker.get()
+                except:
+                    tk.messagebox.showinfo('Error', 'Remote worker ID cannot be empty', parent=window)
+                    return
+
+                try:
+                    rowids = excel_rowid.get_column(0)
+                except:
+                    tk.messagebox.showinfo('Error', 'Invalid row numbers', parent=window)
+                    return
+
+                # check for overwriting
+                overwrite = False
+                n_obj = self.config['problem']['n_obj']
+                for rowid in rowids:
+                    for i in range(n_obj):
+                        if self.table_db.get(rowid - 1, f'f{i + 1}') != 'N/A':
+                            overwrite = True
+                if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=window) == 'no': return
+
+                window.destroy()
+
+                # get design value
+                n_var = self.config['problem']['n_var']
+                X = np.zeros((len(rowids), n_var))
+                for i, rowid in enumerate(rowids):
+                    for j in range(n_var):
+                        X[i, j] = self.table_db.get(rowid - 1, f'x{j + 1}')
+
+                # TODO: launch remote worker
+
+            frame_action = create_widget('frame', master=window, row=3, column=0, sticky=None, pady=0)
+            create_widget('button', master=frame_action, row=0, column=0, text='Start', command=gui_start_remote_worker)
+            create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window.destroy)
 
         def gui_stop_evaluate():
             '''

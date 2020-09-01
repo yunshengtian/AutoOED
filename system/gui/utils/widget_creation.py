@@ -3,7 +3,7 @@ Widget creation helper tools
 '''
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, scrolledtext
 
 from system.gui.utils.button import Button
 from system.gui.utils.entry import get_entry
@@ -117,6 +117,16 @@ def create_labeled_button_entry(master, row, column, label_text, button_text, co
     return button, get_entry('string', entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg, changeable=changeable)
 
 
+def create_labeled_text(master, row, column, text, width, height, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+    label_text = text + ':'
+    label = tk.Label(master=frame, text=label_text)
+    label.grid(row=0, column=0, sticky='W')
+    scrtext = scrolledtext.ScrolledText(master=frame, width=width, height=height)
+    scrtext.grid(row=1, column=0, pady=pady / 2, sticky='EW')
+    return get_entry('string', scrtext)
+
+
 def create_widget(name, *args, **kwargs):
     '''
     Create widget by name and other arguments
@@ -133,6 +143,7 @@ def create_widget(name, *args, **kwargs):
         'labeled_button': create_labeled_button,
         'labeled_entry': create_labeled_entry,
         'labeled_button_entry': create_labeled_button_entry,
+        'labeled_text': create_labeled_text,
     }
     return factory[name](*args, **kwargs)
 

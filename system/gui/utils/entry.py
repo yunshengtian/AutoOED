@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, scrolledtext
 
 
 class Entry(ABC):
@@ -68,6 +68,9 @@ class Entry(ABC):
         if type(self.widget) == tk.Entry:
             self.widget.delete(0, tk.END)
             self.widget.insert(0, new_val)
+        elif type(self.widget) == scrolledtext.ScrolledText:
+            self.widget.delete(1.0, tk.END)
+            self.widget.insert(tk.END, new_val)
         else:
             self.widget.set(new_val)
 
