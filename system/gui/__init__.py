@@ -1,1 +1,1 @@
-from system.gui.gui import GUI
+from system.gui.server import ServerGUI

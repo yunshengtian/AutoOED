@@ -27,7 +27,7 @@ from system.gui.utils.widget_creation import create_widget, show_widget_error
 from system.gui.utils.image import ImageFrame
 
 
-class GUI:
+class ServerGUI:
     '''
     Interactive local tkinter-based GUI
     '''
