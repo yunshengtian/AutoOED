@@ -2,13 +2,13 @@ import os
 import yaml
 
 
-class ProblemAgent:
+class ProblemManager:
     '''
-    Agent controlling problem communication from & to file system
+    Problem config management in file system
     '''
     def __init__(self):
         '''
-        Agent initialization
+        Manager initialization
         '''
         # create folder
         self.problem_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'problems', 'custom', 'yaml')

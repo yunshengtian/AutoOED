@@ -100,7 +100,7 @@ def load_default_config():
     '''
     Load default config for optional values
     '''
-    default_config_path = 'config/default_config.yml'
+    default_config_path = 'config/experiment/default_config.yml'
     with open(default_config_path, 'r') as f:
         default_config = yaml.load(f, Loader=yaml.FullLoader)
     return default_config
