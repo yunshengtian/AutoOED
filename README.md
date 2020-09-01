@@ -23,7 +23,7 @@ Tested with Python 3.7 on Ubuntu 18.04.
 
 ```
 python run_server.py
+python run_client.py
 ```
 
-This command will run server program of MOBO optimization.
-
+These commands correspond to running the server/client program respectively.
