@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 from mobo.surrogate_model.base import SurrogateModel
@@ -29,8 +28,8 @@ class MLP(nn.Module):
         self.fc.append(nn.Linear(last_size, n_out))
 
         ac_map = {
-            'relu': F.relu,
-            'tanh': F.tanh,
+            'relu': torch.relu,
+            'tanh': torch.tanh,
         }
         assert activation in ac_map, f"activation type {activation} doesn't supported"
         self.ac = ac_map[activation]
@@ -39,6 +38,11 @@ class MLP(nn.Module):
         for fc in self.fc[:-1]:
             x = self.ac(fc(x))
         x = self.fc[-1](x)
+        return x
+
+    def basis_func(self, x):
+        for fc in self.fc[:-1]:
+            x = self.ac(fc(x))
         return x
 
 
@@ -68,7 +72,7 @@ class NeuralNetwork(SurrogateModel):
     '''
     Simple neural network
     '''
-    def __init__(self, n_var, n_obj, hidden_sizes=(64, 64), activation='relu', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
+    def __init__(self, n_var, n_obj, hidden_sizes=(50, 50, 50), activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
         super().__init__(n_var, n_obj)
 
         self.net = [MLP(n_in=n_var, n_out=1, hidden_sizes=hidden_sizes, activation=activation) for _ in range(n_obj)]
