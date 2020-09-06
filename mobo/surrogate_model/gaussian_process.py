@@ -57,10 +57,8 @@ class GaussianProcess(SurrogateModel):
 
             # mean
             K = gp.kernel_(X, gp.X_train_) # K: shape (N, N_train)
-
             y_mean = K.dot(gp.alpha_)
-            y_mean = gp._y_train_mean + y_mean
-
+            
             F.append(y_mean) # y_mean: shape (N,)
 
             if std:
@@ -77,7 +75,9 @@ class GaussianProcess(SurrogateModel):
                 if np.any(y_var_negative):
                     y_var[y_var_negative] = 0.0
 
-                S.append(y_var) # y_var: shape (N,)
+                y_std = np.sqrt(y_var)
+
+                S.append(y_std) # y_std: shape (N,)
 
             if not (calc_gradient or calc_hessian): continue
 
@@ -105,7 +105,8 @@ class GaussianProcess(SurrogateModel):
                 dK_T = dK.transpose(0, 2, 1) # dK: shape (N, N_train, n_var), dK_T: shape (N, n_var, N_train)
                 
             if calc_gradient:
-                dF.append(dK_T @ gp.alpha_) # gp.alpha_: shape (N_train,), dF appended: shape (N, n_var)
+                dy_mean = dK_T @ gp.alpha_ # gp.alpha_: shape (N_train,)
+                dF.append(dy_mean) # dy_mean: shape (N, n_var)
 
                 # TODO: check
                 if std:
@@ -113,7 +114,9 @@ class GaussianProcess(SurrogateModel):
                     K_Ki = K @ gp._K_inv # gp._K_inv: shape (N_train, N_train), K_Ki: shape (N, 1, N_train)
                     dK_Ki = dK_T @ gp._K_inv # dK_Ki: shape (N, n_var, N_train)
 
-                    dS.append(-np.sum(dK_Ki * K + K_Ki * dK_T, axis=2)) # dS appended: shape (N, n_var)
+                    dy_var = -np.sum(dK_Ki * K + K_Ki * dK_T, axis=2) # dy_var: shape (N, n_var)
+                    dy_std = 0.5 * safe_divide(dy_var, y_std) # dy_std: shape (N, n_var)
+                    dS.append(dy_std)
 
             if calc_hessian:
                 d = np.expand_dims(d, 3) # d: shape (N, N_train, 1, 1)
@@ -136,7 +139,8 @@ class GaussianProcess(SurrogateModel):
 
                 hK_T = hK.transpose(0, 2, 3, 1) # hK: shape (N, N_train, n_var, n_var), hK_T: shape (N, n_var, n_var, N_train)
 
-                hF.append(hK_T @ gp.alpha_) # hF appended: shape (N, n_var, n_var)
+                hy_mean = hK_T @ gp.alpha_ # hy_mean: shape (N, n_var, n_var)
+                hF.append(hy_mean)
 
                 # TODO: check
                 if std:
@@ -145,7 +149,9 @@ class GaussianProcess(SurrogateModel):
                     dK_Ki = np.expand_dims(dK_Ki, 2) # dK_Ki: shape (N, n_var, 1, N_train)
                     hK_Ki = hK_T @ gp._K_inv # hK_Ki: shape (N, n_var, n_var, N_train)
 
-                    hS.append(-np.sum(hK_Ki * K + 2 * dK_Ki * dK + K_Ki * hK_T, axis=3)) # hS appended: shape (N, n_var, n_var)
+                    hy_var = -np.sum(hK_Ki * K + 2 * dK_Ki * dK + K_Ki * hK_T, axis=3) # hy_var: shape (N, n_var, n_var)
+                    hy_std = 0.5 * safe_divide(hy_var * y_std - dy_var * dy_std, y_var) # hy_std: shape (N, n_var, n_var)
+                    hS.append(hy_std)
 
         F = np.stack(F, axis=1)
         dF = np.stack(dF, axis=1) if calc_gradient else None

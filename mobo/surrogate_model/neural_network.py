@@ -84,7 +84,7 @@ class NeuralNetwork(SurrogateModel):
         X, Y = torch.FloatTensor(X), torch.FloatTensor(Y)
         for i in range(self.n_obj):
             for _ in range(self.n_epoch):
-                Y_pred = self.net[i](X).squeeze()
+                Y_pred = self.net[i](X)[:, 0]
                 loss = self.criterion(Y_pred, Y[:, i])
                 self.optimizer[i].zero_grad()
                 loss.backward()
@@ -96,7 +96,7 @@ class NeuralNetwork(SurrogateModel):
         X = torch.FloatTensor(X)
         X.requires_grad = True
 
-        F = [self.net[i](X).squeeze() for i in range(self.n_obj)]
+        F = [self.net[i](X)[:, 0] for i in range(self.n_obj)]
 
         if calc_gradient:
             dF = [jacobian(f, X).numpy() for f in F]
