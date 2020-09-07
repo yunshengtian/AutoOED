@@ -11,7 +11,7 @@ class ProblemManager:
         Manager initialization
         '''
         # create folder
-        self.problem_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'problems', 'custom', 'yaml')
+        self.problem_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'problems', 'custom', 'yaml')
         os.makedirs(self.problem_dir, exist_ok=True)
 
     def save_problem(self, config):

@@ -1642,7 +1642,7 @@ class ServerGUI:
         scatter_list.extend([self.scatter_y, self.scatter_y_pareto, self.scatter_y_new, self.scatter_y_pred])
 
         # plot hypervolume curve
-        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point']))
+        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point'], self.config['problem']['minimize']))
         self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
         self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
 
@@ -2307,7 +2307,12 @@ class ServerGUI:
             # calculate reference point
             if self.config['problem']['ref_point'] is None:
                 Y = self.agent_data.load('Y')
-                ref_point = np.max(Y, axis=0).tolist()
+                ref_point = np.zeros(problem.n_obj)
+                for i, m in enumerate(problem.minimize):
+                    if m == True:
+                        ref_point[i] = np.max(Y[:, i])
+                    else:
+                        ref_point[i] = np.min(Y[:, i])
                 self.config['problem']['ref_point'] = ref_point
 
             # initialize visualization widgets
@@ -2596,7 +2601,7 @@ class ServerGUI:
             if batch_id[-1] > 0:
                 # replot hypervolume curve
                 line_hv_y = self.line_hv.get_ydata()
-                hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'])
+                hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'], self.config['problem']['minimize'])
                 hv_value = np.concatenate([line_hv_y, np.full(self.n_valid_sample - len(line_hv_y), hv_value)])
                 self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value)
                 self.ax21.relim()

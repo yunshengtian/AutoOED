@@ -21,6 +21,7 @@ def process_problem_config(config):
         'name': 'required',
         'n_var': 'required',
         'n_obj': 'required',
+        'minimize': True, # minimization by default
         'n_constr': 0, # no constraints by default
         'var_lb': 0, # 0 as var lower bound by default
         'var_ub': 1, # 1 as var upper bound by default

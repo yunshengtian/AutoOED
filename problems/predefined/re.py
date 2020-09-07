@@ -10,15 +10,15 @@ class RE(Problem, ABC):
     '''
     n_var = None
     n_obj = None
-    xl = None
-    xu = None
+    var_lb = None
+    var_ub = None
     var_name = None
     obj_name = None
 
-    def __init__(self, n_var=None, n_obj=None, xl=None, xu=None, **kwargs):
-        if xl is None: xl = self.xl
-        if xu is None: xu = self.xu
-        Problem.__init__(self, n_var=self.n_var, n_obj=self.n_obj, xl=np.array(xl), xu=np.array(xu), var_name=self.var_name, obj_name=self.obj_name)
+    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None, **kwargs):
+        if var_lb is None: var_lb = self.var_lb
+        if var_ub is None: var_ub = self.var_ub
+        Problem.__init__(self, n_var=self.n_var, n_obj=self.n_obj, var_lb=np.array(var_lb), var_ub=np.array(var_ub), var_name=self.var_name, obj_name=self.obj_name)
 
     def _calc_pareto_front(self, *args, **kwargs):
         name = self.__class__.__name__
@@ -46,8 +46,8 @@ class RE1(RE):
     '''
     n_var = 4
     n_obj = 2
-    xl = [1, np.sqrt(2), np.sqrt(2), 1]
-    xu = [3, 3, 3, 3]
+    var_lb = [1, np.sqrt(2), np.sqrt(2), 1]
+    var_ub = [3, 3, 3, 3]
     obj_name = ['structural volume', 'joint displacement']
 
     def evaluate_performance(self, x):
@@ -69,8 +69,8 @@ class RE2(RE):
     '''
     n_var = 3
     n_obj = 2
-    xl = [0.2, 0, 0]
-    xu = [15, 20, 40]
+    var_lb = [0.2, 0, 0]
+    var_ub = [15, 20, 40]
     var_name = ['reinforcement area', 'beam width', 'beam depth']
     obj_name = ['concrete cost', 'reinforcing steel cost']
 
@@ -98,8 +98,8 @@ class RE3(RE):
     '''
     n_var = 2
     n_obj = 2
-    xl = [0.5, 0.5]
-    xu = [4, 50]
+    var_lb = [0.5, 0.5]
+    var_ub = [4, 50]
     var_name = ['flange thickness', 'beam height']
     obj_name = ['weight', 'constraint violation']
 
@@ -138,8 +138,8 @@ class RE4(RE):
     '''
     n_var = 4
     n_obj = 3
-    xl = [0.125, 0.1, 0.1, 0.125]
-    xu = [5, 10, 10, 5]
+    var_lb = [0.125, 0.1, 0.1, 0.125]
+    var_ub = [5, 10, 10, 5]
     obj_name = ['cost', 'end deflection', 'constraint violation']
 
     def evaluate_performance(self, x):
@@ -191,8 +191,8 @@ class RE5(RE):
     '''
     n_var = 4
     n_obj = 3
-    xl = [55, 75, 1000, 11]
-    xu = [80, 110, 3000, 20]
+    var_lb = [55, 75, 1000, 11]
+    var_ub = [80, 110, 3000, 20]
     var_name = ['inner radius', 'outer radius', 'engaging force', 'number of friction surfaces']
     obj_name = ['mass', 'minimum stopping time', 'constraint violation']
 
@@ -223,8 +223,8 @@ class RE6(RE):
     '''
     n_var = 4
     n_obj = 3
-    xl = [12] * 4
-    xu = [60] * 4
+    var_lb = [12] * 4
+    var_ub = [60] * 4
     var_name = ['gear 1 #teeth', 'gear 2 #teeth', 'gear 3 #teeth', 'gear 4 #teeth']
     obj_name = ['ration error', 'max size', 'constraint violation']
 
@@ -249,8 +249,8 @@ class RE7(RE):
     '''
     n_var = 4
     n_obj = 3
-    xl = [0] * 4
-    xu = [1] * 4
+    var_lb = [0] * 4
+    var_ub = [1] * 4
     var_name = ['hygrogen flow angle', 'hydrogen area', 'oxygen area', 'oxidizer post tip thickness']
     obj_name = ['max face temperature', 'inlet distance', 'max post tip temperature']
 

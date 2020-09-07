@@ -107,17 +107,17 @@ def find_all_problems():
         return python_problems, yaml_problems
 
 
-def get_problem(name, *args, **kwargs):
+def get_problem(name, **kwargs):
     '''
     Build problem from name and arguments
     '''
     python_problems, yaml_problems = find_all_problems()
     if name in python_problems:
-        return python_problems[name](*args, **kwargs)
+        return python_problems[name](**kwargs)
     elif name in yaml_problems:
         with open(yaml_problems[name], 'r') as fp:
             config = yaml.load(fp, Loader=yaml.FullLoader)
-        return GeneratedProblem(config, *args, **kwargs)
+        return GeneratedProblem(config, **kwargs)
     else:
         raise Exception(f'Problem {name} not found')
 
@@ -266,12 +266,9 @@ def build_problem(config, get_pfront=False):
         problem: the optimization problem
         pareto_front: the true Pareto front of the problem (if defined, otherwise None)
     '''
-    name, n_var, n_obj = config['name'], config['n_var'], config['n_obj']
-    xl, xu = config['var_lb'], config['var_ub']
-
     # build problem
     try:
-        problem = get_problem(name, n_var=n_var, n_obj=n_obj, xl=xl, xu=xu)
+        problem = get_problem(**config)
     except:
         raise NotImplementedError('problem not supported yet!')
 

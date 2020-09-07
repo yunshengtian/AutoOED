@@ -6,10 +6,10 @@ class VLMOP2(Problem):
     '''
     Van Veldhuizen, David A., and Gary B. Lamont. "Multiobjective evolutionary algorithm test suites." Proceedings of the 1999 ACM symposium on Applied computing. 1999.
     '''
-    def __init__(self, n_var=2, n_obj=None, xl=None, xu=None, **kwargs):
-        if xl is None: xl = -2
-        if xu is None: xu = 2
-        super().__init__(n_var=n_var, n_obj=2, xl=xl, xu=xu, type_var=np.double)
+    def __init__(self, n_var=2, n_obj=None, var_lb=None, var_ub=None, **kwargs):
+        if var_lb is None: var_lb = -2
+        if var_ub is None: var_ub = 2
+        super().__init__(n_var=n_var, n_obj=2, var_lb=var_lb, var_ub=var_ub, type_var=np.double)
 
     def evaluate_performance(self, x):
         n = self.n_var
@@ -30,10 +30,10 @@ class VLMOP3(Problem):
     '''
     Van Veldhuizen, David A., and Gary B. Lamont. "Multiobjective evolutionary algorithm test suites." Proceedings of the 1999 ACM symposium on Applied computing. 1999.
     '''
-    def __init__(self, n_var=None, n_obj=None, xl=None, xu=None, **kwargs):
-        if xl is None: xl = -3
-        if xu is None: xu = 3
-        super().__init__(n_var=2, n_obj=3, xl=xl, xu=xu, type_var=np.double)
+    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None, **kwargs):
+        if var_lb is None: var_lb = -3
+        if var_ub is None: var_ub = 3
+        super().__init__(n_var=2, n_obj=3, var_lb=var_lb, var_ub=var_ub, type_var=np.double)
 
     def evaluate_performance(self, x):
         x1, x2 = x[0], x[1]

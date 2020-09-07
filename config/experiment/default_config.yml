@@ -8,6 +8,7 @@ problem:
   name: required
   n_var: required
   n_obj: required
+  minimize: True # minimize/maximize each objective
   var_lb: null # lower bound of design variables
   var_ub: null # upper bound of design variables
   var_name: null # name of design variables

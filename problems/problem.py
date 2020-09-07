@@ -8,36 +8,45 @@ class Problem(PymooProblem):
     '''
     Real problem definition built upon Pymoo's Problem class, added some custom features
     '''
-    def __init__(self, *args, name=None, xl=None, xu=None, fl=None, fu=None, var_name=None, obj_name=None, init_sample_path=None, **kwargs):
-        # set default bounds (TODO: obj bound is currently not supported)
-        xl, xu = self._process_bounds(xl, xu)
+    def __init__(self, name=None, n_var=None, n_obj=None, n_constr=0,
+        var_lb=None, var_ub=None, obj_lb=None, obj_ub=None, var_name=None, obj_name=None, 
+        init_sample_path=None, minimize=True, ref_point=None, **kwargs):
 
         self.name = lambda: self.__class__.__name__ if name is None else name
 
-        PymooProblem.__init__(self, *args, xl=xl, xu=xu, **kwargs)
+        # set default bounds (TODO: obj bound is currently not supported)
+        var_lb, var_ub = self._process_bounds(var_lb, var_ub)
 
-        self.ref_point = None
+        PymooProblem.__init__(self, n_var, n_obj, n_constr, var_lb, var_ub)
+
         self.var_name = var_name if var_name is not None else [f'x{i + 1}' for i in range(self.n_var)]
         self.obj_name = obj_name if obj_name is not None else [f'f{i + 1}' for i in range(self.n_obj)]
+        
         self.init_sample_path = init_sample_path
+        self.ref_point = ref_point
 
-    def _process_bounds(self, xl, xu):
+        if type(minimize) not in [list, np.ndarray]:
+            minimize = [minimize] * self.n_obj
+        assert len(minimize) == self.n_obj
+        self.minimize = np.array(minimize, dtype=bool)
+
+    def _process_bounds(self, var_lb, var_ub):
         '''
         Set default values for bounds if not specified
         '''
-        if xl is None: xl = 0
-        elif isinstance(xl, list) or isinstance(xl, np.ndarray):
-            xl = np.array(xl)
-            xl[xl == None] = 0
-            xl = xl.astype(float)
+        if var_lb is None: var_lb = 0
+        elif type(var_lb) in [list, np.ndarray]:
+            var_lb = np.array(var_lb)
+            var_lb[var_lb == None] = 0
+            var_lb = var_lb.astype(float)
         
-        if xu is None: xu = 1
-        elif isinstance(xu, list) or isinstance(xu, np.ndarray):
-            xu = np.array(xu)
-            xu[xu == None] = 1
-            xu = xu.astype(float)
+        if var_ub is None: var_ub = 1
+        elif type(var_ub) in [list, np.ndarray]:
+            var_ub = np.array(var_ub)
+            var_ub[var_ub == None] = 1
+            var_ub = var_ub.astype(float)
         
-        return xl, xu
+        return var_lb, var_ub
 
     def set_ref_point(self, ref_point):
         '''
@@ -69,7 +78,7 @@ class Problem(PymooProblem):
         else:
             G = self.evaluate_constraint(x)
             assert G is not None
-            CV = Problem.calc_constraint_violation(np.column_stack(G))
+            CV = Problem.calc_constraint_violation(np.column_stack(np.atleast_2d(G)))
         feasible = (CV <= 0).flatten()
         return feasible
 
@@ -90,25 +99,13 @@ class CustomProblem(Problem):
     # main problem config, to be inherited
     config = {}
 
-    # translate config keys to corresponding ones used in pymoo
-    config_translate = {
-        'var_lb': 'xl',
-        'var_ub': 'xu',
-        'obj_lb': 'fl',
-        'obj_ub': 'fu',
-    }
-
-    def __init__(self, *args, xl=None, xu=None, **kwargs):
+    def __init__(self, var_lb=None, var_ub=None, **kwargs):
 
         self.config = process_problem_config(self.config)
 
         # allow dynamically changing design bounds
-        if xl is not None: self.config['var_lb'] = xl
-        if xu is not None: self.config['var_ub'] = xu
-                
-        # translate config
-        for old_key, new_key in self.config_translate.items():
-            self.config[new_key] = self.config.pop(old_key)
+        if var_lb is not None: self.config['var_lb'] = var_lb
+        if var_ub is not None: self.config['var_ub'] = var_ub
 
         super().__init__(**self.config)
 
@@ -117,7 +114,7 @@ class GeneratedProblem(CustomProblem):
     '''
     Generated custom problems from GUI, to be initialized from a config dict
     '''
-    def __init__(self, config, *args, n_var=None, n_obj=None, xl=None, xu=None, **kwargs):
+    def __init__(self, config, n_var=None, n_obj=None, **kwargs):
         self.raw_config = config.copy()
         self.config = config.copy()
         if n_var is not None: self.config['n_var'] = n_var
@@ -136,5 +133,5 @@ class GeneratedProblem(CustomProblem):
                 eval_c_module = import_module_from_path('eval_c', eval_c_path)
                 self.evaluate_constraint = eval_c_module.evaluate_constraint
 
-        super().__init__(*args, xl=xl, xu=xu, **kwargs)
+        super().__init__(**kwargs)
 

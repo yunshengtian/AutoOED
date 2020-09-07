@@ -33,6 +33,12 @@ class SurrogateProblem(Problem):
         # evaluate out['F/dF/hF'] by certain acquisition function
         out['F'], out['dF'], out['hF'] = self.acquisition.evaluate(val, calc_gradient, calc_hessian)
         
+        # multiply a +1/-1 factor for converting maximization to minimization
+        factor = (2 * self.real_problem.minimize - 1)
+        for key in ['F', 'dF', 'hF']:
+            if out[key] is not None:
+                out[key] *= factor
+        
         # evaluate constraints by real problem
         x_ori = self.transformation.undo(x)
         out['G'] = self.real_problem.evaluate_constraint(x_ori)

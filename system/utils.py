@@ -126,10 +126,19 @@ def check_pareto(Y):
     return is_pareto
 
 
-def calc_hypervolume(Y, ref_point):
+def calc_hypervolume(Y, ref_point, minimize):
     '''
     Calculate hypervolume
     '''
+    # convert maximization to minimization
+    Y, ref_point = Y.copy(), ref_point.copy()
+    if type(minimize) not in [list, np.ndarray]:
+        minimize = np.array([minimize] * Y.shape[1], dtype=bool)
+    maxm_idx = minimize == False
+    Y[:, maxm_idx] = -Y[:, maxm_idx]
+    ref_point[maxm_idx] = -ref_point[maxm_idx]
+
+    # calculate
     return Hypervolume(ref_point=ref_point).calc(Y)
 
 

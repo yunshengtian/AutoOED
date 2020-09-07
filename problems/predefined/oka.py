@@ -6,11 +6,11 @@ class OKA1(Problem):
     '''
     Okabe, Tatsuya, et al. "On test functions for evolutionary multi-objective optimization." International Conference on Parallel Problem Solving from Nature. Springer, Berlin, Heidelberg, 2004.
     '''
-    def __init__(self, n_var=None, n_obj=None, xl=None, xu=None, **kwargs):
+    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None, **kwargs):
         super().__init__(n_var=2, n_obj=2, type_var=np.double)
         sin, cos = np.sin(np.pi / 12), np.cos(np.pi / 12)
-        self.xl = np.array([6 * sin, -2 * np.pi * sin]) if xl is None else xl
-        self.xu = np.array([6 * sin + 2 * np.pi * cos, 6 * cos]) if xu is None else xu
+        self.var_lb = np.array([6 * sin, -2 * np.pi * sin]) if var_lb is None else var_lb
+        self.var_ub = np.array([6 * sin + 2 * np.pi * cos, 6 * cos]) if var_ub is None else var_ub
     
     def evaluate_performance(self, x):
         sin, cos = np.sin(np.pi / 12), np.cos(np.pi / 12)
@@ -36,10 +36,10 @@ class OKA2(Problem):
     '''
     Okabe, Tatsuya, et al. "On test functions for evolutionary multi-objective optimization." International Conference on Parallel Problem Solving from Nature. Springer, Berlin, Heidelberg, 2004.
     '''
-    def __init__(self, n_var=None, n_obj=None, xl=None, xu=None, **kwarg):
+    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None, **kwarg):
         super().__init__(n_var=3, n_obj=2, type_var=np.double)
-        self.xl = np.array([-np.pi, -5.0, -5.0]) if xl is None else xl
-        self.xu = np.array([np.pi, 5.0, 5.0]) if xu is None else xu
+        self.var_lb = np.array([-np.pi, -5.0, -5.0]) if var_lb is None else var_lb
+        self.var_ub = np.array([np.pi, 5.0, 5.0]) if var_ub is None else var_ub
     
     def evaluate_performance(self, x):
         x1, x2, x3 = x[0], x[1], x[2]
