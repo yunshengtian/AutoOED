@@ -2287,7 +2287,7 @@ class ServerGUI:
             self.image_tutorial.destroy()
 
             # build agents
-            self.agent_data = DataAgent(n_var=problem.n_var, n_obj=problem.n_obj, result_dir=self.result_dir)
+            self.agent_data = DataAgent(n_var=problem.n_var, n_obj=problem.n_obj, minimize=problem.minimize, result_dir=self.result_dir)
             self.agent_worker = WorkerAgent(mode='manual', config=config, agent_data=self.agent_data, eval=hasattr(problem, 'evaluate_performance'))
 
             # data initialization
@@ -2508,7 +2508,7 @@ class ServerGUI:
         if draw_iter is not None and draw_iter < batch_id[-1]:
             draw_idx = batch_id <= draw_iter
             X, Y, Y_expected, batch_id = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch_id[draw_idx]
-            is_pareto = check_pareto(Y)
+            is_pareto = check_pareto(Y, self.config['problem']['minimize'])
         
         # replot evaluated & pareto points
         self.scatter_x = X

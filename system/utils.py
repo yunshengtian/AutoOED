@@ -113,10 +113,18 @@ def get_available_algorithms():
     return get_algo_list_mobo() + get_algo_list_moo()
 
 
-def check_pareto(Y):
+def check_pareto(Y, minimize):
     '''
     Check pareto optimality of the input performance data
     '''
+    # convert maximization to minimization
+    Y = Y.copy()
+    if type(minimize) not in [list, np.ndarray]:
+        minimize = np.array([minimize] * Y.shape[1], dtype=bool)
+    maxm_idx = minimize == False
+    Y[:, maxm_idx] = -Y[:, maxm_idx]
+
+    # find pareto indices
     sorted_indices = np.argsort(Y.T[0])
     is_pareto = np.zeros(len(Y), dtype=bool)
     for idx in sorted_indices:

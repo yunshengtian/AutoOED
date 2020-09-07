@@ -10,13 +10,14 @@ class DataAgent:
     '''
     Agent controlling data communication from & to database
     '''
-    def __init__(self, n_var, n_obj, result_dir):
+    def __init__(self, n_var, n_obj, minimize, result_dir):
         '''
         Agent initialization
         '''
         self.n_var = n_var
         self.n_obj = n_obj
         self.n_init_sample = 0
+        self.minimize = minimize
 
         # create & init database
         db_path = os.path.join(result_dir, 'data.db')
@@ -104,7 +105,7 @@ class DataAgent:
         batch_id = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
-            is_pareto = check_pareto(Y)
+            is_pareto = check_pareto(Y, self.minimize)
 
         with self.db.get_lock():
             if Y is None:
@@ -151,7 +152,7 @@ class DataAgent:
             all_Y_valid = all_Y[valid_idx]
 
             is_pareto = np.full(len(all_Y), False)
-            is_pareto[valid_idx] = check_pareto(all_Y_valid)
+            is_pareto[valid_idx] = check_pareto(all_Y_valid, self.minimize)
             pareto_id = np.where(is_pareto)[0] + 1
 
             self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid, lock=False)
@@ -172,7 +173,7 @@ class DataAgent:
             all_Y_valid = all_Y[valid_idx]
 
             is_pareto = np.full(len(all_Y), False)
-            is_pareto[valid_idx] = check_pareto(all_Y_valid)
+            is_pareto[valid_idx] = check_pareto(all_Y_valid, self.minimize)
             pareto_id = np.where(is_pareto)[0] + 1
 
             self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids, lock=False)
