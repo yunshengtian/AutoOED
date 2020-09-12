@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
-from pymoo.optimize import minimize
-from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
-from pymoo.operators.sampling.random_sampling import FloatRandomSampling
-from pymoo.operators.sampling.latin_hypercube_sampling import LatinHypercubeSampling
-from external import lhs
+from pymoo.model.individual import Individual
+from pymoo.model.population import Population
+from pymoo.model.problem import Problem
 
 '''
 Main algorithm framework for Multi-Objective Optimization
@@ -20,32 +18,49 @@ class MOO:
         '''
         Input:
             problem: the original / real optimization problem
-            ref_point: reference point for hypervolume calculation
-            algo_cfg: algorithm configurations
         '''
         self.real_problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
-        self.ref_point = problem.ref_point
 
-        self.pop_size = algo_cfg['solver']['batch_size']
-        self.pop_init_method = algo_cfg['solver']['pop_init_method']
+        self.batch_size = algo_cfg['selection']['batch_size']
+        self.algo = self.algo(pop_size=self.batch_size)
 
-    def solve(self, X, Y):
+    def solve(self, X_init, Y_init):
         '''
-        Solve the multi-objective problem
+        Solve the real multi-objective problem from initial data (X_init, Y_init)
         '''
-        # initialize population
-        sampling = self._get_sampling(X, Y)
+        # convert maximization to minimization
+        X, Y = X_init, Y_init.copy()
+        minimize = self.real_problem.minimize
+        if type(minimize) not in [list, np.ndarray]:
+            minimize = np.array([minimize] * Y.shape[1], dtype=bool)
+        maxm_idx = minimize == False
+        Y[:, maxm_idx] = -Y[:, maxm_idx]
 
-        # setup algorithm
-        algo = self.algo(pop_size=self.pop_size, sampling=sampling)
+        # construct population
+        pop = Population(0, individual=Individual())
+        pop = pop.new('X', X)
+        pop.set('F', Y)
+        pop.set('CV', np.zeros([X.shape[0], 1])) # assume input samples are all feasible
 
-        # optimization
-        res = minimize(self.real_problem, algo, n_gen=1)
+        # filter out best samples so far
+        pop = self.algo.survival.do(self.real_problem, pop, self.batch_size, algorithm=self.algo)
 
-        # construct solution
-        X_next = res.pop.get('X')
+        # mate for offsprings (TODO: check) (NOTE: assume the while loop can stop)
+        off = Population(0, individual=Individual())
+        while len(off) < self.batch_size:
+            new_off = self.algo.mating.do(self.real_problem, pop, len(pop), algorithm=self.algo)
+            new_X = new_off.get('X')
+            if self.real_problem.n_constr > 0:
+                new_G = np.array([self.real_problem.evaluate_constraint(x) for x in new_X])
+                new_CV = Problem.calc_constraint_violation(new_G)
+                valid_idx = new_CV <= 0
+            else:
+                valid_idx = np.arange(len(new_off))
+            if np.any(valid_idx):
+                off = Population.merge(off, new_off[valid_idx])
 
+        X_next = off.get('X')[:self.batch_size]
         return X_next
 
     def predict(self, X_init, Y_init, X_next):
@@ -57,23 +72,3 @@ class MOO:
         Y_uncertainty = np.zeros((sample_len, self.n_obj))
         return Y_expected, Y_uncertainty
 
-    def _get_sampling(self, X, Y):
-        '''
-        Initialize population from data
-        '''
-        if self.pop_init_method == 'lhs':
-            sampling = LatinHypercubeSampling()
-        elif self.pop_init_method == 'nds':
-            sorted_indices = NonDominatedSorting().do(Y)
-            pop_size = self.pop_size
-            sampling = X[np.concatenate(sorted_indices)][:pop_size]
-            # NOTE: use lhs if current samples are not enough
-            if len(sampling) < pop_size:
-                rest_sampling = lhs(X.shape[1], pop_size - len(sampling))
-                sampling = np.vstack([sampling, rest_sampling])
-        elif self.pop_init_method == 'random':
-            sampling = FloatRandomSampling()
-        else:
-            raise NotImplementedError
-
-        return sampling
