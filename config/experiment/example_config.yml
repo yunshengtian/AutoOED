@@ -17,7 +17,7 @@ problem:
   n_init_sample: 20 # number of random initial samples
   init_sample_path: null # path of provided initial samples
 algorithm: 
-  name: custom
+  name: tsemo
   n_process: 1 # number of parallel processes used in algorithm (optional)
   # specific algorithm settings below (optional)
   surrogate:
