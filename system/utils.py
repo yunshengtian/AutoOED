@@ -121,7 +121,7 @@ def check_pareto(Y, minimize):
     Y = Y.copy()
     if type(minimize) not in [list, np.ndarray]:
         minimize = np.array([minimize] * Y.shape[1], dtype=bool)
-    maxm_idx = minimize == False
+    maxm_idx = np.array(minimize) == False
     Y[:, maxm_idx] = -Y[:, maxm_idx]
 
     # find pareto indices
@@ -139,10 +139,10 @@ def calc_hypervolume(Y, ref_point, minimize):
     Calculate hypervolume
     '''
     # convert maximization to minimization
-    Y, ref_point = Y.copy(), ref_point.copy()
+    Y, ref_point = np.array(Y), np.array(ref_point)
     if type(minimize) not in [list, np.ndarray]:
         minimize = np.array([minimize] * Y.shape[1], dtype=bool)
-    maxm_idx = minimize == False
+    maxm_idx = np.array(minimize) == False
     Y[:, maxm_idx] = -Y[:, maxm_idx]
     ref_point[maxm_idx] = -ref_point[maxm_idx]
 

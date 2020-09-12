@@ -34,7 +34,7 @@ class MOO:
         minimize = self.real_problem.minimize
         if type(minimize) not in [list, np.ndarray]:
             minimize = np.array([minimize] * Y.shape[1], dtype=bool)
-        maxm_idx = minimize == False
+        maxm_idx = np.array(minimize) == False
         Y[:, maxm_idx] = -Y[:, maxm_idx]
 
         # construct population
