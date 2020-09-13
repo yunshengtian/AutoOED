@@ -1,4 +1,4 @@
-from .solver import Solver
+from .base import Solver
 from pymoo.algorithms.nsga2 import NSGA2
 
 

@@ -1,4 +1,4 @@
-from .solver import Solver
+from .base import Solver
 import numpy as np
 from pymoo.algorithms.moead import MOEAD
 
