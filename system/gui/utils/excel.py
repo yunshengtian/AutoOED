@@ -1,4 +1,5 @@
 import tkinter as tk
+import numpy as np
 
 
 class Excel(tk.Frame):
@@ -64,7 +65,7 @@ class Excel(tk.Frame):
     def _make_entry(self, row, column, width, text, state):
         entry = tk.Entry(self, width=width)
         if text: entry.insert(0, text)
-        entry['state'] = tk.NORMAL if state else tk.DISABLED
+        entry['state'] = 'normal' if state else 'readonly'
         entry.coords = (row - 1, column - 1)
         entry.grid(row=row, column=column)
         return entry
@@ -78,7 +79,12 @@ class Excel(tk.Frame):
                 result = self.default[column]
         else:
             try:
-                result = self.dtype[column](val)
+                if self.dtype[column] == bool:
+                    val = val.lower()
+                    assert val in ['true', 'false', '1', '0']
+                    result = bool(val == 'true' or val == '1')
+                else:
+                    result = self.dtype[column](val)
             except:
                 raise Exception('Invalid value specified in the entry')
         if self.valid_check[column] is not None and not self.valid_check[column](result):
@@ -108,22 +114,28 @@ class Excel(tk.Frame):
 
     def set_row(self, row, val):
         if val is None: return
+        if type(val) not in [list, np.ndarray]:
+            val = [val] * self.n_column
         for column, v in enumerate(val):
             self.set(row, column, v)
     
     def set_column(self, column, val):
         if val is None: return
+        if type(val) not in [list, np.ndarray]:
+            val = [val] * self.n_row
         for row, v in enumerate(val):
             self.set(row, column, v)
 
     def set_all(self, val):
         if val is None: return
+        if type(val) not in [list, np.ndarray]:
+            val = [[val] * self.n_column] * self.n_row
         for row, v_row in enumerate(val):
             for column, v in enumerate(v_row):
                 self.set(row, column, v)
 
     def enable(self, row, column):
-        self.entries[row][column].configure(state=tk.NORMAL)
+        self.entries[row][column].configure(state='normal')
 
     def enable_row(self, row):
         for column in range(self.n_column):
@@ -134,7 +146,7 @@ class Excel(tk.Frame):
             self.enable(row, column)
 
     def disable(self, row, column):
-        self.entries[row][column].configure(state=tk.DISABLED)
+        self.entries[row][column].configure(state='readonly')
 
     def disable_row(self, row):
         for column in range(self.n_column):

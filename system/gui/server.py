@@ -10,7 +10,8 @@ from matplotlib.backend_bases import MouseButton
 import os
 import yaml
 import numpy as np
-from time import time, sleep
+from time import time, sleep, strftime
+from datetime import datetime
 from problems.common import build_problem, get_initial_samples, get_problem_list, get_yaml_problem_list, get_problem_config
 from problems.utils import import_module_from_path
 from system.agent import DataAgent, WorkerAgent
@@ -128,6 +129,7 @@ class ServerGUI:
                 'n_constr': 'Number of constraints',
                 'performance_eval': 'Performance evaluation script',
                 'constraint_eval': 'Constraint evaluation script',
+                'minimize': 'Minimize',
                 'var_lb': 'Lower bound',
                 'var_ub': 'Upper bound',
                 'obj_lb': 'Lower bound',
@@ -921,7 +923,7 @@ class ServerGUI:
                 window_design.resizable(False, False)
 
                 # design space section
-                frame_design = create_widget('labeled_frame', master=window_design, row=0, column=0, text='Design Space')
+                frame_design = create_widget('frame', master=window_design, row=0, column=0)
                 create_widget('label', master=frame_design, row=0, column=0, text='Enter the properties for design variables:')
                 excel_design = Excel(master=frame_design, rows=n_var, columns=3, width=15,
                     title=[self.name_map['problem'][title] for title in titles], dtype=[str, float, float], default=[None, 0, 1])
@@ -969,17 +971,17 @@ class ServerGUI:
                     tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem']['n_obj'] + '"' + error_msg, parent=window)
                     return
 
-                titles = ['obj_name', 'obj_lb', 'obj_ub']
+                titles = ['obj_name', 'obj_lb', 'obj_ub', 'minimize']
 
                 window_performance = tk.Toplevel(master=window)
                 window_performance.title('Configure Performance Space')
                 window_performance.resizable(False, False)
 
                 # performance space section
-                frame_performance = create_widget('labeled_frame', master=window_performance, row=0, column=0, text='Performance Space')
+                frame_performance = create_widget('frame', master=window_performance, row=0, column=0)
                 create_widget('label', master=frame_performance, row=0, column=0, text='Enter the properties for objectives:')
-                excel_performance = Excel(master=frame_performance, rows=n_obj, columns=3, width=15,
-                    title=[self.name_map['problem'][title] for title in titles], dtype=[str, float, float])
+                excel_performance = Excel(master=frame_performance, rows=n_obj, columns=4, width=15,
+                    title=[self.name_map['problem'][title] for title in titles], dtype=[str, float, float, bool])
                 excel_performance.grid(row=1, column=0)
                 excel_performance.set_column(0, [f'f{i + 1}' for i in range(n_obj)])
 
@@ -1018,6 +1020,7 @@ class ServerGUI:
                 self.in_creating_problem = False
                 button_create.enable()
                 listbox_problem.delete(tk.END)
+                problem_cfg.clear()
 
             def enable_config_widgets():
                 '''
@@ -1125,6 +1128,7 @@ class ServerGUI:
                     exit_creating_problem()
                     disable_config_widgets()
                 listbox_problem.select_event()
+                problem_cfg.clear()
 
             def gui_create_problem():
                 '''
@@ -1139,6 +1143,7 @@ class ServerGUI:
                 enable_config_widgets()
                 button_create.disable()
                 button_delete.disable()
+                problem_cfg.clear()
 
             def gui_delete_problem():
                 '''
@@ -1159,6 +1164,7 @@ class ServerGUI:
                     self.manager_problem.remove_problem(name)
                 else:
                     return
+                problem_cfg.clear()
 
             def gui_select_problem(event):
                 '''
@@ -1179,6 +1185,8 @@ class ServerGUI:
                 load_entry_values(widget_map, config)
 
                 button_delete.enable()
+                problem_cfg.clear()
+                problem_cfg.update(config)
 
             listbox_problem.bind_cmd(reload_cmd=get_yaml_problem_list, select_cmd=gui_select_problem)
             listbox_problem.reload()
@@ -2402,20 +2410,20 @@ class ServerGUI:
         status, rowids = [], []
         evaluated = False
         for log in self.agent_worker.read_log():
-            log = log.split('/')
-            log_text = log[0]
+            log = log.split('/') 
+            log_text = datetime.now().strftime('%Y-%m-%d %H:%M:%S\n') + log[0] + '\n'
             log_list.append(log_text)
 
-            if not log_text.startswith('evaluation'): continue
+            if 'evaluation' not in log_text: continue
 
             # evaluation worker log, update database table status
             if len(log) > 1:
                 rowid = int(log[1])
-                if log_text.endswith('started'):
+                if 'started' in log_text:
                     status.append('evaluating')
-                elif log_text.endswith('stopped'):
+                elif 'stopped' in log_text:
                     status.append('unevaluated')
-                elif log_text.endswith('completed'):
+                elif 'completed' in log_text:
                     status.append('evaluated')
                     evaluated = True
                 else:
