@@ -267,10 +267,7 @@ def build_problem(config, get_pfront=False):
         pareto_front: the true Pareto front of the problem (if defined, otherwise None)
     '''
     # build problem
-    try:
-        problem = get_problem(**config)
-    except:
-        raise NotImplementedError('problem not supported yet!')
+    problem = get_problem(**config)
 
     # getting true pareto front
     if get_pfront:

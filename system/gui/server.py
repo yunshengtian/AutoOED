@@ -13,7 +13,6 @@ import numpy as np
 from time import time, sleep, strftime
 from datetime import datetime
 from problems.common import build_problem, get_initial_samples, get_problem_list, get_yaml_problem_list, get_problem_config
-from problems.utils import import_module_from_path
 from system.agent import DataAgent, WorkerAgent
 from system.manager import ProblemManager, WorkerManager, RequestManager
 from system.utils import process_config, load_config, get_available_algorithms, calc_hypervolume, calc_pred_error, find_closest_point, check_pareto
@@ -850,6 +849,15 @@ class ServerGUI:
             button_config_design = create_widget('button', master=frame_config_space, row=0, column=0, text='Configure design space')
             button_config_performance = create_widget('button', master=frame_config_space, row=0, column=1, text='Configure performance space')
 
+            def eval_script_valid_check(path):
+                '''
+                Check validity of evaluation script located at path
+                '''
+                if path is None:
+                    return False
+                ftype = path.split('.')[-1]
+                return ftype in ['py', 'c', 'cpp']
+
             def gui_set_performance_script():
                 '''
                 Set path of performance evaluation script
@@ -858,22 +866,9 @@ class ServerGUI:
                 if not isinstance(filename, str) or filename == '': return
                 widget_map['performance_eval'].set(filename)
 
-            def performance_script_valid_check(path):
-                '''
-                Check validity of performance script located at path
-                '''
-                if path is None:
-                    return False
-                try:
-                    module = import_module_from_path('eval_check', path)
-                    module.evaluate_performance
-                except:
-                    return False
-                return True
-
             button_browse_performance, widget_map['performance_eval'] = create_widget('labeled_button_entry',
                 master=frame_config_display, row=5, column=0, label_text=self.name_map['problem']['performance_eval'], button_text='Browse', command=gui_set_performance_script,
-                width=30, valid_check=performance_script_valid_check, error_msg="performance evaluation script doesn't exist or no evaluate_performance() function inside")
+                width=30, valid_check=eval_script_valid_check, error_msg="performance evaluation script doesn't exist or file format is invalid")
 
             def gui_set_constraint_script():
                 '''
@@ -883,22 +878,9 @@ class ServerGUI:
                 if not isinstance(filename, str) or filename == '': return
                 widget_map['constraint_eval'].set(filename)
 
-            def constraint_script_valid_check(path):
-                '''
-                Check validity of constraint script located at path
-                '''
-                if path is None:
-                    return False
-                try:
-                    module = import_module_from_path('eval_check', path)
-                    module.evaluate_constraint
-                except:
-                    return False
-                return True
-
             button_browse_constraint, widget_map['constraint_eval'] = create_widget('labeled_button_entry',
                 master=frame_config_display, row=6, column=0, label_text=self.name_map['problem']['constraint_eval'], button_text='Browse', command=gui_set_constraint_script,
-                width=30, valid_check=constraint_script_valid_check, error_msg="constraint evaluation script doesn't exist or no evaluate_constraint() function inside")
+                width=30, valid_check=eval_script_valid_check, error_msg="constraint evaluation script doesn't exist or file format is invalid")
 
             button_save = create_widget('button', master=frame_config_action, row=0, column=0, text='Save')
             button_cancel = create_widget('button', master=frame_config_action, row=0, column=1, text='Cancel')
@@ -1094,7 +1076,8 @@ class ServerGUI:
                     listbox_problem.reload()
                     listbox_problem.select(name)
                 else:
-                    old_name = listbox_problem.get(tk.ANCHOR)
+                    curr_idx = listbox_problem.curselection()[0]
+                    old_name = listbox_problem.get(curr_idx)
                     if_save = tk.messagebox.askquestion('Save Changes', f'Are you sure to save the changes for problem "{old_name}"?', parent=window)
 
                     if if_save == 'yes':
@@ -2260,8 +2243,8 @@ class ServerGUI:
         '''
         try:
             config = process_config(config)
-        except:
-            tk.messagebox.showinfo('Error', 'Invalid configurations', parent=window)
+        except Exception as e:
+            tk.messagebox.showinfo('Error', 'Invalid configurations: ' + str(e), parent=window)
             return
 
         # update raw config (config will be processed and changed later)
@@ -2285,8 +2268,8 @@ class ServerGUI:
             # initialize problem and data storage (agent)
             try:
                 problem, self.true_pfront = build_problem(config['problem'], get_pfront=True)
-            except:
-                tk.messagebox.showinfo('Error', 'Invalid values in configuration', parent=window)
+            except Exception as e:
+                tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
                 return
 
             self.config = config
@@ -2363,7 +2346,7 @@ class ServerGUI:
                 if self.config_raw['problem']['ref_point'] is not None:
                     unchanged_keys.append('ref_point')
                 for key in unchanged_keys:
-                    assert self.config_raw['problem'][key] == config['problem'][key]
+                    assert (np.array(self.config_raw['problem'][key]) == np.array(config['problem'][key])).all()
             except:
                 tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading', parent=window)
                 return

@@ -1,7 +1,7 @@
 import numpy as np
 from pymoo.model.problem import Problem as PymooProblem
 
-from problems.utils import import_module_from_path, process_problem_config
+from problems.utils import import_python_func, import_c_func, process_problem_config
 
 
 class Problem(PymooProblem):
@@ -120,18 +120,43 @@ class GeneratedProblem(CustomProblem):
         if n_var is not None: self.config['n_var'] = n_var
         if n_obj is not None: self.config['n_obj'] = n_obj
 
-        # set evaluation modules
+        # import performance evaluation function
         if 'performance_eval' in self.config:
             eval_p_path = self.config.pop('performance_eval')
             if eval_p_path is not None:
-                eval_p_module = import_module_from_path('eval_p', eval_p_path)
-                self.evaluate_performance = eval_p_module.evaluate_performance
+                ftype = eval_p_path.split('.')[-1]
+                if ftype == 'py':
+                    try:
+                        self.evaluate_performance = import_python_func(path=eval_p_path, module_name='eval_p', func_name='evaluate_performance')
+                    except:
+                        raise Exception('failed to import performance evaluation function from python file')
+                elif ftype == 'c' or ftype == 'cpp':
+                    try:
+                        self.evaluate_performance = import_c_func(path=eval_p_path, lib_name='eval_p', func_name='evaluate_performance',
+                            n_in=self.config['n_var'], n_out=self.config['n_obj'])
+                    except:
+                        raise Exception('failed to import performance evaluation function from c/cpp file')
+                else:
+                    raise Exception('only python and c/cpp files are supported')
 
+        # import constraint evaluation function
         if 'constraint_eval' in self.config:
             eval_c_path = self.config.pop('constraint_eval')
-            if eval_c_path is not None:
-                eval_c_module = import_module_from_path('eval_c', eval_c_path)
-                self.evaluate_constraint = eval_c_module.evaluate_constraint
+            if eval_c_path is not None and self.config['n_constr'] > 0:
+                ftype = eval_p_path.split('.')[-1]
+                if ftype == 'py':
+                    try:
+                        self.evaluate_constraint = import_python_func(path=eval_c_path, module_name='eval_c', func_name='evaluate_constraint')
+                    except:
+                        raise Exception('failed to import constraint evaluation function from python file')  
+                elif ftype == 'c' or ftype == 'cpp':
+                    try:
+                        self.evaluate_constraint = import_c_func(path=eval_c_path, lib_name='eval_c', func_name='evaluate_constraint',
+                            n_in=self.config['n_var'], n_out=self.config['n_constr'])
+                    except:
+                        raise Exception('failed to import constraint evaluation function from c/cpp file')
+                else:
+                    raise Exception('only python and c/cpp files are supported')
 
         super().__init__(**kwargs)
 
