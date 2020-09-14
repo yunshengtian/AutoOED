@@ -6,13 +6,10 @@ general:
   n_iter: 1 # number of algorithm iterations
 problem: 
   name: required
-  n_var: required
-  n_obj: required
-  minimize: True # minimize/maximize each objective
   var_lb: null # lower bound of design variables
   var_ub: null # upper bound of design variables
-  var_name: null # name of design variables
-  obj_name: null # name of performance objectives
+  obj_lb: null # lower bound of objectives
+  obj_ub: null # upper bound of objectives
   ref_point: null # reference point for hypervolume calculation
   n_init_sample: 0 # number of random initial samples
   init_sample_path: null # path of provided initial samples

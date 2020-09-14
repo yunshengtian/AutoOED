@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 import pandas as pd
 from pymoo.performance_indicator.hv import Hypervolume
-from problems.common import build_problem
+from problems.common import build_problem, get_problem_config
 from mobo.algorithms import get_algorithm_list as get_algo_list_mobo
 from moo.algorithms import get_algorithm_list as get_algo_list_moo
 from mobo.algorithms import get_algorithm as get_algorithm_mobo
@@ -35,14 +35,11 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def correct_config(config):
+def process_config(config):
     '''
-    Correct n_var and n_obj in config file due to problem specification
-    Update default values if not specified in config
+    Post-process to arguments specified in config file for file simplicity
     '''
     general_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
-    problem = build_problem(problem_cfg)
-    problem_cfg['n_var'], problem_cfg['n_obj'] = problem.n_var, problem.n_obj
 
     # fill default values by depth-first search
     default_config = load_default_config()
@@ -59,21 +56,14 @@ def correct_config(config):
                 correct_values_dfs(config[key], default_config[key])
     correct_values_dfs(config, default_config)
 
-    # process default values for optional configurations
-    if 'var_name' not in problem_cfg or problem_cfg['var_name'] is None:
-        problem_cfg['var_name'] = [f'x{i + 1}' for i in range(problem.n_var)]
-    if 'obj_name' not in problem_cfg or problem_cfg['obj_name'] is None:
-        problem_cfg['obj_name'] = [f'f{i + 1}' for i in range(problem.n_obj)]
+    # fill default dynamic values of problem config
+    for key in ['var_lb', 'var_ub', 'obj_lb', 'obj_ub']:
+        if key not in problem_cfg:
+            problem_cfg[key] = None
 
+    static_problem_cfg = get_problem_config(problem_cfg['name'])
 
-def process_config(config):
-    '''
-    Post-process to arguments specified in config file for file simplicity
-    '''
-    general_cfg, problem_cfg, algo_cfg = config['general'], config['problem'], config['algorithm']
-    correct_config(config)
-
-    n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
+    n_var, n_obj = static_problem_cfg['n_var'], static_problem_cfg['n_obj']
     n_process, batch_size = algo_cfg['n_process'], general_cfg['batch_size']
 
     algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})
@@ -85,15 +75,14 @@ def process_config(config):
 
 def load_config(config_path):
     '''
-    Load config from file path and process config
+    Load config from file path
     '''
     try:
         with open(config_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
     except:
         raise Exception('not a valid yaml file')
-    
-    return process_config(config)
+    return config
 
 
 def load_default_config():
@@ -101,9 +90,7 @@ def load_default_config():
     Load default config for optional values
     '''
     default_config_path = 'config/experiment/default_config.yml'
-    with open(default_config_path, 'r') as f:
-        default_config = yaml.load(f, Loader=yaml.FullLoader)
-    return default_config
+    return load_config(default_config_path)
     
 
 def get_available_algorithms():

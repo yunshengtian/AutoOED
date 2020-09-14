@@ -5,7 +5,6 @@ import yaml
 import numpy as np
 from pymoo.factory import get_from_list
 from problems import Problem, GeneratedProblem
-from problems.utils import process_problem_config
 from external import lhs
 
 
@@ -107,21 +106,6 @@ def find_all_problems():
         return python_problems, yaml_problems
 
 
-def get_problem(name, **kwargs):
-    '''
-    Build problem from name and arguments
-    '''
-    python_problems, yaml_problems = find_all_problems()
-    if name in python_problems:
-        return python_problems[name](**kwargs)
-    elif name in yaml_problems:
-        with open(yaml_problems[name], 'r') as fp:
-            config = yaml.load(fp, Loader=yaml.FullLoader)
-        return GeneratedProblem(config, **kwargs)
-    else:
-        raise Exception(f'Problem {name} not found')
-
-
 def get_predefined_python_problem_list():
     '''
     '''
@@ -159,32 +143,15 @@ def get_problem_config(name):
     '''
     Get config dict of problem
     '''
-    assert name in get_problem_list(), f"problem {name} doesn't exist"
-    config = None
-    
-    if name in get_predefined_python_problem_list():
-        problem = get_problem(name)
-        config = {
-            'name': problem.name(),
-            'n_var': problem.n_var,
-            'n_obj': problem.n_obj,
-            'n_constr': problem.n_constr,
-            'var_lb': problem.xl,
-            'var_ub': problem.xu,
-            'obj_lb': None, # NOTE: not supported yet
-            'obj_ub': None, # NOTE: not supported yet
-            'var_name': problem.var_name,
-            'obj_name': problem.obj_name,
-            'init_sample_path': None,
-        }
+    # check for custom python problems
+    custom_problems = find_custom_python_problems()
+    if name in custom_problems:
+        return custom_problems[name].get_config()
 
-    elif name in get_custom_python_problem_list():
-        problem = get_problem(name)
-        config = problem.config.copy()
-        config.update({'name': problem.name()})
-
-    elif name in get_yaml_problem_list():
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'custom', 'yaml', f'{name}.yml')
+    # check for custom yaml problems
+    yaml_problems = find_yaml_problems()
+    if name in yaml_problems:
+        config_path = yaml_problems[name]
         try:
             with open(config_path, 'r') as f:
                 config = yaml.load(f, Loader=yaml.FullLoader)
@@ -192,8 +159,14 @@ def get_problem_config(name):
             raise Exception('not a valid config file')
         if 'performance_eval' in config: config.pop('performance_eval')
         if 'constraint_eval' in config: config.pop('constraint_eval')
+        return Problem.process_config(config)
+
+    # check for predefined python problems
+    predefined_problems = find_predefined_python_problems()
+    if name in predefined_problems:
+        return predefined_problems[name].get_config()
         
-    return process_problem_config(config)
+    raise Exception(f'problem {name} is not defined')
 
 
 def generate_random_initial_samples(problem, n_sample):
@@ -227,10 +200,10 @@ def load_provided_initial_samples(problem, init_sample_path):
     Output:
         X, Y: initial samples (design parameters, performance values)
     '''
-    assert init_sample_path is not None or problem.init_sample_path is not None, 'path of initial samples is not provided'
     # use problem default path if not specified
     if init_sample_path is None:
-        init_sample_path = problem.init_sample_path
+        init_sample_path = problem.get_config()['init_sample_path']
+    assert init_sample_path is not None, 'path of initial samples is not provided'
 
     if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
         X_path, Y_path = init_sample_path[0], init_sample_path[1] # initial X and initial Y are both provided
@@ -266,17 +239,27 @@ def build_problem(config, get_pfront=False):
         problem: the optimization problem
         pareto_front: the true Pareto front of the problem (if defined, otherwise None)
     '''
+    config = config.copy()
+    problem = None
+    
     # build problem
-    problem = get_problem(**config)
+    name = config.pop('name')
+    python_problems, yaml_problems = find_all_problems()
+    if name in python_problems:
+        problem = python_problems[name](**config)
+    elif name in yaml_problems:
+        with open(yaml_problems[name], 'r') as fp:
+            problem_cfg = yaml.load(fp, Loader=yaml.FullLoader)
+        problem = GeneratedProblem(problem_cfg, **config)
+    else:
+        raise Exception(f'Problem {name} not found')
 
-    # getting true pareto front
+    # get true pareto front
     if get_pfront:
         try:
             pareto_front = problem.pareto_front()
         except:
             pareto_front = None
-
-    if get_pfront:
         return problem, pareto_front
     else:
         return problem
@@ -296,7 +279,7 @@ def get_initial_samples(config, problem):
     X_init_evaluated, X_init_unevaluated, Y_init_evaluated = None, None, None
 
     random_init = config['n_init_sample'] > 0
-    provided_init = config['init_sample_path'] is not None or problem.init_sample_path is not None
+    provided_init = config['init_sample_path'] is not None or problem.get_config()['init_sample_path'] is not None
     assert random_init or provided_init, 'neither number of random initial samples nor path of provided initial samples is provided'
     
     if random_init:

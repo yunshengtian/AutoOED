@@ -1,5 +1,5 @@
 import numpy as np
-from problems import CustomProblem
+from problems import Problem
 
 '''
 Example custom problem definitions (performance and constraint evaluation functions here might not make any sense)
@@ -27,7 +27,7 @@ Default values if not specifed in problem config:
     init_sample_path: None
 '''
 
-class ExampleProblem1(CustomProblem):
+class ExampleProblem1(Problem):
     '''
     Example 1, with specified number of design variables and objectives
     '''
@@ -42,7 +42,7 @@ class ExampleProblem1(CustomProblem):
         return f1, f2
 
 
-class ExampleProblem2(CustomProblem):
+class ExampleProblem2(Problem):
     '''
     Example 2, with specified number of design variables and objectives, also bounds on design variables
     '''
@@ -59,7 +59,7 @@ class ExampleProblem2(CustomProblem):
         return f1, f2
 
 
-class ExampleProblem3(CustomProblem):
+class ExampleProblem3(Problem):
     '''
     Example 3, with specified number of design variables and objectives, bounds on design variables and constraint functions
     NOTE: for constraint value (g), > 0 means violating constraint, <= 0 means satisfying constraint

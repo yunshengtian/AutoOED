@@ -8,18 +8,6 @@ class RE(Problem, ABC):
     '''
     Tanabe, Ryoji, and Hisao Ishibuchi. "An easy-to-use real-world multi-objective optimization problem suite." Applied Soft Computing (2020): 106078.
     '''
-    n_var = None
-    n_obj = None
-    var_lb = None
-    var_ub = None
-    var_name = None
-    obj_name = None
-
-    def __init__(self, n_var=None, n_obj=None, var_lb=None, var_ub=None, **kwargs):
-        if var_lb is None: var_lb = self.var_lb
-        if var_ub is None: var_ub = self.var_ub
-        Problem.__init__(self, n_var=self.n_var, n_obj=self.n_obj, var_lb=np.array(var_lb), var_ub=np.array(var_ub), var_name=self.var_name, obj_name=self.obj_name)
-
     def _calc_pareto_front(self, *args, **kwargs):
         name = self.__class__.__name__
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'../data/pareto_front/{name}.npy')
@@ -44,11 +32,13 @@ class RE1(RE):
     '''
     Four bar truss design
     '''
-    n_var = 4
-    n_obj = 2
-    var_lb = [1, np.sqrt(2), np.sqrt(2), 1]
-    var_ub = [3, 3, 3, 3]
-    obj_name = ['structural volume', 'joint displacement']
+    config = {
+        'n_var': 4,
+        'n_obj': 2,
+        'var_lb': [1, np.sqrt(2), np.sqrt(2), 1],
+        'var_ub': [3, 3, 3, 3],
+        'obj_name': ['structural volume', 'joint displacement'],
+    }
 
     def evaluate_performance(self, x):
         x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
@@ -67,12 +57,14 @@ class RE2(RE):
     '''
     Reinforced concrete beam design
     '''
-    n_var = 3
-    n_obj = 2
-    var_lb = [0.2, 0, 0]
-    var_ub = [15, 20, 40]
-    var_name = ['reinforcement area', 'beam width', 'beam depth']
-    obj_name = ['concrete cost', 'reinforcing steel cost']
+    config = {
+        'n_var': 3,
+        'n_obj': 2,
+        'var_lb': [0.2, 0, 0],
+        'var_ub': [15, 20, 40],
+        'var_name': ['reinforcement area', 'beam width', 'beam depth'],
+        'obj_name': ['concrete cost', 'reinforcing steel cost'],
+    }
 
     feasible_values = np.array([0.20, 0.31, 0.40, 0.44, 0.60, 0.62, 0.79, 0.80, 0.88, 0.93, 1.0, 1.20, 1.24, 1.32, 1.40, 1.55, 1.58, 1.60, 1.76, 1.80, 1.86, 2.0, 2.17, 2.20, 2.37, 2.40, 2.48, 2.60, 2.64, 2.79, 2.80, 3.0, 3.08, 3,10, 3.16, 3.41, 3.52, 3.60, 3.72, 3.95, 3.96, 4.0, 4.03, 4.20, 4.34, 4.40, 4.65, 4.74, 4.80, 4.84, 5.0, 5.28, 5.40, 5.53, 5.72, 6.0, 6.16, 6.32, 6.60, 7.11, 7.20, 7.80, 7.90, 8.0, 8.40, 8.69, 9.0, 9.48, 10.27, 11.0, 11.06, 11.85, 12.0, 13.0, 14.0, 15.0])
 
@@ -96,12 +88,14 @@ class RE3(RE):
     '''
     Hatch cover design
     '''
-    n_var = 2
-    n_obj = 2
-    var_lb = [0.5, 0.5]
-    var_ub = [4, 50]
-    var_name = ['flange thickness', 'beam height']
-    obj_name = ['weight', 'constraint violation']
+    config = {
+        'n_var': 2,
+        'n_obj': 2,
+        'var_lb': [0.5, 0.5],
+        'var_ub': [4, 50],
+        'var_name': ['flange thickness', 'beam height'],
+        'obj_name': ['weight', 'constraint violation'],
+    }
 
     def evaluate_performance(self, x):
         x1, x2 = x[0], x[1]
@@ -136,11 +130,13 @@ class RE4(RE):
     '''
     Welded beam design
     '''
-    n_var = 4
-    n_obj = 3
-    var_lb = [0.125, 0.1, 0.1, 0.125]
-    var_ub = [5, 10, 10, 5]
-    obj_name = ['cost', 'end deflection', 'constraint violation']
+    config = {
+        'n_var': 4,
+        'n_obj': 3,
+        'var_lb': [0.125, 0.1, 0.1, 0.125],
+        'var_ub': [5, 10, 10, 5],
+        'obj_name': ['cost', 'end deflection', 'constraint violation'],
+    } 
 
     def evaluate_performance(self, x):
         x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
@@ -189,12 +185,14 @@ class RE5(RE):
     '''
     Disc brake design
     '''
-    n_var = 4
-    n_obj = 3
-    var_lb = [55, 75, 1000, 11]
-    var_ub = [80, 110, 3000, 20]
-    var_name = ['inner radius', 'outer radius', 'engaging force', 'number of friction surfaces']
-    obj_name = ['mass', 'minimum stopping time', 'constraint violation']
+    config = {
+        'n_var': 4,
+        'n_obj': 3,
+        'var_lb': [55, 75, 1000, 11],
+        'var_ub': [80, 110, 3000, 20],
+        'var_name': ['inner radius', 'outer radius', 'engaging force', 'number of friction surfaces'],
+        'obj_name': ['mass', 'minimum stopping time', 'constraint violation'],
+    }
 
     def evaluate_performance(self, x):
         x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
@@ -221,12 +219,14 @@ class RE6(RE):
     '''
     Gear train design
     '''
-    n_var = 4
-    n_obj = 3
-    var_lb = [12] * 4
-    var_ub = [60] * 4
-    var_name = ['gear 1 #teeth', 'gear 2 #teeth', 'gear 3 #teeth', 'gear 4 #teeth']
-    obj_name = ['ration error', 'max size', 'constraint violation']
+    config = {
+        'n_var': 4,
+        'n_obj': 3,
+        'var_lb': [12] * 4,
+        'var_ub': [60] * 4,
+        'var_name': ['gear 1 #teeth', 'gear 2 #teeth', 'gear 3 #teeth', 'gear 4 #teeth'],
+        'obj_name': ['ration error', 'max size', 'constraint violation'],
+    }
 
     def evaluate_performance(self, x):
         x1, x2, x3, x4 = np.round(x[0]), np.round(x[1]), np.round(x[2]), np.round(x[3])
@@ -247,12 +247,14 @@ class RE7(RE):
     '''
     Rocket injector design
     '''
-    n_var = 4
-    n_obj = 3
-    var_lb = [0] * 4
-    var_ub = [1] * 4
-    var_name = ['hygrogen flow angle', 'hydrogen area', 'oxygen area', 'oxidizer post tip thickness']
-    obj_name = ['max face temperature', 'inlet distance', 'max post tip temperature']
+    config = {
+        'n_var': 4,
+        'n_obj': 3,
+        'var_lb': [0] * 4,
+        'var_ub': [1] * 4,
+        'var_name': ['hygrogen flow angle', 'hydrogen area', 'oxygen area', 'oxidizer post tip thickness'],
+        'obj_name': ['max face temperature', 'inlet distance', 'max post tip temperature'],
+    }
 
     def evaluate_performance(self, x):
         xAlpha, xHA, xOA, xOPTT = x[0], x[1], x[2], x[3]

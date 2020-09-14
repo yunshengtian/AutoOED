@@ -1,52 +1,110 @@
 import numpy as np
+from collections.abc import Iterable
 from pymoo.model.problem import Problem as PymooProblem
 
-from problems.utils import import_python_func, import_c_func, process_problem_config
+from problems.utils import import_python_func, import_c_func
 
 
 class Problem(PymooProblem):
     '''
-    Real problem definition built upon Pymoo's Problem class, added some custom features
+    Base class for problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
     '''
-    def __init__(self, name=None, n_var=None, n_obj=None, n_constr=0,
-        var_lb=None, var_ub=None, obj_lb=None, obj_ub=None, var_name=None, obj_name=None, 
-        init_sample_path=None, minimize=True, ref_point=None, **kwargs):
+    config = {}
 
-        self.name = lambda: self.__class__.__name__ if name is None else name
+    def __init__(self, ref_point=None, **kwargs):
 
-        # set default bounds (TODO: obj bound is currently not supported)
-        var_lb, var_ub = self._process_bounds(var_lb, var_ub)
+        self.config = self.get_config(**kwargs)
 
-        PymooProblem.__init__(self, n_var, n_obj, n_constr, var_lb, var_ub)
+        PymooProblem.__init__(self, 
+            n_var=self.config['n_var'], 
+            n_obj=self.config['n_obj'], 
+            n_constr=self.config['n_constr'], 
+            xl=self.config['var_lb'], 
+            xu=self.config['var_ub'],
+        )
 
-        self.var_name = var_name if var_name is not None else [f'x{i + 1}' for i in range(self.n_var)]
-        self.obj_name = obj_name if obj_name is not None else [f'f{i + 1}' for i in range(self.n_obj)]
-        
-        self.init_sample_path = init_sample_path
-        self.ref_point = ref_point
+        self.name = lambda: self.config['name']
+        self.ref_point = ref_point # TODO: check
 
-        if type(minimize) not in [list, np.ndarray]:
-            minimize = [minimize] * self.n_obj
-        assert len(minimize) == self.n_obj
-        self.minimize = np.array(minimize, dtype=bool)
+        self.minimize = self.config['minimize']
+        self.var_name = self.config['var_name']
+        self.obj_name = self.config['obj_name']
 
-    def _process_bounds(self, var_lb, var_ub):
+    @classmethod
+    def get_config(cls, *args, **kwargs):
         '''
-        Set default values for bounds if not specified
+        Post-process loaded problem config
         '''
-        if var_lb is None: var_lb = 0
-        elif type(var_lb) in [list, np.ndarray]:
+        config = cls.config.copy()
+        return cls.process_config(config, *args, **kwargs)
+
+    @classmethod
+    def process_config(cls, config, var_lb=0, var_ub=1, obj_lb=None, obj_ub=None, init_sample_path=None, **kwargs):
+        '''
+        Post-process config
+        '''
+        # default values for config
+        default_config = {
+            'name': cls.__name__,
+            'n_var': 'required',
+            'n_obj': 'required',
+            'minimize': True, # minimization by default
+            'n_constr': 0, # no constraints by default
+            'var_lb': var_lb, # 0 as var lower bound by default
+            'var_ub': var_ub, # 1 as var upper bound by default
+            'obj_lb': obj_lb, # no obj lower bound by default
+            'obj_ub': obj_ub, # no obj upper bound by default
+            'var_name': None,
+            'obj_name': None,
+            'init_sample_path': init_sample_path, # no provided initial sample path by default
+        }
+
+        # TODO: type check
+
+        # fill config with default_config when there are key missings
+        for key, value in default_config.items():
+            if key not in config:
+                if value == 'required':
+                    raise Exception('Invalid config for custom problem, required values are not provided')
+                config[key] = value
+            elif config[key] is None:
+                config[key] = value
+
+        n_var, n_obj = config['n_var'], config['n_obj']
+
+        # post-process minimize
+        minimize = config['minimize']
+        if not isinstance(minimize, Iterable):
+            minimize = [minimize] * n_obj
+        assert len(minimize) == n_obj, f'dimension mismatch, minimize should have {n_obj} dimensions'
+        config['minimize'] = np.array(minimize, dtype=bool)
+
+        # post-process bounds
+        var_lb, var_ub = config['var_lb'], config['var_ub']
+
+        if var_lb is None: var_lb = np.zeros(n_var)
+        elif isinstance(var_lb, Iterable):
             var_lb = np.array(var_lb)
             var_lb[var_lb == None] = 0
             var_lb = var_lb.astype(float)
+        else:
+            var_lb = np.array([var_lb] * n_var, dtype=float)
         
-        if var_ub is None: var_ub = 1
-        elif type(var_ub) in [list, np.ndarray]:
+        if var_ub is None: var_ub = np.ones(n_var)
+        elif isinstance(var_ub, Iterable):
             var_ub = np.array(var_ub)
             var_ub[var_ub == None] = 1
             var_ub = var_ub.astype(float)
-        
-        return var_lb, var_ub
+        else:
+            var_ub = np.array([var_ub] * n_var, dtype=float)
+
+        config['var_lb'], config['var_ub'] = var_lb, var_ub
+
+        # post-process names
+        if config['var_name'] is None: config['var_name'] = [f'x{i + 1}' for i in range(n_var)]
+        if config['obj_name'] is None: config['obj_name'] = [f'f{i + 1}' for i in range(n_obj)]
+
+        return config
 
     def set_ref_point(self, ref_point):
         '''
@@ -92,25 +150,7 @@ class Problem(PymooProblem):
         return '========== Problem Definition ==========\n' + super().__str__()
 
 
-class CustomProblem(Problem):
-    '''
-    Base class for custom problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
-    '''
-    # main problem config, to be inherited
-    config = {}
-
-    def __init__(self, var_lb=None, var_ub=None, **kwargs):
-
-        self.config = process_problem_config(self.config)
-
-        # allow dynamically changing design bounds
-        if var_lb is not None: self.config['var_lb'] = var_lb
-        if var_ub is not None: self.config['var_ub'] = var_ub
-
-        super().__init__(**self.config)
-
-
-class GeneratedProblem(CustomProblem):
+class GeneratedProblem(Problem):
     '''
     Generated custom problems from GUI, to be initialized from a config dict
     '''

@@ -1,1 +1,1 @@
-from problems.problem import Problem, CustomProblem, GeneratedProblem
+from problems.problem import Problem, GeneratedProblem

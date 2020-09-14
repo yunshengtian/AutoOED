@@ -64,6 +64,7 @@ class ServerGUI:
         self.config = None
         self.config_raw = None
         self.config_id = -1
+        self.problem_cfg = None
 
         # event widgets
         self.button_optimize = None
@@ -318,36 +319,18 @@ class ServerGUI:
             grid_configure(frame_problem, [0, 1, 2, 3, 4, 5, 6, 7], [0])
             widget_map['problem']['name'] = create_widget('labeled_combobox', 
                 master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), width=15, required=True, changeable=False)
-            widget_map['problem']['n_var'] = create_widget('labeled_entry', 
-                master=frame_problem, row=1, column=0, text=self.name_map['problem']['n_var'], class_type='int', required=True,
-                valid_check=lambda x: x > 0, error_msg='number of design variables must be positive', changeable=False)
-            widget_map['problem']['n_obj'] = create_widget('labeled_entry', 
-                master=frame_problem, row=2, column=0, text=self.name_map['problem']['n_obj'], class_type='int', required=True,
-                valid_check=lambda x: x > 1, error_msg='number of objectives must be greater than 1', changeable=False)
             widget_map['problem']['ref_point'] = create_widget('labeled_entry', 
-                master=frame_problem, row=3, column=0, text=self.name_map['problem']['ref_point'], class_type='floatlist', width=10, 
+                master=frame_problem, row=1, column=0, text=self.name_map['problem']['ref_point'], class_type='floatlist', width=10, 
                 valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
 
-            for key in ['n_var', 'n_obj', 'ref_point']:
-                widget_map['problem'][key].disable()
+            widget_map['problem']['ref_point'].disable()
 
             def gui_config_design():
                 '''
                 Configure bounds for design variables
                 '''
-                # validity check
-                try:
-                    n_var = widget_map['problem']['n_var'].get()
-                except:
-                    error_msg = widget_map['problem']['n_var'].get_error_msg()
-                    error_msg = '' if error_msg is None else ': ' + error_msg
-                    tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem']['n_var'] + '"' + error_msg, parent=window)
-                    return
-
                 var_name = problem_cfg['var_name']
-                if n_var != len(var_name):
-                    var_name = [f'x{i + 1}' for i in range(n_var)]
-                    problem_cfg['var_name'] = var_name
+                n_var = len(var_name)
 
                 titles = ['var_name', 'var_lb', 'var_ub']
 
@@ -365,8 +348,8 @@ class ServerGUI:
                 excel_design.disable_column(0)
 
                 if self.config is not None:
-                    excel_design.set_column(1, self.config['problem']['var_lb'])
-                    excel_design.set_column(2, self.config['problem']['var_ub'])
+                    excel_design.set_column(1, problem_cfg['var_lb'])
+                    excel_design.set_column(2, problem_cfg['var_ub'])
 
                 def gui_save_design_space():
                     '''
@@ -394,19 +377,8 @@ class ServerGUI:
                 '''
                 Configure bounds for objectives
                 '''
-                # validity check
-                try:
-                    n_obj = widget_map['problem']['n_obj'].get()
-                except:
-                    error_msg = widget_map['problem']['n_obj'].get_error_msg()
-                    error_msg = '' if error_msg is None else ': ' + error_msg
-                    tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem']['n_obj'] + '"' + error_msg, parent=window)
-                    return
-
                 obj_name = problem_cfg['obj_name']
-                if n_obj != len(obj_name):
-                    obj_name = [f'f{i + 1}' for i in range(n_obj)]
-                    problem_cfg['obj_name'] = obj_name
+                n_obj = len(obj_name)
 
                 titles = ['obj_name', 'obj_lb', 'obj_ub']
 
@@ -424,10 +396,8 @@ class ServerGUI:
                 excel_performance.disable_column(0)
 
                 if self.config is not None:
-                    if 'obj_lb' in self.config['problem']:
-                        excel_performance.set_column(1, self.config['problem']['obj_lb'])
-                    if 'obj_ub' in self.config['problem']:
-                        excel_performance.set_column(2, self.config['problem']['obj_ub'])
+                    excel_performance.set_column(1, problem_cfg['obj_lb'])
+                    excel_performance.set_column(2, problem_cfg['obj_ub'])
 
                 def gui_save_performance_space():
                     '''
@@ -452,9 +422,9 @@ class ServerGUI:
                 create_widget('button', master=frame_action, row=0, column=1, text='Cancel', command=window_performance.destroy)
 
             frame_space = tk.Frame(master=frame_problem)
-            frame_space.grid(row=4, column=0)
-            button_config_design = create_widget('button', master=frame_space, row=4, column=0, text='Set design bounds', command=gui_config_design)
-            button_config_performance = create_widget('button', master=frame_space, row=4, column=1, text='Set performance bounds', command=gui_config_performance)
+            frame_space.grid(row=2, column=0)
+            button_config_design = create_widget('button', master=frame_space, row=0, column=0, text='Set design bounds', command=gui_config_design)
+            button_config_performance = create_widget('button', master=frame_space, row=0, column=1, text='Set performance bounds', command=gui_config_performance)
 
             def gui_set_x_init():
                 '''
@@ -473,13 +443,13 @@ class ServerGUI:
                 widget_y_init.set(filename)
 
             widget_map['problem']['n_init_sample'] = create_widget('labeled_entry', 
-                master=frame_problem, row=5, column=0, text=self.name_map['problem']['n_init_sample'], class_type='int', default=0, 
+                master=frame_problem, row=3, column=0, text=self.name_map['problem']['n_init_sample'], class_type='int', default=0, 
                 valid_check=lambda x: x >= 0, error_msg='number of initial samples cannot be negative', changeable=False)
             button_browse_x_init, widget_x_init = create_widget('labeled_button_entry',
-                master=frame_problem, row=6, column=0, label_text='Path of provided initial design variables', button_text='Browse', command=gui_set_x_init, 
+                master=frame_problem, row=4, column=0, label_text='Path of provided initial design variables', button_text='Browse', command=gui_set_x_init, 
                 width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
             button_browse_y_init, widget_y_init = create_widget('labeled_button_entry',
-                master=frame_problem, row=7, column=0, label_text='Path of provided initial performance values', button_text='Browse', command=gui_set_y_init, 
+                master=frame_problem, row=5, column=0, label_text='Path of provided initial performance values', button_text='Browse', command=gui_set_y_init, 
                 width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
 
             if not change:
@@ -495,7 +465,7 @@ class ServerGUI:
                 '''
                 Select problem to configure
                 '''
-                for key in ['n_var', 'n_obj', 'ref_point', 'n_init_sample']:
+                for key in ['ref_point', 'n_init_sample']:
                     widget_map['problem'][key].enable()
                 button_config_design.enable()
                 button_config_performance.enable()
@@ -506,8 +476,6 @@ class ServerGUI:
 
                 name = event.widget.get()
                 config = get_problem_config(name)
-                for key in ['n_var', 'n_obj']:
-                    widget_map['problem'][key].set(config[key])
                 
                 for key in ['var_name', 'var_lb', 'var_ub', 'obj_name', 'obj_lb', 'obj_ub']:
                     problem_cfg.update({key: config[key]})
@@ -749,15 +717,6 @@ class ServerGUI:
                         except:
                             show_widget_error(master=window, widget=widget, name=self.name_map[cfg_type][cfg_name])
                             return
-
-                # validity check
-                n_var, n_obj = config['problem']['n_var'], config['problem']['n_obj']
-                if n_var != len(problem_cfg['var_name']):
-                    tk.messagebox.showinfo('Error', 'Number of design variables changed, please reconfigure design space', parent=window)
-                    return
-                if n_obj != len(problem_cfg['obj_name']):
-                    tk.messagebox.showinfo('Error', 'Number of objectives changed, please reconfigure performance space', parent=window)
-                    return
 
                 if x_init_path is None and widget_map['problem']['n_init_sample'].get() == 0:
                     tk.messagebox.showinfo('Error', 'Either number of initial samples or path of initial design variables needs to be provided', parent=window)
@@ -1633,7 +1592,7 @@ class ServerGUI:
         scatter_list.extend([self.scatter_y, self.scatter_y_pareto, self.scatter_y_new, self.scatter_y_pred])
 
         # plot hypervolume curve
-        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point'], self.config['problem']['minimize']))
+        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point'], self.problem_cfg['minimize']))
         self.line_hv = self.ax21.plot(list(range(self.n_init_sample)), hv_value)[0]
         self.ax21.set_title('Hypervolume: %.4f' % hv_value[-1])
 
@@ -1732,8 +1691,8 @@ class ServerGUI:
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
-            n_var = self.config['problem']['n_var']
-            var_lb, var_ub = self.config['problem']['var_lb'], self.config['problem']['var_ub']
+            n_var = self.problem_cfg['n_var']
+            var_lb, var_ub = self.problem_cfg['var_lb'], self.problem_cfg['var_ub']
             if not (isinstance(var_lb, list) or isinstance(var_lb, np.ndarray)):
                 var_lb = [var_lb] * n_var
             if not (isinstance(var_ub, list) or isinstance(var_ub, np.ndarray)):
@@ -1794,7 +1753,7 @@ class ServerGUI:
             entry_n_row.set(1)
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
-            n_obj = self.config['problem']['n_obj']
+            n_obj = self.problem_cfg['n_obj']
             excel_performance = Excel(master=window, rows=1, columns=n_obj + 1, width=10, 
                 title=['Row number'] + [f'f{i + 1}' for i in range(n_obj)], dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows] + [None] * n_obj)
             excel_performance.grid(row=1, column=0)
@@ -1886,7 +1845,7 @@ class ServerGUI:
 
                 # check for overwriting
                 overwrite = False
-                n_obj = self.config['problem']['n_obj']
+                n_obj = self.problem_cfg['n_obj']
                 for rowid in rowids:
                     for i in range(n_obj):
                         if self.table_db.get(rowid - 1, f'f{i + 1}') != 'N/A':
@@ -1952,7 +1911,7 @@ class ServerGUI:
 
                 # check for overwriting
                 overwrite = False
-                n_obj = self.config['problem']['n_obj']
+                n_obj = self.problem_cfg['n_obj']
                 for rowid in rowids:
                     for i in range(n_obj):
                         if self.table_db.get(rowid - 1, f'f{i + 1}') != 'N/A':
@@ -1962,7 +1921,7 @@ class ServerGUI:
                 window.destroy()
 
                 # get design value
-                n_var = self.config['problem']['n_var']
+                n_var = self.problem_cfg['n_var']
                 X = np.zeros((len(rowids), n_var))
                 for i, rowid in enumerate(rowids):
                     for j in range(n_var):
@@ -2273,6 +2232,12 @@ class ServerGUI:
                 return
 
             self.config = config
+            self.problem_cfg = problem.get_config(
+                var_lb=config['problem']['var_lb'],
+                var_ub=config['problem']['var_ub'],
+                obj_lb=config['problem']['obj_lb'],
+                obj_ub=config['problem']['obj_ub'],
+            )
 
             # remove tutorial image
             self.image_tutorial.destroy()
@@ -2342,7 +2307,7 @@ class ServerGUI:
         else: # user changed config in the middle
             try:
                 # some keys cannot be changed
-                unchanged_keys = ['name', 'n_var', 'n_obj', 'var_name', 'obj_name', 'n_init_sample']
+                unchanged_keys = ['name', 'n_init_sample', 'init_sample_path']
                 if self.config_raw['problem']['ref_point'] is not None:
                     unchanged_keys.append('ref_point')
                 for key in unchanged_keys:
@@ -2352,6 +2317,12 @@ class ServerGUI:
                 return
 
             self.config = config
+            self.problem_cfg.update(
+                var_lb=config['problem']['var_lb'],
+                var_ub=config['problem']['var_ub'],
+                obj_lb=config['problem']['obj_lb'],
+                obj_ub=config['problem']['obj_ub'],
+            )
         
         if self.config != old_config:
             self._save_config(self.config)
@@ -2473,7 +2444,7 @@ class ServerGUI:
             self.scatter_selected.remove()
             self.scatter_selected = None
             
-        n_var, var_name = self.config['problem']['n_var'], self.config['problem']['var_name']
+        n_var, var_name = self.problem_cfg['n_var'], self.problem_cfg['var_name']
 
         if n_var > 2:
             self.ax12.set_varlabels(var_name)
@@ -2499,7 +2470,7 @@ class ServerGUI:
         if draw_iter is not None and draw_iter < batch_id[-1]:
             draw_idx = batch_id <= draw_iter
             X, Y, Y_expected, batch_id = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch_id[draw_idx]
-            is_pareto = check_pareto(Y, self.config['problem']['minimize'])
+            is_pareto = check_pareto(Y, self.problem_cfg['minimize'])
         
         # replot evaluated & pareto points
         self.scatter_x = X
@@ -2512,7 +2483,7 @@ class ServerGUI:
             self.scatter_y_pareto._offsets_3d = Y[is_pareto]
         
         # rescale plot according to Y and true_pfront
-        n_obj = self.config['problem']['n_obj']
+        n_obj = self.problem_cfg['n_obj']
         x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
         y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
         if n_obj == 3: z_min, z_max = np.min(Y[:, 2]), np.max(Y[:, 2])
@@ -2592,7 +2563,7 @@ class ServerGUI:
             if batch_id[-1] > 0:
                 # replot hypervolume curve
                 line_hv_y = self.line_hv.get_ydata()
-                hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'], self.config['problem']['minimize'])
+                hv_value = calc_hypervolume(Y[valid_idx], self.config['problem']['ref_point'], self.problem_cfg['minimize'])
                 hv_value = np.concatenate([line_hv_y, np.full(self.n_valid_sample - len(line_hv_y), hv_value)])
                 self.line_hv.set_data(list(range(self.n_valid_sample)), hv_value)
                 self.ax21.relim()
