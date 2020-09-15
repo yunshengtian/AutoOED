@@ -42,7 +42,10 @@ class Problem(PymooProblem):
         Post-process loaded problem config
         '''
         config = cls_or_self.config.copy()
-        return cls_or_self.process_config(config, *args, **kwargs)
+        if isinstance(cls_or_self, type):
+            return cls_or_self.process_config(config, *args, **kwargs)
+        else:
+            return config
 
     @classmethod
     def process_config(cls, config, var_lb=0, var_ub=1, obj_lb=None, obj_ub=None, init_sample_path=None, **kwargs):
