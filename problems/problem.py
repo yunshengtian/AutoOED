@@ -163,7 +163,12 @@ class Problem(PymooProblem):
         raise NotImplementedError
     
     def __str__(self):
-        return '========== Problem Definition ==========\n' + super().__str__()
+        s = '========== Problem Definition ==========\n'
+        s += "# name: %s\n" % self.name()
+        s += "# n_var: %s\n" % self.n_var
+        s += "# n_obj: %s\n" % self.n_obj
+        s += "# n_constr: %s\n" % self.n_constr
+        return s
 
 
 class GeneratedProblem(Problem):
