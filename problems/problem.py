@@ -48,7 +48,7 @@ class Problem(PymooProblem):
             return config
 
     @classmethod
-    def process_config(cls, config, var_lb=0, var_ub=1, obj_lb=None, obj_ub=None, init_sample_path=None, **kwargs):
+    def process_config(cls, config, var_lb=None, var_ub=None, obj_lb=None, obj_ub=None, init_sample_path=None, **kwargs):
         '''
         Post-process config
         '''
@@ -59,13 +59,13 @@ class Problem(PymooProblem):
             'n_obj': 'required',
             'minimize': True, # minimization by default
             'n_constr': 0, # no constraints by default
-            'var_lb': var_lb, # 0 as var lower bound by default
-            'var_ub': var_ub, # 1 as var upper bound by default
-            'obj_lb': obj_lb, # no obj lower bound by default
-            'obj_ub': obj_ub, # no obj upper bound by default
+            'var_lb': 0, # 0 as var lower bound by default
+            'var_ub': 1, # 1 as var upper bound by default
+            'obj_lb': None, # no obj lower bound by default
+            'obj_ub': None, # no obj upper bound by default
             'var_name': None,
             'obj_name': None,
-            'init_sample_path': init_sample_path, # no provided initial sample path by default
+            'init_sample_path': None, # no provided initial sample path by default
         }
 
         # TODO: type check
@@ -78,6 +78,13 @@ class Problem(PymooProblem):
                 config[key] = value
             elif config[key] is None:
                 config[key] = value
+        
+        # update config if kwargs are specified
+        if var_lb is not None: config['var_lb'] = var_lb
+        if var_ub is not None: config['var_ub'] = var_ub
+        if obj_lb is not None: config['obj_lb'] = obj_lb
+        if obj_ub is not None: config['obj_ub'] = obj_ub
+        if init_sample_path is not None: config['init_sample_path'] = init_sample_path
 
         n_var, n_obj = config['n_var'], config['n_obj']
 
