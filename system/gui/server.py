@@ -2516,11 +2516,6 @@ class ServerGUI:
         if n_obj == 3: self.ax11.set_zlim(z_min - z_offset, z_max + z_offset)
 
         # replot new evaluated & predicted points
-        try:
-            self.scatter_y_new.remove()
-            self.scatter_y_pred.remove()
-        except:
-            pass
         for line in self.line_y_pred_list:
             line.remove()
         self.line_y_pred_list = []
@@ -2531,8 +2526,8 @@ class ServerGUI:
                 self.scatter_y_new.set_offsets(Y[last_batch_idx])
                 self.scatter_y_pred.set_offsets(Y_expected[last_batch_idx])
             elif n_obj == 3:
-                self.scatter_y._offsets_3d = Y[last_batch_idx]
-                self.scatter_y_pareto._offsets_3d = Y_expected[last_batch_idx]
+                self.scatter_y_new._offsets_3d = Y[last_batch_idx]
+                self.scatter_y_pred._offsets_3d = Y_expected[last_batch_idx]
             for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
                 line = self.ax11.plot(*[[y[i], y_expected[i]] for i in range(n_obj)], '--', color='m', alpha=0.5)[0]
                 self.line_y_pred_list.append(line)
