@@ -618,6 +618,7 @@ class ServerGUI:
                                 widget.set(self.value_map_algo[cfg_type][cfg_name][val])
                             else:
                                 widget.set(val)
+                            widget.select()
                     
                     widget_map_algo['surrogate']['name'].select()
 
@@ -667,14 +668,15 @@ class ServerGUI:
                 '''
                 Set values of widgets as current configuration values
                 '''
+                problem_cfg.clear()
                 for cfg_type, val_map in widget_map.items():
                     for cfg_name, widget in val_map.items():
                         widget.enable()
                         widget.set(self.config[cfg_type][cfg_name])
+                        widget.select()
                         if not widget.changeable:
                             widget.disable()
                 button_advanced.enable()
-                problem_cfg.clear()
                 problem_cfg.update(self.config['problem'])
 
             def gui_save_config():
@@ -1005,6 +1007,7 @@ class ServerGUI:
                 '''
                 for name, widget in entry_map.items():
                     widget.set(config[name])
+                    widget.select()
 
             def gui_save_change():
                 '''
@@ -1211,6 +1214,7 @@ class ServerGUI:
                 '''
                 for name, widget in entry_map.items():
                     widget.set(config[name])
+                    widget.select()
             
             def gui_remove_worker():
                 '''
@@ -1337,6 +1341,7 @@ class ServerGUI:
                 '''
                 for name, widget in entry_map.items():
                     widget.set(config[name])
+                    widget.select()
 
             def gui_approve_request():
                 '''
