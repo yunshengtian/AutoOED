@@ -5,6 +5,12 @@ from pymoo.model.problem import Problem as PymooProblem
 from problems.utils import import_python_func, import_c_func
 
 
+class class_or_instance_method(classmethod):
+    def __get__(self, instance, type_):
+        descr_get = super().__get__ if instance is None else self.__func__.__get__
+        return descr_get(instance, type_)
+
+
 class Problem(PymooProblem):
     '''
     Base class for problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
@@ -13,7 +19,7 @@ class Problem(PymooProblem):
 
     def __init__(self, ref_point=None, **kwargs):
 
-        self.config = self.get_config(**kwargs)
+        self.config = self.process_config(self.config, **kwargs)
 
         PymooProblem.__init__(self, 
             n_var=self.config['n_var'], 
@@ -30,13 +36,13 @@ class Problem(PymooProblem):
         self.var_name = self.config['var_name']
         self.obj_name = self.config['obj_name']
 
-    @classmethod
-    def get_config(cls, *args, **kwargs):
+    @class_or_instance_method
+    def get_config(cls_or_self, *args, **kwargs):
         '''
         Post-process loaded problem config
         '''
-        config = cls.config.copy()
-        return cls.process_config(config, *args, **kwargs)
+        config = cls_or_self.config.copy()
+        return cls_or_self.process_config(config, *args, **kwargs)
 
     @classmethod
     def process_config(cls, config, var_lb=0, var_ub=1, obj_lb=None, obj_ub=None, init_sample_path=None, **kwargs):
@@ -64,7 +70,7 @@ class Problem(PymooProblem):
         # fill config with default_config when there are key missings
         for key, value in default_config.items():
             if key not in config:
-                if value == 'required':
+                if type(value) == str and value == 'required':
                     raise Exception('Invalid config for custom problem, required values are not provided')
                 config[key] = value
             elif config[key] is None:
@@ -154,11 +160,8 @@ class GeneratedProblem(Problem):
     '''
     Generated custom problems from GUI, to be initialized from a config dict
     '''
-    def __init__(self, config, n_var=None, n_obj=None, **kwargs):
-        self.raw_config = config.copy()
+    def __init__(self, config, **kwargs):
         self.config = config.copy()
-        if n_var is not None: self.config['n_var'] = n_var
-        if n_obj is not None: self.config['n_obj'] = n_obj
 
         # import performance evaluation function
         if 'performance_eval' in self.config:
