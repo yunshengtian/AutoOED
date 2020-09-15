@@ -61,10 +61,10 @@ class ServerGUI:
         self.manager_request = RequestManager()
 
         # config related
-        self.config = None
+        self.config = None # NOTE: contains dynamic problem config
         self.config_raw = None
         self.config_id = -1
-        self.problem_cfg = None
+        self.problem_cfg = None # static problem config
 
         # event widgets
         self.button_optimize = None
@@ -297,7 +297,8 @@ class ServerGUI:
                 'algorithm': {},
             }
 
-            problem_cfg = {} # store other problem configs that cannot be obtained by widget.get()
+            problem_static_cfg = {}
+            problem_dynamic_cfg = {}
             algo_cfg = {} # store advanced config of algorithm
 
             window = tk.Toplevel(master=self.root)
@@ -316,23 +317,57 @@ class ServerGUI:
 
             # problem subsection
             frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='Problem')
-            grid_configure(frame_problem, [0, 1, 2, 3, 4, 5, 6, 7], [0])
+            if change:
+                grid_configure(frame_problem, [0, 1, 2], [0])
+            else:
+                grid_configure(frame_problem, [0, 1, 2, 3, 4, 5, 6, 7], [0])
+
+            def gui_select_problem(event):
+                '''
+                Select problem to configure
+                '''
+                widget_map['problem']['ref_point'].enable()
+                button_config_design.enable()
+                button_config_performance.enable()
+
+                # find problem static config by name selected
+                name = event.widget.get()
+                config = get_problem_config(name)
+
+                problem_static_cfg.clear()
+                problem_static_cfg.update(config)
+                
+                for key in ['var_lb', 'var_ub', 'obj_lb', 'obj_ub']:
+                    problem_dynamic_cfg.update({key: config[key]})
+                
+                if not change:
+                    init_sample_path = config['init_sample_path']
+                    if init_sample_path is not None:
+                        if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
+                            x_init_path, y_init_path = init_sample_path[0], init_sample_path[1]
+                            widget_x_init.set(x_init_path)
+                            widget_y_init.set(y_init_path)
+                        elif isinstance(init_sample_path, str):
+                            x_init_path = init_sample_path
+                            widget_x_init.set(x_init_path)
+                        else:
+                            tk.messagebox.showinfo('Error', 'Error in problem definition: init_sample_path must be specified as 1) a list [x_path, y_path]; or 2) a string x_path', parent=window)
+
             widget_map['problem']['name'] = create_widget('labeled_combobox', 
                 master=frame_problem, row=0, column=0, text=self.name_map['problem']['name'], values=get_problem_list(), width=15, required=True, changeable=False)
             widget_map['problem']['ref_point'] = create_widget('labeled_entry', 
                 master=frame_problem, row=1, column=0, text=self.name_map['problem']['ref_point'], class_type='floatlist', width=10, 
-                valid_check=lambda x: len(x) == widget_map['problem']['n_obj'].get(), error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
+                valid_check=lambda x: len(x) == problem_static_cfg['n_obj'], error_msg='dimension of reference point mismatches number of objectives', changeable=False) # TODO: changeable
 
-            widget_map['problem']['ref_point'].disable()
+            widget_map['problem']['name'].widget.bind('<<ComboboxSelected>>', gui_select_problem)
 
             def gui_config_design():
                 '''
                 Configure bounds for design variables
                 '''
-                var_name = problem_cfg['var_name']
-                n_var = len(var_name)
-
                 titles = ['var_name', 'var_lb', 'var_ub']
+                var_name, var_lb, var_ub = problem_static_cfg['var_name'], problem_dynamic_cfg['var_lb'], problem_dynamic_cfg['var_ub']
+                n_var = len(var_name)
 
                 window_design = tk.Toplevel(master=window)
                 window_design.title('Set Design Bounds')
@@ -348,8 +383,8 @@ class ServerGUI:
                 excel_design.disable_column(0)
 
                 if self.config is not None:
-                    excel_design.set_column(1, problem_cfg['var_lb'])
-                    excel_design.set_column(2, problem_cfg['var_ub'])
+                    excel_design.set_column(1, var_lb)
+                    excel_design.set_column(2, var_ub)
 
                 def gui_save_design_space():
                     '''
@@ -363,7 +398,7 @@ class ServerGUI:
                             tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem'][key] + '"', parent=window_design)
                             return
                     for key, val in temp_cfg.items():
-                        problem_cfg[key] = val
+                        problem_dynamic_cfg[key] = val
 
                     window_design.destroy()
 
@@ -377,10 +412,9 @@ class ServerGUI:
                 '''
                 Configure bounds for objectives
                 '''
-                obj_name = problem_cfg['obj_name']
-                n_obj = len(obj_name)
-
                 titles = ['obj_name', 'obj_lb', 'obj_ub']
+                obj_name, obj_lb, obj_ub = problem_static_cfg['obj_name'], problem_dynamic_cfg['obj_lb'], problem_dynamic_cfg['obj_ub']
+                n_obj = len(obj_name)
 
                 window_performance = tk.Toplevel(master=window)
                 window_performance.title('Set Performance Bounds')
@@ -396,8 +430,8 @@ class ServerGUI:
                 excel_performance.disable_column(0)
 
                 if self.config is not None:
-                    excel_performance.set_column(1, problem_cfg['obj_lb'])
-                    excel_performance.set_column(2, problem_cfg['obj_ub'])
+                    excel_performance.set_column(1, obj_lb)
+                    excel_performance.set_column(2, obj_ub)
 
                 def gui_save_performance_space():
                     '''
@@ -411,7 +445,7 @@ class ServerGUI:
                             tk.messagebox.showinfo('Error', 'Invalid value for "' + self.name_map['problem'][key] + '"', parent=window_performance)
                             return
                     for key, val in temp_cfg.items():
-                        problem_cfg[key] = val
+                        problem_dynamic_cfg[key] = val
                     
                     window_performance.destroy()
 
@@ -426,73 +460,34 @@ class ServerGUI:
             button_config_design = create_widget('button', master=frame_space, row=0, column=0, text='Set design bounds', command=gui_config_design)
             button_config_performance = create_widget('button', master=frame_space, row=0, column=1, text='Set performance bounds', command=gui_config_performance)
 
-            def gui_set_x_init():
-                '''
-                Set path of provided initial design variables
-                '''
-                filename = tk.filedialog.askopenfilename(parent=window)
-                if not isinstance(filename, str) or filename == '': return
-                widget_x_init.set(filename)
-
-            def gui_set_y_init():
-                '''
-                Set path of provided initial performance values
-                '''
-                filename = tk.filedialog.askopenfilename(parent=window)
-                if not isinstance(filename, str) or filename == '': return
-                widget_y_init.set(filename)
-
-            widget_map['problem']['n_init_sample'] = create_widget('labeled_entry', 
-                master=frame_problem, row=3, column=0, text=self.name_map['problem']['n_init_sample'], class_type='int', default=0, 
-                valid_check=lambda x: x >= 0, error_msg='number of initial samples cannot be negative', changeable=False)
-            button_browse_x_init, widget_x_init = create_widget('labeled_button_entry',
-                master=frame_problem, row=4, column=0, label_text='Path of provided initial design variables', button_text='Browse', command=gui_set_x_init, 
-                width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
-            button_browse_y_init, widget_y_init = create_widget('labeled_button_entry',
-                master=frame_problem, row=5, column=0, label_text='Path of provided initial performance values', button_text='Browse', command=gui_set_y_init, 
-                width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
-
+            # initial samples related
             if not change:
-                button_config_design.disable()
-                button_config_performance.disable()
-                widget_map['problem']['n_init_sample'].disable()
-                button_browse_x_init.disable()
-                button_browse_y_init.disable()
-                widget_x_init.disable()
-                widget_y_init.disable()
 
-            def gui_select_problem(event):
-                '''
-                Select problem to configure
-                '''
-                for key in ['ref_point', 'n_init_sample']:
-                    widget_map['problem'][key].enable()
-                button_config_design.enable()
-                button_config_performance.enable()
-                button_browse_x_init.enable()
-                button_browse_y_init.enable()
-                widget_x_init.enable()
-                widget_y_init.enable()
+                def gui_set_x_init():
+                    '''
+                    Set path of provided initial design variables
+                    '''
+                    filename = tk.filedialog.askopenfilename(parent=window)
+                    if not isinstance(filename, str) or filename == '': return
+                    widget_x_init.set(filename)
 
-                name = event.widget.get()
-                config = get_problem_config(name)
-                
-                for key in ['var_name', 'var_lb', 'var_ub', 'obj_name', 'obj_lb', 'obj_ub']:
-                    problem_cfg.update({key: config[key]})
-                
-                init_sample_path = config['init_sample_path']
-                if init_sample_path is not None:
-                    if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
-                        x_init_path, y_init_path = init_sample_path[0], init_sample_path[1]
-                        widget_x_init.set(x_init_path)
-                        widget_y_init.set(y_init_path)
-                    elif isinstance(init_sample_path, str):
-                        x_init_path = init_sample_path
-                        widget_x_init.set(x_init_path)
-                    else:
-                        tk.messagebox.showinfo('Error', 'Error in problem definition: init_sample_path must be specified as 1) a list [x_path, y_path]; or 2) a string x_path', parent=window)
+                def gui_set_y_init():
+                    '''
+                    Set path of provided initial performance values
+                    '''
+                    filename = tk.filedialog.askopenfilename(parent=window)
+                    if not isinstance(filename, str) or filename == '': return
+                    widget_y_init.set(filename)
 
-            widget_map['problem']['name'].widget.bind('<<ComboboxSelected>>', gui_select_problem)
+                widget_n_init = create_widget('labeled_entry', 
+                    master=frame_problem, row=3, column=0, text=self.name_map['problem']['n_init_sample'], class_type='int', default=0, 
+                    valid_check=lambda x: x >= 0, error_msg='number of initial samples cannot be negative', changeable=False)
+                _, widget_x_init = create_widget('labeled_button_entry',
+                    master=frame_problem, row=4, column=0, label_text='Path of provided initial design variables', button_text='Browse', command=gui_set_x_init, 
+                    width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)
+                _, widget_y_init = create_widget('labeled_button_entry',
+                    master=frame_problem, row=5, column=0, label_text='Path of provided initial performance values', button_text='Browse', command=gui_set_y_init, 
+                    width=30, valid_check=lambda x: os.path.exists(x), error_msg="file not exists", changeable=False)            
 
             # algorithm subsection
             frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')
@@ -655,7 +650,6 @@ class ServerGUI:
                     load_curr_config_algo()
 
             button_advanced = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', command=gui_set_advanced, sticky=None)
-            button_advanced.disable()
 
             # evaluation subsection
             frame_general = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Evaluation')
@@ -668,16 +662,16 @@ class ServerGUI:
                 '''
                 Set values of widgets as current configuration values
                 '''
-                problem_cfg.clear()
+                problem_dynamic_cfg.clear()
                 for cfg_type, val_map in widget_map.items():
                     for cfg_name, widget in val_map.items():
                         widget.enable()
                         widget.set(self.config[cfg_type][cfg_name])
                         widget.select()
-                        if not widget.changeable:
-                            widget.disable()
+                        # if not widget.changeable:
+                        #     widget.disable()
                 button_advanced.enable()
-                problem_cfg.update(self.config['problem'])
+                problem_dynamic_cfg.update(self.config['problem'])
 
             def gui_save_config():
                 '''
@@ -689,27 +683,33 @@ class ServerGUI:
                     'algorithm': {},
                 }
 
-                # specifically deal with provided initial samples
-                try:
-                    x_init_path = widget_x_init.get()
-                except:
-                    show_widget_error(master=window, widget=widget_x_init, name='Path of provided initial design variables')
-                    return
-                try:
-                    y_init_path = widget_y_init.get()
-                except:
-                    show_widget_error(master=window, widget=widget_y_init, name='Path of provided initial performance values')
-                    return
+                # specifically deal with initial samples (TODO: clean)
+                if not change:
+                    try:
+                        config['problem']['n_init_sample'] = widget_n_init.get()
+                    except:
+                        show_widget_error(master=window, widget=widget_n_init, name=self.name_map['problem']['n_init_sample'])
+                        return
+                    try:
+                        x_init_path = widget_x_init.get()
+                    except:
+                        show_widget_error(master=window, widget=widget_x_init, name='Path of provided initial design variables')
+                        return
+                    try:
+                        y_init_path = widget_y_init.get()
+                    except:
+                        show_widget_error(master=window, widget=widget_y_init, name='Path of provided initial performance values')
+                        return
 
-                if x_init_path is None and y_init_path is None: # no path of initial samples is provided
-                    config['problem']['init_sample_path'] = None
-                elif x_init_path is None: # only path of initial Y is provided, error
-                    tk.messagebox.showinfo('Error', 'Only path of initial performance values is provided', parent=window)
-                    return
-                elif y_init_path is None: # only path of initial X is provided
-                    config['problem']['init_sample_path'] = x_init_path
-                else: # both path of initial X and initial Y are provided
-                    config['problem']['init_sample_path'] = [x_init_path, y_init_path]
+                    if x_init_path is None and y_init_path is None: # no path of initial samples is provided
+                        config['problem']['init_sample_path'] = None
+                    elif x_init_path is None: # only path of initial Y is provided, error
+                        tk.messagebox.showinfo('Error', 'Only path of initial performance values is provided', parent=window)
+                        return
+                    elif y_init_path is None: # only path of initial X is provided
+                        config['problem']['init_sample_path'] = x_init_path
+                    else: # both path of initial X and initial Y are provided
+                        config['problem']['init_sample_path'] = [x_init_path, y_init_path]
 
                 # set config values from widgets
                 for cfg_type, val_map in widget_map.items():
@@ -720,11 +720,12 @@ class ServerGUI:
                             show_widget_error(master=window, widget=widget, name=self.name_map[cfg_type][cfg_name])
                             return
 
-                if x_init_path is None and widget_map['problem']['n_init_sample'].get() == 0:
-                    tk.messagebox.showinfo('Error', 'Either number of initial samples or path of initial design variables needs to be provided', parent=window)
-                    return
+                if not change:
+                    if x_init_path is None and widget_n_init.get() == 0:
+                        tk.messagebox.showinfo('Error', 'Either number of initial samples or path of initial design variables needs to be provided', parent=window)
+                        return
 
-                config['problem'].update(problem_cfg)
+                config['problem'].update(problem_dynamic_cfg)
                 config['algorithm'].update(algo_cfg)
 
                 self._set_config(config, window)
@@ -739,6 +740,16 @@ class ServerGUI:
             # load current config values to entry if not first time setting config
             if change:
                 load_curr_config()
+
+            # disable widgets
+            if change:
+                widget_map['problem']['name'].disable()
+                widget_map['problem']['ref_point'].disable()
+            else:
+                widget_map['problem']['ref_point'].disable()
+                button_config_design.disable()
+                button_config_performance.disable()
+                button_advanced.disable()
 
         def gui_create_config():
             '''
@@ -1698,12 +1709,9 @@ class ServerGUI:
 
             n_var = self.problem_cfg['n_var']
             var_lb, var_ub = self.problem_cfg['var_lb'], self.problem_cfg['var_ub']
-            if not (isinstance(var_lb, list) or isinstance(var_lb, np.ndarray)):
-                var_lb = [var_lb] * n_var
-            if not (isinstance(var_ub, list) or isinstance(var_ub, np.ndarray)):
-                var_ub = [var_ub] * n_var
             excel_design = Excel(master=window, rows=1, columns=n_var, width=10, 
-                title=[f'x{i + 1}' for i in range(n_var)], dtype=[float] * n_var, default=None, required=[True] * n_var, valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)])
+                title=[f'x{i + 1}' for i in range(n_var)], dtype=[float] * n_var, default=None, required=[True] * n_var, 
+                valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)])
             excel_design.grid(row=1, column=0)
 
             def gui_update_table():
@@ -1759,8 +1767,12 @@ class ServerGUI:
             button_n_row = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
             n_obj = self.problem_cfg['n_obj']
+            obj_lb, obj_ub = self.problem_cfg['obj_lb'], self.problem_cfg['obj_ub']
+            if obj_lb is None: obj_lb = np.full(n_obj, -np.inf)
+            if obj_ub is None: obj_ub = np.full(n_obj, np.inf)
             excel_performance = Excel(master=window, rows=1, columns=n_obj + 1, width=10, 
-                title=['Row number'] + [f'f{i + 1}' for i in range(n_obj)], dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows] + [None] * n_obj)
+                title=['Row number'] + [f'f{i + 1}' for i in range(n_obj)], dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), 
+                valid_check=[lambda x: x > 0 and x <= self.table_db.n_rows] + [lambda x: x >= obj_lb[i] and x <= obj_ub[i] for i in range(n_obj)])
             excel_performance.grid(row=1, column=0)
 
             def gui_update_table():
