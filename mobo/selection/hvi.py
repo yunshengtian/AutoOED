@@ -1,6 +1,5 @@
 import numpy as np
 from pymoo.factory import get_performance_indicator
-from mobo.acquisition import IdentityFunc
 from .base import Selection
 
 
@@ -10,13 +9,12 @@ class HVI(Selection):
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.acquisition = IdentityFunc()
 
     def select(self, solution, surrogate_model, transformation, curr_pset, curr_pfront):
 
         pred_pset = solution['x']
-        val = surrogate_model.evaluate(pred_pset, std=self.acquisition.requires_std)
-        pred_pfront, _, _ = self.acquisition.evaluate(val)
+        val = surrogate_model.evaluate(pred_pset)
+        pred_pfront = val['F']
         pred_pset, pred_pfront = transformation.undo(pred_pset, pred_pfront)
 
         curr_pfront = curr_pfront.copy()
