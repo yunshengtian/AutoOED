@@ -7,9 +7,6 @@ class HVI(Selection):
     '''
     Hypervolume Improvement
     '''
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def select(self, solution, surrogate_model, transformation, curr_pset, curr_pfront):
 
         pred_pset = solution['x']
