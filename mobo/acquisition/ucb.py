@@ -19,14 +19,14 @@ class UCB(Acquisition):
         lamda = np.sqrt(np.log(self.n_sample) / self.n_sample)
         
         y_mean, y_std = val['F'], val['S']
-        F = y_mean + lamda * y_std
+        F = y_mean - lamda * y_std
 
         dF, hF = None, None
         dy_mean, hy_mean, dy_std, hy_std = val['dF'], val['hF'], val['dS'], val['hS']
         
         if calc_gradient or calc_hessian:
             dF_y_mean = np.ones_like(y_mean)
-            dF_y_std = lamda * np.ones_like(y_std)
+            dF_y_std = -lamda * np.ones_like(y_std)
 
             dF_y_mean, dF_y_std = expand(dF_y_mean), expand(dF_y_std)
 
