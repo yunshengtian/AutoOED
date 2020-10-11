@@ -84,7 +84,9 @@ def get_yaml_problem_dir():
     '''
     Return directory of yaml problems
     '''
-    return os.path.join(os.path.dirname(__file__), 'custom', 'yaml')
+    problem_dir = os.path.join(os.path.dirname(__file__), 'custom', 'yaml')
+    os.makedirs(problem_dir, exist_ok=True)
+    return problem_dir
 
 
 def find_yaml_problems():
