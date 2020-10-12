@@ -1,1 +1,1 @@
-from .controller import LogController
+from .controller import PanelLogController

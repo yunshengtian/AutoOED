@@ -5,7 +5,7 @@ from system.gui.widgets.factory import create_widget
 from system.scientist.gui.map import config_map
 
 
-class ControlView:
+class PanelControlView:
 
     def __init__(self, root_view):
         self.root_view = root_view

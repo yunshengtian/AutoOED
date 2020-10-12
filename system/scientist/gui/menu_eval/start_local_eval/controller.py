@@ -18,7 +18,7 @@ class StartLocalEvalController:
         self.view.widget['disp_n_row'].set(1)
         self.view.widget['set_n_row'].configure(command=self.update_table)
 
-        table = self.root_controller.table
+        table = self.root_controller.get_table()
         self.view.widget['rowid_excel'].config(
             valid_check=[lambda x: x > 0 and x <= table.n_rows]
         )
@@ -44,7 +44,7 @@ class StartLocalEvalController:
             return
 
         n_obj = self.root_controller.get_problem_cfg()['n_obj']
-        table = self.root_controller.table
+        table = self.root_controller.get_table()
         worker_agent = self.root_controller.worker_agent
 
         # check for overwriting

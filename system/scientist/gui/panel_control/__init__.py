@@ -1,1 +1,1 @@
-from .controller import ControlController
+from .controller import PanelControlController

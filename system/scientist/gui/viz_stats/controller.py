@@ -1,16 +1,16 @@
 import numpy as np
 from system.gui.utils.figure import embed_figure
 from system.server.utils import calc_hypervolume, calc_pred_error
-from .view import StatsView
+from .view import VizStatsView
 
 
-class StatsController:
+class VizStatsController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.view = StatsView(self.root_view)
+        self.view = VizStatsView(self.root_view)
 
         # connect matplotlib figure with tkinter GUI
         embed_figure(self.view.fig, self.root_view.frame_stat)

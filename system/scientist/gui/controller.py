@@ -13,14 +13,16 @@ from system.scientist.gui.view import View
 from system.server.agent import DataAgent, WorkerAgent
 from system.scientist.gui.params import *
 
-from system.scientist.gui.menu_file import FileController
-from system.scientist.gui.menu_config import ConfigController
-from system.scientist.gui.menu_problem import ProblemController
-from system.scientist.gui.panel_control import ControlController
-from system.scientist.gui.panel_log import LogController
-from system.scientist.gui.viz_space import SpaceController
-from system.scientist.gui.viz_stats import StatsController
-from system.scientist.gui.viz_database import DatabaseController
+from system.scientist.gui.menu_file import MenuFileController
+from system.scientist.gui.menu_config import MenuConfigController
+from system.scientist.gui.menu_problem import MenuProblemController
+from system.scientist.gui.menu_database import MenuDatabaseController
+from system.scientist.gui.menu_eval import MenuEvalController
+from system.scientist.gui.panel_control import PanelControlController
+from system.scientist.gui.panel_log import PanelLogController
+from system.scientist.gui.viz_space import VizSpaceController
+from system.scientist.gui.viz_stats import VizStatsController
+from system.scientist.gui.viz_database import VizDatabaseController
 
 
 class ScientistController:
@@ -29,6 +31,14 @@ class ScientistController:
         self.root = tk.Tk()
         self.root.title('OpenMOBO - Scientist')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
+
+        # TODO: use customized theme
+        # from tkinter import ttk
+        # from system.utils.path import get_root_dir
+        # self.root.tk.call('lappend', 'auto_path', os.path.join(get_root_dir(), 'system', 'gui', 'themes'))
+        # self.root.tk.call('package', 'require', 'awdark')
+        # s = ttk.Style()
+        # s.theme_use('awdark')
 
         self.refresh_rate = REFRESH_RATE # ms
         self.result_dir = RESULT_DIR # initial result directory
@@ -56,31 +66,42 @@ class ScientistController:
         '''
         Menu initialization
         '''
-        self.controller['file'] = FileController(self)
-        self.view.menu_file.entryconfig(0, command=self.controller['file'].set_result_dir)
+        self.controller['menu_file'] = MenuFileController(self)
+        self.view.menu_file.entryconfig(0, command=self.controller['menu_file'].set_result_dir)
 
-        self.controller['config'] = ConfigController(self)
-        self.view.menu_config.entryconfig(0, command=self.controller['config'].load_config_from_file)
-        self.view.menu_config.entryconfig(1, command=self.controller['config'].create_config)
-        self.view.menu_config.entryconfig(2, command=self.controller['config'].change_config, state=tk.DISABLED)
+        self.controller['menu_config'] = MenuConfigController(self)
+        self.view.menu_config.entryconfig(0, command=self.controller['menu_config'].load_config_from_file)
+        self.view.menu_config.entryconfig(1, command=self.controller['menu_config'].create_config)
+        self.view.menu_config.entryconfig(2, command=self.controller['menu_config'].change_config, state=tk.DISABLED)
 
-        self.controller['problem'] = ProblemController(self)
-        self.view.menu_problem.entryconfig(0, command=self.controller['problem'].manage_problem)
+        self.controller['menu_problem'] = MenuProblemController(self)
+        self.view.menu_problem.entryconfig(0, command=self.controller['menu_problem'].manage_problem)
+
+        self.controller['menu_database'] = MenuDatabaseController(self)
+        self.view.menu_database.entryconfig(0, command=None, state=tk.DISABLED) # TODO
+        self.view.menu_database.entryconfig(1, command=None, state=tk.DISABLED) # TODO
+        self.view.menu_database.entryconfig(2, command=self.controller['menu_database'].enter_design, state=tk.DISABLED)
+        self.view.menu_database.entryconfig(3, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
+
+        self.controller['menu_eval'] = MenuEvalController(self)
+        self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_local_eval, state=tk.DISABLED)
+        self.view.menu_eval.entryconfig(1, command=None, state=tk.DISABLED) # TODO
+        self.view.menu_eval.entryconfig(2, command=self.controller['menu_eval'].stop_eval, state=tk.DISABLED)
 
     def _init_panel(self):
         '''
         Panel initialization
         '''
-        self.controller['control'] = ControlController(self)
-        self.controller['log'] = LogController(self)
+        self.controller['panel_control'] = PanelControlController(self)
+        self.controller['panel_log'] = PanelLogController(self)
 
     def _init_visualization(self):
         '''
         Visualization initialization
         '''
-        self.controller['space'] = SpaceController(self)
-        self.controller['stats'] = StatsController(self)
-        self.controller['database'] = DatabaseController(self)
+        self.controller['viz_space'] = VizSpaceController(self)
+        self.controller['viz_stats'] = VizStatsController(self)
+        self.controller['viz_database'] = VizDatabaseController(self)
         self.view.activate_viz()
 
     def get_config(self):
@@ -176,30 +197,36 @@ class ScientistController:
             self.view.menu_config.entryconfig(1, state=tk.DISABLED)
             self.view.menu_config.entryconfig(2, state=tk.NORMAL)
 
+            for i in range(4):
+                self.view.menu_database.entryconfig(i, state=tk.NORMAL)
+            
+            for i in range(3):
+                self.view.menu_eval.entryconfig(i, state=tk.NORMAL)
+
             # activate widgets
-            entry_mode = self.controller['control'].view.widget['mode']
+            entry_mode = self.controller['panel_control'].view.widget['mode']
             entry_mode.enable(readonly=False)
             entry_mode.set('manual')
             entry_mode.enable(readonly=True)
 
-            entry_batch_size = self.controller['control'].view.widget['batch_size']
+            entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
             entry_batch_size.enable()
             try:
                 entry_batch_size.set(self.config['general']['batch_size'])
             except:
                 entry_batch_size.set(5)
 
-            entry_n_iter = self.controller['control'].view.widget['n_iter']
+            entry_n_iter = self.controller['panel_control'].view.widget['n_iter']
             entry_n_iter.enable()
             try:
                 entry_n_iter.set(self.config['general']['n_iter'])
             except:
                 entry_n_iter.set(1)
 
-            self.controller['control'].view.widget['optimize'].enable()
-            self.controller['control'].view.widget['set_stop_cri'].enable()
+            self.controller['panel_control'].view.widget['optimize'].enable()
+            self.controller['panel_control'].view.widget['set_stop_cri'].enable()
 
-            self.controller['log'].view.widget['clear'].enable()
+            self.controller['panel_log'].view.widget['clear'].enable()
 
             # trigger periodic refresh
             self.root.after(self.refresh_rate, self.refresh)
@@ -228,8 +255,8 @@ class ScientistController:
         if self.config != old_config:
             self.save_config(self.config)
             self.worker_agent.set_config(self.config, self.config_id)
-            self.controller['space'].set_config(self.config, self.problem_cfg)
-            self.controller['stats'].set_config(self.config, self.problem_cfg)
+            self.controller['viz_space'].set_config(self.config, self.problem_cfg)
+            self.controller['viz_stats'].set_config(self.config, self.problem_cfg)
 
         return True
 
@@ -268,9 +295,9 @@ class ScientistController:
         
         # can optimize and load config when worker agent is empty
         if self.worker_agent.empty():
-            self.controller['control'].view.widget['mode'].enable()
-            self.controller['control'].view.widget['optimize'].enable()
-            self.controller['control'].view.widget['stop'].disable()
+            self.controller['panel_control'].view.widget['mode'].enable()
+            self.controller['panel_control'].view.widget['optimize'].enable()
+            self.controller['panel_control'].view.widget['stop'].disable()
             if self.view.menu_config.entrycget(0, 'state') == tk.DISABLED:
                 self.view.menu_config.entryconfig(0, state=tk.NORMAL)
             if self.view.menu_config.entrycget(2, 'state') == tk.DISABLED:
@@ -302,17 +329,17 @@ class ScientistController:
                 rowids.append(rowid)
 
         # log display
-        self.controller['log'].log(log_list)
+        self.controller['panel_log'].log(log_list)
 
         # update visualization
         opt_done, eval_done = self.data_agent.check_opt_done(), self.data_agent.check_eval_done()
 
         if eval_done:
-            self.controller['space'].redraw_performance_space(reset_scaler=True)
-            self.controller['stats'].redraw()
+            self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
+            self.controller['viz_stats'].redraw()
         
-        self.controller['database'].update_data(opt_done, eval_done)
-        self.controller['database'].update_status(status, rowids)
+        self.controller['viz_database'].update_data(opt_done, eval_done)
+        self.controller['viz_database'].update_status(status, rowids)
 
         # check stopping criterion
         self.check_stop_criterion()
@@ -325,7 +352,7 @@ class ScientistController:
         Check if stopping criterion is met
         '''
         stop = False
-        stop_criterion = self.controller['control'].stop_criterion
+        stop_criterion = self.controller['panel_control'].stop_criterion
         n_valid_sample = self.data_agent.get_n_valid_sample()
 
         for key, val in stop_criterion.items():
@@ -350,7 +377,7 @@ class ScientistController:
         if stop:
             stop_criterion.clear()
             self.worker_agent.stop_worker()
-            self.controller['log'].log('stopping criterion is met')
+            self.controller['panel_log'].log('stopping criterion is met')
         
     def _quit(self):
         '''

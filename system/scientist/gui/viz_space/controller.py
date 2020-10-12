@@ -1,10 +1,10 @@
 import numpy as np
 from matplotlib.backend_bases import MouseButton
 from system.server.utils import find_closest_point, check_pareto
-from .view import SpaceView
+from .view import VizSpaceView
 
 
-class SpaceController:
+class VizSpaceController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -14,7 +14,7 @@ class SpaceController:
         self.config, self.problem_cfg = self.root_controller.config, self.root_controller.problem_cfg
         self.data_agent = self.root_controller.data_agent
 
-        self.view = SpaceView(self.root_view, self.problem_cfg)
+        self.view = VizSpaceView(self.root_view, self.problem_cfg)
 
         # bind command of viewing history to scaler
         self.max_iter = 0

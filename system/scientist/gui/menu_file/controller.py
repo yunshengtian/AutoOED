@@ -1,14 +1,14 @@
 import tkinter as tk
-from .view import FileView
+from .view import MenuFileView
 
 
-class FileController:
+class MenuFileController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
         
-        self.view = FileView(self.root_view)
+        self.view = MenuFileView(self.root_view)
 
     def set_result_dir(self):
         '''

@@ -1,7 +1,7 @@
 from problem.common import load_yaml_problem, save_yaml_problem, remove_yaml_problem
 
 
-class ProblemModel:
+class MenuProblemModel:
 
     def load_problem(self, name):
         return load_yaml_problem(name)

@@ -1,1 +1,1 @@
-from .controller import ProblemController
+from .controller import MenuProblemController

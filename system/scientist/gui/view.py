@@ -48,6 +48,19 @@ class View:
         self.menu_problem = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Problem', menu=self.menu_problem)
         self.menu_problem.add_command(label='Manage')
+
+        self.menu_database = tk.Menu(master=self.menu, tearoff=0)
+        self.menu.add_cascade(label='Database', menu=self.menu_database)
+        self.menu_database.add_command(label='Load') # TODO
+        self.menu_database.add_command(label='Export') # TODO
+        self.menu_database.add_command(label='Enter design')
+        self.menu_database.add_command(label='Enter performance')
+
+        self.menu_eval = tk.Menu(master=self.menu, tearoff=0)
+        self.menu.add_cascade(label='Evaluation', menu=self.menu_eval)
+        self.menu_eval.add_command(label='Start local')
+        self.menu_eval.add_command(label='Start remote')
+        self.menu_eval.add_command(label='Stop')
         
     def _init_viz(self):
         '''
@@ -68,7 +81,7 @@ class View:
         self.nb_viz.add(child=self.frame_db, text='Database')
         grid_configure(self.frame_plot, [0], [0])
         grid_configure(self.frame_stat, [0], [0])
-        grid_configure(self.frame_db, [1], [0])
+        grid_configure(self.frame_db, [0], [0])
 
         # temporarily disable tabs until data loaded
         self.nb_viz.tab(0, state=tk.DISABLED)

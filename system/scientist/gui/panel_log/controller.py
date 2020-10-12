@@ -1,14 +1,14 @@
 import tkinter as tk
-from .view import LogView
+from .view import PanelLogView
 
 
-class LogController:
+class PanelLogController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.view = LogView(self.root_view)
+        self.view = PanelLogView(self.root_view)
 
         self.view.widget['clear'].configure(command=self.clear_log)
         self.view.widget['clear'].configure(state=tk.DISABLED)

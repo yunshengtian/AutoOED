@@ -6,7 +6,7 @@ from system.gui.widgets.factory import create_widget
 from system.scientist.gui.map import config_map
 
 
-class ConfigView:
+class MenuConfigView:
 
     def __init__(self, root_view, first_time):
         self.root_view = root_view

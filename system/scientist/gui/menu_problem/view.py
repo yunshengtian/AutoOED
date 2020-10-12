@@ -5,7 +5,7 @@ from system.gui.widgets.listbox import Listbox
 from system.scientist.gui.map import config_map
 
 
-class ProblemView:
+class MenuProblemView:
 
     def __init__(self, root_view):
         self.root_view = root_view

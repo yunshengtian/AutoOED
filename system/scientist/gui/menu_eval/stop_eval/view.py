@@ -8,7 +8,7 @@ class StopEvalView:
     def __init__(self, root_view):
         self.root_view = root_view
 
-        self.window = tk.Toplevel(master=self.root_view.frame)
+        self.window = tk.Toplevel(master=self.root_view.root)
         self.window.title('Stop Evaluation')
         self.window.resizable(False, False)
 

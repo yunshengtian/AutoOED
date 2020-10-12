@@ -1,14 +1,9 @@
 import numpy as np
 from system.gui.widgets.table import Table
-from .view import DatabaseView
-
-from .enter_design import EnterDesignController
-from .enter_performance import EnterPerformanceController
-from .start_local_eval import StartLocalEvalController
-from .stop_eval import StopEvalController
+from .view import VizDatabaseView
 
 
-class DatabaseController:
+class VizDatabaseController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -18,12 +13,7 @@ class DatabaseController:
         self.data_agent = self.root_controller.data_agent
         self.worker_agent = self.root_controller.worker_agent
 
-        self.view = DatabaseView(self.root_view)
-
-        self.view.widget['enter_design'].configure(command=self.enter_design)
-        self.view.widget['enter_performance'].configure(command=self.enter_performance)
-        self.view.widget['start_local_eval'].configure(command=self.start_local_eval)
-        self.view.widget['stop_eval'].configure(command=self.stop_eval)
+        self.view = VizDatabaseView(self.root_view)
 
         # load data
         X, Y, is_pareto = self.data_agent.load(['X', 'Y', 'is_pareto'])
@@ -43,7 +33,7 @@ class DatabaseController:
             'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(n_obj)],
         }
 
-        self.table = Table(master=self.view.frame_db_table, titles=titles)
+        self.table = Table(master=self.view.frame, titles=titles)
         self.table.register_key_map(key_map)
         self.table.insert({
             'status': ['evaluated'] * n_init_sample,
@@ -55,15 +45,6 @@ class DatabaseController:
             'config_id': np.zeros(n_init_sample, dtype=int), 
             'batch_id': np.zeros(n_init_sample, dtype=int)
         })
-
-    def get_config(self):
-        return self.root_controller.get_config()
-
-    def get_config_id(self):
-        return self.root_controller.get_config_id()
-
-    def get_problem_cfg(self):
-        return self.root_controller.get_problem_cfg()
 
     def update_data(self, opt_done, eval_done):
         '''
@@ -105,33 +86,3 @@ class DatabaseController:
         Update status of evaluation
         '''
         self.table.update({'status': status}, rowids)
-
-    def enter_design(self):
-        '''
-        Enter design variables
-        '''
-        EnterDesignController(self)
-
-    def enter_performance(self):
-        '''
-        Enter performance values at certain rows
-        '''
-        EnterPerformanceController(self)
-
-    def start_local_eval(self):
-        '''
-        Manually start local evaluation workers for certain rows (TODO: disable when no eval script linked)
-        '''
-        StartLocalEvalController(self)
-
-    def start_remove_eval(self):
-        '''
-        TODO
-        '''
-        pass
-
-    def stop_eval(self):
-        '''
-        Manually stop evaluation workers for certain rows (TODO: disable when no eval script linked)
-        '''
-        StopEvalController(self)

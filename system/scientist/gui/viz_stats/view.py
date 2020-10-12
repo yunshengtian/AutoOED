@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 
-class StatsView:
+class VizStatsView:
 
     def __init__(self, root_view):
         self.root_view = root_view

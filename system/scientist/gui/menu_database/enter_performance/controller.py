@@ -25,7 +25,7 @@ class EnterPerformanceController:
         self.view.widget['disp_n_row'].set(1)
         self.view.widget['set_n_row'].configure(command=self.update_table)
 
-        table = self.root_controller.table.n_rows
+        table = self.root_controller.get_table()
         self.view.widget['performance_excel'].config(
             valid_check=[lambda x: x > 0 and x <= table.n_rows] + [lambda x: x >= obj_lb[i] and x <= obj_ub[i] for i in range(n_obj)],
         )
@@ -53,7 +53,7 @@ class EnterPerformanceController:
             return
 
         n_obj = self.root_controller.get_problem_cfg()['n_obj']
-        table = self.root_controller.table
+        table = self.root_controller.get_table()
         data_agent = self.root_controller.data_agent
 
         # check for overwriting

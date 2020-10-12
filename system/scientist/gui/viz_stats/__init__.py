@@ -1,1 +1,1 @@
-from .controller import StatsController
+from .controller import VizStatsController

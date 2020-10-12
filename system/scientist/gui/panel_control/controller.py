@@ -1,11 +1,11 @@
 import tkinter as tk
 from system.scientist.gui.map import config_map
-from .view import ControlView
+from .view import PanelControlView
 
 from .stop_criterion import StopCriterionController
 
 
-class ControlController:
+class PanelControlController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -14,7 +14,7 @@ class ControlController:
         self.worker_agent = self.root_controller.worker_agent
         self.stop_criterion = {}
 
-        self.view = ControlView(self.root_view)
+        self.view = PanelControlView(self.root_view)
 
         self.view.widget['batch_size'].config(
             valid_check=lambda x: x > 0, 

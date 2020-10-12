@@ -18,7 +18,7 @@ class StopEvalController:
         self.view.widget['disp_n_row'].set(1)
         self.view.widget['set_n_row'].configure(command=self.update_table)
 
-        table = self.root_controller.table
+        table = self.root_controller.get_table()
         self.view.widget['rowid_excel'].config(
             valid_check=[lambda x: x > 0 and x <= table.n_rows],
         )

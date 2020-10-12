@@ -8,7 +8,7 @@ from system.gui.utils.grid import grid_configure
 from system.gui.utils.figure import embed_figure
 
 
-class SpaceView:
+class VizSpaceView:
 
     def __init__(self, root_view, problem_cfg):
         self.root_view = root_view

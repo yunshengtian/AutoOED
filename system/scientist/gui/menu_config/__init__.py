@@ -1,1 +1,1 @@
-from .controller import ConfigController
+from .controller import MenuConfigController

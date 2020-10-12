@@ -1,1 +1,1 @@
-from .controller import DatabaseController
+from .controller import VizDatabaseController

@@ -1,14 +1,14 @@
 import tkinter as tk
 from problem.common import get_problem_list, get_yaml_problem_list
 from system.scientist.gui.map import config_map
-from .model import ProblemModel
-from .view import ProblemView
+from .model import MenuProblemModel
+from .view import MenuProblemView
 
 from .design_space import DesignSpaceController
 from .performance_space import PerformanceSpaceController
 
 
-class ProblemController:
+class MenuProblemController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -16,13 +16,13 @@ class ProblemController:
 
         self.problem_cfg = {}
 
-        self.model = ProblemModel()
+        self.model = MenuProblemModel()
         self.view = None
 
         self.in_creating_problem = False
 
     def manage_problem(self):
-        self.view = ProblemView(self.root_view)
+        self.view = MenuProblemView(self.root_view)
 
         self.view.widget['problem_list'].bind_cmd(reload_cmd=get_yaml_problem_list, select_cmd=self.select_problem)
         self.view.widget['problem_list'].reload()

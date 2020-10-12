@@ -4,14 +4,14 @@ from config.utils import load_config
 from problem.common import get_problem_config
 from system.gui.widgets.factory import show_widget_error
 from system.scientist.gui.map import config_map
-from .view import ConfigView
+from .view import MenuConfigView
 
 from .design_bound import DesignBoundController
 from .performance_bound import PerformanceBoundController
 from .algo_advanced import AlgoAdvancedController
 
 
-class ConfigController:
+class MenuConfigController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -50,7 +50,7 @@ class ConfigController:
         '''
         Build configuration window (for create/change)
         '''
-        self.view = ConfigView(self.root_view, self.first_time)
+        self.view = MenuConfigView(self.root_view, self.first_time)
 
         self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
         self.view.widget['ref_point'].config(

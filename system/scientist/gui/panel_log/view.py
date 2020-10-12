@@ -4,7 +4,7 @@ from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 
 
-class LogView:
+class PanelLogView:
 
     def __init__(self, root_view):
         self.root_view = root_view

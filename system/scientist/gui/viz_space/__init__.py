@@ -1,1 +1,1 @@
-from .controller import SpaceController
+from .controller import VizSpaceController

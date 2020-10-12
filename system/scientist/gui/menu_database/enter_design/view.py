@@ -8,7 +8,7 @@ class EnterDesignView:
     def __init__(self, root_view, n_var):
         self.root_view = root_view
 
-        self.window = tk.Toplevel(master=self.root_view.frame)
+        self.window = tk.Toplevel(master=self.root_view.root)
         self.window.title('Enter Design Variables')
         self.window.resizable(False, False)
 
