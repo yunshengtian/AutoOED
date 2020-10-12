@@ -146,7 +146,7 @@ class ProblemController:
                 tk.messagebox.showinfo('Error', f'Problem {name} already exists', parent=self.view.window)
                 return
             try:
-                save_entry_values(widget_map, problem_cfg)
+                self.view.save_widget_values(self.problem_cfg)
             except:
                 return
             self.model.save_problem(self.problem_cfg)
@@ -169,7 +169,7 @@ class ProblemController:
                         tk.messagebox.showinfo('Error', f'Problem {new_name} already exists', parent=self.view.window)
                         return
                 try:
-                    save_entry_values(widget_map, problem_cfg)
+                    self.view.save_widget_values(self.problem_cfg)
                 except:
                     return
                 if old_name != new_name:

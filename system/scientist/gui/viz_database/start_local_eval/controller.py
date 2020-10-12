@@ -18,9 +18,9 @@ class StartLocalEvalController:
         self.view.widget['disp_n_row'].set(1)
         self.view.widget['set_n_row'].configure(command=self.update_table)
 
-        max_n_rows = self.root_controller.table.n_rows
+        table = self.root_controller.table
         self.view.widget['rowid_excel'].config(
-            valid_check=[lambda x: x > 0 and x <= max_n_rows]
+            valid_check=[lambda x: x > 0 and x <= table.n_rows]
         )
         
         self.view.widget['start'].configure(command=self.start_local_worker)

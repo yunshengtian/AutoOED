@@ -25,9 +25,9 @@ class EnterPerformanceController:
         self.view.widget['disp_n_row'].set(1)
         self.view.widget['set_n_row'].configure(command=self.update_table)
 
-        max_n_rows = self.root_controller.table.n_rows
+        table = self.root_controller.table.n_rows
         self.view.widget['performance_excel'].config(
-            valid_check=[lambda x: x > 0 and x <= max_n_rows] + [lambda x: x >= obj_lb[i] and x <= obj_ub[i] for i in range(n_obj)],
+            valid_check=[lambda x: x > 0 and x <= table.n_rows] + [lambda x: x >= obj_lb[i] and x <= obj_ub[i] for i in range(n_obj)],
         )
 
         self.view.widget['save'].configure(command=self.add_performance)

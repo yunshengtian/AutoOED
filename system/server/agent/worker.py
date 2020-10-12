@@ -16,12 +16,12 @@ class WorkerAgent:
 
         self.opt_workers_run = [] # active optimization workers
         self.opt_workers_wait = [] # pending optimization workers
-        self.opt_worker_id = -1
+        self.opt_worker_id = 0
         self.opt_worker_cmd = None # command (function) that generates an optimization worker
 
         self.eval_workers_run = [] # active optimization workers
         self.eval_workers_wait = [] # pending optimization workers
-        self.eval_worker_id = -1
+        self.eval_worker_id = 0
         self.eval_worker_cmd = None # command (function) that generates an evaluation worker
 
         self.stopped = False # whether is stopped by user
@@ -136,22 +136,25 @@ class WorkerAgent:
                 self.opt_workers_run = []
                 self.opt_workers_wait = []
 
-    def stop_eval_worker(self, worker_id=None):
+    def stop_eval_worker(self, worker_id=None, row_id=None):
         '''
         Stop the running evaluation worker(s)
         Input:
-            worker_id: the id of worker to be stopped, if None then stop all the workers
+            worker_id: the id of worker to be stopped
+            row_id: the id of row to be stopped
+            (if both are None then stop all workers)
         '''
+        stop_all = worker_id is None and row_id is None
         with self.lock_eval_worker:
             for w in self.eval_workers_run:
                 wid, worker, rowid = w
-                if (worker_id is None or wid == worker_id) and worker.is_alive():
+                if (stop_all or wid == worker_id or rowid == row_id) and worker.is_alive():
                     worker.terminate()
                     self._add_log(f'evaluation worker {wid} stopped' + f'/{rowid}')
                     if worker_id is not None:
                         self.eval_workers_run.remove(w)
                         break
-            if worker_id is None:
+            if stop_all:
                 self.eval_workers_run = []
                 self.eval_workers_wait = []
 
