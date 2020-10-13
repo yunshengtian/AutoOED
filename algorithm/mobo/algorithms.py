@@ -5,6 +5,18 @@ High-level algorithm specifications by providing spec
 '''
 
 
+class DGEMO(MOBO):
+    '''
+    DGEMO
+    '''
+    config = {
+        'surrogate': 'gp',
+        'acquisition': 'identity',
+        'solver': 'discovery',
+        'selection': 'dgemo',
+    }
+
+
 class TSEMO(MOBO):
     '''
     TSEMO
@@ -66,6 +78,7 @@ class Custom(MOBO):
 
 
 algos = {
+    'dgemo': DGEMO,
     'tsemo': TSEMO,
     'usemo-ei': USEMO_EI,
     'moead-ego': MOEAD_EGO,

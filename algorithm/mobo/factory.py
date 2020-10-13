@@ -33,12 +33,13 @@ def get_acquisition(name):
 
 
 def get_solver(name):
-    from algorithm.mobo.solver import NSGA2Solver, MOEADSolver, ParEGOSolver
+    from algorithm.mobo.solver import NSGA2Solver, MOEADSolver, ParEGOSolver, ParetoDiscoverySolver
 
     solver = {
         'nsga2': NSGA2Solver,
         'moead': MOEADSolver,
         'parego': ParEGOSolver,
+        'discovery': ParetoDiscoverySolver,
     }
 
     solver['default'] = NSGA2Solver
@@ -47,13 +48,14 @@ def get_solver(name):
 
 
 def get_selection(name):
-    from algorithm.mobo.selection import HVI, Uncertainty, Random, MOEADSelect
+    from algorithm.mobo.selection import HVI, Uncertainty, Random, MOEADSelect, DGEMOSelect
 
     selection = {
         'hvi': HVI,
         'uncertainty': Uncertainty,
         'random': Random,
         'moead': MOEADSelect,
+        'dgemo': DGEMOSelect,
     }
 
     selection['default'] = HVI
