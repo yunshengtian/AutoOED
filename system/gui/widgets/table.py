@@ -83,3 +83,9 @@ class Table:
         Get values of a column
         '''
         return [self.get(row, column) for row in range(self.n_rows)]
+
+    def export_csv(self):
+        '''
+        Export table content to a csv file
+        '''
+        self.table.exportTable()
