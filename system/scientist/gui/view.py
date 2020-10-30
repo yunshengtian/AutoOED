@@ -7,7 +7,7 @@ from system.utils.path import get_root_dir
 from system.scientist.gui.params import *
 
 
-class View:
+class ScientistView:
 
     def __init__(self, root):
         '''

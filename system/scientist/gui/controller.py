@@ -9,7 +9,7 @@ from problem.common import build_problem, get_initial_samples
 from problem.problem import Problem
 
 import tkinter as tk
-from system.scientist.gui.view import View
+from system.scientist.gui.view import ScientistView
 from system.server.agent import DataAgent, WorkerAgent
 from system.scientist.gui.params import *
 
@@ -56,7 +56,7 @@ class ScientistController:
         self.n_sample = None
         self.n_valid_sample = None
 
-        self.view = View(self.root)
+        self.view = ScientistView(self.root)
         self.controller = {}
 
         self._init_menu()

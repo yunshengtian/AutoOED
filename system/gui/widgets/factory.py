@@ -21,7 +21,8 @@ def create_label(master, row, column, text,
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='W'):
     label = tk.Label(master=master, text=text)
     label.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
-
+    return label
+    
 
 def create_frame(master, row, column, 
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
@@ -67,14 +68,14 @@ def create_labeled_frame(master, row, column, text,
     return frame
 
 
-def create_labeled_combobox(master, row, column, text, values, class_type='string', readonly=True, width=combobox_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None, 
+def create_labeled_combobox(master, row, column, text, values=None, class_type='string', readonly=True, width=combobox_width, justify='right', required=False, required_mark=True, default=None, valid_check=None, error_msg=None, 
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = text + ' (*): ' if required and required_mark else text + ': '
     label = tk.Label(master=frame, text=label_text)
     label.grid(row=0, column=0, sticky='W')
-    combobox = ttk.Combobox(master=frame, values=values, state='readonly' if readonly else None, width=width, justify='right')
+    combobox = ttk.Combobox(master=frame, values=values, state='readonly' if readonly else None, width=width, justify=justify)
     combobox.grid(row=0, column=1, sticky='E')
     return get_entry(class_type, combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg)
 
