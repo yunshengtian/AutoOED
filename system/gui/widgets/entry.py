@@ -181,9 +181,9 @@ class CheckbuttonEntry(Entry):
     '''
     Entry for checkbutton
     '''
-    def __init__(self, var, master):
+    def __init__(self, var, widget):
         self.var = var
-        self.master = master
+        self.widget = widget
         self.readonly = False
     
     def get(self):

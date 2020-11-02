@@ -53,12 +53,18 @@ def create_entry(master, row, column, class_type, width=entry_width, required=Fa
 
 
 def create_checkbutton(master, row, column, text,
-        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky=None):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky=None, return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     var = tk.IntVar()
-    tk.Checkbutton(master=frame, variable=var, highlightthickness=0, bd=0).grid(row=0, column=0)
-    tk.Label(master=frame, text=text).grid(row=0, column=1)
-    return get_entry('checkbutton', var, frame)
+    checkbutton = tk.Checkbutton(master=frame, variable=var, highlightthickness=0, bd=0)
+    checkbutton.grid(row=0, column=0)
+    label = tk.Label(master=frame, text=text)
+    label.grid(row=0, column=1)
+    entry = get_entry('checkbutton', var, checkbutton)
+    if return_label:
+        return label, entry
+    else:
+        return entry
 
 
 def create_labeled_frame(master, row, column, text, 
@@ -69,7 +75,7 @@ def create_labeled_frame(master, row, column, text,
 
 
 def create_labeled_combobox(master, row, column, text, values=None, class_type='string', readonly=True, width=combobox_width, justify='right', required=False, required_mark=True, default=None, valid_check=None, error_msg=None, 
-        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW', return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = text + ' (*): ' if required and required_mark else text + ': '
@@ -77,11 +83,15 @@ def create_labeled_combobox(master, row, column, text, values=None, class_type='
     label.grid(row=0, column=0, sticky='W')
     combobox = ttk.Combobox(master=frame, values=values, state='readonly' if readonly else None, width=width, justify=justify)
     combobox.grid(row=0, column=1, sticky='E')
-    return get_entry(class_type, combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg)
+    entry = get_entry(class_type, combobox, required=required, default=default, readonly=readonly, valid_check=valid_check, error_msg=error_msg)
+    if return_label:
+        return label, entry
+    else:
+        return entry
 
 
 def create_labeled_button(master, row, column, label_text, button_text, command=None, required=False, required_mark=True,
-        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW', return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = label_text + ' (*): ' if required and required_mark else label_text + ': '
@@ -89,11 +99,14 @@ def create_labeled_button(master, row, column, label_text, button_text, command=
     label.grid(row=0, column=0, sticky='W')
     button = Button(master=frame, text=button_text, command=command)
     button.grid(row=0, column=1, sticky='E')
-    return button
+    if return_label:
+        return label, button
+    else:
+        return button
 
 
 def create_labeled_entry(master, row, column, text, class_type, width=entry_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None,  
-        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='EW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='EW', return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     grid_configure(frame, [0], [0, 1])
     label_text = text + ' (*): ' if required and required_mark else text + ': '
@@ -101,11 +114,15 @@ def create_labeled_entry(master, row, column, text, class_type, width=entry_widt
     label.grid(row=0, column=0, sticky='W')
     entry = tk.Entry(master=frame, width=width, justify='right')
     entry.grid(row=0, column=1, sticky='E')
-    return get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg)
+    entry = get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg)
+    if return_label:
+        return label, entry
+    else:
+        return entry
 
 
 def create_labeled_button_entry(master, row, column, label_text, button_text, command=None, width=entry_width, required=False, required_mark=True, default=None, valid_check=None, error_msg=None,
-        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW', return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, 0, pady / 2, sticky)
     grid_configure(frame, [0], [1])
     label_text = label_text + ' (*): ' if required and required_mark else label_text + ': '
@@ -115,17 +132,25 @@ def create_labeled_button_entry(master, row, column, label_text, button_text, co
     button.grid(row=1, column=0, padx=padx)
     entry = tk.Entry(master=frame, width=width, justify='right')
     entry.grid(row=1, column=1, sticky='EW', padx=padx)
-    return button, get_entry('string', entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg)
+    entry = get_entry('string', entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg)
+    if return_label:
+        return label, button, entry
+    else:
+        return button, entry
 
 
-def create_labeled_text(master, row, column, text, width, height, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
+def create_labeled_text(master, row, column, text, width, height, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW', return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
     label_text = text + ':'
     label = tk.Label(master=frame, text=label_text)
     label.grid(row=0, column=0, sticky='W')
     scrtext = scrolledtext.ScrolledText(master=frame, width=width, height=height)
     scrtext.grid(row=1, column=0, pady=pady / 2, sticky='EW')
-    return get_entry('string', scrtext)
+    entry = get_entry('string', scrtext)
+    if return_label:
+        return label, entry
+    else:
+        return entry
 
 
 def create_widget(name, *args, **kwargs):

@@ -34,6 +34,11 @@ algo_config_map = {
         'nu': 'Type of Matern kernel',
         'n_spectral_pts': 'Number of points for spectral sampling',
         'mean_sample': 'Use mean sample for Thompson sampling',
+        'hidden_sizes': 'Size of hidden layers',
+        'activation': 'Activation',
+        'lr': 'Learning rate',
+        'weight_decay': 'Weight decay',
+        'n_epoch': 'Number of training epoch',
     },
     'acquisition': {
         'name': 'Name',
@@ -71,6 +76,7 @@ algo_value_map = {
             'nsga2': 'NSGA-II',
             'moead': 'MOEA/D',
             'parego': 'ParEGO Solver',
+            'discovery': 'Pareto Discovery',
         },
         'pop_init_method': {
             'random': 'Random',
@@ -83,7 +89,8 @@ algo_value_map = {
             'hvi': 'Hypervolume Improvement',
             'uncertainty': 'Uncertainty',
             'random': 'Random',
-            'moead': 'MOEA/D Selection',
+            'moead': 'MOEA/D-EGO Selection',
+            'dgemo': 'DGEMO Selection',
         },
     },
 }
