@@ -11,10 +11,16 @@ conda env create -f environment.yml
 conda activate mobo
 ```
 
-Or directly install major dependencies from pip:
+Or install by pip:
 
 ```
-pip install numpy scipy argparse autograd cma cython matplotlib pandas pygco pymoo pymop pyyaml sklearn tkintertable
+pip install -r requirements.txt
+```
+
+Finally, install the following packages by pip:
+
+```
+pip install pymoo==0.4.1 pygco==0.0.16
 ```
 
 Tested with Python 3.7 on Ubuntu 18.04.
@@ -22,8 +28,5 @@ Tested with Python 3.7 on Ubuntu 18.04.
 ## Getting Started
 
 ```
-python run_server.py
-python run_client.py
+python run_scientist.py
 ```
-
-These commands correspond to running the server/client program respectively.

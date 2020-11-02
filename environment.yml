@@ -29,9 +29,8 @@ dependencies:
     - matplotlib==3.2.2
     - numpy==1.19.0
     - pandas==1.0.5
+    - pillow==7.2.0
     - pydoe2==1.3.0
-    - pygco==0.0.16
-    - pymoo==0.4.1
     - pymop==0.2.4
     - pyparsing==2.4.7
     - python-dateutil==2.8.1
@@ -43,3 +42,4 @@ dependencies:
     - sklearn==0.0
     - threadpoolctl==2.1.0
     - tkintertable==1.3.2
+    - torch==1.6.0
