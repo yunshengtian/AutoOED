@@ -264,6 +264,17 @@ class ScientistController:
         '''
         Save configurations to file
         '''
+        # convert all numpy array to list
+        def convert_config(config):
+            for key, val in config.items():
+                if type(val) == np.ndarray:
+                    config[key] = val.tolist()
+                elif type(val) == dict:
+                    convert_config(config[key])
+
+        config = config.copy()
+        convert_config(config)
+
         self.config_id += 1
         with open(os.path.join(self.result_dir, 'config', f'config_{self.config_id}.yml'), 'w') as fp:
             yaml.dump(config, fp, default_flow_style=False, sort_keys=False)
