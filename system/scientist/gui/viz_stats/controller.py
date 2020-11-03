@@ -72,3 +72,5 @@ class VizStatsController:
         self.view.ax2.relim()
         self.view.ax2.autoscale_view()
         self.view.ax2.set_title('Model Prediction Error: %.4f' % pred_error[-1])
+
+        self.view.fig.canvas.draw()

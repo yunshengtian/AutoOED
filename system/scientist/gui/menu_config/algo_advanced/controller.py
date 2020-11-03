@@ -13,7 +13,7 @@ class AlgoAdvancedController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.algo_cfg = {}
+        self.algo_cfg = self.root_controller.algo_cfg
 
         self.view = AlgoAdvancedView(self.root_view)
 
