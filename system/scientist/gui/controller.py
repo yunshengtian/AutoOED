@@ -1,4 +1,5 @@
 import os
+import shutil
 import yaml
 from time import time, sleep
 from datetime import datetime
@@ -291,8 +292,11 @@ class ScientistController:
     def create_result_dir(self, window):
         # check if result_dir folder is not empty
         if os.path.exists(self.result_dir) and os.listdir(self.result_dir) != []:
-            tk.messagebox.showinfo('Error', f'Result folder {self.result_dir} is not empty, please change another folder for saving results by clicking: File -> Save in...', parent=window)
-            return False
+            overwrite = tk.messagebox.askquestion('Error', f'Result folder {self.result_dir} is not empty, do you want to overwrite? If not, please change another folder for saving results by clicking: File -> Save in...', parent=window)
+            if overwrite == 'no':
+                return False
+            else:
+                shutil.rmtree(self.result_dir)
         os.makedirs(self.result_dir, exist_ok=True)
         config_dir = os.path.join(self.result_dir, 'config')
         os.makedirs(config_dir)
