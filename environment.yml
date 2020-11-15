@@ -2,15 +2,8 @@ name: mobo
 channels:
   - defaults
 dependencies:
-  - ca-certificates=2020.6.24
-  - certifi=2020.6.20
-  - libedit=3.1.20191231
-  - libffi=3.3
-  - ncurses=6.2
-  - openssl=1.1.1g
   - pip=20.1.1
   - python=3.7.7
-  - readline=8.0
   - setuptools=47.3.1
   - sqlite=3.32.3
   - tk=8.6.10
