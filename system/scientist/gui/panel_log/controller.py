@@ -1,3 +1,4 @@
+from datetime import datetime
 import tkinter as tk
 from .view import PanelLogView
 
@@ -19,12 +20,14 @@ class PanelLogController:
         '''
         if string == []: return
         self.view.widget['log'].configure(state=tk.NORMAL)
+        time = datetime.now().strftime('\n%Y-%m-%d %H:%M:%S\n')
         if isinstance(string, str):
-            self.view.widget['log'].insert(tk.INSERT, string + '\n')
+            log_str = string
         elif isinstance(string, list):
-            self.view.widget['log'].insert(tk.INSERT, '\n'.join(string) + '\n')
+            log_str = '\n'.join(string)
         else:
             raise NotImplementedError
+        self.view.widget['log'].insert(tk.INSERT, time + log_str + '\n')
         self.view.widget['log'].configure(state=tk.DISABLED)
         self.view.widget['log'].yview_pickplace('end')
 
