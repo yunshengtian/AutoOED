@@ -4,7 +4,7 @@ from multiprocessing import Value
 from ctypes import c_bool
 
 from system.utils.process_safe import ProcessSafeExit
-from system.server.database import Database
+from system.server.db_team import Database
 from system.server.core import optimize, predict, evaluate
 from system.server.utils import check_pareto
 
@@ -13,9 +13,9 @@ class DataAgent:
     '''
     Agent controlling data communication from & to database
     '''
-    def __init__(self):
-        self.db = None
-        self.db_dir = None
+    def __init__(self, database, table_name):
+        self.db = database
+        self.table_name = table_name
 
         self.opt_done = Value(c_bool, False)
         self.eval_done = Value(c_bool, False)
@@ -28,57 +28,16 @@ class DataAgent:
         self.n_obj = None
         self.minimize = True
 
-    def configure(self, db_dir=None, n_var=None, n_obj=None, minimize=None):
+    def configure(self, n_var=None, n_obj=None, minimize=None):
         '''
         Set configurations, a required step before initialization
         '''
-        if db_dir is not None:
-            self.db_dir = db_dir
         if n_var is not None:
             self.n_var = n_var
         if n_obj is not None:
             self.n_obj = n_obj
         if minimize is not None:
             self.minimize = minimize
-
-    def initialize_db(self):
-        '''
-        Initialize database, create table
-        '''
-        assert self.db_dir is not None
-        db_path = os.path.join(self.db_dir, 'data.db')
-        self.db = Database(db_path)
-
-        # keys and associated datatypes of database table
-        key_list = [f'x{i + 1} real' for i in range(self.n_var)] + \
-            [f'f{i + 1} real' for i in range(self.n_obj)] + \
-            [f'f{i + 1}_expected real' for i in range(self.n_obj)] + \
-            [f'f{i + 1}_uncertainty real' for i in range(self.n_obj)] + \
-            ['is_pareto boolean', 'config_id integer', 'batch_id integer']
-        self.db.create('data', key=key_list)
-        self.db.commit()
-
-        # high level key mapping (e.g., X -> [x1, x2, ...])
-        self.key_map = {
-            'X': [f'x{i + 1}' for i in range(self.n_var)],
-            'Y': [f'f{i + 1}' for i in range(self.n_obj)],
-            'Y_expected': [f'f{i + 1}_expected' for i in range(self.n_obj)],
-            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.n_obj)],
-            'is_pareto': 'is_pareto',
-            'config_id': 'config_id',
-            'batch_id': 'batch_id',
-        }
-
-        # datatype mapping in python
-        self.type_map = {
-            'X': float,
-            'Y': float,
-            'Y_expected': float,
-            'Y_uncertainty': float,
-            'is_pareto': bool,
-            'config_id': int,
-            'batch_id': int,
-        }
 
     def _map_key(self, key, flatten=False):
         '''
@@ -101,40 +60,55 @@ class DataAgent:
         else:
             raise NotImplementedError
 
-    def _map_type(self, key):
+    def init_table(self, create=False):
         '''
-        Get mapped types from self.type_map
+        Initialize database table
         '''
-        if isinstance(key, str):
-            return self.type_map[key]
-        elif isinstance(key, list):
-            return [self.type_map[k] for k in key]
-        else:
-            raise NotImplementedError
+        if create:
+            # keys and associated datatypes of database table
+            key_list = ['id int auto_increment primary key', "status varchar(20) not null default 'unevaluated'"] + \
+                [f'x{i + 1} float not null' for i in range(self.n_var)] + \
+                [f'f{i + 1} float' for i in range(self.n_obj)] + \
+                [f'f{i + 1}_expected float' for i in range(self.n_obj)] + \
+                [f'f{i + 1}_uncertainty float' for i in range(self.n_obj)] + \
+                ['is_pareto boolean', 'config_id int not null', 'batch_id int not null']
 
-    def initialize_data(self, X, Y=None):
+            self.db.create_table(name=self.table_name, description=','.join(key_list))
+
+        # high level key mapping (e.g., X -> [x1, x2, ...])
+        self.key_map = {
+            'status': 'status',
+            'X': [f'x{i + 1}' for i in range(self.n_var)],
+            'Y': [f'f{i + 1}' for i in range(self.n_obj)],
+            'Y_expected': [f'f{i + 1}_expected' for i in range(self.n_obj)],
+            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.n_obj)],
+            'is_pareto': 'is_pareto',
+            'config_id': 'config_id',
+            'batch_id': 'batch_id',
+        }
+
+    def init_data(self, X, Y=None):
         '''
         Initialize database table with initial data X, Y
         '''
         n_init_sample = X.shape[0]
 
-        Y_uncertainty = np.zeros((n_init_sample, self.n_obj))
-        Y_expected = np.zeros((n_init_sample, self.n_obj))
         config_id = np.zeros(n_init_sample, dtype=int)
         batch_id = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
-            is_pareto = check_pareto(Y, self.minimize)
+            is_pareto = check_pareto(Y, self.minimize).astype(int)
 
         # update data
-        with self.db.get_lock():
-            if Y is None:
-                self.db.insert('data', key=self._map_key(['X', 'Y_uncertainty', 'Y_expected', 'config_id', 'batch_id'], flatten=True),
-                    data=[X, Y_uncertainty, Y_expected, config_id, batch_id], lock=False)
-            else:
-                self.db.insert('data', key=None, data=[X, Y, Y_uncertainty, Y_expected, is_pareto, config_id, batch_id], lock=False)
-            last_rowid = self.db.get_last_rowid('data', lock=False)
-            self.db.commit()
+        if Y is None:
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'config_id', 'batch_id'], flatten=True),
+                data=[X, config_id, batch_id], transform=True)
+        else:
+            status = ['evaluated'] * n_init_sample
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'is_pareto', 'config_id', 'batch_id'], flatten=True),
+                data=[status, X, Y, is_pareto, config_id, batch_id], transform=True)
+
+        last_rowid = self.db.select_last_data(table=self.table_name, column=['id'])[0]
 
         # update status
         with self.opt_done.get_lock():
@@ -166,13 +140,12 @@ class DataAgent:
         config_id = np.full(sample_len, config_id)
 
         # update data
-        with self.db.get_lock():
-            batch_id = self.db.select_last('data', key='batch_id', dtype=int, lock=False) + 1
-            batch_id = np.full(sample_len, batch_id)
-            self.db.insert('data', key=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
-                data=[X, Y_expected, Y_uncertainty, config_id, batch_id], lock=False)
-            last_rowid = self.db.get_last_rowid('data', lock=False)
-            self.db.commit()
+        self.db.execute(f'select batch_id from {self.table_name} order by id desc limit 1')
+        batch_id = self.db.fetchone()[0] + 1
+        batch_id = np.full(sample_len, batch_id)
+        self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
+            data=[X, Y_expected, Y_uncertainty, config_id, batch_id], transform=True)
+        last_rowid = self.db.select_last_data(table=self.table_name, column=['id'])[0]
 
         # update status
         with self.opt_done.get_lock():
@@ -192,20 +165,19 @@ class DataAgent:
             rowid: row index to be updated (count from 1)
         '''
         # update data
-        with self.db.get_lock():
-            all_Y = self.load('Y', valid_only=False, lock=False)
-            all_Y[rowid - 1] = y
-            valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
-            all_Y_valid = all_Y[valid_idx]
+        Y_prev = self.load('Y', dtype=float)
+        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0]
+        Y_prev = Y_prev[rowids_prev]
 
-            is_pareto = np.full(len(all_Y), False)
-            is_pareto[valid_idx] = check_pareto(all_Y_valid, self.minimize)
-            pareto_id = np.where(is_pareto)[0] + 1
+        self.db.update_data(table=self.table_name, column=['status'] + self._map_key('Y'), data=['evaluated', y, rowid], condition='id = %s', transform=True)
 
-            self.db.update('data', key=self._map_key('Y'), data=[y], rowid=rowid, lock=False)
-            self.db.update('data', key='is_pareto', data=False, rowid=None, lock=False)
-            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id, lock=False)
-            self.db.commit()
+        if len(Y_prev) == 0:
+            self.db.update_data(table=self.table_name, column=['is_pareto'], data=[1, rowid], condition='id = %s', transform=True)
+        else:
+            Y_all = np.vstack([Y_prev, y])
+            rowids_all = np.concatenate([rowids_prev, [rowid]])
+            is_pareto = check_pareto(Y_all, self.minimize).astype(int)
+            self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto, rowids_all], condition='id = %s', transform=True)
 
         # update status
         with self.eval_done.get_lock():
@@ -222,20 +194,16 @@ class DataAgent:
             rowids: row indices to be updated (count from 1)
         '''
         # update data
-        with self.db.get_lock():
-            all_Y = self.load('Y', valid_only=False, lock=False)
-            all_Y[np.array(rowids) - 1] = Y
-            valid_idx = np.where(~np.isnan(all_Y).any(axis=1))
-            all_Y_valid = all_Y[valid_idx]
+        Y_prev = self.load('Y', dtype=float)
+        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0]
+        Y_prev = Y_prev[rowids_prev]
 
-            is_pareto = np.full(len(all_Y), False)
-            is_pareto[valid_idx] = check_pareto(all_Y_valid, self.minimize)
-            pareto_id = np.where(is_pareto)[0] + 1
+        Y_all = np.vstack([Y_prev, Y])
+        rowids_all = np.concatenate([rowids_prev, rowids])
+        is_pareto = check_pareto(Y_all, self.minimize).astype(int)
 
-            self.db.update('data', key=self._map_key('Y'), data=[Y], rowid=rowids, lock=False)
-            self.db.update('data', key='is_pareto', data=False, rowid=None, lock=False)
-            self.db.update('data', key='is_pareto', data=True, rowid=pareto_id, lock=False)
-            self.db.commit()
+        self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y, rowids], condition='id = %s', transform=True)
+        self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto, rowids_all], condition='id = %s', transform=True)
 
         # update status
         with self.eval_done.get_lock():
@@ -245,36 +213,73 @@ class DataAgent:
         with self.n_valid_sample.get_lock():
             self.n_valid_sample.value += len(Y)
 
-    def load(self, keys, valid_only=True, rowid=None, lock=True):
+    def _load(self, keys, rowid=None):
         '''
-        Load array from database table
-        Input:
-            valid_only: if only keeps valid data (evaluated data)
         '''
-        result = self.db.select('data', key=self._map_key(keys), dtype=self._map_type(keys), rowid=rowid, lock=lock)
-        if valid_only:
-            if isinstance(result, list):
-                if 'Y' not in keys:
-                    return result
-                Y_idx = keys.index('Y')
-                isnan = np.isnan(result[Y_idx]).any(axis=1)
-                valid_idx = np.where(~isnan)[0]
-                return [res[valid_idx] for res in result]
-            else:
-                if 'Y' != keys:
-                    return result
-                isnan = np.isnan(result).any(axis=1)
-                valid_idx = np.where(~isnan)[0]
-                return result[valid_idx]
+        if rowid is None:
+            condition = None
+        elif type(rowid) == int:
+            condition = f'id = {rowid}'
         else:
-            return result
+            condition = f"id in ({','.join(rowid)})"
+
+        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), condition=condition)
+        return data
+
+    def load_str(self, keys, rowid=None):
+        '''
+        Load data represented as string from database table
+        '''
+        data = self._load(keys, rowid)
+        data_str = np.array(data, dtype=str)
+        return data_str
+
+    def load(self, keys, rowid=None, dtype=None):
+        '''
+        Load data from database table
+        '''
+        data = self._load(keys, rowid)
+
+        if type(keys) == list:
+            mapped_keys = self._map_key(keys)
+            res_len = [len(k) if type(k) == list else 1 for k in mapped_keys]
+            res_cumsum = np.cumsum(res_len)
+            result_list = [[] for _ in range(len(keys))]
+
+            for row in range(len(data)):
+                res_idx = 0
+                for col in range(len(data[row])):
+                    if col >= res_cumsum[res_idx]:
+                        res_idx += 1
+                    if res_len[res_idx] == 1:
+                        result_list[res_idx].append(data[row][col])
+                    else:
+                        if col == 0 or col == res_cumsum[res_idx - 1]:
+                            result_list[res_idx].append([])
+                        result_list[res_idx][-1].append(data[row][col])
+
+            if dtype is not None:
+                if type(dtype) == list:
+                    assert len(dtype) == len(result_list)
+                    for i in range(len(dtype)):
+                        result_list[i] = np.array(result_list[i], dtype=dtype[i])
+                else:
+                    for i in range(len(result_list)):
+                        result_list[i] = np.array(result_list[i], dtype=dtype)
+            return result_list
+        else:
+            if dtype is not None:
+                data = np.array(data, dtype=dtype)
+            return data
 
     def _predict(self, config, X_next):
         '''
         Performance prediction of given design variables X_next
         '''
         # read current data from database
-        X, Y = self.load(['X', 'Y'])
+        X, Y = self.load(['X', 'Y'], dtype=float)
+        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        X, Y = X[valid_idx], Y[valid_idx]
 
         # predict performance of given input X_next
         Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
@@ -285,8 +290,11 @@ class DataAgent:
         '''
         Evaluation of design variables given the associated rowid in database
         '''
+        self.db.connect(force=True)
+        
         # load design variables
-        x_next = self.load('X', valid_only=False, rowid=rowid)[0]
+        x_next = self.load('X', rowid=rowid, dtype=float)[0]
+        self.db.update_data(table=self.table_name, column=['status'], data=['evaluating', rowid], condition='id = %s')
 
         # run evaluation
         y_next = evaluate(config, x_next)
@@ -304,7 +312,9 @@ class DataAgent:
         Optimization of next batch of samples to evaluate, stored in 'rowids' rows in database
         '''
         # read current data from database
-        X, Y = self.load(['X', 'Y'])
+        X, Y = self.load(['X', 'Y'], dtype=float)
+        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        X, Y = X[valid_idx], Y[valid_idx]
 
         # optimize for best X_next
         X_next = optimize(config, X, Y)
@@ -393,12 +403,13 @@ class DataAgent:
         '''
         Correct stats variables due to process termination
         '''
-        Y = self.load('Y')
-        Y_valid = ~np.isnan(Y).any(axis=1)
+        status = self.load_str('status')
+        n_sample = len(status)
+        n_valid_sample = np.sum(status == 'evaluated')
         with self.n_sample.get_lock():
-            self.n_sample.value = len(Y)
+            self.n_sample.value = n_sample
         with self.n_valid_sample.get_lock():
-            self.n_valid_sample.value = len(Y_valid)
+            self.n_valid_sample.value = n_valid_sample
 
     def quit(self):
         '''

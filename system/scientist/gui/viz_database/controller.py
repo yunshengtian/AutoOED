@@ -1,5 +1,5 @@
 import numpy as np
-from system.gui.widgets.table import Table
+from system.gui.widgets.newtable import Table
 from .view import VizDatabaseView
 
 
@@ -15,36 +15,19 @@ class VizDatabaseController:
 
         self.view = VizDatabaseView(self.root_view)
 
-        # load data
-        X, Y, is_pareto = self.data_agent.load(['X', 'Y', 'is_pareto'])
-        n_init_sample = len(X)
-
         # initialize database table
-        n_var, n_obj = X.shape[1], Y.shape[1]
-        titles = ['status'] + [f'x{i + 1}' for i in range(n_var)] + \
+        n_var, n_obj = self.data_agent.n_var, self.data_agent.n_obj
+        self.columns = ['status'] + [f'x{i + 1}' for i in range(n_var)] + \
             [f'f{i + 1}' for i in range(n_obj)] + \
             [f'f{i + 1}_expected' for i in range(n_obj)] + \
             [f'f{i + 1}_uncertainty' for i in range(n_obj)] + \
             ['pareto', 'config_id', 'batch_id']
-        key_map = {
-            'X': [f'x{i + 1}' for i in range(n_var)],
-            'Y': [f'f{i + 1}' for i in range(n_obj)],
-            'Y_expected': [f'f{i + 1}_expected' for i in range(n_obj)],
-            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(n_obj)],
-        }
+        self.n_var = n_var
+        self.n_obj = n_obj
 
-        self.table = Table(master=self.view.frame, titles=titles)
-        self.table.register_key_map(key_map)
-        self.table.insert({
-            'status': ['evaluated'] * n_init_sample,
-            'X': X, 
-            'Y': Y, 
-            'Y_expected': np.full_like(Y, 'N/A', dtype=object),
-            'Y_uncertainty': np.full_like(Y, 'N/A', dtype=object),
-            'pareto': is_pareto, 
-            'config_id': np.zeros(n_init_sample, dtype=int), 
-            'batch_id': np.zeros(n_init_sample, dtype=int)
-        })
+        self.table = Table(master=self.view.frame, columns=self.columns)
+        data_str = self.data_agent.load_str(keys=['status', 'X', 'Y', 'Y_expected', 'Y_uncertainty', 'is_pareto', 'config_id', 'batch_id'])
+        self.table.insert(columns=None, data=data_str)
 
     def update_data(self, opt_done, eval_done):
         '''
@@ -54,35 +37,15 @@ class VizDatabaseController:
             return
 
         # load data
-        X, Y, Y_expected, Y_uncertainty, is_pareto, config_id, batch_id = \
-            self.data_agent.load(['X', 'Y', 'Y_expected', 'Y_uncertainty', 'is_pareto', 'config_id', 'batch_id'], valid_only=False)
+        data_str = self.data_agent.load_str(keys=['X', 'Y', 'Y_expected', 'Y_uncertainty', 'is_pareto', 'config_id', 'batch_id'])
 
         # update optimization results
         if opt_done:
             n_prev_sample = self.table.n_rows
-            insert_len = len(Y_expected[n_prev_sample:])
-            self.table.insert({
-                # confirmed value
-                'X': X[n_prev_sample:], 
-                'Y_expected': Y_expected[n_prev_sample:],
-                'Y_uncertainty': Y_uncertainty[n_prev_sample:],
-                'config_id': config_id[n_prev_sample:], 
-                'batch_id': batch_id[n_prev_sample:],
-                # unconfirmed value
-                'status': ['unevaluated'] * insert_len,
-                'Y': np.ones_like(Y_expected[n_prev_sample:]) * np.nan,
-                'pareto': [False] * insert_len,
-            })
+            self.table.insert(columns=self.columns[1:], data=data_str[n_prev_sample:])
 
         # update evaluation results
         if eval_done:
-            self.table.update({
-                'Y': Y, 
-                'pareto': is_pareto,
-            })
-
-    def update_status(self, status, rowids):
-        '''
-        Update status of evaluation
-        '''
-        self.table.update({'status': status}, rowids)
+            Y_str = data_str[:, self.n_var:self.n_var + self.n_obj]
+            pareto_str = data_str[:, -3]
+            self.table.update(columns=self.data_agent._map_key('Y') + ['pareto'], data=[Y_str, pareto_str], transform=True)

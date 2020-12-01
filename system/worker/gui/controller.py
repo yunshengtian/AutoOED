@@ -1,3 +1,4 @@
+import numpy as np
 import tkinter as tk
 from tkinter import messagebox
 from system.server.db_team import Database
@@ -101,16 +102,20 @@ class WorkerController:
         '''
         '''
         assert self.table_name is not None
+
+        if self.view.widget['db_table'] is None:
+            if self.database.check_table_exist(self.table_name):
+                self.database.execute(f'describe {self.table_name}')
+                columns = [res[0] for res in self.database.fetchall() if res[0] != 'id']
+                self.view.init_db_table(columns)
+            else:
+                return
+
         checksum = self.database.get_checksum(table=self.table_name)
         if checksum == self.table_checksum or checksum == 0: return
-
         self.table_checksum = checksum
 
         data = self.database.load_table(name=self.table_name)
+        data = np.array(data, dtype=str)[:, 1:]
 
-        if self.view.widget['db_table'] is None:
-            self.database.execute(f'describe {self.table_name}')
-            titles = [res[0] for res in self.database.fetchall()]
-            self.view.init_db_table(titles)
-
-        self.view.widget['db_table'].update(data)
+        self.view.widget['db_table'].update(columns=None, data=data)

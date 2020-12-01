@@ -10,7 +10,9 @@ from problem.common import build_problem, get_initial_samples
 from problem.problem import Problem
 
 import tkinter as tk
-from system.scientist.gui.view import ScientistView
+from tkinter import messagebox
+from system.scientist.gui.view import ScientistLoginView, ScientistView
+from system.server.db_team import Database
 from system.server.agent import DataAgent, WorkerAgent
 from system.scientist.gui.params import *
 
@@ -29,6 +31,65 @@ from system.scientist.gui.viz_database import VizDatabaseController
 class ScientistController:
 
     def __init__(self):
+        self.root_login = tk.Tk()
+        self.root_login.title('OpenMOBO - Scientist')
+        self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
+        self.root_login.resizable(False, False)
+        self.view_login = ScientistLoginView(self.root_login)
+        self.bind_command_login()
+
+        self.root = None
+        self.view = None
+        self.after_handle = None
+        
+        self.database = None
+        self.table_name = None
+
+        self.table_checksum = None
+
+    def bind_command_login(self):
+        '''
+        '''
+        self.view_login.widget['login'].configure(command=self.login_database)
+
+    def login_database(self):
+        '''
+        '''
+        try:
+            ip = self.view_login.widget['ip'].get()
+            user = self.view_login.widget['user'].get()
+            passwd = self.view_login.widget['passwd'].get()
+            table = self.view_login.widget['table'].get()
+        except Exception as e:
+            messagebox.showinfo('Error', e, parent=self.root_login)
+            return
+
+        try:
+            self.database = Database(ip, user, passwd)
+        except:
+            messagebox.showinfo('Error', 'Invalid IP or username or password', parent=self.root_login)
+            return
+
+        if not (self.database.check_table_exist(table) or self.database.check_empty_table_exist(table)):
+            messagebox.showinfo('Error', f"Table {table} doesn't exist", parent=self.root_login)
+            return     
+
+        self.after_login(table_name=table)
+
+    def _quit_login(self):
+        '''
+        Quit handling for login window
+        '''
+        self.root_login.quit()
+        self.root_login.destroy()
+
+    def after_login(self, table_name):
+        '''
+        '''
+        self._quit_login()
+
+        self.table_name = table_name
+
         self.root = tk.Tk()
         self.root.title('OpenMOBO - Scientist')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
@@ -49,7 +110,7 @@ class ScientistController:
         self.problem_cfg = None
         self.timestamp = None
 
-        self.data_agent = DataAgent()
+        self.data_agent = DataAgent(self.database, self.table_name)
         self.worker_agent = WorkerAgent(self.data_agent)
 
         self.true_pfront = None
@@ -62,6 +123,8 @@ class ScientistController:
 
         self._init_menu()
         self._init_panel()
+
+        self.root.mainloop()
     
     def _init_menu(self):
         '''
@@ -105,6 +168,16 @@ class ScientistController:
         self.controller['viz_database'] = VizDatabaseController(self)
         self.view.activate_viz()
 
+    def _load_existing_data(self):
+        '''
+        '''
+        # load table data
+        self.controller['viz_database'].update_data(opt_done=True, eval_done=False)
+
+        # load viz status
+        self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
+        self.controller['viz_stats'].redraw()
+
     def get_config(self):
         return self.config
 
@@ -144,6 +217,18 @@ class ScientistController:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
                 return False
 
+            # check if config is compatible with history data (problem dimension)
+            table_exist = self.database.check_table_exist(self.table_name)
+            if table_exist:
+                column_names = self.database.get_column_names(self.table_name)
+                data_n_var = len([name for name in column_names if name.startswith('x')])
+                data_n_obj = len([name for name in column_names if name.startswith('y') and '_' not in name])
+                try:
+                    assert problem.n_var == data_n_var and problem.n_obj == data_n_obj
+                except:
+                    tk.messagebox.showinfo('Error', 'Problem dimension mismatch between configuration and history data', parent=window)
+                    return False
+
             # update config
             self.config = config
             self.problem_cfg = problem.get_config(
@@ -159,27 +244,31 @@ class ScientistController:
             # TODO: give hint of initializing
 
             # configure agents
-            self.data_agent.configure(db_dir=self.result_dir, n_var=problem.n_var, n_obj=problem.n_obj, minimize=problem.minimize)
-            self.data_agent.initialize_db()
+            self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, minimize=problem.minimize)
             self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_performance'))
 
-            # data initialization
-            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(config['problem'], problem)
-            if X_init_evaluated is not None:
-                self.data_agent.initialize_data(X_init_evaluated, Y_init_evaluated)
-            if X_init_unevaluated is not None:
-                rowids = self.data_agent.initialize_data(X_init_unevaluated)
-                for rowid in rowids:
-                    self.worker_agent.add_eval_worker(rowid)
-                
-                # wait until initialization is completed
-                while not self.worker_agent.empty():
-                    self.worker_agent.refresh()
-                    sleep(self.refresh_rate / 1000.0)
+            self.data_agent.init_table(create=not table_exist)
+
+            if not table_exist:
+                # data initialization
+                X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(config['problem'], problem)
+                if X_init_evaluated is not None:
+                    self.data_agent.init_data(X_init_evaluated, Y_init_evaluated)
+                if X_init_unevaluated is not None:
+                    rowids = self.data_agent.init_data(X_init_unevaluated)
+                    for rowid in rowids:
+                        self.worker_agent.add_eval_worker(rowid)
+                    
+                    # wait until initialization is completed
+                    while not self.worker_agent.empty():
+                        self.worker_agent.refresh()
+                        sleep(self.refresh_rate / 1000.0)
 
             # calculate reference point
             if self.config['problem']['ref_point'] is None:
-                Y = self.data_agent.load('Y')
+                Y = self.data_agent.load('Y', dtype=float)
+                valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+                Y = Y[valid_idx]
                 ref_point = np.zeros(problem.n_obj)
                 for i, m in enumerate(problem.minimize):
                     if m == True:
@@ -190,6 +279,10 @@ class ScientistController:
 
             # initialize visualization widgets
             self._init_visualization()
+
+            # load existing data
+            if table_exist:
+                self._load_existing_data()
 
             # disable changing saving location
             self.view.menu_file.entryconfig(0, state=tk.DISABLED)
@@ -230,7 +323,7 @@ class ScientistController:
             self.controller['panel_log'].view.widget['clear'].enable()
 
             # trigger periodic refresh
-            self.root.after(self.refresh_rate, self.refresh)
+            self.after_handle = self.root.after(self.refresh_rate, self.refresh)
 
         else: # user changed config in the middle
             try:
@@ -327,22 +420,6 @@ class ScientistController:
             log_text = datetime.now().strftime('%Y-%m-%d %H:%M:%S\n') + log[0] + '\n'
             log_list.append(log_text)
 
-            if 'evaluation' not in log_text: continue
-
-            # evaluation worker log, update database table status
-            if len(log) > 1:
-                rowid = int(log[1])
-                if 'started' in log_text:
-                    status.append('evaluating')
-                elif 'stopped' in log_text:
-                    status.append('unevaluated')
-                elif 'completed' in log_text:
-                    status.append('evaluated')
-                    evaluated = True
-                else:
-                    raise NotImplementedError
-                rowids.append(rowid)
-
         # log display
         self.controller['panel_log'].log(log_list)
 
@@ -354,13 +431,12 @@ class ScientistController:
             self.controller['viz_stats'].redraw()
         
         self.controller['viz_database'].update_data(opt_done, eval_done)
-        self.controller['viz_database'].update_status(status, rowids)
 
         # check stopping criterion
         self.check_stop_criterion()
         
         # trigger another refresh
-        self.root.after(self.refresh_rate, self.refresh)
+        self.after_handle = self.root.after(self.refresh_rate, self.refresh)
 
     def check_stop_criterion(self):
         '''
@@ -400,9 +476,12 @@ class ScientistController:
         '''
         self.data_agent.quit()
         self.worker_agent.quit()
+        self.database.quit()
 
+        if self.after_handle is not None:
+            self.root.after_cancel(self.after_handle)
         self.root.quit()
         self.root.destroy()
 
     def run(self):
-        tk.mainloop()
+        self.root_login.mainloop()

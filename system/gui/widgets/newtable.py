@@ -6,10 +6,11 @@ class Table:
     '''
     Excel-like table in tkinter gui
     '''
-    def __init__(self, master, titles):
+    def __init__(self, master, columns):
         self.model = TableModel()
-        for title in titles:
-            self.model.addColumn(colname=title)
+        self.columns = columns
+        for column in columns:
+            self.model.addColumn(colname=column)
         self.table = TableCanvas(parent=master, model=self.model, cellwidth=110, read_only=True)
         self.table.setSelectedRow(-1)
         self.table.show()
@@ -26,27 +27,52 @@ class Table:
         else:
             return val
 
-    def insert(self, data):
+    def transform_data(self, data_list):
+        '''
+        '''
+        new_data_list = []
+        for data in data_list:
+            data = np.array(data, dtype=str)
+            if len(data.shape) == 1:
+                data = np.expand_dims(data, axis=1)
+            assert len(data.shape) == 2
+            new_data_list.append(data)
+        return np.hstack(new_data_list)
+
+    def insert(self, columns, data, transform=False):
         '''
         Insert data into bottom of the table
         '''
+        if transform:
+            data = self.transform_data(data)
+
+        data = np.array(data, dtype=str)
+        data[data == 'None'] = 'N/A'
+
         new_n_rows = len(data)
         if new_n_rows > self.n_rows:
             self.model.autoAddRows(new_n_rows - self.n_rows)
             self.n_rows = new_n_rows
 
+        if columns is None: columns = self.columns
+
         for row in range(len(data)):
             row_data = data[row]
-            for col in range(len(row_data)):
-                entry_data = row_data[col]
-                self.model.data[row][col] = self._process_val(entry_data)
+            for j, col in enumerate(columns):
+                self.model.data[row][col] = self._process_val(row_data[j])
         
         self.table.redrawTable()
 
-    def update(self, data, rowids=None):
+    def update(self, columns, data, rowids=None, transform=False):
         '''
         Update rows of the table (TODO: support single rowid)
         '''
+        if transform:
+            data = self.transform_data(data)
+
+        data = np.array(data, dtype=str)
+        data[data == 'None'] = 'N/A'
+
         if rowids is None:
             rowids = list(range(len(data)))
             new_n_rows = len(data)
@@ -54,12 +80,13 @@ class Table:
                 self.model.autoAddRows(new_n_rows - self.n_rows)
                 self.n_rows = new_n_rows
 
+        if columns is None: columns = self.columns
+
         assert len(data) == len(rowids)
         for i, row in enumerate(rowids):
             row_data = data[i]
-            for col in range(len(row_data)):
-                entry_data = row_data[col]
-                self.model.data[row][col] = self._process_val(entry_data)
+            for j, col in enumerate(columns):
+                self.model.data[row][col] = self._process_val(row_data[j])
 
         self.table.redrawTable()
 

@@ -20,23 +20,20 @@ class VizSpaceController:
         self.max_iter = 0
         self.view.scale_iter.configure(command=self.redraw)
 
-        # load from database
-        X, Y, is_pareto = self.data_agent.load(['X', 'Y', 'is_pareto'])
-
         # calculate pfront limit (for rescale plot afterwards)
         self.pfront_limit = None
         true_pfront = self.root_controller.true_pfront
         if true_pfront is not None:
             self.pfront_limit = [np.min(true_pfront, axis=1), np.max(true_pfront, axis=1)]
 
-        # plot performance space
+        # initialize performance space
         scatter_list = []
         if true_pfront is not None:
             scatter_pfront = self.view.ax1.scatter(*true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
             scatter_list.append(scatter_pfront)
-        self.scatter_x = X
-        self.scatter_y = self.view.ax1.scatter(*Y.T, color='blue', s=10, label='Evaluated')
-        self.scatter_y_pareto = self.view.ax1.scatter(*Y[is_pareto].T, color='red', s=10, label='Pareto front')
+        self.scatter_x = None
+        self.scatter_y = self.view.ax1.scatter([], [], color='blue', s=10, label='Evaluated')
+        self.scatter_y_pareto = self.view.ax1.scatter([], [], color='red', s=10, label='Pareto front')
         self.scatter_y_new = self.view.ax1.scatter([], [], color='m', s=10, label='New evaluated')
         self.scatter_y_pred = self.view.ax1.scatter([], [], facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted')
         scatter_list.extend([self.scatter_y, self.scatter_y_pareto, self.scatter_y_new, self.scatter_y_pred])
@@ -62,7 +59,7 @@ class VizSpaceController:
 
         # refresh figure
         self.view.fig.subplots_adjust(bottom=0.15)
-        self.view.fig.canvas.draw()
+        self.redraw_performance_space(reset_scaler=True)
 
     def set_config(self, config=None, problem_cfg=None):
         if config is not None:
@@ -158,7 +155,10 @@ class VizSpaceController:
         Redraw performance space
         '''
         # load data
-        X, Y, Y_expected, is_pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'is_pareto', 'batch_id'])
+        X, Y, Y_expected, is_pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'is_pareto', 'batch_id'], dtype=[float, float, float, bool, int])
+        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        if len(valid_idx) == 0: return
+        X, Y, Y_expected, is_pareto, batch_id = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], is_pareto[valid_idx], batch_id[valid_idx]
         max_iter = batch_id[-1]
 
         if reset_scaler:

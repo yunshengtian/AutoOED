@@ -108,12 +108,11 @@ class ServerView:
         self.widget['worker_remove'] = create_widget('button', master=frame_worker, row=1, column=2, text='Remove Worker')
 
         frame_db = create_widget('labeled_frame', master=self.root, row=0, column=1, text='Database')
-        grid_configure(frame_db, 0, 0)
         self.widget['db_frame'] = frame_db
         self.widget['db_placeholder'] = create_widget('label', master=frame_db, row=0, column=0, text='Uninitialized')
         self.widget['db_table'] = None
 
-    def init_db_table(self, titles):
+    def init_db_table(self, columns):
         '''
         '''
         screen_width = self.root.winfo_screenwidth()
@@ -124,4 +123,4 @@ class ServerView:
         self.root.geometry(f'{int(width)}x{int(height)}')
 
         self.widget['db_placeholder'].destroy()
-        self.widget['db_table'] = Table(master=self.widget['db_frame'], titles=titles)
+        self.widget['db_table'] = Table(master=self.widget['db_frame'], columns=columns)

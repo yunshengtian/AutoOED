@@ -19,21 +19,17 @@ class VizStatsController:
         self.config, self.problem_cfg = self.root_controller.config, self.root_controller.problem_cfg
         self.data_agent = self.root_controller.data_agent
 
-        # load from database
-        Y = self.data_agent.load('Y')
-        self.n_init_sample = len(Y)
+        # compute n_init_sample
+        batch_id = self.data_agent.load('batch_id', dtype=int)
+        self.n_init_sample = np.sum(batch_id == 0)
 
-        # plot hypervolume curve
-        hv_value = np.full(self.n_init_sample, calc_hypervolume(Y, self.config['problem']['ref_point'], self.problem_cfg['minimize']))
-        self.line_hv = self.view.ax1.plot(list(range(self.n_init_sample)), hv_value)[0]
-        self.view.ax1.set_title('Hypervolume: %.4f' % hv_value[-1])
-
-        # plot prediction error curve
+        # initialize hypervolume curve & prediction error curve
+        self.line_hv = self.view.ax1.plot([], [])[0]
         self.line_error = self.view.ax2.plot([], [])[0]
 
         # refresh figure
         self.view.fig.tight_layout()
-        self.view.fig.canvas.draw()
+        self.redraw()
 
     def set_config(self, config=None, problem_cfg=None):
         if config is not None:
@@ -46,12 +42,12 @@ class VizStatsController:
         Redraw hypervolume and prediction error curves
         '''
         # load data
-        Y, Y_expected = self.data_agent.load(['Y', 'Y_expected'])
+        Y, Y_expected = self.data_agent.load(['Y', 'Y_expected'], dtype=float)
+        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        if len(valid_idx) == 0: return
+        Y, Y_expected = Y[valid_idx], Y_expected[valid_idx]
 
         n_sample = len(Y)
-        if n_sample == self.n_init_sample:
-            return
-
         ref_point = self.config['problem']['ref_point']
         minimize = self.problem_cfg['minimize']
 
@@ -65,12 +61,13 @@ class VizStatsController:
         self.view.ax1.set_title('Hypervolume: %.4f' % hv_value[-1])
 
         # prediction error
-        line_error_y = self.line_error.get_ydata()
-        pred_error = calc_pred_error(Y[self.n_init_sample:], Y_expected[self.n_init_sample:])
-        pred_error = np.concatenate([line_error_y, np.full(n_sample - self.n_init_sample - len(line_error_y), pred_error)])
-        self.line_error.set_data(np.arange(self.n_init_sample, n_sample), pred_error)
-        self.view.ax2.relim()
-        self.view.ax2.autoscale_view()
-        self.view.ax2.set_title('Model Prediction Error: %.4f' % pred_error[-1])
+        if n_sample > self.n_init_sample:
+            line_error_y = self.line_error.get_ydata()
+            pred_error = calc_pred_error(Y[self.n_init_sample:], Y_expected[self.n_init_sample:])
+            pred_error = np.concatenate([line_error_y, np.full(n_sample - self.n_init_sample - len(line_error_y), pred_error)])
+            self.line_error.set_data(np.arange(self.n_init_sample, n_sample), pred_error)
+            self.view.ax2.relim()
+            self.view.ax2.autoscale_view()
+            self.view.ax2.set_title('Model Prediction Error: %.4f' % pred_error[-1])
 
         self.view.fig.canvas.draw()
