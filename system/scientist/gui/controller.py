@@ -43,7 +43,6 @@ class ScientistController:
         
         self.database = None
         self.table_name = None
-
         self.table_checksum = None
 
     def bind_command_login(self):
@@ -221,7 +220,7 @@ class ScientistController:
             if table_exist:
                 column_names = self.database.get_column_names(self.table_name)
                 data_n_var = len([name for name in column_names if name.startswith('x')])
-                data_n_obj = len([name for name in column_names if name.startswith('y') and '_' not in name])
+                data_n_obj = len([name for name in column_names if name.startswith('f') and '_' not in name])
                 try:
                     assert problem.n_var == data_n_var and problem.n_obj == data_n_obj
                 except:
@@ -412,8 +411,6 @@ class ScientistController:
 
         # post-process worker logs
         log_list = []
-        status, rowids = [], []
-        evaluated = False
         for log in self.worker_agent.read_log():
             log = log.split('/') 
             log_text = log[0]
@@ -428,8 +425,11 @@ class ScientistController:
         if eval_done:
             self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
             self.controller['viz_stats'].redraw()
-        
-        self.controller['viz_database'].update_data(opt_done, eval_done)
+
+        checksum = self.database.get_checksum(table=self.table_name)
+        if checksum != self.table_checksum and checksum != 0:
+            self.table_checksum = checksum
+            self.controller['viz_database'].update_data(opt_done, eval_done)
 
         # check stopping criterion
         self.check_stop_criterion()

@@ -49,15 +49,15 @@ class Table:
         data = np.array(data, dtype=str)
         data[data == 'None'] = 'N/A'
 
-        new_n_rows = len(data)
-        if new_n_rows > self.n_rows:
-            self.model.autoAddRows(new_n_rows - self.n_rows)
-            self.n_rows = new_n_rows
+        old_n_rows = self.n_rows
+        if len(data) > 0:
+            self.model.autoAddRows(len(data))
+            self.n_rows = old_n_rows + len(data)
 
         if columns is None: columns = self.columns
 
-        for row in range(len(data)):
-            row_data = data[row]
+        for i, row in enumerate(range(old_n_rows, self.n_rows)):
+            row_data = data[i]
             for j, col in enumerate(columns):
                 self.model.data[row][col] = self._process_val(row_data[j])
         

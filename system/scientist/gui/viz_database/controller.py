@@ -31,21 +31,24 @@ class VizDatabaseController:
 
     def update_data(self, opt_done, eval_done):
         '''
-        Update table data when optimization or evaluation is done
+        Update table data when 1) status changes, 2) optimization is None, 3) evaluation is done
         '''
+        # only status changes
         if not opt_done and not eval_done:
+            status_str = self.data_agent.load_str(keys='status')
+            self.table.update(columns=['status'], data=status_str)
             return
 
-        # load data
-        data_str = self.data_agent.load_str(keys=['X', 'Y', 'Y_expected', 'Y_uncertainty', 'is_pareto', 'config_id', 'batch_id'])
+        data_str = self.data_agent.load_str(keys=['status', 'X', 'Y', 'Y_expected', 'Y_uncertainty', 'is_pareto', 'config_id', 'batch_id'])
 
         # update optimization results
         if opt_done:
             n_prev_sample = self.table.n_rows
-            self.table.insert(columns=self.columns[1:], data=data_str[n_prev_sample:])
+            self.table.insert(columns=self.columns, data=data_str[n_prev_sample:])
 
-        # update evaluation results
+        # update evaluation results and status
         if eval_done:
-            Y_str = data_str[:, self.n_var:self.n_var + self.n_obj]
+            Y_str = data_str[:, 1 + self.n_var:1 + self.n_var + self.n_obj]
             pareto_str = data_str[:, -3]
-            self.table.update(columns=self.data_agent._map_key('Y') + ['pareto'], data=[Y_str, pareto_str], transform=True)
+            status_str = data_str[:, 0]
+            self.table.update(columns=self.data_agent._map_key('Y') + ['pareto', 'status'], data=[Y_str, pareto_str, status_str], transform=True)
