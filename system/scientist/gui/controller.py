@@ -2,7 +2,6 @@ import os
 import shutil
 import yaml
 from time import time, sleep
-from datetime import datetime
 import numpy as np
 
 from config.utils import load_config, process_config
@@ -417,7 +416,7 @@ class ScientistController:
         evaluated = False
         for log in self.worker_agent.read_log():
             log = log.split('/') 
-            log_text = datetime.now().strftime('%Y-%m-%d %H:%M:%S\n') + log[0] + '\n'
+            log_text = log[0]
             log_list.append(log_text)
 
         # log display
@@ -455,10 +454,10 @@ class ScientistController:
                 if n_valid_sample >= val:
                     stop = True
             elif key == 'hv_value': # hypervolume value
-                if self.controller['viz'].view.line_hv.get_ydata()[-1] >= val:
+                if self.controller['viz_stats'].line_hv.get_ydata()[-1] >= val:
                     stop = True
             elif key == 'hv_conv': # hypervolume convergence
-                hv_history = self.controller['viz'].view.line_hv.get_ydata()
+                hv_history = self.controller['viz_stats'].line_hv.get_ydata()
                 checkpoint = np.clip(int(n_valid_sample * val / 100.0), 1, n_valid_sample - 1)
                 if hv_history[-checkpoint] == hv_history[-1]:
                     stop = True
