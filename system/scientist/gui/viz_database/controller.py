@@ -76,9 +76,10 @@ class VizDatabaseController:
 
         # update evaluation results
         if eval_done:
+            valid_idx = np.where(~np.isnan(Y).any(axis=1))
             self.table.update({
-                'Y': Y, 
-                'pareto': is_pareto,
+                'Y': Y[valid_idx], 
+                'pareto': is_pareto[valid_idx],
             })
 
     def update_status(self, status, rowids):
