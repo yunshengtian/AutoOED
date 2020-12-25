@@ -29,15 +29,16 @@ class Database:
             self.execute(f'create database {self.database}')
             self.execute(f'use {self.database}')
             
-        if not self.check_table_exist('user'):
-            self.create_table(name='user', description='\
-                name varchar(20) not null primary key,\
-                passwd varchar(20),\
-                role varchar(10) not null,\
-                access varchar(20) not null')
+        if user == 'root':
+            if not self.check_table_exist('user'):
+                self.create_table(name='user', description='\
+                    name varchar(20) not null primary key,\
+                    passwd varchar(20),\
+                    role varchar(10) not null,\
+                    access varchar(20) not null')
 
-        if not self.check_table_exist('empty_table'):
-            self.create_table(name='empty_table', description='name varchar(20) not null')
+            if not self.check_table_exist('empty_table'):
+                self.create_table(name='empty_table', description='name varchar(20) not null')
 
         self.reserved_tables = ['user', 'empty_table']
 
@@ -184,18 +185,14 @@ class Database:
 
     def get_table_list(self):
         '''
-        ROOT
         '''
-        self.check_root()
         self.execute('show tables')
         table_list = [res[0] for res in self.cursor if res[0] not in self.reserved_tables]
         return table_list
 
     def check_table_exist(self, name):
         '''
-        ROOT
         '''
-        self.check_root()
         self.execute('show tables')
         table_list = [res[0] for res in self.cursor]
         return name in table_list
@@ -215,9 +212,8 @@ class Database:
 
     def create_table(self, name, description):
         '''
-        ROOT
+        TODO: ROOT
         '''
-        self.check_root()
         if self.check_table_exist(name):
             raise Exception(f'Table {name} exists')
         self.execute(f'create table {name} ({description})')
@@ -246,25 +242,22 @@ class Database:
 
     def get_empty_table_list(self):
         '''
-        ROOT
+        TODO: ROOT
         '''
-        self.check_root()
         self.execute('select name from empty_table')
         table_list = [res[0] for res in self.cursor]
         return table_list
 
     def get_all_table_list(self):
         '''
-        ROOT
+        TODO: ROOT
         '''
-        self.check_root()
         return self.get_table_list() + self.get_empty_table_list()
 
     def check_empty_table_exist(self, name):
         '''
-        ROOT
+        TODO: ROOT
         '''
-        self.check_root()
         return name in self.get_empty_table_list()
 
     def create_empty_table(self, name):
@@ -278,9 +271,8 @@ class Database:
 
     def remove_empty_table(self, name):
         '''
-        ROOT
+        TODO: ROOT
         '''
-        self.check_root()
         if not self.check_empty_table_exist(name):
             raise Exception(f'Table {name} does not exist')
         self.delete_data(table='empty_table', condition=f"name = '{name}'")

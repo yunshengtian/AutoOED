@@ -64,8 +64,8 @@ class ScientistController:
 
         try:
             self.database = Database(ip, user, passwd)
-        except:
-            messagebox.showinfo('Error', 'Invalid IP or username or password', parent=self.root_login)
+        except Exception as e:
+            messagebox.showinfo('Error', 'Invalid IP or username or password' + e, parent=self.root_login)
             return
 
         if not (self.database.check_table_exist(table) or self.database.check_empty_table_exist(table)):
