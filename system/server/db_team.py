@@ -40,6 +40,9 @@ class Database:
             if not self.check_table_exist('empty_table'):
                 self.create_table(name='empty_table', description='name varchar(20) not null')
 
+            self.create_function_login_verify()
+            self.create_procedure_init_table()
+
         self.reserved_tables = ['user', 'empty_table']
 
     def connect(self, force=False):
@@ -54,6 +57,81 @@ class Database:
         '''
         '''
         assert self.login_info['user'] == 'root', 'root previlege is needed'
+
+    def check_function_exist(self, name):
+        '''
+        '''
+        query = f'''
+            select exists(select * from information_schema.routines where routine_type='function' and routine_schema='{self.database}' and routine_name='{name}');
+            '''
+        self.execute(query)
+        return self.fetchone()[0]
+
+    def check_procedure_exist(self, name):
+        '''
+        '''
+        query = f'''
+            select exists(select * from information_schema.routines where routine_type='procedure' and routine_schema='{self.database}' and routine_name='{name}');
+            '''
+        self.execute(query)
+        return self.fetchone()[0]
+
+    def create_function_login_verify(self):
+        '''
+        ROOT
+        '''
+        self.check_root()
+        if self.check_function_exist('login_verify'): return
+        query = f'''
+            create function login_verify( 
+                name_ varchar(20), role_ varchar(10), access_ varchar(20)
+            )
+            returns boolean
+            begin
+                declare user_exist, init_table_exist, uninit_table_exist boolean;
+                select exists(select * from user where name=name_ and role=role_ and (access=access_ or access='*')) into user_exist;
+                select exists(select * from information_schema.tables where table_schema='{self.database}' and table_name=access_) into init_table_exist;
+                select exists(select * from empty_table where name=access_) into uninit_table_exist;
+                return user_exist and (init_table_exist or uninit_table_exist);
+            end
+            '''
+        self.execute(query)
+
+    def login_verify(self, name, role, access):
+        '''
+        '''
+        query = f'''
+            select login_verify('{name}', '{role}', '{access}')
+            '''
+        self.execute(query)
+        return self.fetchone()[0]
+
+    def create_procedure_init_table(self):
+        '''
+        ROOT
+        '''
+        self.check_root()
+        if self.check_procedure_exist('init_table'): return
+        query = f'''
+            create procedure init_table( 
+                in name_ varchar(20), in description_ varchar(10000)
+            )
+            begin
+                set @query = concat('create table ', name_, '(', description_, ')');
+                prepare stmt from @query;
+                execute stmt;
+                delete from empty_table where name=name_;
+            end
+            '''
+        self.execute(query)
+
+    def init_table(self, name, description):
+        '''
+        '''
+        query = f'''
+            call init_table('{name}', "{description}")
+            '''
+        self.execute(query)
 
     def check_db_exist(self, name):
         '''
@@ -120,6 +198,7 @@ class Database:
         self.check_root()
         assert not self.check_user_exist(name), f'user {name} already exists'
 
+        # create user
         try:
             self.execute(f'drop user {name}')
             self.execute('flush privileges')
@@ -127,13 +206,22 @@ class Database:
             pass
         self.execute(f"create user '{name}'@'%' identified by '{passwd}'")
 
+        # grant table access
         table_list = self.get_table_list()
         if access == '*':
             for table in table_list:
                 self.execute(f"grant all privileges on {self.database}.{table} to '{name}'@'%'")
+        elif access == '':
+            pass
         else:
             assert access in table_list, f"table {access} doesn't exist "
             self.execute(f"grant all privileges on {self.database}.{access} to '{name}'@'%'")
+
+        # grant function & procedure access
+        self.execute(f"grant execute on function {self.database}.login_verify to '{name}'@'%'")
+        if role == 'Scientist':
+            self.execute(f"grant execute on procedure {self.database}.init_table to '{name}'@'%'")
+
         self.execute('flush privileges')
 
         self.insert_data(table='user', column=None, data=(name, passwd, role, access))
@@ -162,6 +250,8 @@ class Database:
                 if old_access == '*':
                     for table in table_list:
                         self.execute(f"revoke all privileges on {self.database}.{table} from '{name}'@'%'")
+                elif old_access == '':
+                    pass
                 else:
                     self.execute(f"revoke all privileges on {self.database}.{old_access} from '{name}'@'%'")
                 self.execute(f"grant all privileges on {self.database}.{access} to '{name}'@'%'")
@@ -212,14 +302,12 @@ class Database:
 
     def create_table(self, name, description):
         '''
-        TODO: ROOT
+        ROOT
         '''
+        self.check_root()
         if self.check_table_exist(name):
             raise Exception(f'Table {name} exists')
         self.execute(f'create table {name} ({description})')
-
-        if self.check_empty_table_exist(name):
-            self.remove_empty_table(name)
 
     def import_table_from_file(self, name, file_path):
         '''
@@ -239,25 +327,29 @@ class Database:
         if not self.check_table_exist(name):
             raise Exception(f'Table {name} does not exist')
         self.execute(f'drop table {name}')
+        self.execute(f"update user set access='' where access='{name}'")
 
     def get_empty_table_list(self):
         '''
-        TODO: ROOT
+        ROOT
         '''
+        self.check_root()
         self.execute('select name from empty_table')
         table_list = [res[0] for res in self.cursor]
         return table_list
 
     def get_all_table_list(self):
         '''
-        TODO: ROOT
+        ROOT
         '''
+        self.check_root()
         return self.get_table_list() + self.get_empty_table_list()
 
     def check_empty_table_exist(self, name):
         '''
-        TODO: ROOT
+        ROOT
         '''
+        self.check_root()
         return name in self.get_empty_table_list()
 
     def create_empty_table(self, name):
@@ -271,8 +363,9 @@ class Database:
 
     def remove_empty_table(self, name):
         '''
-        TODO: ROOT
+        ROOT
         '''
+        self.check_root()
         if not self.check_empty_table_exist(name):
             raise Exception(f'Table {name} does not exist')
         self.delete_data(table='empty_table', condition=f"name = '{name}'")

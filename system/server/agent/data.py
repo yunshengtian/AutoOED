@@ -73,7 +73,7 @@ class DataAgent:
                 [f'f{i + 1}_uncertainty float' for i in range(self.n_obj)] + \
                 ['is_pareto boolean', 'config_id int not null', 'batch_id int not null']
 
-            self.db.create_table(name=self.table_name, description=','.join(key_list))
+            self.db.init_table(name=self.table_name, description=','.join(key_list))
 
         # high level key mapping (e.g., X -> [x1, x2, ...])
         self.key_map = {

@@ -45,8 +45,13 @@ class WorkerController:
 
         try:
             self.database = Database(ip, user, passwd)
-        except:
-            messagebox.showinfo('Error', 'Invalid IP or username or password', parent=self.root_login)
+        except Exception as e:
+            messagebox.showinfo('Error', 'Invalid login info: ' + str(e), parent=self.root_login)
+            return
+
+        valid_login = self.database.login_verify(name=user, role='Worker', access=table)
+        if not valid_login:
+            messagebox.showinfo('Error', f'Invalid access to table {table}', parent=self.root_login)
             return
 
         self.after_login(table_name=table)
