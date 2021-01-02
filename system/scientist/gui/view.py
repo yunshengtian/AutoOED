@@ -36,7 +36,7 @@ class ScientistView:
         '''
         # GUI root initialization
         self.root = root
-        grid_configure(self.root, 1, 0, row_weights=[1, 20]) # configure for resolution change
+        grid_configure(self.root, 2, 0, row_weights=[1, 1, 20]) # configure for resolution change
         screen_width = self.root.winfo_screenwidth()
         max_width = GEOMETRY_MAX_WIDTH
         width = GEOMETRY_WIDTH_RATIO * screen_width
@@ -88,7 +88,7 @@ class ScientistView:
         Visualization initialization
         '''
         frame_viz = tk.Frame(master=self.root)
-        frame_viz.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+        frame_viz.grid(row=0, column=0, rowspan=3, sticky='NSEW')
         grid_configure(frame_viz, 0, 0)
 
         # configure tab widgets
@@ -112,7 +112,7 @@ class ScientistView:
         # initialize tutorial image
         img_path = os.path.join(get_root_dir(), 'system', 'scientist', 'tutorial.png')
         self.image_tutorial = ImageFrame(master=self.root, img_path=img_path)
-        self.image_tutorial.grid(row=0, column=0, rowspan=2, sticky='NSEW')
+        self.image_tutorial.grid(row=0, column=0, rowspan=3, sticky='NSEW')
 
     def activate_viz(self):
         '''

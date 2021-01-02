@@ -4,7 +4,7 @@ class ManageUserModel:
         self.database = database
 
     def load_user(self, name):
-        self.database.execute(f"select name, passwd, role, access from user where name = '{name}'")
+        self.database.execute(f"select name, passwd, role, access from _user where name = '{name}'")
         info_list = self.database.fetchone()
         info = {
             'name': info_list[0],

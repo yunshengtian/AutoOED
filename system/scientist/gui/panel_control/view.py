@@ -1,6 +1,5 @@
 import tkinter as tk
 from system.gui.widgets.button import Button
-from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 from system.scientist.gui.map import config_map
 
@@ -11,7 +10,7 @@ class PanelControlView:
         self.root_view = root_view
 
         # control overall frame
-        frame_control = create_widget('labeled_frame', master=self.root_view.root, row=0, column=1, text='Control')
+        frame_control = create_widget('labeled_frame', master=self.root_view.root, row=1, column=1, text='Control')
 
         self.widget = {}
         self.widget['mode'] = create_widget('labeled_combobox',

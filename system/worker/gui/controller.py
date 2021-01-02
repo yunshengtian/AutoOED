@@ -5,6 +5,11 @@ from system.server.db_team import Database
 from .view import WorkerLoginView, WorkerView
 from .params import *
 
+from .auto_set_script import AutoSetScriptController
+from .auto_evaluate import AutoEvaluateController
+from .manual_lock import ManualLockController
+from .manual_fill import ManualFillController
+
 
 class WorkerController:
 
@@ -21,10 +26,14 @@ class WorkerController:
         
         self.database = None
         self.table_name = None
+        self.table_checksum = None
+        self.problem_info = None
+        self.eval_script = {
+            'p_path': None,
+            'c_path': None,
+        }
 
         self.refresh_rate = REFRESH_RATE
-
-        self.table_checksum = None
 
     def bind_command_login(self):
         '''
@@ -59,8 +68,7 @@ class WorkerController:
     def bind_command(self):
         '''
         '''
-        self.view.widget['auto_eval'].configure(state=tk.DISABLED)
-        self.view.widget['manual_fill'].configure(state=tk.DISABLED)
+        self.view.widget['auto_set_script'].configure(command=self.auto_set_script)
 
     def after_login(self, table_name):
         '''
@@ -75,6 +83,9 @@ class WorkerController:
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
         self.view = WorkerView(self.root)
         self.bind_command()
+
+        self.problem_info = self.database.query_problem(self.table_name)
+        self.view.widget['problem_info'].set_info(**self.problem_info)
 
         self.root.after(self.refresh_rate, self.refresh)
 
@@ -113,6 +124,8 @@ class WorkerController:
                 self.database.execute(f'describe {self.table_name}')
                 columns = [res[0] for res in self.database.fetchall() if res[0] != 'id']
                 self.view.init_db_table(columns)
+                self.problem_info = self.database.query_problem(self.table_name)
+                self.view.widget['problem_info'].set_info(**self.problem_info)
             else:
                 return
 
@@ -124,3 +137,20 @@ class WorkerController:
         data = np.array(data, dtype=str)[:, 1:]
 
         self.view.widget['db_table'].update(columns=None, data=data)
+
+    def auto_set_script(self):
+        '''
+        '''
+        AutoSetScriptController(self)
+
+    def set_eval_script(self, p_path, c_path):
+        '''
+        '''
+        self.eval_script = {
+            'p_path': p_path,
+            'c_path': c_path
+        }
+        self.view.widget['auto_eval'].configure(state=tk.NORMAL)
+
+    def load_eval_script(self):
+        return self.eval_script['p_path'], self.eval_script['c_path']

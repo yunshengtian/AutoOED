@@ -26,9 +26,10 @@ class DataAgent:
 
         self.n_var = None
         self.n_obj = None
+        self.n_constr = None
         self.minimize = True
 
-    def configure(self, n_var=None, n_obj=None, minimize=None):
+    def configure(self, n_var=None, n_obj=None, n_constr=None, minimize=None):
         '''
         Set configurations, a required step before initialization
         '''
@@ -36,6 +37,8 @@ class DataAgent:
             self.n_var = n_var
         if n_obj is not None:
             self.n_obj = n_obj
+        if n_constr is not None:
+            self.n_constr = n_constr
         if minimize is not None:
             self.minimize = minimize
 
@@ -74,6 +77,8 @@ class DataAgent:
                 ['is_pareto boolean', 'config_id int not null', 'batch_id int not null']
 
             self.db.init_table(name=self.table_name, description=','.join(key_list))
+            self.db.update_problem(name=self.table_name, var_type='continuous', n_var=self.n_var, n_obj=self.n_obj, n_constr=self.n_constr)
+            # TODO: more var_type
 
         # high level key mapping (e.g., X -> [x1, x2, ...])
         self.key_map = {

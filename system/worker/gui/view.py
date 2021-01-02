@@ -2,6 +2,7 @@ import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 from system.gui.widgets.newtable import Table
+from system.gui.widgets_modular import ProblemInfoWidget
 from .params import *
 
 
@@ -48,13 +49,17 @@ class WorkerView:
         self.widget['db_placeholder'] = create_widget('label', master=frame_db, row=0, column=0, text='Uninitialized')
         self.widget['db_table'] = None
 
-        frame_ctrl = create_widget('frame', master=self.root, row=1, column=0, padx=0, pady=0)
-        frame_auto = create_widget('labeled_frame', master=frame_ctrl, row=0, column=0, text='Auto mode')
-        frame_manual = create_widget('labeled_frame', master=frame_ctrl, row=0, column=1, text='Manual mode')
+        frame_ctrl = create_widget('frame', master=self.root, row=0, column=1, padx=0, pady=0)
+        self.widget['problem_info'] = ProblemInfoWidget(master=frame_ctrl, row=0, column=0)
+        frame_auto = create_widget('labeled_frame', master=frame_ctrl, row=1, column=0, text='Auto mode')
         self.widget['auto_set_script'] = create_widget('button', master=frame_auto, row=0, column=0, text='Set script')
-        self.widget['auto_eval'] = create_widget('button', master=frame_auto, row=0, column=1, text='Evaluate')
+        self.widget['auto_eval'] = create_widget('button', master=frame_auto, row=1, column=0, text='Evaluate')
+        frame_manual = create_widget('labeled_frame', master=frame_ctrl, row=2, column=0, text='Manual mode')
         self.widget['manual_lock'] = create_widget('button', master=frame_manual, row=0, column=0, text='Lock entry')
-        self.widget['manual_fill'] = create_widget('button', master=frame_manual, row=0, column=1, text='Fill value')
+        self.widget['manual_fill'] = create_widget('button', master=frame_manual, row=1, column=0, text='Fill value')
+
+        for widget_name in ['auto_set_script', 'auto_eval', 'manual_lock', 'manual_fill']:
+            self.widget[widget_name].configure(state=tk.DISABLED)
 
     def init_db_table(self, columns):
         '''
@@ -68,3 +73,6 @@ class WorkerView:
 
         self.widget['db_placeholder'].destroy()
         self.widget['db_table'] = Table(master=self.widget['db_frame'], columns=columns)
+
+        for widget_name in ['auto_set_script', 'manual_lock', 'manual_fill']:
+            self.widget[widget_name].configure(state=tk.NORMAL)

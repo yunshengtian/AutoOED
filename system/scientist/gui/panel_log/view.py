@@ -11,7 +11,7 @@ class PanelLogView:
 
         self.widget = {}
 
-        frame_log = create_widget('labeled_frame', master=self.root_view.root, row=1, column=1, text='Log')
+        frame_log = create_widget('labeled_frame', master=self.root_view.root, row=2, column=1, text='Log')
         grid_configure(frame_log, 0, 0)
 
         # log display

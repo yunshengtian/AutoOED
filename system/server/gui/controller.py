@@ -27,6 +27,7 @@ class ServerController:
         self.database = None
         self.table_name = None
         self.table_checksum = None
+        self.problem_info = None
 
         self.refresh_rate = REFRESH_RATE
 
@@ -153,6 +154,9 @@ class ServerController:
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
         self.view = ServerView(self.root)
         self.bind_command()
+
+        self.problem_info = self.database.query_problem(self.table_name)
+        self.view.widget['problem_info'].set_info(**self.problem_info)
 
         self.root.after(self.refresh_rate, self.refresh)
 

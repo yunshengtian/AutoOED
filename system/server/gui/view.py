@@ -3,6 +3,7 @@ from tkinter import ttk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 from system.gui.widgets.newtable import Table
+from system.gui.widgets_modular import ProblemInfoWidget
 from system.server.gui.params import *
 
 
@@ -66,24 +67,31 @@ class ServerView:
         '''
         Visualization initialization
         '''
-        grid_configure(self.root, 0, [1])
+        grid_configure(self.root, 0, 0)
 
         self.widget = {}
 
-        frame_conn = create_widget('frame', master=self.root, row=0, column=0, padx=0, pady=0)
-        grid_configure(frame_conn, [2], 0)
+        frame_db = create_widget('labeled_frame', master=self.root, row=0, column=0, text='Database')
+        self.widget['db_frame'] = frame_db
+        self.widget['db_placeholder'] = create_widget('label', master=frame_db, row=0, column=0, text='Uninitialized')
+        self.widget['db_table'] = None
 
-        frame_server = create_widget('labeled_frame', master=frame_conn, row=0, column=0, text='Server Info')
+        frame_conn = create_widget('frame', master=self.root, row=0, column=1, padx=0, pady=0)
+        grid_configure(frame_conn, [3], 0)
+
+        self.widget['problem_info'] = ProblemInfoWidget(master=frame_conn, row=0, column=0)
+
+        frame_server = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Server Info')
         self.widget['server_user'] = create_widget('label', master=frame_server, row=0, column=0, text='Username:')
         self.widget['server_ip'] = create_widget('label', master=frame_server, row=0, column=1, text='IP Address:')
         self.widget['server_refresh'] = create_widget('button', master=frame_server, row=0, column=2, text='Refresh')
 
-        frame_sci = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Scientist Info')
+        frame_sci = create_widget('labeled_frame', master=frame_conn, row=2, column=0, text='Scientist Info')
         self.widget['sci_user'] = create_widget('label', master=frame_sci, row=0, column=0, text='Username: unknown')
         self.widget['sci_ip'] = create_widget('label', master=frame_sci, row=0, column=1, text='IP Address: unknown')
         self.widget['sci_refresh'] = create_widget('button', master=frame_sci, row=0, column=2, text='Refresh')
 
-        frame_worker = create_widget('labeled_frame', master=frame_conn, row=2, column=0, text='Worker Info')
+        frame_worker = create_widget('labeled_frame', master=frame_conn, row=3, column=0, text='Worker Info')
         grid_configure(frame_worker, 0, 2)
         frame_disp = create_widget('frame', master=frame_worker, row=0, column=0, columnspan=3)
         grid_configure(frame_disp, 0, 0)
@@ -106,11 +114,6 @@ class ServerView:
         self.widget['worker_add'] = create_widget('button', master=frame_worker, row=1, column=0, text='Add Worker')
         self.widget['worker_stop'] = create_widget('button', master=frame_worker, row=1, column=1, text='Stop Worker')
         self.widget['worker_remove'] = create_widget('button', master=frame_worker, row=1, column=2, text='Remove Worker')
-
-        frame_db = create_widget('labeled_frame', master=self.root, row=0, column=1, text='Database')
-        self.widget['db_frame'] = frame_db
-        self.widget['db_placeholder'] = create_widget('label', master=frame_db, row=0, column=0, text='Uninitialized')
-        self.widget['db_table'] = None
 
     def init_db_table(self, columns):
         '''

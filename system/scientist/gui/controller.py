@@ -20,6 +20,7 @@ from system.scientist.gui.menu_config import MenuConfigController
 from system.scientist.gui.menu_problem import MenuProblemController
 from system.scientist.gui.menu_database import MenuDatabaseController
 from system.scientist.gui.menu_eval import MenuEvalController
+from system.scientist.gui.panel_info import PanelInfoController
 from system.scientist.gui.panel_control import PanelControlController
 from system.scientist.gui.panel_log import PanelLogController
 from system.scientist.gui.viz_space import VizSpaceController
@@ -155,6 +156,7 @@ class ScientistController:
         '''
         Panel initialization
         '''
+        self.controller['panel_info'] = PanelInfoController(self)
         self.controller['panel_control'] = PanelControlController(self)
         self.controller['panel_log'] = PanelLogController(self)
 
@@ -243,10 +245,12 @@ class ScientistController:
             # TODO: give hint of initializing
 
             # configure agents
-            self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, minimize=problem.minimize)
+            self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, n_constr=problem.n_constr, minimize=problem.minimize)
             self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_performance'))
 
             self.data_agent.init_table(create=not table_exist)
+            problem_info = self.database.query_problem(self.table_name)
+            self.controller['panel_info'].set_info(**problem_info)
 
             if not table_exist:
                 # data initialization
