@@ -1,5 +1,5 @@
 import os
-from system.worker.gui import WorkerController
+from system.worker import WorkerController
 
 
 def main():

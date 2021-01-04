@@ -1,5 +1,5 @@
 import os
-from system.server.gui import ServerController
+from system.server import ServerController
 
 
 def main():

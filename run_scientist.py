@@ -1,5 +1,5 @@
 import os
-from system.scientist.gui import ScientistController
+from system.scientist import ScientistController
 
 
 def main():
