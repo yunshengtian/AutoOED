@@ -786,6 +786,7 @@ class TeamDatabase:
     def get_checksum(self, table):
         '''
         '''
+        self.connect()
         self.execute(f'checksum table {table}')
         return self.cursor.fetchone()[1]
 

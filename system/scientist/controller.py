@@ -173,7 +173,7 @@ class ScientistController:
         '''
         '''
         # load table data
-        self.controller['viz_database'].update_data(opt_done=True, eval_done=False)
+        self.controller['viz_database'].update_data()
 
         # load viz status
         self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
@@ -424,17 +424,17 @@ class ScientistController:
         # log display
         self.controller['panel_log'].log(log_list)
 
-        # update visualization
-        opt_done, eval_done = self.data_agent.check_opt_done(), self.data_agent.check_eval_done()
-
-        if eval_done:
-            self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
-            self.controller['viz_stats'].redraw()
-
+        # check if database has changed
         checksum = self.database.get_checksum(table=self.table_name)
         if checksum != self.table_checksum and checksum != 0:
             self.table_checksum = checksum
-            self.controller['viz_database'].update_data(opt_done, eval_done)
+            
+            # update database visualization
+            self.controller['viz_database'].update_data()
+
+            # update space visualization (TODO: only redraw when evaluation is done)
+            self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
+            self.controller['viz_stats'].redraw()
 
         # check stopping criterion
         self.check_stop_criterion()
@@ -478,9 +478,9 @@ class ScientistController:
         '''
         Quit handling
         '''
+        self.database.quit()
         self.data_agent.quit()
         self.worker_agent.quit()
-        self.database.quit()
 
         if self.after_handle is not None:
             self.root.after_cancel(self.after_handle)

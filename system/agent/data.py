@@ -16,9 +16,6 @@ class DataAgent:
         self.db = database
         self.table_name = table_name
 
-        self.opt_done = Value(c_bool, False)
-        self.eval_done = Value(c_bool, False)
-
         self.n_init_sample = Value('i', 0)
         self.n_valid_sample = Value('i', 0)
         self.n_sample = Value('i', 0)
@@ -114,12 +111,6 @@ class DataAgent:
 
         last_rowid = self.db.select_last_data(table=self.table_name, column=['id'])[0]
 
-        # update status
-        with self.opt_done.get_lock():
-            self.opt_done.value = True
-            if Y is not None:
-                self.eval_done.value = True
-
         # update stats
         with self.n_init_sample.get_lock():
             self.n_init_sample.value += n_init_sample
@@ -151,10 +142,6 @@ class DataAgent:
             data=[X, Y_expected, Y_uncertainty, config_id, batch_id], transform=True)
         last_rowid = self.db.select_last_data(table=self.table_name, column=['id'])[0]
 
-        # update status
-        with self.opt_done.get_lock():
-            self.opt_done.value = True
-
         # update stats
         with self.n_sample.get_lock():
             self.n_sample.value += sample_len
@@ -183,10 +170,6 @@ class DataAgent:
             is_pareto = check_pareto(Y_all, self.minimize).astype(int)
             self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto, rowids_all], condition='id = %s', transform=True)
 
-        # update status
-        with self.eval_done.get_lock():
-            self.eval_done.value = True
-
         # update stats
         with self.n_valid_sample.get_lock():
             self.n_valid_sample.value += 1
@@ -208,10 +191,6 @@ class DataAgent:
 
         self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y, rowids], condition='id = %s', transform=True)
         self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto, rowids_all], condition='id = %s', transform=True)
-
-        # update status
-        with self.eval_done.get_lock():
-            self.eval_done.value = True
 
         # update stats
         with self.n_valid_sample.get_lock():
@@ -307,7 +286,6 @@ class DataAgent:
         try:
             self.update(y_next, rowid)
         except ProcessSafeExit:
-            self.correct_status()
             self.correct_stats()
             raise ProcessSafeExit()
 
@@ -330,7 +308,6 @@ class DataAgent:
         try:
             rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
         except ProcessSafeExit:
-            self.correct_status()
             self.correct_stats()
             raise ProcessSafeExit()
 
@@ -350,7 +327,6 @@ class DataAgent:
         try:
             rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
         except ProcessSafeExit:
-            self.correct_status()
             self.correct_stats()
             raise ProcessSafeExit()
 
@@ -358,35 +334,6 @@ class DataAgent:
             return rowids
         else:
             queue.put(rowids)
-
-    def check_opt_done(self):
-        '''
-        Check if optimization has done since last check
-        '''
-        with self.opt_done.get_lock():
-            opt_done = self.opt_done.value
-            if opt_done:
-                self.opt_done.value = False
-        return opt_done
-        
-    def check_eval_done(self):
-        '''
-        Check if evaluation has done since last check
-        '''
-        with self.eval_done.get_lock():
-            eval_done = self.eval_done.value
-            if eval_done:
-                self.eval_done.value = False
-        return eval_done
-
-    def correct_status(self):
-        '''
-        Correct status variables due to process termination
-        '''
-        with self.opt_done.get_lock():
-            self.opt_done.value = True
-        with self.eval_done.get_lock():
-            self.eval_done.value = True
 
     def get_n_init_sample(self):
         with self.n_init_sample.get_lock():
