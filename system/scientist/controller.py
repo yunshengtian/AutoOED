@@ -3,6 +3,7 @@ import shutil
 import yaml
 from time import time, sleep
 import numpy as np
+import matplotlib.pyplot as plt
 
 from config.utils import load_config, process_config
 from problem.common import build_problem, get_initial_samples
@@ -40,7 +41,6 @@ class ScientistController:
 
         self.root = None
         self.view = None
-        self.after_handle = None
         
         self.database = None
         self.table_name = None
@@ -326,7 +326,7 @@ class ScientistController:
             self.controller['panel_log'].view.widget['clear'].enable()
 
             # trigger periodic refresh
-            self.after_handle = self.root.after(self.refresh_rate, self.refresh)
+            self.root.after(self.refresh_rate, self.refresh)
 
         else: # user changed config in the middle
             try:
@@ -440,7 +440,7 @@ class ScientistController:
         self.check_stop_criterion()
         
         # trigger another refresh
-        self.after_handle = self.root.after(self.refresh_rate, self.refresh)
+        self.root.after(self.refresh_rate, self.refresh)
 
     def check_stop_criterion(self):
         '''
@@ -478,12 +478,11 @@ class ScientistController:
         '''
         Quit handling
         '''
+        plt.close('all')
         self.database.quit()
         self.data_agent.quit()
         self.worker_agent.quit()
 
-        if self.after_handle is not None:
-            self.root.after_cancel(self.after_handle)
         self.root.quit()
         self.root.destroy()
 
