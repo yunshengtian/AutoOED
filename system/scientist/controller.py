@@ -348,6 +348,8 @@ class ScientistController:
                 obj_lb=config['problem']['obj_lb'],
                 obj_ub=config['problem']['obj_ub'],
             )
+            
+        self.database.update_config(name=self.table_name, config=self.config)
         
         if self.config != old_config:
             self.save_config(self.config)

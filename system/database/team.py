@@ -3,6 +3,7 @@ import mysql.connector
 import requests
 import ipaddress
 import numpy as np
+import yaml
 from collections.abc import Iterable
 
 
@@ -30,7 +31,7 @@ class TeamDatabase:
             self.execute(f'create database {self.database}')
             self.execute(f'use {self.database}')
 
-        self.reserved_tables = ['_user', '_empty_table', '_problem_info', '_lock']
+        self.reserved_tables = ['_user', '_empty_table', '_problem_info', '_config', '_lock']
         
         # initialize database utilities
         if user == 'root':
@@ -55,6 +56,12 @@ class TeamDatabase:
                     minimize varchar(100)
                     ''')
 
+            if not self.check_table_exist('_config'):
+                self.create_table(name='_config', description='''
+                    name varchar(50) not null primary key,
+                    config text
+                    ''')
+
             if not self.check_table_exist('_lock'):
                 self.create_table(name='_lock', description='''
                     name varchar(50) not null,
@@ -66,6 +73,8 @@ class TeamDatabase:
             self._create_procedure_init_table()
             self._create_procedure_update_problem()
             self._create_procedure_query_problem()
+            self._create_procedure_update_config()
+            self._create_function_query_config()
             self._create_function_check_entry()
             self._create_procedure_lock_entry()
             self._create_procedure_release_entry()
@@ -153,6 +162,7 @@ class TeamDatabase:
                 deallocate prepare stmt;
                 delete from _empty_table where name=name_;
                 insert into _problem_info (name) values (name_);
+                insert into _config (name) values (name_);
 
                 open user_cur;
                 grant_access_loop: loop
@@ -261,6 +271,59 @@ class TeamDatabase:
             'n_constr': n_constr,
             'minimize': minimize,
         }
+
+    def _create_procedure_update_config(self):
+        '''
+        ROOT
+        '''
+        self.check_root()
+        if self.check_procedure_exist('update_config'): return
+        query = f'''
+            create procedure update_config(
+                in name_ varchar(50), in config_ text
+            )
+            begin
+                update _config set config=config_ where name=name_;
+            end
+            '''
+        self.execute(query)
+
+    def update_config(self, name, config):
+        '''
+        '''
+        config_str = str(config)
+        query = f'''
+            call update_config('{name}', "{config_str}")
+            '''
+        self.execute(query)
+
+    def _create_function_query_config(self):
+        '''
+        ROOT
+        '''
+        self.check_root()
+        if self.check_function_exist('query_config'): return
+        query = f'''
+            create function query_config(
+                name_ varchar(50)
+            )
+            returns text
+            begin
+                return (select config from _config where name=name_);
+            end
+            '''
+        self.execute(query)
+
+    def query_config(self, name):
+        '''
+        '''
+        query = f'''
+            select query_config('{name}')
+            '''
+        self.execute(query)
+        config_str = self.fetchone()[0]
+        config = yaml.load(config_str)
+        return config
 
     def _create_function_check_entry(self):
         '''
@@ -437,12 +500,12 @@ class TeamDatabase:
             self.execute(f"grant all privileges on {self.database}.{access} to '{name}'@'%'")
 
         # grant function & procedure access
-        for func_name in ['login_verify', 'check_entry']:
+        for func_name in ['login_verify', 'check_entry', 'query_config']:
             self._grant_function_access(func_name=func_name, user_name=name)
         for proc_name in ['query_problem', 'lock_entry', 'release_entry']:
             self._grant_procedure_access(proc_name=proc_name, user_name=name)
         if role == 'Scientist':
-            for proc_name in ['init_table', 'update_problem']:
+            for proc_name in ['init_table', 'update_problem', 'update_config']:
                 self._grant_procedure_access(proc_name=proc_name, user_name=name)
 
         self.execute('flush privileges')
@@ -533,6 +596,7 @@ class TeamDatabase:
         self.execute(f'create table {name} ({description})')
         if name not in self.reserved_tables:
             self.execute(f'insert into _problem_info (name) values ({name})')
+            self.execute(f'insert into _config (name) values ({name})')
 
     def import_table_from_file(self, name, file_path):
         '''
@@ -555,6 +619,7 @@ class TeamDatabase:
         self.execute(f"update _user set access='' where access='{name}'")
         if name not in self.reserved_tables:
             self.execute(f"delete from _problem_info where name='{name}'")
+            self.execute(f"delete from _config where name='{name}'")
 
     def get_empty_table_list(self):
         '''
@@ -735,27 +800,6 @@ class TeamDatabase:
         self.execute(query)
         column_names = [res[0] for res in self.cursor]
         return column_names
-
-    # def _execute(self, func, query, data):
-    #     '''
-    #     '''
-    #     self.connect() # TODO: check latency
-    #     done = False
-    #     curr_try, max_try = 0, 3
-    #     while not done and curr_try <= max_try:
-    #         try:
-    #             if data is None:
-    #                 func(query)
-    #             else:
-    #                 func(query, data)
-    #             done = True
-    #         except Exception as e:
-    #             done = False
-    #             curr_try += 1
-    #             if curr_try < max_try:
-    #                 print(f'Database execution error "{e}"", retrying {curr_try} times')
-    #     if curr_try > max_try:
-    #         print(f'Database execution error, exceeded max number of retry')
 
     def execute(self, query, data=None):
         '''
