@@ -23,7 +23,7 @@ class CreateTableController:
 
     def create_table(self):
         try:
-            name = self.view.widget['db_name'].get()
+            name = self.view.widget['table_name'].get()
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return
@@ -36,9 +36,9 @@ class CreateTableController:
 
         try:
             if file_path is None:
-                self.database.create_empty_table(name)
+                self.database.create_table(name)
             else:
-                self.database.import_db_from_file(name, file_path)
+                self.database.import_table_from_file(name, file_path)
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return

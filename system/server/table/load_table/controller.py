@@ -12,22 +12,16 @@ class LoadTableController:
 
         self.view = LoadTableView(self.root_view)
 
-        self.view.widget['db_name'].widget.config(values=self.database.get_all_table_list())
+        self.view.widget['table_name'].widget.config(values=self.database.get_table_list())
         self.view.widget['load'].configure(command=self.load_table)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
     def load_table(self):
         try:
-            name = self.view.widget['db_name'].get()
+            name = self.view.widget['table_name'].get()
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return
-
-        # try:
-        #     self.database.load_table(name)
-        # except Exception as e:
-        #     tk.messagebox.showinfo('Error', e, parent=self.view.window)
-        #     return
         
         self.view.window.destroy()
         self.root_controller.after_init(name)

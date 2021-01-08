@@ -9,7 +9,7 @@ class CreateTableView:
         self.window.title('Create Table')
         self.window.resizable(False, False)
         self.widget = {}
-        self.widget['db_name'] = create_widget('labeled_entry', master=self.window, row=0, column=0, columnspan=2, 
+        self.widget['table_name'] = create_widget('labeled_entry', master=self.window, row=0, column=0, columnspan=2, 
             text='Table name', class_type='string', width=10, required=True)
         self.widget['set_file_path'], self.widget['disp_file_path'] = create_widget('labeled_button_entry', master=self.window, row=1, column=0, columnspan=2,
             label_text='Existing table file location (optional)', button_text='Browse')

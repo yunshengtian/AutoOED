@@ -115,7 +115,7 @@ class ManageUserController:
         self.view.widget['user_list'].select_set(tk.END)
 
         self.view.enable_info_widgets()
-        self.view.widget['access'].widget.config(values=self.database.get_all_table_list() + ['*', ''])
+        self.view.widget['access'].widget.config(values=self.database.get_table_list() + ['*', ''])
         self.view.widget['create'].disable()
         self.view.widget['delete'].disable()
         self.user_info.clear()
@@ -156,7 +156,7 @@ class ManageUserController:
             self.exit_creating_user()
 
         self.view.enable_info_widgets()
-        self.view.widget['access'].widget.config(values=self.database.get_all_table_list() + ['*', ''])
+        self.view.widget['access'].widget.config(values=self.database.get_table_list() + ['*', ''])
         info = self.model.load_user(name)
         self.view.load_widget_values(info)
         self.view.widget['name'].disable()

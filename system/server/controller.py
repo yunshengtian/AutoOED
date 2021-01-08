@@ -245,7 +245,7 @@ class ServerController:
         assert self.table_name is not None
 
         if self.view.widget['db_table'] is None:
-            if self.database.check_table_exist(self.table_name):
+            if self.database.check_inited_table_exist(self.table_name):
                 self.database.execute(f'describe {self.table_name}')
                 columns = [res[0] for res in self.database.fetchall() if res[0] != 'id']
                 self.view.init_db_table(columns)

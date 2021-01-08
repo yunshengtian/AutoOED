@@ -219,7 +219,7 @@ class ScientistController:
                 return False
 
             # check if config is compatible with history data (problem dimension)
-            table_exist = self.database.check_table_exist(self.table_name)
+            table_exist = self.database.check_inited_table_exist(self.table_name)
             if table_exist:
                 column_names = self.database.get_column_names(self.table_name)
                 data_n_var = len([name for name in column_names if name.startswith('x')])
