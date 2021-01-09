@@ -14,7 +14,7 @@ def get_trigger_queries(table_name, n_var, n_obj):
 
     for i in range(1, n_obj + 1):
         trigger_update_status += f'''
-            if (old.f{i} is null and new.f{i} is not null) then
+            if (old.f{i} != new.f{i}) then
                 set changed = true;
             end if;
             if (new.f{i} is null) then
