@@ -10,6 +10,8 @@ class MenuEvalController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
+        self.data_agent, self.worker_agent = self.root_controller.data_agent, self.root_controller.worker_agent
+
         self.view = MenuEvalView(self.root_view)
 
     def get_table(self):
