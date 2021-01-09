@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from multiprocessing import Value
-from ctypes import c_bool
 
 from system.utils.process_safe import ProcessSafeExit
 from system.utils.core import optimize, predict, evaluate
@@ -64,16 +63,7 @@ class DataAgent:
         Initialize database table
         '''
         if create:
-            # keys and associated datatypes of database table
-            key_list = ['id int auto_increment primary key', "status varchar(20) not null default 'unevaluated'"] + \
-                [f'x{i + 1} float not null' for i in range(self.n_var)] + \
-                [f'f{i + 1} float' for i in range(self.n_obj)] + \
-                [f'f{i + 1}_expected float' for i in range(self.n_obj)] + \
-                [f'f{i + 1}_uncertainty float' for i in range(self.n_obj)] + \
-                ['is_pareto boolean', 'config_id int not null', 'batch_id int not null']
-
-            self.db.init_table(name=self.table_name, description=','.join(key_list))
-            self.db.update_problem(name=self.table_name, var_type='continuous', n_var=self.n_var, n_obj=self.n_obj, n_constr=self.n_constr, minimize=self.minimize)
+            self.db.init_table(name=self.table_name, var_type='continuous', n_var=self.n_var, n_obj=self.n_obj, n_constr=self.n_constr, minimize=self.minimize)
             # TODO: more var_type
 
         # high level key mapping (e.g., X -> [x1, x2, ...])

@@ -9,13 +9,14 @@ from collections.abc import Iterable
 from .table import get_table_descriptions, get_table_post_processes
 from .procedure import get_procedure_queries, get_procedure_access
 from .function import get_function_queries, get_function_access
+from .trigger import get_trigger_queries
 
 
 def root(func):
     '''
     '''
     def new_func(self, *args, **kwargs):
-        assert self.login_info['user'] == 'root', 'root previlege is needed'
+        assert self.login_info['user'] == 'root', 'root privilege is needed'
         return func(self, *args, **kwargs)
     return new_func
 
@@ -371,13 +372,22 @@ class TeamDatabase:
             raise Exception(f'Table {name} exists')
         self.insert_data(table='_empty_table', column=None, data=[name])
 
-    def init_table(self, name, description):
+    def init_table(self, name, var_type, n_var, n_obj, n_constr, minimize):
         '''
         '''
+        if isinstance(minimize, Iterable):
+            minimize = [str(bool(m)) for m in minimize]
+            minimize_str = ','.join(minimize)
+        else:
+            minimize_str = str(bool(minimize))
+
         query = f'''
-            call init_table('{name}', "{description}")
+            call init_table('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{minimize_str}')
             '''
         self.execute(query)
+
+        for query in get_trigger_queries(name, n_var, n_obj):
+            self.execute(query)
 
     @root
     def import_table_from_file(self, name, file_path):
@@ -408,19 +418,6 @@ class TeamDatabase:
     '''
     problem
     '''
-
-    def update_problem(self, name, var_type, n_var, n_obj, n_constr, minimize):
-        '''
-        '''
-        if isinstance(minimize, Iterable):
-            minimize = [str(bool(m)) for m in minimize]
-            minimize_str = ','.join(minimize)
-        else:
-            minimize_str = str(bool(minimize))
-        query = f'''
-            call update_problem('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{minimize_str}')
-            '''
-        self.execute(query)
 
     def query_problem(self, name):
         '''
