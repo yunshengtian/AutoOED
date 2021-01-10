@@ -11,9 +11,6 @@ class EnterPerformanceController:
 
         problem_cfg = self.root_controller.get_problem_cfg()
         n_obj = problem_cfg['n_obj']
-        obj_lb, obj_ub = problem_cfg['obj_lb'], problem_cfg['obj_ub']
-        if obj_lb is None: obj_lb = np.full(n_obj, -np.inf)
-        if obj_ub is None: obj_ub = np.full(n_obj, np.inf)
 
         self.view = EnterPerformanceView(self.root_view, n_obj)
 
@@ -27,7 +24,7 @@ class EnterPerformanceController:
 
         table = self.root_controller.get_table()
         self.view.widget['performance_excel'].config(
-            valid_check=[lambda x: x > 0 and x <= table.n_rows] + [lambda x: x >= obj_lb[i] and x <= obj_ub[i] for i in range(n_obj)],
+            valid_check=[lambda x: x > 0 and x <= table.n_rows] + [lambda x: True] * n_obj,
         )
 
         self.view.widget['save'].configure(command=self.add_performance)

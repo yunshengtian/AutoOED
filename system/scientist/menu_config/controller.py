@@ -7,7 +7,6 @@ from system.scientist.map import config_map
 from .view import MenuConfigView
 
 from .design_bound import DesignBoundController
-from .performance_bound import PerformanceBoundController
 from .algo_advanced import AlgoAdvancedController
 
 
@@ -58,7 +57,6 @@ class MenuConfigController:
             error_msg='dimension of reference point mismatches number of objectives',
         )
         self.view.widget['set_design'].configure(command=self.config_design)
-        self.view.widget['set_performance'].configure(command=self.config_performance)
 
         if self.first_time:
             self.view.widget['n_init'].config(
@@ -101,7 +99,6 @@ class MenuConfigController:
         self.view.widget['ref_point'].disable()
         if self.first_time:
             self.view.widget['set_design'].disable()
-            self.view.widget['set_performance'].disable()
             self.view.widget['set_advanced'].disable()
         else:
             self.view.widget['problem_name'].disable()
@@ -126,7 +123,6 @@ class MenuConfigController:
         '''
         self.view.widget['ref_point'].enable()
         self.view.widget['set_design'].enable()
-        self.view.widget['set_performance'].enable()
 
         # find problem static config by name selected
         name = event.widget.get()
@@ -135,7 +131,7 @@ class MenuConfigController:
         self.problem_static_cfg.clear()
         self.problem_static_cfg.update(config)
 
-        for key in ['var_lb', 'var_ub', 'obj_lb', 'obj_ub']:
+        for key in ['var_lb', 'var_ub']:
             self.problem_dynamic_cfg.update({key: config[key]})
         
         if self.first_time:
@@ -156,12 +152,6 @@ class MenuConfigController:
         Configure bounds for design variables
         '''
         DesignBoundController(self)
-
-    def config_performance(self):
-        '''
-        Configure bounds for objectives
-        '''
-        PerformanceBoundController(self)
 
     def set_x_init(self):
         '''

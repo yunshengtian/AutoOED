@@ -14,8 +14,6 @@ config_map = {
         'minimize': 'Minimize',
         'var_lb': 'Lower bound',
         'var_ub': 'Upper bound',
-        'obj_lb': 'Lower bound',
-        'obj_ub': 'Upper bound',
         'var_name': 'Names',
         'obj_name': 'Names',
         'ref_point': 'Reference point',

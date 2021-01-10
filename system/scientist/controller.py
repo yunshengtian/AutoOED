@@ -235,8 +235,6 @@ class ScientistController:
             self.problem_cfg = problem.get_config(
                 var_lb=config['problem']['var_lb'],
                 var_ub=config['problem']['var_ub'],
-                obj_lb=config['problem']['obj_lb'],
-                obj_ub=config['problem']['obj_ub'],
             )
 
             # remove tutorial image
@@ -345,8 +343,6 @@ class ScientistController:
                 self.problem_cfg,
                 var_lb=config['problem']['var_lb'],
                 var_ub=config['problem']['var_ub'],
-                obj_lb=config['problem']['obj_lb'],
-                obj_ub=config['problem']['obj_ub'],
             )
             
         self.database.update_config(name=self.table_name, config=self.config)

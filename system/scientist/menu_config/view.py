@@ -41,7 +41,6 @@ class MenuConfigView:
         frame_space = tk.Frame(master=frame_problem)
         frame_space.grid(row=2, column=0)
         self.widget['set_design'] = create_widget('button', master=frame_space, row=0, column=0, text='Set design bounds')
-        self.widget['set_performance'] = create_widget('button', master=frame_space, row=0, column=1, text='Set performance bounds')
 
         # initial samples related
         if self.first_time:

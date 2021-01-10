@@ -10,9 +10,6 @@ class ManualFillController:
         self.root_view = self.root_controller.view
 
         n_obj = self.root_controller.problem_info['n_obj']
-        # TODO: correct obj bounds
-        obj_lb = np.full(n_obj, -np.inf)
-        obj_ub = np.full(n_obj, np.inf)
 
         self.view = ManualFillView(self.root_view, n_obj)
 
@@ -26,7 +23,7 @@ class ManualFillController:
 
         table = self.root_controller.view.widget['db_table']
         self.view.widget['performance_excel'].config(
-            valid_check=[lambda x: x > 0 and x <= table.n_rows] + [lambda x: x >= obj_lb[i] and x <= obj_ub[i] for i in range(n_obj)],
+            valid_check=[lambda x: x > 0 and x <= table.n_rows] + [lambda x: True] * n_obj,
         )
 
         self.view.widget['save'].configure(command=self.add_performance)

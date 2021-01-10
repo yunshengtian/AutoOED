@@ -46,7 +46,7 @@ def process_config(config):
     correct_values_dfs(config, default_config)
 
     # fill default dynamic values of problem config
-    for key in ['var_lb', 'var_ub', 'obj_lb', 'obj_ub']:
+    for key in ['var_lb', 'var_ub']:
         if key not in problem_cfg:
             problem_cfg[key] = None
 

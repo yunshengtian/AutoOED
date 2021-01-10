@@ -8,8 +8,6 @@ problem:
   name: required
   var_lb: null # lower bound of design variables
   var_ub: null # upper bound of design variables
-  obj_lb: null # lower bound of objectives
-  obj_ub: null # upper bound of objectives
   ref_point: null # reference point for hypervolume calculation
   n_init_sample: 0 # number of random initial samples
   init_sample_path: null # path of provided initial samples

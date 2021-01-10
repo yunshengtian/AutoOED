@@ -10,8 +10,6 @@ Problem configuration is defined as a 'config' dict, where each key means:
     n_constr: number of constraints (except bounds)
     var_lb: lower bounds of design variables
     var_ub: upper bounds of design variables
-    obj_lb: lower bounds of objectives
-    obj_ub: upper bounds of objectives
     var_name: names of design variables
     obj_name: names of objectives
     init_sample_path: path of provided initial samples
@@ -20,8 +18,6 @@ Default values if not specifed in problem config:
     n_constr: 0
     var_lb: 0
     var_ub: 1
-    obj_lb: None
-    obj_ub: None
     var_name: ['x1', ..., 'x{n_var}']
     obj_name: ['f1', ..., 'f{n_obj}']
     init_sample_path: None
