@@ -1,0 +1,18 @@
+name: mixed_problem
+type: mixed
+var:
+  x1:
+    type: integer
+    var_lb: 0
+    var_ub: 3
+  x2:
+    type: continuous
+    var_lb: 0
+    var_lb: 1
+  x3:
+    type: binary
+  x4:
+    type: categorical
+    choices: ['a', 'b', 'c']
+n_obj: 2
+n_constr: 0

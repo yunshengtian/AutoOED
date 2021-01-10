@@ -1,0 +1,5 @@
+name: binary_problem
+type: binary
+n_var: 6
+n_obj: 2
+n_constr: 0

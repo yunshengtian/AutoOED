@@ -1,0 +1,8 @@
+name: categorical_problem
+type: categorical
+var:
+  x1: ['a', 'b', 'c', 'd']
+  x2: [0, 3, 5, 8]
+  x3: ['true', 'false']
+n_obj: 2
+n_constr: 0

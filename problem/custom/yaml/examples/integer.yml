@@ -1,0 +1,7 @@
+name: integer_problem
+type: integer
+n_var: 6
+n_obj: 2
+n_constr: 0
+var_lb: 0
+var_ub: 1
