@@ -11,10 +11,10 @@ def get_procedure_queries(database_name):
                 declare i int;
                 declare user_name varchar(50);
                 declare done boolean;
-                declare user_cur cursor for select name from _user where access='*';
+                declare user_cur cursor for select name from _user where access='*' or access=name_;
                 declare continue handler for not found set done = true;
 
-                set @query = concat('create table ', name_, '(id int auto_increment primary key,
+                set @query = concat('create table ', name_, '(rowid int auto_increment primary key,
                     status varchar(20) not null default "unevaluated",');
 
                 set i = 1;
@@ -49,7 +49,6 @@ def get_procedure_queries(database_name):
 
                 delete from _empty_table where name=name_;
                 insert into _problem_info values (name_, var_type_, n_var_, n_obj_, n_constr_, minimize_);
-                insert into _config (name) values (name_);
 
                 open user_cur;
                 grant_access_loop: loop
@@ -80,7 +79,7 @@ def get_procedure_queries(database_name):
                 in name_ varchar(50), in config_ text
             )
             begin
-                update _config set config=config_ where name=name_;
+                insert into _config (name, config) values (name_, config_);
             end
             ''',
 

@@ -46,7 +46,7 @@ def get_function_queries(database_name):
             )
             returns text
             begin
-                return (select config from _config where name=name_);
+                return (select config from _config where name=name_ order by id desc limit 1);
             end
             ''',
 

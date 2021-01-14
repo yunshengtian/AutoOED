@@ -1,2 +1,2 @@
-from .manage_admin import ManageAdminController
-from .manage_user import ManageUserController
+from .admin import ManageAdminController
+from .user import ManageUserController

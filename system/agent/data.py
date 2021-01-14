@@ -99,8 +99,6 @@ class DataAgent:
             self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'is_pareto', 'config_id', 'batch_id'], flatten=True),
                 data=[status, X, Y, is_pareto, config_id, batch_id], transform=True)
 
-        last_rowid = self.db.select_last_data(table=self.table_name, column=['id'])[0]
-
         # update stats
         with self.n_init_sample.get_lock():
             self.n_init_sample.value += n_init_sample
@@ -112,7 +110,7 @@ class DataAgent:
             if Y is not None:
                 self.n_valid_sample.value += n_init_sample
 
-        rowids = np.arange(last_rowid - n_init_sample, last_rowid, dtype=int) + 1
+        rowids = np.arange(n_init_sample, dtype=int) + 1
         return rowids.tolist()
 
     def insert(self, X, Y_expected, Y_uncertainty, config_id):
@@ -125,18 +123,17 @@ class DataAgent:
         config_id = np.full(sample_len, config_id)
 
         # update data
-        self.db.execute(f'select batch_id from {self.table_name} order by id desc limit 1')
-        batch_id = self.db.fetchone()[0] + 1
+        batch_id = self.db.select_data(table=self.table_name, column='batch_id')[-1][0] + 1
         batch_id = np.full(sample_len, batch_id)
         self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
             data=[X, Y_expected, Y_uncertainty, config_id, batch_id], transform=True)
-        last_rowid = self.db.select_last_data(table=self.table_name, column=['id'])[0]
+        n_row = self.db.get_n_row(self.table_name)
 
         # update stats
         with self.n_sample.get_lock():
             self.n_sample.value += sample_len
             
-        rowids = np.arange(last_rowid - sample_len, last_rowid, dtype=int) + 1
+        rowids = np.arange(n_row - sample_len, n_row, dtype=int) + 1
         return rowids.tolist()
 
     def update(self, y, rowid):
@@ -147,18 +144,18 @@ class DataAgent:
         '''
         # update data
         Y_prev = self.load('Y', dtype=float)
-        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0]
-        Y_prev = Y_prev[rowids_prev]
+        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
+        Y_prev = Y_prev[rowids_prev - 1]
 
-        self.db.update_data(table=self.table_name, column=['status'] + self._map_key('Y'), data=['evaluated', y, rowid], condition='id = %s', transform=True)
+        self.db.update_data(table=self.table_name, column=['status'] + self._map_key('Y'), data=['evaluated', y], rowid=rowid, transform=True)
 
         if len(Y_prev) == 0:
-            self.db.update_data(table=self.table_name, column=['is_pareto'], data=[1, rowid], condition='id = %s', transform=True)
+            self.db.update_data(table=self.table_name, column=['is_pareto'], data=[1], rowid=rowid, transform=True)
         else:
             Y_all = np.vstack([Y_prev, y])
             rowids_all = np.concatenate([rowids_prev, [rowid]])
             is_pareto = check_pareto(Y_all, self.minimize).astype(int)
-            self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto, rowids_all], condition='id = %s', transform=True)
+            self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
 
         # update stats
         with self.n_valid_sample.get_lock():
@@ -172,15 +169,15 @@ class DataAgent:
         '''
         # update data
         Y_prev = self.load('Y', dtype=float)
-        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0]
-        Y_prev = Y_prev[rowids_prev]
+        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
+        Y_prev = Y_prev[rowids_prev - 1]
 
         Y_all = np.vstack([Y_prev, Y])
         rowids_all = np.concatenate([rowids_prev, rowids])
         is_pareto = check_pareto(Y_all, self.minimize).astype(int)
 
-        self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y, rowids], condition='id = %s', transform=True)
-        self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto, rowids_all], condition='id = %s', transform=True)
+        self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
+        self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
 
         # update stats
         with self.n_valid_sample.get_lock():
@@ -189,14 +186,7 @@ class DataAgent:
     def _load(self, keys, rowid=None):
         '''
         '''
-        if rowid is None:
-            condition = None
-        elif type(rowid) == int:
-            condition = f'id = {rowid}'
-        else:
-            condition = f"id in ({','.join(rowid)})"
-
-        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), condition=condition)
+        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), rowid=rowid)
         return data
 
     def load_str(self, keys, rowid=None):
@@ -267,7 +257,7 @@ class DataAgent:
         
         # load design variables
         x_next = self.load('X', rowid=rowid, dtype=float)[0]
-        self.db.update_data(table=self.table_name, column=['status'], data=['evaluating', rowid], condition='id = %s')
+        self.db.update_data(table=self.table_name, column=['status'], data=['evaluating'], rowid=rowid)
 
         # run evaluation
         y_next = evaluate(config, x_next)

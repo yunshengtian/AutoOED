@@ -11,87 +11,74 @@ from problem.problem import Problem
 
 import tkinter as tk
 from tkinter import messagebox
-from system.scientist.view import ScientistLoginView, ScientistView
-from system.database import TeamDatabase
+from system.database import PersonalDatabase
 from system.agent import DataAgent, WorkerAgent
 from system.scientist.params import *
 
-from system.scientist.menu_file import MenuFileController
-from system.scientist.menu_config import MenuConfigController
-from system.scientist.menu_problem import MenuProblemController
-from system.scientist.menu_database import MenuDatabaseController
-from system.scientist.menu_eval import MenuEvalController
-from system.scientist.panel_info import PanelInfoController
-from system.scientist.panel_control import PanelControlController
-from system.scientist.panel_log import PanelLogController
-from system.scientist.viz_space import VizSpaceController
-from system.scientist.viz_stats import VizStatsController
-from system.scientist.viz_database import VizDatabaseController
+from system.scientist.view_personal import ScientistInitView, ScientistView
+from system.scientist.table import CreateTableController, LoadTableController, RemoveTableController
+from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController
+from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController
+from system.scientist.viz import VizSpaceController, VizStatsController, VizDatabaseController
 
 
 class ScientistController:
 
     def __init__(self):
-        self.root_login = tk.Tk()
-        self.root_login.title('OpenMOBO - Scientist')
-        self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
-        self.root_login.resizable(False, False)
-        self.view_login = ScientistLoginView(self.root_login)
-        self.bind_command_login()
+        self.root_init = tk.Tk()
+        self.root_init.title('OpenMOBO')
+        self.root_init.protocol('WM_DELETE_WINDOW', self._quit_init)
+        self.root_init.resizable(False, False)
+        self.view_init = ScientistInitView(self.root_init)
+        self.bind_command_init()
 
         self.root = None
         self.view = None
         
-        self.database = None
+        self.database = PersonalDatabase()
         self.table_name = None
         self.table_checksum = None
 
-    def bind_command_login(self):
+    def bind_command_init(self):
         '''
         '''
-        self.view_login.widget['login'].configure(command=self.login_database)
+        self.view_init.widget['create_table'].configure(command=self.create_table)
+        self.view_init.widget['load_table'].configure(command=self.load_table)
+        self.view_init.widget['remove_table'].configure(command=self.remove_table)
 
-    def login_database(self):
+    def create_table(self):
         '''
         '''
-        try:
-            ip = self.view_login.widget['ip'].get()
-            user = self.view_login.widget['user'].get()
-            passwd = self.view_login.widget['passwd'].get()
-            table = self.view_login.widget['table'].get()
-        except Exception as e:
-            messagebox.showinfo('Error', e, parent=self.root_login)
-            return
+        CreateTableController(self)
+                
+    def load_table(self):
+        '''
+        '''
+        LoadTableController(self)
 
-        try:
-            self.database = TeamDatabase(ip, user, passwd)
-        except Exception as e:
-            messagebox.showinfo('Error', 'Invalid login info: ' + str(e), parent=self.root_login)
-            return
-
-        valid_login = self.database.login_verify(name=user, role='Scientist', access=table)
-        if not valid_login:
-            messagebox.showinfo('Error', f'Invalid access to table {table}', parent=self.root_login)
-            return
-
-        self.after_login(table_name=table)
-
-    def _quit_login(self):
-        '''
-        Quit handling for login window
-        '''
-        self.root_login.quit()
-        self.root_login.destroy()
-
-    def after_login(self, table_name):
+    def remove_table(self):
         '''
         '''
-        self._quit_login()
+        RemoveTableController(self)
+
+    def _quit_init(self, force=True):
+        '''
+        Quit handling for init window
+        '''
+        self.root_init.quit()
+        self.root_init.destroy()
+        if force:
+            self.database.quit()
+
+    def after_init(self, table_name):
+        '''
+        '''
+        self._quit_init(force=False)
 
         self.table_name = table_name
 
         self.root = tk.Tk()
-        self.root.title('OpenMOBO - Scientist')
+        self.root.title('OpenMOBO')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
 
         # TODO: use customized theme
@@ -130,9 +117,6 @@ class ScientistController:
         '''
         Menu initialization
         '''
-        self.controller['menu_file'] = MenuFileController(self)
-        self.view.menu_file.entryconfig(0, command=self.controller['menu_file'].set_result_dir)
-
         self.controller['menu_config'] = MenuConfigController(self)
         self.view.menu_config.entryconfig(0, command=self.controller['menu_config'].load_config_from_file)
         self.view.menu_config.entryconfig(1, command=self.controller['menu_config'].create_config)
@@ -284,10 +268,7 @@ class ScientistController:
             # load existing data
             if table_exist:
                 self._load_existing_data()
-
-            # disable changing saving location
-            self.view.menu_file.entryconfig(0, state=tk.DISABLED)
-
+            
             # change config create/change status
             self.view.menu_config.entryconfig(1, state=tk.DISABLED)
             self.view.menu_config.entryconfig(2, state=tk.NORMAL)
@@ -348,31 +329,12 @@ class ScientistController:
         self.database.update_config(name=self.table_name, config=self.config)
         
         if self.config != old_config:
-            self.save_config(self.config)
+            self.config_id += 1
             self.worker_agent.set_config(self.config, self.config_id)
             self.controller['viz_space'].set_config(self.config, self.problem_cfg)
             self.controller['viz_stats'].set_config(self.config, self.problem_cfg)
 
         return True
-
-    def save_config(self, config):
-        '''
-        Save configurations to file
-        '''
-        # convert all numpy array to list
-        def convert_config(config):
-            for key, val in config.items():
-                if type(val) == np.ndarray:
-                    config[key] = val.tolist()
-                elif type(val) == dict:
-                    convert_config(config[key])
-
-        config = config.copy()
-        convert_config(config)
-
-        self.config_id += 1
-        with open(os.path.join(self.result_dir, 'config', f'config_{self.config_id}.yml'), 'w') as fp:
-            yaml.dump(config, fp, default_flow_style=False, sort_keys=False)
 
     def get_timestamp(self):
         return self.timestamp
@@ -392,8 +354,6 @@ class ScientistController:
             else:
                 shutil.rmtree(self.result_dir)
         os.makedirs(self.result_dir, exist_ok=True)
-        config_dir = os.path.join(self.result_dir, 'config')
-        os.makedirs(config_dir)
         return True
 
     def refresh(self):
@@ -423,7 +383,7 @@ class ScientistController:
         self.controller['panel_log'].log(log_list)
 
         # check if database has changed
-        checksum = self.database.get_checksum(table=self.table_name)
+        checksum = self.database.get_checksum()
         if checksum != self.table_checksum and checksum != 0:
             self.table_checksum = checksum
             
@@ -485,4 +445,4 @@ class ScientistController:
         self.root.destroy()
 
     def run(self):
-        self.root_login.mainloop()
+        self.root_init.mainloop()

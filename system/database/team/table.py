@@ -24,8 +24,9 @@ def get_table_descriptions():
             ''',
 
         '_config': '''
-            name varchar(50) not null primary key,
-            config text
+            id int auto_increment primary key,
+            name varchar(50) not null,
+            config text not null
             ''',
 
         '_lock': '''

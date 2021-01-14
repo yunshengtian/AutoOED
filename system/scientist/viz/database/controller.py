@@ -28,7 +28,7 @@ class VizDatabaseController:
 
         self.table = Table(master=self.view.frame, columns=self.columns)
         data = self.database.load_table(name=self.table_name)
-        data = np.array(data, dtype=str)[:, 1:]
+        data = np.array(data, dtype=str)
         self.table.insert(columns=None, data=data)
 
     def update_data(self):
@@ -36,5 +36,5 @@ class VizDatabaseController:
         Update table data
         '''
         data = self.database.load_table(name=self.table_name)
-        data = np.array(data, dtype=str)[:, 1:]
+        data = np.array(data, dtype=str)
         self.table.update(columns=None, data=data)

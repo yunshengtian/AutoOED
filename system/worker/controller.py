@@ -137,7 +137,7 @@ class WorkerController:
         if self.view.widget['db_table'] is None:
             if self.database.check_inited_table_exist(self.table_name):
                 self.database.execute(f'describe {self.table_name}')
-                columns = [res[0] for res in self.database.fetchall() if res[0] != 'id']
+                columns = [res[0] for res in self.database.fetchall() if res[0] != 'rowid']
                 self.view.init_db_table(columns)
                 self.problem_info = self.database.query_problem(self.table_name)
                 self.view.widget['problem_info'].set_info(**self.problem_info)
@@ -156,8 +156,6 @@ class WorkerController:
         self.table_checksum = checksum
 
         data = self.database.load_table(name=self.table_name)
-        data = np.array(data, dtype=str)[:, 1:]
-
         self.view.widget['db_table'].update(columns=None, data=data)
 
     def auto_set_script(self):

@@ -71,7 +71,3 @@ class EnterPerformanceController:
 
         # update database
         data_agent.update_batch(Y, rowids)
-
-        # update table gui
-        table.update({'Y': Y}, rowids=rowids)
-    

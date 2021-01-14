@@ -238,15 +238,15 @@ class TeamDatabase:
         self.execute(f"create user '{name}'@'%' identified by '{passwd}'")
 
         # grant table access
-        table_list = self.get_inited_table_list()
         if access == '*':
-            for table in table_list:
+            for table in self.get_inited_table_list():
                 self.execute(f"grant all privileges on {self.database}.{table} to '{name}'@'%'")
         elif access == '':
             pass
         else:
-            assert access in table_list, f"table {access} doesn't exist "
-            self.execute(f"grant all privileges on {self.database}.{access} to '{name}'@'%'")
+            assert access in self.get_table_list(), f"table {access} doesn't exist"
+            if access in self.get_inited_table_list():
+                self.execute(f"grant all privileges on {self.database}.{access} to '{name}'@'%'")
 
         # grant procedure access
         for proc_name, proc_access in get_procedure_access().items():
@@ -292,7 +292,7 @@ class TeamDatabase:
                 self.execute(f"grant all privileges on {self.database}.{access} to '{name}'@'%'")
             self.execute('flush privileges')
 
-        self.update_data(table='_user', column=('passwd', 'role', 'access'), data=(passwd, role, access), condition=f"name = '{name}'")
+        self.execute(f'update _user set passwd=%s, role=%s, access=%s where name="{name}"', data=(passwd, role, access))
 
     @root
     def remove_user(self, name):
@@ -305,7 +305,7 @@ class TeamDatabase:
         self.execute(f'drop user {name}')
         self.execute('flush privileges')
 
-        self.delete_data(table='_user', condition=f"name = '{name}'")
+        self.execute(f'delete from _user where name="{name}"')
 
     '''
     table
@@ -362,7 +362,8 @@ class TeamDatabase:
         '''
         assert self.check_table_exist(name), f"Table {name} doesn't exist"
         self.execute(f'select * from {name}')
-        return self.cursor.fetchall()
+        data = [res[1:] for res in self.cursor.fetchall()] # omit rowid
+        return data
 
     @root
     def create_table(self, name):
@@ -411,7 +412,7 @@ class TeamDatabase:
             self.execute(f"delete from _problem_info where name='{name}'")
             self.execute(f"delete from _config where name='{name}'")
         elif self.check_table_exist(name):
-            self.delete_data(table='_empty_table', condition=f"name = '{name}'")
+            self.execute(f'delete from _empty_table where name="{name}"')
         else:
             raise Exception(f'Table {name} does not exist')
 
@@ -465,6 +466,17 @@ class TeamDatabase:
     def update_config(self, name, config):
         '''
         '''
+        # convert all numpy array to list
+        def convert_config(config):
+            for key, val in config.items():
+                if type(val) == np.ndarray:
+                    config[key] = val.tolist()
+                elif type(val) == dict:
+                    convert_config(config[key])
+
+        config = config.copy()
+        convert_config(config)
+        
         config_str = str(config)
         query = f'''
             call update_config('{name}', "{config_str}")
@@ -519,7 +531,7 @@ class TeamDatabase:
         '''
         '''
         if transform:
-            data = self.transform_data(data)
+            data = self._transform_data(data)
         if type(data) == np.ndarray:
             data = data.tolist()
         if column is None:
@@ -535,7 +547,7 @@ class TeamDatabase:
         '''
         '''
         if transform:
-            data = self.transform_multiple_data(data)
+            data = self._transform_multiple_data(data)
         if type(data) == np.ndarray:
             data = data.tolist()
         if column is None:
@@ -547,40 +559,74 @@ class TeamDatabase:
             query = f"insert into {table} ({','.join(column)}) values ({','.join(['%s'] * len(data[0]))})"
         self.executemany(query, data)
 
-    def update_data(self, table, column, data, condition, transform=False):
+    def _get_rowid_condition(self, rowid):
+        '''
+        '''
+        if isinstance(rowid, int):
+            # update single row
+            condition = f' where rowid = {rowid}'
+        elif isinstance(rowid, Iterable):
+            # update multiple rows
+            condition = f' where rowid in ({",".join(np.array(rowid, dtype=str))})'
+        elif rowid is None:
+            # update all rows
+            condition = ''
+        else:
+            raise NotImplementedError
+        return condition
+
+    def update_data(self, table, column, data, rowid=None, transform=False):
         '''
         '''
         if transform:
-            data = self.transform_data(data)
+            data = self._transform_data(data)
         if type(data) == np.ndarray:
             data = data.tolist()
+
         if type(column) == str:
-            query = f"update {table} set {column}=%s where {condition}"
+            query = f"update {table} set {column}=%s"
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f"update {table} set {','.join([col + '=%s' for col in column])} where {condition}"
+            query = f"update {table} set {','.join([col + '=%s' for col in column])}"
+
+        condition = self._get_rowid_condition(rowid)
+        query += condition
+
         self.execute(query, data)
 
-    def update_multiple_data(self, table, column, data, condition, transform=False):
+    def update_multiple_data(self, table, column, data, rowid=None, transform=False):
         '''
         '''
         if transform:
-            data = self.transform_multiple_data(data)
+            data = self._transform_multiple_data(data)
         if type(data) == np.ndarray:
             data = data.tolist()
+
         if type(column) == str:
-            query = f"update {table} set {column}=%s where {condition}"
+            query = f"update {table} set {column}=%s"
         else:
             # assert len(column) == len(data[0]), 'length mismatch of keys and values'
-            query = f"update {table} set {','.join([col + '=%s' for col in column])} where {condition}"
+            query = f"update {table} set {','.join([col + '=%s' for col in column])}"
+
+        if rowid is not None:
+            assert isinstance(rowid, Iterable) and len(rowid) == len(data)
+            if isinstance(rowid, np.ndarray):
+                rowid = rowid.tolist()
+            for i in range(len(data)):
+                data[i].append(rowid[i])
+            query += ' where rowid=%s'
+        
         self.executemany(query, data)
 
-    def delete_data(self, table, condition):
+    def delete_data(self, table, rowid=None):
         '''
         '''
-        self.execute(f'delete from {table} where {condition}')
+        condition = self._get_rowid_condition(rowid)
+        query = f'delete from {table}' + condition
+
+        self.execute(query)
     
-    def transform_data(self, data_list):
+    def _transform_data(self, data_list):
         '''
         '''
         new_data_list = []
@@ -592,7 +638,7 @@ class TeamDatabase:
             new_data_list.append(data)
         return np.hstack(new_data_list)
 
-    def transform_multiple_data(self, data_list):
+    def _transform_multiple_data(self, data_list):
         '''
         '''
         new_data_list = []
@@ -604,7 +650,7 @@ class TeamDatabase:
             new_data_list.append(data)
         return np.hstack(new_data_list)
 
-    def select_data(self, table, column, condition=None):
+    def select_data(self, table, column, rowid=None):
         '''
         '''
         if column is None:
@@ -613,38 +659,19 @@ class TeamDatabase:
             query = f"select {column} from {table}"
         else:
             query = f"select {','.join(column)} from {table}"
-        if condition is not None:
-            query += f' where {condition}'
+
+        condition = self._get_rowid_condition(rowid)
+        query += condition
+
         self.execute(query)
         return self.fetchall()
 
-    def select_first_data(self, table, column, condition=None):
+    def get_n_row(self, table):
         '''
         '''
-        if column is None:
-            query = f'select * from {table}'
-        elif type(column) == str:
-            query = f"select {column} from {table}"
-        else:
-            query = f"select {','.join(column)} from {table}"
-        if condition is not None:
-            query += f' where {condition}'
+        query = f'select rowid from {table} order by rowid desc limit 1'
         self.execute(query)
-        return self.fetchone()
-    
-    def select_last_data(self, table, column, condition=None):
-        '''
-        '''
-        if column is None:
-            query = f'select * from {table} order by id desc limit 1'
-        elif type(column) == str:
-            query = f"select {column} from {table} order by id desc limit 1"
-        else:
-            query = f"select {','.join(column)} from {table} order by id desc limit 1"
-        if condition is not None:
-            query += f' where {condition}'
-        self.execute(query)
-        return self.fetchone()
+        return self.fetchone()[0]
 
     def get_column_names(self, table):
         '''
