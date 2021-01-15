@@ -1,18 +1,18 @@
 import numpy as np
 import tkinter as tk
 from tkinter import messagebox
+from system.params import *
 from system.database import TeamDatabase
 from system.server.view import ServerLoginView, ServerInitView, ServerView
 from system.server.table import CreateTableController, LoadTableController, RemoveTableController
 from system.server.access import ManageAdminController, ManageUserController 
-from .params import *
 
 
 class ServerController:
 
     def __init__(self):
         self.root_login = tk.Tk()
-        self.root_login.title('OpenMOBO - Server')
+        self.root_login.title(f'{TITLE} - Server')
         self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
         self.root_login.resizable(False, False)
         self.view_login = ServerLoginView(self.root_login)

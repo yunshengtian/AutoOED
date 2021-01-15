@@ -1,10 +1,10 @@
 import numpy as np
 import tkinter as tk
 from tkinter import messagebox
+from system.params import *
 from system.database import TeamDatabase
 from system.agent import DataAgent
 from .view import WorkerLoginView, WorkerView
-from .params import *
 
 from .auto_set_script import AutoSetScriptController
 from .auto_evaluate import AutoEvaluateController
@@ -16,7 +16,7 @@ class WorkerController:
 
     def __init__(self):
         self.root_login = tk.Tk()
-        self.root_login.title('OpenMOBO - Worker')
+        self.root_login.title(f'{TITLE} - Worker')
         self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
         self.root_login.resizable(False, False)
         self.view_login = WorkerLoginView(self.root_login)

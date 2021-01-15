@@ -11,9 +11,9 @@ from problem.problem import Problem
 
 import tkinter as tk
 from tkinter import messagebox
+from system.params import *
 from system.database import PersonalDatabase
 from system.agent import DataAgent, WorkerAgent
-from system.scientist.params import *
 
 from system.scientist.view.init import ScientistInitView
 from system.scientist.view.main import ScientistView
@@ -27,7 +27,7 @@ class ScientistController:
 
     def __init__(self):
         self.root_init = tk.Tk()
-        self.root_init.title('OpenMOBO')
+        self.root_init.title(TITLE)
         self.root_init.protocol('WM_DELETE_WINDOW', self._quit_init)
         self.root_init.resizable(False, False)
         self.view_init = ScientistInitView(self.root_init)

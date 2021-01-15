@@ -11,9 +11,9 @@ from problem.problem import Problem
 
 import tkinter as tk
 from tkinter import messagebox
+from system.params import *
 from system.database import TeamDatabase
 from system.agent import DataAgent, WorkerAgent
-from system.scientist.params import *
 
 from system.scientist.view.login import ScientistLoginView
 from system.scientist.view.main import ScientistView
@@ -26,7 +26,7 @@ class ScientistController:
 
     def __init__(self):
         self.root_login = tk.Tk()
-        self.root_login.title('OpenMOBO - Scientist')
+        self.root_login.title(f'{TITLE} - Scientist')
         self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
         self.root_login.resizable(False, False)
         self.view_login = ScientistLoginView(self.root_login)

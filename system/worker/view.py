@@ -2,7 +2,7 @@ import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 from system.gui.widgets_modular import ProblemInfoWidget, AdjustableTable
-from .params import *
+from system.params import *
 
 
 class WorkerLoginView:

@@ -4,7 +4,7 @@ from tkinter import ttk
 from system.gui.widgets.image import ImageFrame
 from system.gui.utils.grid import grid_configure
 from system.utils.path import get_root_dir
-from system.scientist.params import *
+from system.params import *
 
 
 class ScientistView:
