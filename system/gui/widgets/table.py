@@ -6,70 +6,134 @@ class Table:
     '''
     Excel-like table in tkinter gui
     '''
-    def __init__(self, master, titles):
+    def __init__(self, master, columns):
+
+        # default params
+        self.params = {
+            'cellwidth': 110,
+            'precision': 6,
+        }
+
+        self.data = []
+
         self.model = TableModel()
-        for title in titles:
-            self.model.addColumn(colname=title)
-        self.table = TableCanvas(parent=master, model=self.model, cellwidth=110, read_only=True)
+        self.columns = columns
+        for column in columns:
+            self.model.addColumn(colname=column)
+        self.table = TableCanvas(parent=master, model=self.model, cellwidth=self.params['cellwidth'], read_only=True)
         self.table.setSelectedRow(-1)
         self.table.show()
         
         self.n_rows = 0
-        self.key_map = None
 
-    def register_key_map(self, key_map):
-        self.key_map = key_map
+    def set_params(self, params):
+        assert params.keys() == self.params.keys()
+        self.params = params
+        self.table.cellwidth = self.params['cellwidth']
+        self.refresh()
+
+    def get_params(self):
+        return self.params.copy()
 
     def _process_val(self, val):
-        if isinstance(val, bool):
+        if val is None:
+            return 'N/A'
+        elif isinstance(val, bool):
             if val == True: return 'True'
             else: return 'False'
         elif isinstance(val, float):
             if np.isnan(val): return 'N/A'
-            else: return round(val, 4)
+            else: return round(val, self.params['precision'])
         else:
-            return val
+            return str(val)
 
-    def insert(self, data):
+    def transform_data(self, data_list):
+        '''
+        '''
+        new_data_list = []
+        for data in data_list:
+            data = np.array(data, dtype=str)
+            if len(data.shape) == 1:
+                data = np.expand_dims(data, axis=1)
+            assert len(data.shape) == 2
+            new_data_list.append(data)
+        return np.hstack(new_data_list)
+
+    def load(self, data, transform=False):
+        '''
+        '''
+        if transform:
+            data = self.transform_data(data)
+
+        if len(data) > self.n_rows:
+            self.model.autoAddRows(len(data) - self.n_rows)
+            self.data.extend([[None for _ in self.columns] for _ in range(len(data) - self.n_rows)])
+        elif len(data) < self.n_rows:
+            self.model.deleteRows(rowlist=range(len(data), self.n_rows))
+            del self.data[len(data):]
+        self.n_rows = len(data)
+
+        for row in range(self.n_rows):
+            row_data = data[row]
+            for j, col in enumerate(self.columns):
+                self.model.data[row][col] = self._process_val(row_data[j])
+                self.data[row][self.columns.index(col)] = row_data[j]
+
+    def insert(self, columns, data, transform=False):
         '''
         Insert data into bottom of the table
         '''
-        old_n_rows = self.n_rows
-        for key, val in data.items():
-            if isinstance(val, np.ndarray): val = val.tolist()
+        if transform:
+            data = self.transform_data(data)
 
-            new_n_rows = old_n_rows + len(val)
-            if new_n_rows > self.n_rows:
-                self.model.autoAddRows(new_n_rows - self.n_rows)
-                self.n_rows = new_n_rows
-            
-            for i, row in enumerate(range(old_n_rows, self.n_rows)):
-                if self.key_map is not None and key in self.key_map:
-                    mapped_keys = self.key_map[key]
-                    for j, mapped_key in enumerate(mapped_keys):
-                        self.model.data[row][mapped_key] = self._process_val(val[i][j])
-                else:
-                    self.model.data[row][key] = self._process_val(val[i])
+        old_n_rows = self.n_rows
+        if len(data) > 0:
+            self.model.autoAddRows(len(data))
+            self.data.extend([[None for _ in self.columns] for _ in data])
+            self.n_rows = old_n_rows + len(data)
+
+        if columns is None: columns = self.columns
+
+        for i, row in enumerate(range(old_n_rows, self.n_rows)):
+            row_data = data[i]
+            for j, col in enumerate(columns):
+                self.model.data[row][col] = self._process_val(row_data[j])
+                self.data[row][self.columns.index(col)] = row_data[j]
         
         self.table.redrawTable()
 
-    def update(self, data, rowids=None):
+    def update(self, columns, data, rowids=None, transform=False):
         '''
         Update rows of the table (TODO: support single rowid)
         '''
-        for key, val in data.items():
-            if isinstance(val, np.ndarray): val = val.tolist()
+        if transform:
+            data = self.transform_data(data)
 
-            row_range = range(len(val)) if rowids is None else np.array(rowids) - 1
+        if rowids is None:
+            rowids = list(range(len(data)))
+            new_n_rows = len(data)
+            if new_n_rows > self.n_rows:
+                self.model.autoAddRows(new_n_rows - self.n_rows)
+                self.n_rows = new_n_rows
 
-            for i, row in enumerate(row_range):
-                if self.key_map is not None and key in self.key_map:
-                    mapped_keys = self.key_map[key]
-                    for j, mapped_key in enumerate(mapped_keys):
-                        self.model.data[row][mapped_key] = self._process_val(val[i][j])
-                else:
-                    self.model.data[row][key] = self._process_val(val[i])
+        if columns is None: columns = self.columns
 
+        assert len(data) == len(rowids)
+        for i, row in enumerate(rowids):
+            row_data = data[i]
+            for j, col in enumerate(columns):
+                self.model.data[row][col] = self._process_val(row_data[j])
+                self.data[row][self.columns.index(col)] = row_data[j]
+
+        self.table.redrawTable()
+
+    def refresh(self):
+        '''
+        '''
+        for row in range(self.n_rows):
+            for j, col in enumerate(self.columns):
+                self.model.data[row][col] = self._process_val(self.data[row][j])
+        
         self.table.redrawTable()
 
     def get(self, row, column):

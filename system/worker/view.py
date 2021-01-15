@@ -1,8 +1,7 @@
 import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
-from system.gui.widgets.newtable import Table
-from system.gui.widgets_modular import ProblemInfoWidget
+from system.gui.widgets_modular import ProblemInfoWidget, AdjustableTable
 from .params import *
 
 
@@ -73,7 +72,7 @@ class WorkerView:
         self.root.geometry(f'{int(width)}x{int(height)}')
 
         self.widget['db_placeholder'].destroy()
-        self.widget['db_table'] = Table(master=self.widget['db_frame'], columns=columns)
+        self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)
 
         for widget_name in ['auto_set_script', 'manual_lock', 'manual_release', 'manual_fill']:
             self.widget[widget_name].configure(state=tk.NORMAL)

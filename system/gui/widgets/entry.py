@@ -177,35 +177,6 @@ class FloatListEntry(Entry):
         return ','.join([str(float(num)) for num in val])
 
 
-class CheckbuttonEntry(Entry):
-    '''
-    Entry for checkbutton
-    '''
-    def __init__(self, var, widget):
-        self.var = var
-        self.widget = widget
-        self.readonly = False
-    
-    def get(self):
-        '''
-        Get entry value
-        '''
-        val = self.var.get() == 1
-        return val
-
-    def set(self, val):
-        '''
-        Set entry value
-        '''
-        self.var.set(int(val))
-
-    def _get(self):
-        pass
-
-    def _set(self):
-        pass
-
-
 def get_entry(name, *args, **kwargs):
     '''
     Create entry by name and other arguments
@@ -217,6 +188,5 @@ def get_entry(name, *args, **kwargs):
         'stringlist': StringListEntry,
         'intlist': IntListEntry,
         'floatlist': FloatListEntry,
-        'checkbutton': CheckbuttonEntry,
     }
     return factory[name](*args, **kwargs)

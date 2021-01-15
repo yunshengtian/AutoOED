@@ -156,7 +156,7 @@ class WorkerController:
         self.table_checksum = checksum
 
         data = self.database.load_table(name=self.table_name)
-        self.view.widget['db_table'].update(columns=None, data=data)
+        self.view.widget['db_table'].load(data)
 
     def auto_set_script(self):
         '''

@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
-from system.gui.widgets.newtable import Table
-from system.gui.widgets_modular import ProblemInfoWidget
+from system.gui.widgets_modular import ProblemInfoWidget, AdjustableTable
 from system.server.params import *
 
 
@@ -126,4 +125,4 @@ class ServerView:
         self.root.geometry(f'{int(width)}x{int(height)}')
 
         self.widget['db_placeholder'].destroy()
-        self.widget['db_table'] = Table(master=self.widget['db_frame'], columns=columns)
+        self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)

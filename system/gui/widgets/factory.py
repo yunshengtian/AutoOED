@@ -7,6 +7,7 @@ from tkinter import ttk, scrolledtext
 
 from system.gui.widgets.button import Button
 from system.gui.widgets.entry import get_entry
+from system.gui.widgets.variable import get_variable
 from system.gui.utils.grid import grid_configure
 
 
@@ -60,11 +61,26 @@ def create_checkbutton(master, row, column, text,
     checkbutton.grid(row=0, column=0)
     label = tk.Label(master=frame, text=text)
     label.grid(row=0, column=1)
-    entry = get_entry('checkbutton', var, checkbutton)
+    variable = get_variable('checkbutton', var, checkbutton)
     if return_label:
-        return label, entry
+        return label, variable
     else:
-        return entry
+        return variable
+
+
+def create_spinbox(master, row, column, text, from_, to, width=entry_width,
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky=None, return_label=False):
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+    label = tk.Label(master=frame, text=text)
+    label.grid(row=0, column=0)
+    var = tk.IntVar()
+    spinbox = tk.Spinbox(master=frame, from_=from_, to=to, width=width, textvariable=var)
+    spinbox.grid(row=0, column=1, padx=padx)
+    variable = get_variable('spinbox', var, spinbox)
+    if return_label:
+        return label, variable
+    else:
+        return variable
 
 
 def create_labeled_frame(master, row, column, text, 
@@ -164,6 +180,7 @@ def create_widget(name, *args, **kwargs):
         'button': create_button,
         'entry': create_entry,
         'checkbutton': create_checkbutton,
+        'spinbox': create_spinbox,
         'labeled_frame': create_labeled_frame,
         'labeled_combobox': create_labeled_combobox,
         'labeled_button': create_labeled_button,
