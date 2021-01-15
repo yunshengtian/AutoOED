@@ -1,8 +1,8 @@
 import tkinter as tk
-from .view import CreateTableView
+from .view import CreateTaskView
 
 
-class CreateTableController:
+class CreateTaskController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -10,10 +10,10 @@ class CreateTableController:
 
         self.database = self.root_controller.database
 
-        self.view = CreateTableView(self.root_view)
+        self.view = CreateTaskView(self.root_view)
 
         self.view.widget['set_file_path'].configure(command=self.set_file_path)
-        self.view.widget['create'].configure(command=self.create_table)
+        self.view.widget['create'].configure(command=self.create_task)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
     def set_file_path(self):
@@ -21,9 +21,9 @@ class CreateTableController:
         if not isinstance(filename, str) or filename == '': return
         self.view.widget['disp_file_path'].set(filename)
 
-    def create_table(self):
+    def create_task(self):
         try:
-            name = self.view.widget['table_name'].get()
+            name = self.view.widget['task_name'].get()
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return

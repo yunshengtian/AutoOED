@@ -17,6 +17,6 @@ class ScientistLoginView:
             text='Username', class_type='string', required=True, required_mark=False)
         self.widget['passwd'] = create_widget('labeled_entry', master=frame_login, row=2, column=0, width=20,
             text='Password', class_type='string', required=False)
-        self.widget['table'] = create_widget('labeled_entry', master=frame_login, row=3, column=0, width=20,
-            text='Database Table Name', class_type='string', required=True, required_mark=False)
+        self.widget['task'] = create_widget('labeled_entry', master=frame_login, row=3, column=0, width=20,
+            text='Task Name', class_type='string', required=True, required_mark=False)
         self.widget['login'] = create_widget('button', master=frame_login, row=4, column=0, text='Log in')

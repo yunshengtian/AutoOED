@@ -47,7 +47,7 @@ class WorkerController:
             ip = self.view_login.widget['ip'].get()
             user = self.view_login.widget['user'].get()
             passwd = self.view_login.widget['passwd'].get()
-            table = self.view_login.widget['table'].get()
+            task = self.view_login.widget['task'].get()
         except Exception as e:
             messagebox.showinfo('Error', e, parent=self.root_login)
             return
@@ -58,12 +58,12 @@ class WorkerController:
             messagebox.showinfo('Error', 'Invalid login info: ' + str(e), parent=self.root_login)
             return
 
-        valid_login = self.database.login_verify(name=user, role='Worker', access=table)
+        valid_login = self.database.login_verify(name=user, role='Worker', access=task)
         if not valid_login:
-            messagebox.showinfo('Error', f'Invalid access to table {table}', parent=self.root_login)
+            messagebox.showinfo('Error', f'Invalid access to task {task}', parent=self.root_login)
             return
 
-        self.after_login(table_name=table)
+        self.after_login(table_name=task)
 
     def bind_command(self):
         '''

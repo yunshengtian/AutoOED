@@ -4,7 +4,7 @@ from tkinter import messagebox
 from system.params import *
 from system.database import TeamDatabase
 from system.server.view import ServerLoginView, ServerInitView, ServerView
-from system.server.table import CreateTableController, LoadTableController, RemoveTableController
+from system.server.task import CreateTaskController, LoadTaskController, RemoveTaskController
 from system.server.access import ManageAdminController, ManageUserController 
 
 
@@ -59,15 +59,15 @@ class ServerController:
         '''
         self.refresh_info_init()
         self.view_init.widget['refresh'].configure(command=self.refresh_info_init)
-        self.view_init.widget['create_table'].configure(command=self.create_table)
-        self.view_init.widget['load_table'].configure(command=self.load_table)
-        self.view_init.widget['remove_table'].configure(command=self.remove_table)
+        self.view_init.widget['create_task'].configure(command=self.create_task)
+        self.view_init.widget['load_task'].configure(command=self.load_task)
+        self.view_init.widget['remove_task'].configure(command=self.remove_task)
         self.view_init.widget['manage_admin'].configure(command=self.manage_admin)
         self.view_init.widget['manage_user'].configure(command=self.manage_user)
 
         if self.database.get_current_user() != 'root':
-            self.view_init.widget['create_table'].disable()
-            self.view_init.widget['remove_table'].disable()
+            self.view_init.widget['create_task'].disable()
+            self.view_init.widget['remove_task'].disable()
             self.view_init.widget['manage_admin'].disable()
             self.view_init.widget['manage_user'].disable()
 
@@ -83,20 +83,20 @@ class ServerController:
         self.view_init.widget['user'].config(text='Username: ' + user)
         self.view_init.widget['ip'].config(text='IP Address: ' + ip)
 
-    def create_table(self):
+    def create_task(self):
         '''
         '''
-        CreateTableController(self)
+        CreateTaskController(self)
                 
-    def load_table(self):
+    def load_task(self):
         '''
         '''
-        LoadTableController(self)
+        LoadTaskController(self)
 
-    def remove_table(self):
+    def remove_task(self):
         '''
         '''
-        RemoveTableController(self)
+        RemoveTaskController(self)
 
     def manage_admin(self):
         '''

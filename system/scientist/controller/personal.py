@@ -17,7 +17,7 @@ from system.agent import DataAgent, WorkerAgent
 
 from system.scientist.view.init import ScientistInitView
 from system.scientist.view.main import ScientistView
-from system.scientist.table import CreateTableController, LoadTableController, RemoveTableController
+from system.scientist.task import CreateTaskController, LoadTaskController, RemoveTaskController
 from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController
 from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController
 from system.scientist.viz import VizSpaceController, VizStatsController, VizDatabaseController
@@ -43,24 +43,24 @@ class ScientistController:
     def bind_command_init(self):
         '''
         '''
-        self.view_init.widget['create_table'].configure(command=self.create_table)
-        self.view_init.widget['load_table'].configure(command=self.load_table)
-        self.view_init.widget['remove_table'].configure(command=self.remove_table)
+        self.view_init.widget['create_task'].configure(command=self.create_task)
+        self.view_init.widget['load_task'].configure(command=self.load_task)
+        self.view_init.widget['remove_task'].configure(command=self.remove_task)
 
-    def create_table(self):
+    def create_task(self):
         '''
         '''
-        CreateTableController(self)
+        CreateTaskController(self)
                 
-    def load_table(self):
+    def load_task(self):
         '''
         '''
-        LoadTableController(self)
+        LoadTaskController(self)
 
-    def remove_table(self):
+    def remove_task(self):
         '''
         '''
-        RemoveTableController(self)
+        RemoveTaskController(self)
 
     def _quit_init(self, force=True):
         '''

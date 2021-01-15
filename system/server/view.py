@@ -41,9 +41,9 @@ class ServerInitView:
 
         frame_db = create_widget('labeled_frame', master=frame_init, row=1, column=0, text='Database')
         grid_configure(frame_db, 0, 2)
-        self.widget['create_table'] = create_widget('button', master=frame_db, row=0, column=0, text='Create Table')
-        self.widget['load_table'] = create_widget('button', master=frame_db, row=0, column=1, text='Load Table')
-        self.widget['remove_table'] = create_widget('button', master=frame_db, row=0, column=2, text='Remove Table')
+        self.widget['create_task'] = create_widget('button', master=frame_db, row=0, column=0, text='Create Task')
+        self.widget['load_task'] = create_widget('button', master=frame_db, row=0, column=1, text='Load Task')
+        self.widget['remove_task'] = create_widget('button', master=frame_db, row=0, column=2, text='Remove Task')
 
         frame_access = create_widget('labeled_frame', master=frame_init, row=2, column=0, text='Access')
         grid_configure(frame_access, 0, 1)
