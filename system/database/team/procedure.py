@@ -19,25 +19,25 @@ def get_procedure_queries(database_name):
 
                 set i = 1;
                 while i <= n_var_ do
-                    set @query = concat(@query, 'x', i, ' float not null,');
+                    set @query = concat(@query, 'x', i, ' double not null,');
                     set i = i + 1;
                 end while;
 
                 set i = 1;
                 while i <= n_obj_ do
-                    set @query = concat(@query, 'f', i, ' float,');
+                    set @query = concat(@query, 'f', i, ' double,');
                     set i = i + 1;
                 end while;
 
                 set i = 1;
                 while i <= n_obj_ do
-                    set @query = concat(@query, 'f', i, '_expected float,');
+                    set @query = concat(@query, 'f', i, '_expected double,');
                     set i = i + 1;
                 end while;
 
                 set i = 1;
                 while i <= n_obj_ do
-                    set @query = concat(@query, 'f', i, '_uncertainty float,');
+                    set @query = concat(@query, 'f', i, '_uncertainty double,');
                     set i = i + 1;
                 end while;
 

@@ -490,11 +490,11 @@ class TeamDatabase:
             select query_config('{name}')
             '''
         self.execute(query)
-        config_str = self.fetchone()
-        if len(config_str) == 0:
+        config_str = self.fetchone()[0]
+        if config_str is None:
             return None
         else:
-            config = yaml.load(config_str[0], Loader=yaml.FullLoader)
+            config = yaml.load(config_str, Loader=yaml.FullLoader)
             return config
 
     '''
