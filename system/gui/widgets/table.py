@@ -79,6 +79,8 @@ class Table:
                 self.model.data[row][col] = self._process_val(row_data[j])
                 self.data[row][self.columns.index(col)] = row_data[j]
 
+        self.table.redrawTable()
+
     def insert(self, columns, data, transform=False):
         '''
         Insert data into bottom of the table

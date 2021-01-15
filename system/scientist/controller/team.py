@@ -116,6 +116,9 @@ class ScientistController:
 
         self._init_menu()
         self._init_panel()
+        config = self.database.query_config(self.table_name)
+        if config is not None:
+            self.set_config(config)
 
         self.root.mainloop()
     

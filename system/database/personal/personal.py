@@ -330,7 +330,7 @@ class PersonalDatabase:
         config = config.copy()
         convert_config(config)
         
-        config_str = str(config)
+        config_str = yaml.dump(config)
         with SafeLock(self.lock):
             self.execute(f'insert into _config (name, config) values ("{name}", "{config_str}")')
             self.commit()
@@ -338,9 +338,12 @@ class PersonalDatabase:
     def query_config(self, name):
         '''
         '''
-        config_str = self.execute(f'select config from _config where name="{name}" order by rowid desc limit 1', fetchone=True)[0]
-        config = yaml.load(config_str)
-        return config
+        config_str = self.execute(f'select config from _config where name="{name}" order by rowid desc limit 1', fetchone=True)
+        if config_str is None:
+            return None
+        else:
+            config = yaml.load(config_str[0], Loader=yaml.FullLoader)
+            return config
 
     '''
     basic operations

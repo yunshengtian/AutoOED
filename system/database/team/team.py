@@ -477,7 +477,7 @@ class TeamDatabase:
         config = config.copy()
         convert_config(config)
         
-        config_str = str(config)
+        config_str = yaml.dump(config)
         query = f'''
             call update_config('{name}', "{config_str}")
             '''
@@ -490,9 +490,12 @@ class TeamDatabase:
             select query_config('{name}')
             '''
         self.execute(query)
-        config_str = self.fetchone()[0]
-        config = yaml.load(config_str)
-        return config
+        config_str = self.fetchone()
+        if len(config_str) == 0:
+            return None
+        else:
+            config = yaml.load(config_str[0], Loader=yaml.FullLoader)
+            return config
 
     '''
     entry lock
