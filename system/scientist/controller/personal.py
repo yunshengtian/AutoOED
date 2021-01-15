@@ -15,7 +15,8 @@ from system.database import PersonalDatabase
 from system.agent import DataAgent, WorkerAgent
 from system.scientist.params import *
 
-from system.scientist.view_personal import ScientistInitView, ScientistView
+from system.scientist.view.init import ScientistInitView
+from system.scientist.view.main import ScientistView
 from system.scientist.table import CreateTableController, LoadTableController, RemoveTableController
 from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController
 from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController

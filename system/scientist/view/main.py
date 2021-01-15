@@ -2,30 +2,9 @@ import os
 import tkinter as tk
 from tkinter import ttk
 from system.gui.widgets.image import ImageFrame
-from system.gui.widgets.factory import create_widget
 from system.gui.utils.grid import grid_configure
 from system.utils.path import get_root_dir
 from system.scientist.params import *
-
-
-class ScientistLoginView:
-
-    def __init__(self, root):
-        self.root = root
-
-        frame_login = tk.Frame(master=self.root)
-        frame_login.grid(row=0, column=0, padx=20, pady=20, sticky='NSEW')
-
-        self.widget = {}
-        self.widget['ip'] = create_widget('labeled_entry', master=frame_login, row=0, column=0, width=20,
-            text='Server IP Address', class_type='string', required=True, required_mark=False)
-        self.widget['user'] = create_widget('labeled_entry', master=frame_login, row=1, column=0, width=20,
-            text='Username', class_type='string', required=True, required_mark=False)
-        self.widget['passwd'] = create_widget('labeled_entry', master=frame_login, row=2, column=0, width=20,
-            text='Password', class_type='string', required=False)
-        self.widget['table'] = create_widget('labeled_entry', master=frame_login, row=3, column=0, width=20,
-            text='Database Table Name', class_type='string', required=True, required_mark=False)
-        self.widget['login'] = create_widget('button', master=frame_login, row=4, column=0, text='Log in')
 
 
 class ScientistView:
@@ -56,10 +35,6 @@ class ScientistView:
         self.root.config(menu=self.menu)
 
         # sub-level menu
-        self.menu_file = tk.Menu(master=self.menu, tearoff=0)
-        self.menu.add_cascade(label='File', menu=self.menu_file)
-        self.menu_file.add_command(label='Save in ...')
-
         self.menu_config = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Config', menu=self.menu_config)
         self.menu_config.add_command(label='Load')

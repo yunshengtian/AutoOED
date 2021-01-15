@@ -1,2 +1,0 @@
-from .controller_team import ScientistController as TeamScientistController
-from .controller_personal import ScientistController as PersonalScientistController

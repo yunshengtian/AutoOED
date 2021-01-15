@@ -15,8 +15,9 @@ from system.database import TeamDatabase
 from system.agent import DataAgent, WorkerAgent
 from system.scientist.params import *
 
-from system.scientist.view_team import ScientistLoginView, ScientistView
-from system.scientist.menu import MenuFileController, MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController
+from system.scientist.view.login import ScientistLoginView
+from system.scientist.view.main import ScientistView
+from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController
 from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController
 from system.scientist.viz import VizSpaceController, VizStatsController, VizDatabaseController
 
@@ -122,9 +123,6 @@ class ScientistController:
         '''
         Menu initialization
         '''
-        self.controller['menu_file'] = MenuFileController(self)
-        self.view.menu_file.entryconfig(0, command=self.controller['menu_file'].set_result_dir)
-
         self.controller['menu_config'] = MenuConfigController(self)
         self.view.menu_config.entryconfig(0, command=self.controller['menu_config'].load_config_from_file)
         self.view.menu_config.entryconfig(1, command=self.controller['menu_config'].create_config)
@@ -276,9 +274,6 @@ class ScientistController:
             # load existing data
             if table_exist:
                 self._load_existing_data()
-
-            # disable changing saving location
-            self.view.menu_file.entryconfig(0, state=tk.DISABLED)
 
             # change config create/change status
             self.view.menu_config.entryconfig(1, state=tk.DISABLED)
