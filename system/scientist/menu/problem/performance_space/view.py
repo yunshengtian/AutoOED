@@ -22,7 +22,7 @@ class PerformanceSpaceView:
         frame_performance = create_widget('frame', master=self.window, row=0, column=0)
         create_widget('label', master=frame_performance, row=0, column=0, text='Enter the properties for objectives:')
         self.widget['performance_excel'] = Excel(master=frame_performance, rows=self.n_obj, columns=2, width=15,
-            title=[config_map['problem'][title] for title in self.titles], dtype=[str, float, float, bool])
+            title=[config_map['problem'][title] for title in self.titles], dtype=[str, bool])
         self.widget['performance_excel'].grid(row=1, column=0)
         self.widget['performance_excel'].set_column(0, [f'f{i + 1}' for i in range(self.n_obj)])
 
