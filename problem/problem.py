@@ -29,12 +29,14 @@ class Problem(PymooProblem):
             xu=self.config['var_ub'],
         )
 
-        self.name = lambda: self.config['name']
         self.ref_point = ref_point # TODO: check
 
         self.minimize = self.config['minimize']
         self.var_name = self.config['var_name']
         self.obj_name = self.config['obj_name']
+
+    def name(self):
+        return self.config['name']
 
     @class_or_instance_method
     def get_config(cls_or_self, *args, **kwargs):
