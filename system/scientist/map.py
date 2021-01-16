@@ -9,7 +9,7 @@ config_map = {
         'n_var': 'Number of design variables',
         'n_obj': 'Number of objectives',
         'n_constr': 'Number of constraints',
-        'performance_eval': 'Performance evaluation script',
+        'objective_eval': 'Objective evaluation script',
         'constraint_eval': 'Constraint evaluation script',
         'minimize': 'Minimize',
         'var_lb': 'Lower bound',

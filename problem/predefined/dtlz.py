@@ -48,7 +48,7 @@ class DTLZ1(DTLZ):
         ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return 0.5 * ref_dirs
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
         g = self.g1(x_m)
 
@@ -69,7 +69,7 @@ class DTLZ2(DTLZ):
         ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return generic_sphere(ref_dirs)
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
         g = self.g2(x_m)
         return self.obj_func(x_, g, alpha=1)
@@ -82,7 +82,7 @@ class DTLZ3(DTLZ):
         ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return generic_sphere(ref_dirs)
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
         g = self.g1(x_m)
         return self.obj_func(x_, g, alpha=1)
@@ -99,7 +99,7 @@ class DTLZ4(DTLZ):
         ref_dirs = get_reference_directions('das-dennis', n_dim=self.n_obj, **ref_kwargs)
         return generic_sphere(ref_dirs)
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
         g = self.g2(x_m)
         return self.obj_func(x_, g, alpha=self.alpha)
@@ -113,7 +113,7 @@ class DTLZ5(DTLZ):
         else:
             raise Exception("Not implemented yet.")
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
         g = self.g2(x_m)
 
@@ -131,7 +131,7 @@ class DTLZ6(DTLZ):
         else:
             raise Exception("Not implemented yet.")
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x_, x_m = x[:self.n_obj - 1], x[self.n_obj - 1:]
         g = np.sum(np.power(x_m, 0.1))
 

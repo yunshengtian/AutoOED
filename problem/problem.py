@@ -2,7 +2,7 @@ import numpy as np
 from collections.abc import Iterable
 from pymoo.model.problem import Problem as PymooProblem
 
-from problem.utils import import_performance_eval_func, import_constraint_eval_func
+from problem.utils import import_objective_eval_func, import_constraint_eval_func
 
 
 class class_or_instance_method(classmethod):
@@ -13,7 +13,7 @@ class class_or_instance_method(classmethod):
 
 class Problem(PymooProblem):
     '''
-    Base class for problems, inherit this with a custom config, evaluate_performance() and evaluate_constraint()
+    Base class for problems, inherit this with a custom config, evaluate_objective() and evaluate_constraint()
     '''
     config = {}
 
@@ -130,7 +130,7 @@ class Problem(PymooProblem):
         self.ref_point = ref_point
 
     """
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         '''
         Main function for objective evaluation
         '''
@@ -158,7 +158,7 @@ class Problem(PymooProblem):
 
     def _evaluate(self, x, out, *args, **kwargs):
         '''
-        Deprecated evaluation function, please call evaluate_performance() and evaluate_constraint() instead
+        Deprecated evaluation function, please call evaluate_objective() and evaluate_constraint() instead
         '''
         raise NotImplementedError
     
@@ -178,17 +178,17 @@ class GeneratedProblem(Problem):
     def __init__(self, config, **kwargs):
         self.config = config.copy()
 
-        # import performance evaluation function
-        if 'performance_eval' in self.config:
-            eval_p_path = self.config.pop('performance_eval')
-            if eval_p_path is not None:
-                self.evaluate_performance = import_performance_eval_func(eval_p_path, self.config['n_var'], self.config['n_obj'])
+        # import objective evaluation function
+        if 'objective_eval' in self.config:
+            eval_obj_path = self.config.pop('objective_eval')
+            if eval_obj_path is not None:
+                self.evaluate_objective = import_objective_eval_func(eval_obj_path, self.config['n_var'], self.config['n_obj'])
 
         # import constraint evaluation function
         if 'constraint_eval' in self.config:
-            eval_c_path = self.config.pop('constraint_eval')
-            if eval_c_path is not None and self.config['n_constr'] > 0:
-                self.evaluate_constraint = import_constraint_eval_func(eval_c_path, self.config['n_var'], self.config['n_constr'])
+            eval_constr_path = self.config.pop('constraint_eval')
+            if eval_constr_path is not None and self.config['n_constr'] > 0:
+                self.evaluate_constraint = import_constraint_eval_func(eval_constr_path, self.config['n_var'], self.config['n_constr'])
 
         super().__init__(**kwargs)
 

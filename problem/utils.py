@@ -47,21 +47,21 @@ def import_c_func(path, lib_name, func_name, n_in, n_out, dtype='float'):
     return lambda x: getattr(c_lib, func_name)(np.array(x, dtype=py_type))
 
 
-def import_performance_eval_func(path, n_var, n_obj):
+def import_objective_eval_func(path, n_var, n_obj):
     '''
     '''
     ftype = path.split('.')[-1]
     if ftype == 'py':
         try:
-            eval_func = import_python_func(path=path, module_name='eval_p', func_name='evaluate_performance')
+            eval_func = import_python_func(path=path, module_name='eval_obj', func_name='evaluate_objective')
         except:
-            raise Exception('failed to import performance evaluation function from python file')
+            raise Exception('failed to import objective evaluation function from python file')
     elif ftype == 'c' or ftype == 'cpp':
         try:
-            eval_func = import_c_func(path=path, lib_name='eval_p', func_name='evaluate_performance',
+            eval_func = import_c_func(path=path, lib_name='eval_obj', func_name='evaluate_objective',
                 n_in=n_var, n_out=n_obj)
         except:
-            raise Exception('failed to import performance evaluation function from c/cpp file')
+            raise Exception('failed to import objective evaluation function from c/cpp file')
     else:
         raise Exception('only python and c/cpp files are supported')
     return eval_func
@@ -73,12 +73,12 @@ def import_constraint_eval_func(path, n_var, n_constr):
     ftype = path.split('.')[-1]
     if ftype == 'py':
         try:
-            eval_func = import_python_func(path=path, module_name='eval_c', func_name='evaluate_constraint')
+            eval_func = import_python_func(path=path, module_name='eval_constr', func_name='evaluate_constraint')
         except:
             raise Exception('failed to import constraint evaluation function from python file')  
     elif ftype == 'c' or ftype == 'cpp':
         try:
-            eval_func = import_c_func(path=path, lib_name='eval_c', func_name='evaluate_constraint',
+            eval_func = import_c_func(path=path, lib_name='eval_constr', func_name='evaluate_constraint',
                 n_in=n_var, n_out=n_constr)
         except:
             raise Exception('failed to import constraint evaluation function from c/cpp file')

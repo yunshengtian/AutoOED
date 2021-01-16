@@ -40,7 +40,7 @@ class RE1(RE):
         'obj_name': ['structural volume', 'joint displacement'],
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
         
         F = 10
@@ -68,7 +68,7 @@ class RE2(RE):
 
     feasible_values = np.array([0.20, 0.31, 0.40, 0.44, 0.60, 0.62, 0.79, 0.80, 0.88, 0.93, 1.0, 1.20, 1.24, 1.32, 1.40, 1.55, 1.58, 1.60, 1.76, 1.80, 1.86, 2.0, 2.17, 2.20, 2.37, 2.40, 2.48, 2.60, 2.64, 2.79, 2.80, 3.0, 3.08, 3,10, 3.16, 3.41, 3.52, 3.60, 3.72, 3.95, 3.96, 4.0, 4.03, 4.20, 4.34, 4.40, 4.65, 4.74, 4.80, 4.84, 5.0, 5.28, 5.40, 5.53, 5.72, 6.0, 6.16, 6.32, 6.60, 7.11, 7.20, 7.80, 7.90, 8.0, 8.40, 8.69, 9.0, 9.48, 10.27, 11.0, 11.06, 11.85, 12.0, 13.0, 14.0, 15.0])
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2, x3 = x[0], x[1], x[2]
         x1 = closest_value(self.feasible_values, x1)
 
@@ -97,7 +97,7 @@ class RE3(RE):
         'obj_name': ['weight', 'constraint violation'],
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2 = x[0], x[1]
 
         f1 = x1 + (120 * x2)
@@ -138,7 +138,7 @@ class RE4(RE):
         'obj_name': ['cost', 'end deflection', 'constraint violation'],
     } 
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
         
         P = 6000
@@ -194,7 +194,7 @@ class RE5(RE):
         'obj_name': ['mass', 'minimum stopping time', 'constraint violation'],
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2, x3, x4 = x[0], x[1], x[2], x[3]
 
         f1 = 4.9 * 1e-5 * (x2 * x2 - x1 * x1) * (x4 - 1.0)
@@ -228,7 +228,7 @@ class RE6(RE):
         'obj_name': ['ration error', 'max size', 'constraint violation'],
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2, x3, x4 = np.round(x[0]), np.round(x[1]), np.round(x[2]), np.round(x[3])
 
         f1 = np.abs(6.931 - (div(x3, x1) * div(x4, x2)))
@@ -256,7 +256,7 @@ class RE7(RE):
         'obj_name': ['max face temperature', 'inlet distance', 'max post tip temperature'],
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         xAlpha, xHA, xOA, xOPTT = x[0], x[1], x[2], x[3]
 
         f1 = 0.692 + (0.477 * xAlpha) - (0.687 * xHA) - (0.080 * xOA) - (0.0650 * xOPTT) - (0.167 * xAlpha * xAlpha) - (0.0129 * xHA * xAlpha) + (0.0796 * xHA * xHA) - (0.0634 * xOA * xAlpha) - (0.0257 * xOA * xHA) + (0.0877 * xOA * xOA) - (0.0521 * xOPTT * xAlpha) + (0.00156 * xOPTT * xHA) + (0.00198 * xOPTT * xOA) + (0.0184 * xOPTT * xOPTT)

@@ -2,7 +2,7 @@ import numpy as np
 from problem import Problem
 
 '''
-Example custom problem definitions (performance and constraint evaluation functions here might not make any sense)
+Example custom problem definitions (objective and constraint evaluation functions here might not make any sense)
 
 Problem configuration is defined as a 'config' dict, where each key means:
     n_var: number of design variables
@@ -32,7 +32,7 @@ class ExampleProblem1(Problem):
         'n_obj': 2,
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         f1 = np.max(x)
         f2 = np.min(x)
         return f1, f2
@@ -49,7 +49,7 @@ class ExampleProblem2(Problem):
         'var_ub': [1, 1, 1, 10],
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         f1 = np.sum(x)
         f2 = np.sum(np.abs(x))
         return f1, f2
@@ -68,7 +68,7 @@ class ExampleProblem3(Problem):
         'var_ub': 1,
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         f1 = np.sum(np.sin(x))
         f2 = np.sum(np.cos(x))
         f3 = np.sum(np.tan(x))

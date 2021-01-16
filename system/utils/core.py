@@ -59,6 +59,6 @@ def evaluate(config, x_next):
     problem = build_problem(config['problem'])
 
     # evaluate x_next with real problem
-    y_next = np.array(problem.evaluate_performance(x_next))
+    y_next = np.array(problem.evaluate_objective(x_next))
 
     return y_next

@@ -13,7 +13,7 @@ class VLMOP2(Problem):
         'var_ub': 2,
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         n = self.n_var
         f1 = 1 - np.exp(-np.sum((x - 1 / np.sqrt(n)) ** 2))
         f2 = 1 - np.exp(-np.sum((x + 1 / np.sqrt(n)) ** 2))
@@ -25,7 +25,7 @@ class VLMOP2(Problem):
         x = np.linspace(-1 / np.sqrt(n), 1 / np.sqrt(n), n_pareto_points)
         x_all = np.column_stack([x] * n)
 
-        return np.array([self.evaluate_performance(x_) for x_ in x_all])
+        return np.array([self.evaluate_objective(x_) for x_ in x_all])
 
 
 class VLMOP3(Problem):
@@ -39,7 +39,7 @@ class VLMOP3(Problem):
         'var_ub': 3,
     }
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2 = x[0], x[1]
 
         f1 = 0.5 * (x1 ** 2 + x2 ** 2) + np.sin(x1 ** 2 + x2 ** 2)

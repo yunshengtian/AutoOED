@@ -18,7 +18,7 @@ class ZDT1(ZDT):
         x = np.linspace(0, 1, n_pareto_points)
         return np.array([x, 1 - np.sqrt(x)]).T
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         f1 = x[0]
         g = 1 + 9.0 / (self.n_var - 1) * np.sum(x[1:])
         f2 = g * (1 - np.power((f1 / g), 0.5))
@@ -30,7 +30,7 @@ class ZDT2(ZDT):
         x = np.linspace(0, 1, n_pareto_points)
         return np.array([x, 1 - np.power(x, 2)]).T
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         f1 = x[0]
         c = np.sum(x[1:])
         g = 1.0 + 9.0 * c / (self.n_var - 1)
@@ -61,7 +61,7 @@ class ZDT3(ZDT):
 
         return pf
 
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         f1 = x[0]
         c = np.sum(x[1:])
         g = 1.0 + 9.0 * c / (self.n_var - 1)

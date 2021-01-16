@@ -47,13 +47,13 @@ class MenuProblemController:
         self.view.widget['set_design'].configure(command=self.set_design_space)
         self.view.widget['set_performance'].configure(command=self.set_performance_space)
 
-        self.view.widget['browse_p_eval'].configure(command=self.set_performance_script)
-        self.view.widget['disp_p_eval'].config(
+        self.view.widget['browse_obj_eval'].configure(command=self.set_objective_script)
+        self.view.widget['disp_obj_eval'].config(
             valid_check=self.eval_script_valid_check, 
             error_msg="performance evaluation script doesn't exist or file format is invalid",
         )
-        self.view.widget['browse_c_eval'].config(command=self.set_constraint_script)
-        self.view.widget['disp_c_eval'].config(
+        self.view.widget['browse_constr_eval'].config(command=self.set_constraint_script)
+        self.view.widget['disp_constr_eval'].config(
             valid_check=self.eval_script_valid_check, 
             error_msg="constraint evaluation script doesn't exist or file format is invalid",
         )
@@ -103,13 +103,13 @@ class MenuProblemController:
         ftype = path.split('.')[-1]
         return ftype in ['py', 'c', 'cpp']
 
-    def set_performance_script(self):
+    def set_objective_script(self):
         '''
         Set path of performance evaluation script
         '''
         filename = tk.filedialog.askopenfilename(parent=self.view.window)
         if not isinstance(filename, str) or filename == '': return
-        self.view.widget['disp_p_eval'].set(filename)
+        self.view.widget['disp_obj_eval'].set(filename)
 
     def set_constraint_script(self):
         '''
@@ -117,7 +117,7 @@ class MenuProblemController:
         '''
         filename = tk.filedialog.askopenfilename(parent=self.view.window)
         if not isinstance(filename, str) or filename == '': return
-        self.view.widget['disp_c_eval'].set(filename)
+        self.view.widget['disp_constr_eval'].set(filename)
 
     def exit_creating_problem(self):
         '''

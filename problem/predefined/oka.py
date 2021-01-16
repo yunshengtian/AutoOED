@@ -13,7 +13,7 @@ class OKA1(Problem):
         'var_ub': [6 * np.sin(np.pi / 12) + 2 * np.pi * np.cos(np.pi / 12), 6 * np.cos(np.pi / 12)],
     }
     
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         sin, cos = np.sin(np.pi / 12), np.cos(np.pi / 12)
         x1, x2 = x[0], x[1]
         x1_ = cos * x1 - sin * x2
@@ -44,7 +44,7 @@ class OKA2(Problem):
         'var_ub': [np.pi, 5.0, 5.0],
     }
     
-    def evaluate_performance(self, x):
+    def evaluate_objective(self, x):
         x1, x2, x3 = x[0], x[1], x[2]
 
         f1 = x1

@@ -232,7 +232,7 @@ class ScientistController:
 
             # configure agents
             self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, n_constr=problem.n_constr, minimize=problem.minimize)
-            self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_performance'))
+            self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_objective'))
 
             self.data_agent.init_table(create=not table_exist)
             problem_info = self.database.query_problem(self.table_name)

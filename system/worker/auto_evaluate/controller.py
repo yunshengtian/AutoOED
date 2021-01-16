@@ -1,5 +1,5 @@
 import tkinter as tk
-from problem.utils import import_performance_eval_func
+from problem.utils import import_objective_eval_func
 from .view import AutoEvaluateView
 
 
@@ -68,7 +68,7 @@ class AutoEvaluateController:
 
         eval_script_path = self.root_controller.load_eval_script()
         try:
-            eval_func = import_performance_eval_func(eval_script_path, n_var, n_obj)
+            eval_func = import_objective_eval_func(eval_script_path, n_var, n_obj)
         except:
             tk.messagebox.showinfo('Error', f'Failed to load evaluation script at {eval_script_path}', parent=self.view.window)
             self.view.window.destroy()
