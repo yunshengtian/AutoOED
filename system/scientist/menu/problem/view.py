@@ -49,11 +49,11 @@ class MenuProblemView:
         self.widget['set_design'] = create_widget('button', master=frame_config_space, row=0, column=0, text='Configure design space')
         self.widget['set_performance'] = create_widget('button', master=frame_config_space, row=0, column=1, text='Configure performance space')
 
-        self.widget['browse_obj_eval'], self.widget['disp_obj_eval'] = create_widget('labeled_button_entry',
-            master=frame_config_display, row=5, column=0, label_text=config_map['problem']['objective_eval'], button_text='Browse', width=30)
+        self.widget['browse_obj_func'], self.widget['disp_obj_func'] = create_widget('labeled_button_entry',
+            master=frame_config_display, row=5, column=0, label_text=config_map['problem']['obj_func'], button_text='Browse', width=30)
         
-        self.widget['browse_constr_eval'], self.widget['disp_constr_eval'] = create_widget('labeled_button_entry',
-            master=frame_config_display, row=6, column=0, label_text=config_map['problem']['constraint_eval'], button_text='Browse', width=30)
+        self.widget['browse_constr_func'], self.widget['disp_constr_func'] = create_widget('labeled_button_entry',
+            master=frame_config_display, row=6, column=0, label_text=config_map['problem']['constr_func'], button_text='Browse', width=30)
 
         self.widget['save'] = create_widget('button', master=frame_config_action, row=0, column=0, text='Save')
         self.widget['cancel'] = create_widget('button', master=frame_config_action, row=0, column=1, text='Cancel')
@@ -63,15 +63,15 @@ class MenuProblemView:
             'n_var': self.widget['n_var'],
             'n_obj': self.widget['n_obj'],
             'n_constr': self.widget['n_constr'],
-            'objective_eval': self.widget['disp_obj_eval'],
-            'constraint_eval': self.widget['disp_constr_eval'],
+            'obj_func': self.widget['disp_obj_func'],
+            'constr_func': self.widget['disp_constr_func'],
         }
 
     def enable_config_widgets(self):
         '''
         Enable all config widgets
         '''
-        for key in ['save', 'cancel', 'set_design', 'set_performance', 'browse_obj_eval', 'browse_constr_eval']:
+        for key in ['save', 'cancel', 'set_design', 'set_performance', 'browse_obj_func', 'browse_constr_func']:
             self.widget[key].enable()
         for widget in self.cfg_widget.values():
             widget.enable()
@@ -81,7 +81,7 @@ class MenuProblemView:
         '''
         Disable all config widgets
         '''
-        for key in ['save', 'cancel', 'set_design', 'set_performance', 'browse_obj_eval', 'browse_constr_eval']:
+        for key in ['save', 'cancel', 'set_design', 'set_performance', 'browse_obj_func', 'browse_constr_func']:
             self.widget[key].disable()
         for widget in self.cfg_widget.values():
             widget.set(None)

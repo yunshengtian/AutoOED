@@ -206,8 +206,8 @@ def get_problem_config(name):
                 config = yaml.load(f, Loader=yaml.FullLoader)
         except:
             raise Exception('not a valid config file')
-        if 'objective_eval' in config: config.pop('objective_eval')
-        if 'constraint_eval' in config: config.pop('constraint_eval')
+        if 'obj_func' in config: config.pop('obj_func')
+        if 'constr_func' in config: config.pop('constr_func')
         return Problem.process_config(config)
 
     # check for predefined python problems

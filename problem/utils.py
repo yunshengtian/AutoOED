@@ -47,7 +47,7 @@ def import_c_func(path, lib_name, func_name, n_in, n_out, dtype='float'):
     return lambda x: getattr(c_lib, func_name)(np.array(x, dtype=py_type))
 
 
-def import_objective_eval_func(path, n_var, n_obj):
+def import_obj_func(path, n_var, n_obj):
     '''
     '''
     ftype = path.split('.')[-1]
@@ -67,7 +67,7 @@ def import_objective_eval_func(path, n_var, n_obj):
     return eval_func
 
 
-def import_constraint_eval_func(path, n_var, n_constr):
+def import_constr_func(path, n_var, n_constr):
     '''
     '''
     ftype = path.split('.')[-1]

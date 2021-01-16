@@ -2,7 +2,7 @@ import numpy as np
 from collections.abc import Iterable
 from pymoo.model.problem import Problem as PymooProblem
 
-from problem.utils import import_objective_eval_func, import_constraint_eval_func
+from problem.utils import import_obj_func, import_constr_func
 
 
 class class_or_instance_method(classmethod):
@@ -179,16 +179,16 @@ class GeneratedProblem(Problem):
         self.config = config.copy()
 
         # import objective evaluation function
-        if 'objective_eval' in self.config:
-            eval_obj_path = self.config.pop('objective_eval')
+        if 'obj_func' in self.config:
+            eval_obj_path = self.config.pop('obj_func')
             if eval_obj_path is not None:
-                self.evaluate_objective = import_objective_eval_func(eval_obj_path, self.config['n_var'], self.config['n_obj'])
+                self.evaluate_objective = import_obj_func(eval_obj_path, self.config['n_var'], self.config['n_obj'])
 
         # import constraint evaluation function
-        if 'constraint_eval' in self.config:
-            eval_constr_path = self.config.pop('constraint_eval')
+        if 'constr_func' in self.config:
+            eval_constr_path = self.config.pop('constr_func')
             if eval_constr_path is not None and self.config['n_constr'] > 0:
-                self.evaluate_constraint = import_constraint_eval_func(eval_constr_path, self.config['n_var'], self.config['n_constr'])
+                self.evaluate_constraint = import_constr_func(eval_constr_path, self.config['n_var'], self.config['n_constr'])
 
         super().__init__(**kwargs)
 

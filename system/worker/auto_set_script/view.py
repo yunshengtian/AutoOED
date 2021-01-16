@@ -15,8 +15,8 @@ class AutoSetScriptView:
         self.widget = {}
 
         frame_script = create_widget('frame', master=self.window, row=0, column=0)
-        self.widget['browse_obj_eval'], self.widget['disp_obj_eval'] = create_widget('labeled_button_entry',
-            master=frame_script, row=0, column=0, label_text=config_map['problem']['objective_eval'], button_text='Browse', width=30, required=True)
+        self.widget['browse_obj_func'], self.widget['disp_obj_func'] = create_widget('labeled_button_entry',
+            master=frame_script, row=0, column=0, label_text=config_map['problem']['obj_func'], button_text='Browse', width=30, required=True)
 
         frame_action = tk.Frame(master=self.window)
         frame_action.grid(row=1, column=0)
