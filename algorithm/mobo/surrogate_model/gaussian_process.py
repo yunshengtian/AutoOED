@@ -10,6 +10,19 @@ from algorithm.mobo.surrogate_model.base import SurrogateModel
 from algorithm.mobo.utils import safe_divide
 
 
+def constrained_optimization(obj_func, initial_theta, bounds):
+    opt_res = minimize(obj_func, initial_theta, method="L-BFGS-B", jac=True, bounds=bounds)
+    '''
+    NOTE: Temporarily disable the checking below because this error sometimes occurs:
+        ConvergenceWarning: lbfgs failed to converge (status=2):
+        ABNORMAL_TERMINATION_IN_LNSRCH
+        , though we already optimized enough number of iterations and scaled the data.
+        Still don't know the exact reason of this yet.
+    '''
+    # _check_optimize_result("lbfgs", opt_res)
+    return opt_res.x, opt_res.fun
+
+
 class GaussianProcess(SurrogateModel):
     '''
     Gaussian process
@@ -19,18 +32,6 @@ class GaussianProcess(SurrogateModel):
         
         self.nu = nu
         self.gps = []
-
-        def constrained_optimization(obj_func, initial_theta, bounds):
-            opt_res = minimize(obj_func, initial_theta, method="L-BFGS-B", jac=True, bounds=bounds)
-            '''
-            NOTE: Temporarily disable the checking below because this error sometimes occurs:
-                ConvergenceWarning: lbfgs failed to converge (status=2):
-                ABNORMAL_TERMINATION_IN_LNSRCH
-                , though we already optimized enough number of iterations and scaled the data.
-                Still don't know the exact reason of this yet.
-            '''
-            # _check_optimize_result("lbfgs", opt_res)
-            return opt_res.x, opt_res.fun
 
         for _ in range(n_obj):
             if nu > 0:
