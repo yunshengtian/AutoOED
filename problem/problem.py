@@ -180,15 +180,15 @@ class GeneratedProblem(Problem):
 
         # import objective evaluation function
         if 'obj_func' in self.config:
-            eval_obj_path = self.config.pop('obj_func')
-            if eval_obj_path is not None:
-                self.evaluate_objective = import_obj_func(eval_obj_path, self.config['n_var'], self.config['n_obj'])
+            obj_func_path = self.config.pop('obj_func')
+            if obj_func_path is not None:
+                self.evaluate_objective = import_obj_func(obj_func_path, self.config['n_var'], self.config['n_obj'])
 
         # import constraint evaluation function
         if 'constr_func' in self.config:
-            eval_constr_path = self.config.pop('constr_func')
-            if eval_constr_path is not None and self.config['n_constr'] > 0:
-                self.evaluate_constraint = import_constr_func(eval_constr_path, self.config['n_var'], self.config['n_constr'])
+            constr_func_path = self.config.pop('constr_func')
+            if constr_func_path is not None and self.config['n_constr'] > 0:
+                self.evaluate_constraint = import_constr_func(constr_func_path, self.config['n_var'], self.config['n_constr'])
 
         super().__init__(**kwargs)
 

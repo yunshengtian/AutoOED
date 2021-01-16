@@ -53,12 +53,12 @@ def import_obj_func(path, n_var, n_obj):
     ftype = path.split('.')[-1]
     if ftype == 'py':
         try:
-            eval_func = import_python_func(path=path, module_name='eval_obj', func_name='evaluate_objective')
+            eval_func = import_python_func(path=path, module_name='obj_func', func_name='evaluate_objective')
         except:
             raise Exception('failed to import objective evaluation function from python file')
     elif ftype == 'c' or ftype == 'cpp':
         try:
-            eval_func = import_c_func(path=path, lib_name='eval_obj', func_name='evaluate_objective',
+            eval_func = import_c_func(path=path, lib_name='obj_func', func_name='evaluate_objective',
                 n_in=n_var, n_out=n_obj)
         except:
             raise Exception('failed to import objective evaluation function from c/cpp file')
@@ -73,12 +73,12 @@ def import_constr_func(path, n_var, n_constr):
     ftype = path.split('.')[-1]
     if ftype == 'py':
         try:
-            eval_func = import_python_func(path=path, module_name='eval_constr', func_name='evaluate_constraint')
+            eval_func = import_python_func(path=path, module_name='constr_func', func_name='evaluate_constraint')
         except:
             raise Exception('failed to import constraint evaluation function from python file')  
     elif ftype == 'c' or ftype == 'cpp':
         try:
-            eval_func = import_c_func(path=path, lib_name='eval_constr', func_name='evaluate_constraint',
+            eval_func = import_c_func(path=path, lib_name='constr_func', func_name='evaluate_constraint',
                 n_in=n_var, n_out=n_constr)
         except:
             raise Exception('failed to import constraint evaluation function from c/cpp file')
