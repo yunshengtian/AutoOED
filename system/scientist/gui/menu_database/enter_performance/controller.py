@@ -73,7 +73,8 @@ class EnterPerformanceController:
         self.view.window.destroy()
 
         # update database
-        data_agent.update_batch(Y, rowids)
+        for y, rowid in zip(Y, rowids):
+            data_agent.update(y, rowid)
 
         # update table gui
         table.update({'Y': Y}, rowids=rowids)
