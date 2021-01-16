@@ -9,7 +9,7 @@ class RemoveTaskView:
         self.window.title('Remove Task')
         self.window.resizable(False, False)
         self.widget = {}
-        self.widget['table_name'] = create_widget('labeled_combobox', master=self.window, row=0, column=0, columnspan=2, 
-            text='Table name', required=True)
+        self.widget['task_name'] = create_widget('labeled_combobox', master=self.window, row=0, column=0, columnspan=2, 
+            text='Task name', required=True)
         self.widget['remove'] = create_widget('button', master=self.window, row=1, column=0, text='Remove')
         self.widget['cancel'] = create_widget('button', master=self.window, row=1, column=1, text='Cancel')
