@@ -20,7 +20,7 @@ def get_table_descriptions():
             n_var int,
             n_obj int,
             n_constr int,
-            minimize varchar(100)
+            obj_type varchar(100)
             ''',
 
         '_config': '''

@@ -97,7 +97,7 @@ class WorkerController:
                 n_var=self.problem_info['n_var'],
                 n_obj=self.problem_info['n_obj'],
                 n_constr=self.problem_info['n_constr'],
-                minimize=self.problem_info['minimize']
+                obj_type=self.problem_info['obj_type']
                 )
             self.data_agent.init_table(create=False)
         # TODO: optimize data_agent related operations
@@ -145,7 +145,7 @@ class WorkerController:
                     n_var=self.problem_info['n_var'],
                     n_obj=self.problem_info['n_obj'],
                     n_constr=self.problem_info['n_constr'],
-                    minimize=self.problem_info['minimize']
+                    obj_type=self.problem_info['obj_type']
                     )
                 self.data_agent.init_table(create=False)
             else:

@@ -373,17 +373,18 @@ class TeamDatabase:
             raise Exception(f'Table {name} exists')
         self.insert_data(table='_empty_table', column=None, data=[name])
 
-    def init_table(self, name, var_type, n_var, n_obj, n_constr, minimize):
+    def init_table(self, name, var_type, n_var, n_obj, n_constr, obj_type):
         '''
         '''
-        if isinstance(minimize, Iterable):
-            minimize = [str(bool(m)) for m in minimize]
-            minimize_str = ','.join(minimize)
+        if isinstance(obj_type, str):
+            obj_type_str = obj_type
+        elif isinstance(obj_type, Iterable):
+            obj_type_str = ','.join(obj_type)
         else:
-            minimize_str = str(bool(minimize))
+            raise Exception('invalid objective type')
 
         query = f'''
-            call init_table('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{minimize_str}')
+            call init_table('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{obj_type_str}')
             '''
         self.execute(query)
 
@@ -429,34 +430,19 @@ class TeamDatabase:
         self.execute(query)
         result = self.fetchone()
         if result is None:
-            var_type, n_var, n_obj, n_constr, minimize = [None] * 5
+            var_type, n_var, n_obj, n_constr, obj_type = [None] * 5
         else:
-            var_type, n_var, n_obj, n_constr, minimize = result[1:]
-            if minimize is None:
-                pass
-            elif ',' in minimize:
-                minimize = [m for m in minimize.split(',')]
-                for i in range(len(minimize)):
-                    if minimize[i] == 'True':
-                        minimize[i] = True
-                    elif minimize[i] == 'False':
-                        minimize[i] = False
-                    else:
-                        raise NotImplementedError
-            else:
-                if minimize == 'True':
-                    minimize = True
-                elif minimize == 'False':
-                    minimize = False
-                else:
-                    raise NotImplementedError
+            var_type, n_var, n_obj, n_constr, obj_type = result[1:]
+            if ',' in obj_type:
+                obj_type = obj_type.split(',')
+ 
         return {
             'name': name,
             'var_type': var_type,
             'n_var': n_var,
             'n_obj': n_obj,
             'n_constr': n_constr,
-            'minimize': minimize,
+            'obj_type': obj_type,
         }
 
     '''

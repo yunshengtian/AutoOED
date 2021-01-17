@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from collections.abc import Iterable
 from pymoo.model.individual import Individual
 from pymoo.model.population import Population
 from pymoo.model.problem import Problem
@@ -31,10 +32,11 @@ class MOO:
         '''
         # convert maximization to minimization
         X, Y = X_init, Y_init.copy()
-        minimize = self.real_problem.minimize
-        if type(minimize) not in [list, np.ndarray]:
-            minimize = np.array([minimize] * Y.shape[1], dtype=bool)
-        maxm_idx = np.array(minimize) == False
+        obj_type = self.real_problem.obj_type
+        if isinstance(obj_type, str):
+            obj_type = [obj_type] * Y.shape[1]
+        assert isinstance(obj_type, Iterable)
+        maxm_idx = np.array(obj_type) == 'max'
         Y[:, maxm_idx] = -Y[:, maxm_idx]
 
         # construct population

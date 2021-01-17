@@ -11,7 +11,7 @@ config_map = {
         'n_constr': 'Number of constraints',
         'obj_func': 'Objective evaluation script',
         'constr_func': 'Constraint evaluation script',
-        'minimize': 'Minimize',
+        'obj_type': 'Objective type',
         'var_lb': 'Lower bound',
         'var_ub': 'Upper bound',
         'var_name': 'Names',

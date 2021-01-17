@@ -34,7 +34,7 @@ class SurrogateProblem(Problem):
         out['F'], out['dF'], out['hF'] = self.acquisition.evaluate(val, calc_gradient, calc_hessian)
         
         # multiply a +1/-1 factor for converting maximization to minimization
-        factor = (2 * self.real_problem.minimize - 1)
+        factor = 2 * (np.array(self.real_problem.obj_type) == 'min') - 1
         for key in ['F', 'dF', 'hF']:
             if out[key] is not None:
                 out[key] *= factor

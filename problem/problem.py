@@ -31,7 +31,7 @@ class Problem(PymooProblem):
 
         self.ref_point = ref_point # TODO: check
 
-        self.minimize = self.config['minimize']
+        self.obj_type = self.config['obj_type']
         self.var_name = self.config['var_name']
         self.obj_name = self.config['obj_name']
 
@@ -61,7 +61,7 @@ class Problem(PymooProblem):
             'name': cls.__name__,
             'n_var': 'required',
             'n_obj': 'required',
-            'minimize': True, # minimization by default
+            'obj_type': 'min', # minimization by default
             'n_constr': 0, # no constraints by default
             'var_lb': 0, # 0 as var lower bound by default
             'var_ub': 1, # 1 as var upper bound by default
@@ -88,18 +88,20 @@ class Problem(PymooProblem):
 
         n_var, n_obj = config['n_var'], config['n_obj']
 
-        # post-process minimize
-        minimize = config['minimize']
-        if not isinstance(minimize, Iterable):
-            minimize = [minimize] * n_obj
-        assert len(minimize) == n_obj, f'dimension mismatch, minimize should have {n_obj} dimensions'
-        config['minimize'] = np.array(minimize, dtype=bool)
+        # post-process obj_type
+        obj_type = config['obj_type']
+        if isinstance(obj_type, str):
+            obj_type = [obj_type] * n_obj
+        assert isinstance(obj_type, Iterable)
+        assert len(obj_type) == n_obj, f'dimension mismatch, obj_type should have {n_obj} dimensions'
+        config['obj_type'] = np.array(obj_type)
 
         # post-process bounds
         var_lb, var_ub = config['var_lb'], config['var_ub']
 
         if var_lb is None: var_lb = np.zeros(n_var)
         elif isinstance(var_lb, Iterable):
+            assert not isinstance(var_lb, str), 'invalid lower bounds'
             var_lb = np.array(var_lb)
             var_lb[var_lb == None] = 0
             var_lb = var_lb.astype(float)
@@ -108,6 +110,7 @@ class Problem(PymooProblem):
         
         if var_ub is None: var_ub = np.ones(n_var)
         elif isinstance(var_ub, Iterable):
+            assert not isinstance(var_ub, str), 'invalid upper bounds'
             var_ub = np.array(var_ub)
             var_ub[var_ub == None] = 1
             var_ub = var_ub.astype(float)

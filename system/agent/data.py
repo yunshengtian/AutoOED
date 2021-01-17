@@ -22,9 +22,9 @@ class DataAgent:
         self.n_var = None
         self.n_obj = None
         self.n_constr = None
-        self.minimize = True
+        self.obj_type = True
 
-    def configure(self, n_var=None, n_obj=None, n_constr=None, minimize=None):
+    def configure(self, n_var=None, n_obj=None, n_constr=None, obj_type=None):
         '''
         Set configurations, a required step before initialization
         '''
@@ -34,8 +34,8 @@ class DataAgent:
             self.n_obj = n_obj
         if n_constr is not None:
             self.n_constr = n_constr
-        if minimize is not None:
-            self.minimize = minimize
+        if obj_type is not None:
+            self.obj_type = obj_type
 
     def _map_key(self, key, flatten=False):
         '''
@@ -63,7 +63,7 @@ class DataAgent:
         Initialize database table
         '''
         if create:
-            self.db.init_table(name=self.table_name, var_type='continuous', n_var=self.n_var, n_obj=self.n_obj, n_constr=self.n_constr, minimize=self.minimize)
+            self.db.init_table(name=self.table_name, var_type='continuous', n_var=self.n_var, n_obj=self.n_obj, n_constr=self.n_constr, obj_type=self.obj_type)
             # TODO: more var_type
 
         # high level key mapping (e.g., X -> [x1, x2, ...])
@@ -88,7 +88,7 @@ class DataAgent:
         batch_id = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
-            is_pareto = check_pareto(Y, self.minimize).astype(int)
+            is_pareto = check_pareto(Y, self.obj_type).astype(int)
 
         # update data
         if Y is None:
@@ -154,7 +154,7 @@ class DataAgent:
         else:
             Y_all = np.vstack([Y_prev, y])
             rowids_all = np.concatenate([rowids_prev, [rowid]])
-            is_pareto = check_pareto(Y_all, self.minimize).astype(int)
+            is_pareto = check_pareto(Y_all, self.obj_type).astype(int)
             self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
 
         # update stats
@@ -174,7 +174,7 @@ class DataAgent:
 
         Y_all = np.vstack([Y_prev, Y])
         rowids_all = np.concatenate([rowids_prev, rowids])
-        is_pareto = check_pareto(Y_all, self.minimize).astype(int)
+        is_pareto = check_pareto(Y_all, self.obj_type).astype(int)
 
         self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
         self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)

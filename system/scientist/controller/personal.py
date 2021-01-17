@@ -231,7 +231,7 @@ class ScientistController:
             # TODO: give hint of initializing
 
             # configure agents
-            self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, n_constr=problem.n_constr, minimize=problem.minimize)
+            self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, n_constr=problem.n_constr, obj_type=problem.obj_type)
             self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_objective'))
 
             self.data_agent.init_table(create=not table_exist)
@@ -259,11 +259,13 @@ class ScientistController:
                 valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
                 Y = Y[valid_idx]
                 ref_point = np.zeros(problem.n_obj)
-                for i, m in enumerate(problem.minimize):
-                    if m == True:
+                for i, m in enumerate(problem.obj_type):
+                    if m == 'max':
                         ref_point[i] = np.max(Y[:, i])
-                    else:
+                    elif m == 'min':
                         ref_point[i] = np.min(Y[:, i])
+                    else:
+                        raise Exception('obj_type must be min/max')
                 self.config['problem']['ref_point'] = ref_point
 
             # initialize visualization widgets

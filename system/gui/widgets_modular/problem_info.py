@@ -10,7 +10,7 @@ class ProblemInfoWidget:
             'n_var': 'Number of variables',
             'n_obj': 'Number of objectives',
             'n_constr': 'Number of constraints',
-            'minimize': 'Minimize objectives',
+            'obj_type': 'Type of objectives',
         }
         self.widget = {}
         frame_info = create_widget('labeled_frame', master=master, row=row, column=column, text='Problem Info')
@@ -19,7 +19,7 @@ class ProblemInfoWidget:
             self.widget[key] = create_widget('label', master=frame_info, row=row + 1, column=0, pady=5, text=f'{self.desc[key]}: unknown')
         create_widget('label', master=frame_info, row=7, column=0, pady=0, text='')
 
-    def set_info(self, name=None, var_type=None, n_var=None, n_obj=None, n_constr=None, minimize=None):
+    def set_info(self, name=None, var_type=None, n_var=None, n_obj=None, n_constr=None, obj_type=None):
         '''
         '''
         info = {
@@ -28,7 +28,7 @@ class ProblemInfoWidget:
             'n_var': n_var,
             'n_obj': n_obj,
             'n_constr': n_constr,
-            'minimize': minimize,
+            'obj_type': obj_type,
         }
         for key, value in info.items():
             if value is not None:
@@ -36,7 +36,7 @@ class ProblemInfoWidget:
             else:
                 self.widget[key].config(text=f'{self.desc[key]}: unknown')
 
-    def update_info(self, name=None, var_type=None, n_var=None, n_obj=None, n_constr=None, minimize=None):
+    def update_info(self, name=None, var_type=None, n_var=None, n_obj=None, n_constr=None, obj_type=None):
         '''
         '''
         info = {
@@ -45,7 +45,7 @@ class ProblemInfoWidget:
             'n_var': n_var,
             'n_obj': n_obj,
             'n_constr': n_constr,
-            'minimize': minimize,
+            'obj_type': obj_type,
         }
         for key, value in info.items():
             if value is not None:

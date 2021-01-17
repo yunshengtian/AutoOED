@@ -1,16 +1,18 @@
 import numpy as np
+from collections.abc import Iterable
 from pymoo.performance_indicator.hv import Hypervolume
 
 
-def check_pareto(Y, minimize):
+def check_pareto(Y, obj_type):
     '''
     Check pareto optimality of the input performance data
     '''
     # convert maximization to minimization
     Y = Y.copy()
-    if type(minimize) not in [list, np.ndarray]:
-        minimize = np.array([minimize] * Y.shape[1], dtype=bool)
-    maxm_idx = np.array(minimize) == False
+    if isinstance(obj_type, str):
+        obj_type = [obj_type] * Y.shape[1]
+    assert isinstance(obj_type, Iterable)
+    maxm_idx = np.array(obj_type) == 'max'
     Y[:, maxm_idx] = -Y[:, maxm_idx]
 
     # find pareto indices
@@ -23,15 +25,16 @@ def check_pareto(Y, minimize):
     return is_pareto
 
 
-def calc_hypervolume(Y, ref_point, minimize):
+def calc_hypervolume(Y, ref_point, obj_type):
     '''
     Calculate hypervolume
     '''
     # convert maximization to minimization
     Y, ref_point = np.array(Y), np.array(ref_point)
-    if type(minimize) not in [list, np.ndarray]:
-        minimize = np.array([minimize] * Y.shape[1], dtype=bool)
-    maxm_idx = np.array(minimize) == False
+    if isinstance(obj_type, str):
+        obj_type = [obj_type] * Y.shape[1]
+    assert isinstance(obj_type, Iterable)
+    maxm_idx = np.array(obj_type) == 'max'
     Y[:, maxm_idx] = -Y[:, maxm_idx]
     ref_point[maxm_idx] = -ref_point[maxm_idx]
 

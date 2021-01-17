@@ -220,7 +220,7 @@ class PersonalDatabase:
             self.execute(f'insert into _empty_table values ("{name}")')
             self.commit()
 
-    def init_table(self, name, var_type, n_var, n_obj, n_constr, minimize):
+    def init_table(self, name, var_type, n_var, n_obj, n_constr, obj_type):
         '''
         '''
         description = ['status varchar(20) not null default "unevaluated"']
@@ -234,16 +234,17 @@ class PersonalDatabase:
             description.append(f'f{i}_uncertainty float')
         description += ['is_pareto boolean', 'config_id int not null', 'batch_id int not null']
 
-        if isinstance(minimize, Iterable):
-            minimize = [str(bool(m)) for m in minimize]
-            minimize_str = ','.join(minimize)
+        if isinstance(obj_type, str):
+            obj_type_str = obj_type
+        elif isinstance(obj_type, Iterable):
+            obj_type_str = ','.join(obj_type)
         else:
-            minimize_str = str(bool(minimize))
+            raise Exception('invalid objective type')
         
         with SafeLock(self.lock):
             self.execute(f'create table {name} ({",".join(description)})')
             self.execute(f'delete from _empty_table where name="{name}"')
-            self.execute(f'insert into _problem_info values ("{name}", "{var_type}", {n_var}, {n_obj}, {n_constr}, "{minimize_str}")')
+            self.execute(f'insert into _problem_info values ("{name}", "{var_type}", {n_var}, {n_obj}, {n_constr}, "{obj_type_str}")')
             self.commit()
 
     def import_table_from_file(self, name, file_path):
@@ -281,27 +282,11 @@ class PersonalDatabase:
         result = self.execute(f'select * from _problem_info where name="{name}"', fetchone=True)
 
         if result is None:
-            var_type, n_var, n_obj, n_constr, minimize = [None] * 5
+            var_type, n_var, n_obj, n_constr, obj_type = [None] * 5
         else:
-            var_type, n_var, n_obj, n_constr, minimize = result[1:]
-            if minimize is None:
-                pass
-            elif ',' in minimize:
-                minimize = [m for m in minimize.split(',')]
-                for i in range(len(minimize)):
-                    if minimize[i] == 'True':
-                        minimize[i] = True
-                    elif minimize[i] == 'False':
-                        minimize[i] = False
-                    else:
-                        raise NotImplementedError
-            else:
-                if minimize == 'True':
-                    minimize = True
-                elif minimize == 'False':
-                    minimize = False
-                else:
-                    raise NotImplementedError
+            var_type, n_var, n_obj, n_constr, obj_type = result[1:]
+            if ',' in obj_type:
+                obj_type = obj_type.split(',')
 
         return {
             'name': name,
@@ -309,7 +294,7 @@ class PersonalDatabase:
             'n_var': n_var,
             'n_obj': n_obj,
             'n_constr': n_constr,
-            'minimize': minimize,
+            'obj_type': obj_type,
         }
 
     '''

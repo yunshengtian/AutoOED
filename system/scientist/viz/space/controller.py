@@ -175,7 +175,7 @@ class VizSpaceController:
             draw_idx = batch_id <= draw_iter
             X, Y, Y_expected, batch_id = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch_id[draw_idx]
             max_iter = batch_id[-1]
-            is_pareto = check_pareto(Y, self.problem_cfg['minimize'])
+            is_pareto = check_pareto(Y, self.problem_cfg['obj_type'])
         
         # replot evaluated & pareto points
         self.scatter_x = X

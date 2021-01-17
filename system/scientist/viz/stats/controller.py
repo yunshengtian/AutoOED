@@ -49,11 +49,11 @@ class VizStatsController:
 
         n_sample = len(Y)
         ref_point = self.config['problem']['ref_point']
-        minimize = self.problem_cfg['minimize']
+        obj_type = self.problem_cfg['obj_type']
 
         # hypervolume
         line_hv_y = self.line_hv.get_ydata()
-        hv_value = calc_hypervolume(Y, ref_point, minimize)
+        hv_value = calc_hypervolume(Y, ref_point, obj_type)
         hv_value = np.concatenate([line_hv_y, np.full(n_sample - len(line_hv_y), hv_value)])
         self.line_hv.set_data(np.arange(n_sample), hv_value)
         self.view.ax1.relim()
