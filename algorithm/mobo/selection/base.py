@@ -22,7 +22,7 @@ class Selection(ABC):
         self.ref_point = ref_point
 
     @abstractmethod
-    def select(self, solution, surrogate_model, transformation, curr_pset, curr_pfront):
+    def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront):
         '''
         Select new samples from solution obtained by solver
         Input:
@@ -30,7 +30,7 @@ class Selection(ABC):
             solution['y']: acquisition values of solution
             solution['algo']: solver algorithm, having some relevant information from optimization
             surrogate_model: fitted surrogate model
-            transformation: data normalization for surrogate model fitting
+            normalization: data normalization for surrogate model fitting
             curr_pset: current pareto set found
             curr_pfront: current pareto front found
             (some inputs may not be necessary for some selection criterion)

@@ -3,7 +3,7 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 '''
-Data transformations (normalizations) for fitting surrogate model
+Data normalizations for fitting surrogate model
 '''
 
 
@@ -37,9 +37,9 @@ class BoundedScaler(Scaler):
         return np.clip(X, 0, 1) * (self.bounds[1] - self.bounds[0]) + self.bounds[0]
 
 
-### 2-dim transformation
+### 2-dim normalization
 
-class Transformation:
+class Normalization:
 
     def __init__(self, x_scaler, y_scaler):
         self.x_scaler = x_scaler
@@ -70,7 +70,7 @@ class Transformation:
             return None
     
 
-class StandardTransform(Transformation):
+class StandardNormalization(Normalization):
 
     def __init__(self, x_bound):
         super().__init__(

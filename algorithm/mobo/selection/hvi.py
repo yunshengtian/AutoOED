@@ -7,12 +7,12 @@ class HVI(Selection):
     '''
     Hypervolume Improvement
     '''
-    def select(self, solution, surrogate_model, transformation, curr_pset, curr_pfront):
+    def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront):
 
         pred_pset = solution['x']
         val = surrogate_model.evaluate(pred_pset)
         pred_pfront = val['F']
-        pred_pset, pred_pfront = transformation.undo(pred_pset, pred_pfront)
+        pred_pset, pred_pfront = normalization.undo(pred_pset, pred_pfront)
 
         curr_pfront = curr_pfront.copy()
         hv = get_performance_indicator('hv', ref_point=self.ref_point)

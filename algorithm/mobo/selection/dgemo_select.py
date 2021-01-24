@@ -7,11 +7,11 @@ class DGEMOSelect(Selection):
     '''
     has_family = True
 
-    def select(self, solution, surrogate_model, status, transformation):
+    def select(self, solution, surrogate_model, status, normalization):
         algo = solution['algo']
 
-        X_next, _, family_lbls_next = algo.propose_next_batch(status['pfront'], self.ref_point, self.batch_size, transformation)
-        family_lbls, approx_pset, approx_pfront = algo.get_sparse_front(transformation)
+        X_next, _, family_lbls_next = algo.propose_next_batch(status['pfront'], self.ref_point, self.batch_size, normalization)
+        family_lbls, approx_pset, approx_pfront = algo.get_sparse_front(normalization)
 
         info = {
             'family_lbls_next': family_lbls_next,

@@ -2,7 +2,7 @@ import numpy as np
 from algorithm.mobo.surrogate_problem import SurrogateProblem
 from algorithm.mobo.utils import Timer, find_pareto_front
 from algorithm.mobo.factory import init_framework
-from algorithm.mobo.transformation import StandardTransform
+from algorithm.mobo.normalization import StandardNormalization
 
 '''
 Main algorithm framework for Multi-Objective Bayesian Optimization
@@ -26,7 +26,7 @@ class MOBO:
         self.ref_point = problem.ref_point
 
         bounds = np.array([problem.xl, problem.xu])
-        self.transformation = StandardTransform(bounds) # data normalization for surrogate model fitting
+        self.normalization = StandardNormalization(bounds) # data normalization for surrogate model fitting
 
         # framework components
         framework = init_framework(self.spec, algo_cfg)
@@ -55,8 +55,8 @@ class MOBO:
         timer = Timer(stdout=False)
 
         # data normalization
-        self.transformation.fit(X_init, Y_init)
-        X, Y = self.transformation.do(X_init, Y_init)
+        self.normalization.fit(X_init, Y_init)
+        X, Y = self.normalization.do(X_init, Y_init)
 
         # build surrogate models
         self.surrogate_model.fit(X, Y)
@@ -66,13 +66,13 @@ class MOBO:
         self.acquisition.fit(X, Y)
 
         # solve surrogate problem
-        surr_problem = SurrogateProblem(self.real_problem, self.surrogate_model, self.acquisition, self.transformation)
+        surr_problem = SurrogateProblem(self.real_problem, self.surrogate_model, self.acquisition, self.normalization)
         solution = self.solver.solve(surr_problem, X, Y)
         timer.log('Surrogate problem solved')
 
         # batch point selection
         self.selection.fit(X, Y)
-        X_next, self.info = self.selection.select(solution, self.surrogate_model, self.transformation, curr_pset, curr_pfront)
+        X_next, self.info = self.selection.select(solution, self.surrogate_model, self.normalization, curr_pset, curr_pfront)
         timer.log('Next sample batch selected')
 
         return X_next
@@ -84,16 +84,16 @@ class MOBO:
         timer = Timer(stdout=False)
 
         # data normalization
-        self.transformation.fit(X_init, Y_init)
-        X, Y = self.transformation.do(X_init, Y_init)
+        self.normalization.fit(X_init, Y_init)
+        X, Y = self.normalization.do(X_init, Y_init)
 
         # build surrogate models
         self.surrogate_model.fit(X, Y)
         timer.log('Surrogate model fitted')
 
         # evalaute prediction and uncertainty on surrogate models
-        val = self.surrogate_model.evaluate(self.transformation.do(x=X_next), std=True)
-        Y_expected = self.transformation.undo(y=val['F'])
+        val = self.surrogate_model.evaluate(self.normalization.do(x=X_next), std=True)
+        Y_expected = self.normalization.undo(y=val['F'])
         Y_uncertainty = val['S']
         timer.log('Performance of next batch predicted')
 

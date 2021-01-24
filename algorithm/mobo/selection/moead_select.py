@@ -7,7 +7,7 @@ class MOEADSelect(Selection):
     '''
     Selection method for MOEA/D-EGO algorithm
     '''
-    def select(self, solution, surrogate_model, transformation, curr_pset, curr_pfront): 
+    def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront): 
         X, G, algo = solution['x'], solution['y'], solution['algo']
         ref_dirs = algo.ref_dirs
 
@@ -28,7 +28,7 @@ class MOEADSelect(Selection):
 
         if batch_size == 0:
             X_next = X[np.random.choice(len(X), self.batch_size, replace=False)]
-            X_next = transformation.undo(x=X_next)
+            X_next = normalization.undo(x=X_next)
             return X_next, None
         
         # k-means clustering on X with weight vectors
@@ -39,13 +39,13 @@ class MOEADSelect(Selection):
         for i in range(batch_size):
             indices = np.where(labels == i)[0]
             top_idx = indices[np.argmin(Q_g[indices])]
-            top_x = transformation.undo(x=Q_x[top_idx])
+            top_x = normalization.undo(x=Q_x[top_idx])
             X_next.append(top_x)
         X_next = np.array(X_next)
 
         # when Q is smaller than batch size
         if batch_size < self.batch_size:
             X_rest = X[np.random.choice(len(X), self.batch_size - batch_size, replace=False)]
-            X_next = np.vstack([X_next, transformation.undo(x=X_rest)])
+            X_next = np.vstack([X_next, normalization.undo(x=X_rest)])
 
         return X_next, None
