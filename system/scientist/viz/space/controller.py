@@ -86,7 +86,8 @@ class VizSpaceController:
 
         if event.button == MouseButton.LEFT and event.dblclick: # check certain design values
             n_var, n_obj = self.problem_cfg['n_var'], self.problem_cfg['n_obj']
-            var_lb, var_ub, var_name = self.problem_cfg['var_lb'], self.problem_cfg['var_ub'], self.problem_cfg['var_name']
+            var_type, var_name = self.problem_cfg['type'], self.problem_cfg['var_name']
+            var_lb, var_ub = self.view.var_lb, self.view.var_ub
 
             # find nearest performance values with associated design values
             loc = [event.xdata, event.ydata]
@@ -102,19 +103,64 @@ class VizSpaceController:
             # highlight selected point
             self.scatter_selected = self.view.ax1.scatter(*closest_y, s=50, facecolors=(0, 0, 0, 0), edgecolors='g', linewidths=2)
 
-            # plot checked design values as radar plot or bar chart
-            transformed_x = (np.array(closest_x) - var_lb) / (var_ub - var_lb)
-            if n_var > 2:
-                self.line_x = self.view.ax2.plot(self.view.theta, transformed_x, color='g')[0]
-                self.fill_x = self.view.ax2.fill(self.view.theta, transformed_x, color='g', alpha=0.2)[0]
-                self.view.ax2.set_varlabels([f'{var_name[i]}\n{closest_x[i]:.4g}' for i in range(n_var)])
+            # compute normalized x
+            if var_type in ['continuous', 'integer', 'binary']:
+                normalized_x = (np.array(closest_x) - var_lb) / (var_ub - var_lb)
+            elif var_type == 'categorical':
+                normalized_x = []
+                if 'var' in self.problem_cfg:
+                    for i, (x, var_info) in enumerate(zip(closest_x, self.problem_cfg['var'].values())):
+                        normalized_x.append((var_info['choices'].index(x) + 1) / var_ub[i])
+                else:
+                    for i, x in enumerate(closest_x):
+                        normalized_x.append((self.problem_cfg['var_choices'].index(x) + 1) / var_ub[i])
+                normalized_x = np.array(normalized_x)
+            elif var_type == 'mixed':
+                normalized_x = []
+                var_type_list = []
+                for i, (x, var_info) in enumerate(zip(closest_x, self.problem_cfg['var'].values())):
+                    var_type_list.append(var_info['type'])
+                    if var_info['type'] in ['continuous', 'integer']:
+                        lb, ub = var_info['lb'], var_info['ub']
+                        normalized_x.append((x - lb) / (ub - lb))
+                    elif var_info['type'] == 'binary':
+                        normalized_x.append(x)
+                    elif var_info['type'] == 'categorical':
+                        normalized_x.append((var_info['choices'].index(x) + 1) / var_ub[i])
+                    else:
+                        raise Exception(f'invalid variable type {var_info["type"]}')
+                normalized_x = np.array(normalized_x)
             else:
-                self.bar_x = self.view.ax2.bar(self.view.xticks, transformed_x, color='g')
+                raise Exception(f'invalid problem type {var_type}')
+
+            # compute text label
+            closest_x_str = []
+            for i in range(n_var):
+                if var_type == 'continuous':
+                    closest_x_str.append(f'{closest_x[i]:.4g}')
+                elif var_type in ['integer', 'binary', 'categorical']:
+                    closest_x_str.append(f'{closest_x[i]}')
+                elif var_type == 'mixed':
+                    if var_type_list[i] == 'continuous':
+                        closest_x_str.append(f'{closest_x[i]:.4g}')
+                    else:
+                        closest_x_str.append(f'{closest_x[i]}')
+                else:
+                    raise Exception(f'invalid problem type {var_type}')
+            
+            # plot checked design values as radar plot or bar chart
+            if n_var > 2:
+                self.line_x = self.view.ax2.plot(self.view.theta, normalized_x, color='g')[0]
+                self.fill_x = self.view.ax2.fill(self.view.theta, normalized_x, color='g', alpha=0.2)[0]
+                self.view.ax2.set_varlabels([f'{var_name[i]}\n{closest_x_str[i]}' for i in range(n_var)])
+            else:
+                self.bar_x = self.view.ax2.bar(self.view.xticks, normalized_x, color='g')
                 self.text_x = []
                 for i in range(n_var):
-                    self.view.text_lb[i].set_text(str(var_lb[i]))
-                    self.view.text_ub[i].set_text(str(var_ub[i]))
-                    text = self.view.ax2.text(self.view.xticks[i], transformed_x[i], f'{closest_x[i]:.4g}', horizontalalignment='center', verticalalignment='bottom')
+                    if var_type in ['continuous', 'integer'] or (var_type == 'mixed' and var_type_list[i] in ['continuous', 'integer']):
+                        self.view.text_lb[i].set_text(str(var_lb[i]))
+                        self.view.text_ub[i].set_text(str(var_ub[i]))
+                    text = self.view.ax2.text(self.view.xticks[i], normalized_x[i], f'{closest_x_str[i]}', horizontalalignment='center', verticalalignment='bottom')
                     self.text_x.append(text)
 
         elif event.button == MouseButton.RIGHT: # clear checked design values
@@ -153,7 +199,7 @@ class VizSpaceController:
         Redraw performance space
         '''
         # load data
-        X, Y, Y_expected, is_pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'is_pareto', 'batch_id'], dtype=[float, float, float, bool, int])
+        X, Y, Y_expected, is_pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'is_pareto', 'batch_id'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         if len(valid_idx) == 0: return
         X, Y, Y_expected, is_pareto, batch_id = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], is_pareto[valid_idx], batch_id[valid_idx]

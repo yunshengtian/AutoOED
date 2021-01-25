@@ -20,7 +20,7 @@ class VizStatsController:
         self.data_agent = self.root_controller.data_agent
 
         # compute n_init_sample
-        batch_id = self.data_agent.load('batch_id', dtype=int)
+        batch_id = self.data_agent.load('batch_id')
         self.n_init_sample = np.sum(batch_id == 0)
 
         # initialize hypervolume curve & prediction error curve
@@ -40,7 +40,7 @@ class VizStatsController:
         Redraw hypervolume and prediction error curves
         '''
         # load data
-        Y, Y_expected = self.data_agent.load(['Y', 'Y_expected'], dtype=float)
+        Y, Y_expected = self.data_agent.load(['Y', 'Y_expected'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         if len(valid_idx) == 0: return
         Y, Y_expected = Y[valid_idx], Y_expected[valid_idx]

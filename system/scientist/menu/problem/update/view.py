@@ -259,8 +259,8 @@ class UpdateProblemView:
                 var_ub, success = self._try_get_val(self.widget['design_mixed']['ub_float'], 'Upper bound')
                 if not success: return
 
-                if var_lb > var_ub:
-                    tk.messagebox.showinfo('Error', 'Lower bound is greater than upper bound', parent=self.window)
+                if var_lb >= var_ub:
+                    tk.messagebox.showinfo('Error', 'Lower bound is no less than upper bound', parent=self.window)
                     return
 
                 self.var_cfg[var_name] = {'type': var_type, 'lb': float(var_lb), 'ub': float(var_ub)}
@@ -272,8 +272,8 @@ class UpdateProblemView:
                 var_ub, success = self._try_get_val(self.widget['design_mixed']['ub_int'], 'Upper bound')
                 if not success: return
 
-                if var_lb > var_ub:
-                    tk.messagebox.showinfo('Error', 'Lower bound is greater than upper bound', parent=self.window)
+                if var_lb >= var_ub:
+                    tk.messagebox.showinfo('Error', 'Lower bound is no less than upper bound', parent=self.window)
                     return
 
                 self.var_cfg[var_name] = {'type': var_type, 'lb': int(var_lb), 'ub': int(var_ub)}
@@ -413,7 +413,7 @@ class UpdateProblemView:
             class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number must be greater than zero')
         self.widget['performance']['set_n_obj'] = create_widget('button', master=frame_n_obj, row=0, column=1, text='Set')
         self.widget['performance']['browse_obj_func'], self.widget['performance']['disp_obj_func'] = create_widget('labeled_button_entry',
-            master=frame_obj_func, row=0, column=0, label_text='Path to objective function', button_text='Browse', width=30)
+            master=frame_obj_func, row=0, column=0, label_text='Path to objective function', button_text='Browse', width=30, required=True)
 
         def _set_n_obj():
             '''
@@ -426,14 +426,17 @@ class UpdateProblemView:
             self.widget['performance']['excel'].grid(row=0, column=0)
             self.widget['performance']['excel'].set_column(0, [f'f{i}' for i in range(1, n_obj + 1)])
             self.widget['performance']['excel'].set_column(1, ['min'] * n_obj)
-            self.widget['next'].enable()
+            if self.widget['performance']['disp_obj_func'].widget.get() != '':
+                self.widget['next'].enable()
 
-        def _set_obj_func(self):
+        def _set_obj_func():
             '''
             '''
             filename = tk.filedialog.askopenfilename(parent=self.window)
             if not isinstance(filename, str) or filename == '': return
             self.widget['performance']['disp_obj_func'].set(filename)
+            if 'excel' in self.widget['performance']:
+                self.widget['next'].enable()
 
         self.widget['performance']['set_n_obj'].configure(command=_set_n_obj)
         self.widget['performance']['browse_obj_func'].configure(command=_set_obj_func)

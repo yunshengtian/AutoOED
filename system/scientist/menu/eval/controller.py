@@ -37,3 +37,6 @@ class MenuEvalController:
         Manually stop evaluation workers for certain rows (TODO: disable when no eval script linked)
         '''
         StopEvalController(self)
+
+    def get_problem_cfg(self):
+        return self.root_controller.get_problem_cfg()

@@ -126,19 +126,6 @@ class MenuConfigController:
         self.problem_cfg.clear()
         self.problem_cfg.update(config)
         
-        if self.first_time:
-            init_sample_path = config['init_sample_path']
-            if init_sample_path is not None:
-                if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
-                    x_init_path, y_init_path = init_sample_path[0], init_sample_path[1]
-                    self.view.widget['disp_x_init'].set(x_init_path)
-                    self.view.widget['disp_y_init'].set(y_init_path)
-                elif isinstance(init_sample_path, str):
-                    x_init_path = init_sample_path
-                    self.view.widget['disp_x_init'].set(x_init_path)
-                else:
-                    tk.messagebox.showinfo('Error', 'Error in problem definition: init_sample_path must be specified as 1) a list [x_path, y_path]; or 2) a string x_path', parent=self.view.window)
-
     def set_x_init(self):
         '''
         Set path of provided initial design variables

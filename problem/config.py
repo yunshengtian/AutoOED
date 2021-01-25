@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 import numpy as np
+import yaml
 
 
 def load_config(path):
@@ -78,7 +79,7 @@ def check_config(config):
             ub_list = [config['var_ub']] * config['n_var']
 
         for lb, ub in zip(lb_list, ub_list):
-            assert lb <= ub, f'lower bound is greater than upper bound'
+            assert lb < ub, f'upper bound must be greater than lower bound'
 
     elif config['type'] == 'binary':
         pass
@@ -106,7 +107,7 @@ def check_config(config):
         assert 'var' in config, 'variable properties are not provided'
         assert isinstance(config['var'], dict), 'variable properties are not specified as a dictionary'
         assert len(config['var']) > 0, 'the dictionary of variable properties is empty'
-        n_var = config['n_var']
+        n_var = len(config['var'])
 
         for var_name, var_info in config['var'].items():
             assert type(var_name) == str, 'invalid type of variable name'
@@ -135,12 +136,12 @@ def check_config(config):
             if var_info['type'] == 'continuous':
                 assert type(var_info['lb']) in [int, float], f'invalid lower bound of variable {var_name}'
                 assert type(var_info['ub']) in [int, float], f'invalid upper bound of variable {var_name}'
-                assert var_info['lb'] <= var_info['ub'], f'lower bound is greater than upper bound of variable {var_name}'
+                assert var_info['lb'] < var_info['ub'], f'lower bound is no less than upper bound of variable {var_name}'
 
             elif var_info['type'] == 'integer':
                 assert var_info['lb'] == int(var_info['lb']), f'invalid lower bound of variable {var_name}'
                 assert var_info['ub'] == int(var_info['ub']), f'invalid upper bound of variable {var_name}'
-                assert var_info['lb'] <= var_info['ub'], f'lower bound is greater than upper bound of variable {var_name}'
+                assert var_info['lb'] < var_info['ub'], f'lower bound is no less than upper bound of variable {var_name}'
 
             elif var_info['type'] == 'binary':
                 pass
@@ -185,7 +186,7 @@ def check_config(config):
         assert isinstance(config['ref_point'], Iterable) and type(config['ref_point']) != str, 'invalid type of reference point'
         assert len(config['ref_point']) == n_obj, 'dimension of reference point mismatches number of objectives'
         for ref_point in config['ref_point']:
-            assert type(ref_point) in [int, float], 'invalid type of reference point'
+            assert ref_point is None or type(ref_point) in [int, float], 'invalid type of reference point'
 
     # constr
     if 'n_constr' in config and config['n_constr'] is not None:
@@ -196,7 +197,7 @@ def check_config(config):
         # TODO: check if constraint function is importable
 
 
-def transform_config(config, check=True):
+def transform_config(config, check=False):
     '''
     Transform and return the config for optimization
     Keys:
@@ -256,7 +257,7 @@ def transform_config(config, check=True):
                 new_config['xu'].append(1)
             
             elif var_info['type'] == 'categorical':
-                len_choices = len(var_info['chocies'])
+                len_choices = len(var_info['choices'])
                 new_config['n_var'] += len_choices
                 new_config['xl'].extend([0] * len_choices)
                 new_config['xu'].extend([1] * len_choices)
@@ -296,7 +297,7 @@ def complete_config(config, check=False):
         new_config['n_var'] = len(config['var'])
         
     if 'var_name' not in config or config['var_name'] is None:
-        new_config['var_name'] = [f'x{i}' for i in range(1, config['n_var'] + 1)]
+        new_config['var_name'] = [f'x{i}' for i in range(1, new_config['n_var'] + 1)]
 
     # obj
     if 'obj_name' not in config or config['obj_name'] is None:
@@ -310,6 +311,9 @@ def complete_config(config, check=False):
 
     if 'ref_point' not in config:
         new_config['ref_point'] = None
+    else:
+        if config['ref_point'] is not None and None in config['ref_point']:
+            new_config['ref_point'] = None
 
     # constr
     if 'n_constr' not in config or config['n_constr'] is None:

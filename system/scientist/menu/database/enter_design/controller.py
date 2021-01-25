@@ -10,10 +10,8 @@ class EnterDesignController:
         self.root_view = self.root_controller.view
 
         problem_cfg = self.root_controller.get_problem_cfg()
-        n_var = problem_cfg['n_var']
-        var_lb, var_ub = problem_cfg['var_lb'], problem_cfg['var_ub']
 
-        self.view = EnterDesignView(self.root_view, n_var)
+        self.view = EnterDesignView(self.root_view, problem_cfg)
 
         self.view.widget['disp_n_row'].config(
             default=1, 
@@ -22,10 +20,6 @@ class EnterDesignController:
         )
         self.view.widget['disp_n_row'].set(1)
         self.view.widget['set_n_row'].configure(command=self.update_table)
-
-        self.view.widget['design_excel'].config(
-            valid_check=[lambda x: x >= var_lb[i] and x <= var_ub[i] for i in range(n_var)],
-        )
 
         self.view.widget['save'].configure(command=self.add_design)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)

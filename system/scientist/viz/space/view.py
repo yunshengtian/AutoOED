@@ -1,3 +1,4 @@
+import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -15,7 +16,45 @@ class VizSpaceView:
 
         n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
         var_name, obj_name = problem_cfg['var_name'], problem_cfg['obj_name']
-        var_lb, var_ub = problem_cfg['var_lb'], problem_cfg['var_ub']
+        var_type = problem_cfg['type']
+
+        # compute lower and upper bound for design space radar plot
+        if var_type in ['continuous', 'integer']:
+            var_lb, var_ub = problem_cfg['var_lb'], problem_cfg['var_ub']
+            if type(var_lb) in [int, float]:
+                var_lb = [var_lb] * n_var
+            if type(var_ub) in [int, float]:
+                var_ub = [var_ub] * n_var
+        elif var_type == 'binary':
+            var_lb, var_ub = [0] * n_var, [1] * n_var
+        elif var_type == 'categorical':
+            var_lb = [0] * n_var
+            if 'var' in problem_cfg:
+                var_ub = []
+                for var_info in problem_cfg['var'].values():
+                    var_ub.append(len(var_info['choices']))
+            else:
+                var_ub = [len(problem_cfg['var_choices'])] * n_var
+        elif var_type == 'mixed':
+            var_lb, var_ub = [], []
+            var_type_list = []
+            for var_info in problem_cfg['var'].values():
+                var_type_list.append(var_info['type'])
+                if var_info['type'] in ['continuous', 'integer']:
+                    var_lb.append(var_info['lb'])
+                    var_ub.append(var_info['ub'])
+                elif var_info['type'] == 'binary':
+                    var_lb.append(0)
+                    var_ub.append(1)
+                elif var_info['type'] == 'categorical':
+                    var_lb.append(0)
+                    var_ub.append(len(var_info['choices']))
+                else:
+                    raise Exception(f'invalid variable type {var_info["type"]}')
+        else:
+            raise Exception(f'invalid problem type {problem_cfg["type"]}')
+        
+        self.var_lb, self.var_ub = np.array(var_lb), np.array(var_ub)
 
         # figure placeholder in GUI
         self.fig = plt.figure(figsize=(10, 5))
@@ -58,8 +97,9 @@ class VizSpaceView:
             self.text_lb = [None] * n_var
             self.text_ub = [None] * n_var
             for i in range(n_var):
-                self.text_lb[i] = self.ax2.text(self.xticks[i] - 0.5, 0, str(var_lb[i]), horizontalalignment='right', verticalalignment='center')
-                self.text_ub[i] = self.ax2.text(self.xticks[i] - 0.5, 1, str(var_ub[i]), horizontalalignment='right', verticalalignment='center')
+                if var_type in ['continuous', 'integer'] or (var_type == 'mixed' and var_type_list[i] in ['continuous', 'integer']):
+                    self.text_lb[i] = self.ax2.text(self.xticks[i] - 0.5, 0, str(self.var_lb[i]), horizontalalignment='right', verticalalignment='center')
+                    self.text_ub[i] = self.ax2.text(self.xticks[i] - 0.5, 1, str(self.var_ub[i]), horizontalalignment='right', verticalalignment='center')
             self.ax2.set_xticklabels(var_name)
             self.ax2.set_title('Design Space')
             self.ax2.set_xlim(-3, 3)

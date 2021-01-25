@@ -119,8 +119,8 @@ class UpdateProblemController:
                         return
 
                     for lb, ub in zip(var_lb, var_ub):
-                        if lb > ub:
-                            messagebox.showinfo('Error', 'Lower bound is greater than upper bound', parent=self.view.window)
+                        if lb >= ub:
+                            messagebox.showinfo('Error', 'Lower bound is no less than upper bound', parent=self.view.window)
                             return
 
                     self.config['n_var'] = n_var

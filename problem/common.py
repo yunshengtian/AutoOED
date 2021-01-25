@@ -191,10 +191,13 @@ def get_problem_config(name):
     '''
     Get config dict of problem
     '''
+    config = None
+
     # check for custom python problems
     custom_problems = find_custom_python_problems()
     if name in custom_problems:
-        return custom_problems[name].get_config()
+        config = custom_problems[name].get_config()
+        return complete_config(config, check=True)
 
     # check for custom yaml problems
     yaml_problems = find_yaml_problems()
@@ -206,7 +209,8 @@ def get_problem_config(name):
     # check for predefined python problems
     predefined_problems = find_predefined_python_problems()
     if name in predefined_problems:
-        return predefined_problems[name].get_config()
+        config = predefined_problems[name].get_config()
+        return complete_config(config, check=True)
         
     raise Exception(f'problem {name} is not defined')
 

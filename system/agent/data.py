@@ -19,23 +19,13 @@ class DataAgent:
         self.n_valid_sample = Value('i', 0)
         self.n_sample = Value('i', 0)
 
-        self.n_var = None
-        self.n_obj = None
-        self.n_constr = None
-        self.obj_type = True
+        self.problem_cfg = None
 
-    def configure(self, n_var=None, n_obj=None, n_constr=None, obj_type=None):
+    def configure(self, problem_cfg):
         '''
-        Set configurations, a required step before initialization
         '''
-        if n_var is not None:
-            self.n_var = n_var
-        if n_obj is not None:
-            self.n_obj = n_obj
-        if n_constr is not None:
-            self.n_constr = n_constr
-        if obj_type is not None:
-            self.obj_type = obj_type
+        assert problem_cfg is not None
+        self.problem_cfg = problem_cfg.copy()
 
     def _map_key(self, key, flatten=False):
         '''
@@ -63,19 +53,37 @@ class DataAgent:
         Initialize database table
         '''
         if create:
-            self.db.init_table(name=self.table_name, var_type='continuous', n_var=self.n_var, n_obj=self.n_obj, n_constr=self.n_constr, obj_type=self.obj_type)
-            # TODO: more var_type
+            self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
 
         # high level key mapping (e.g., X -> [x1, x2, ...])
         self.key_map = {
             'status': 'status',
-            'X': [f'x{i + 1}' for i in range(self.n_var)],
-            'Y': [f'f{i + 1}' for i in range(self.n_obj)],
-            'Y_expected': [f'f{i + 1}_expected' for i in range(self.n_obj)],
-            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.n_obj)],
+            'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
+            'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
+            'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
+            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
             'is_pareto': 'is_pareto',
             'config_id': 'config_id',
             'batch_id': 'batch_id',
+        }
+
+        var_type_map = {
+            'continuous': float,
+            'integer': int,
+            'binary': int,
+            'categorical': str,
+            'mixed': object,
+        }
+
+        self.type_map = {
+            'status': str,
+            'X': var_type_map[self.problem_cfg['type']],
+            'Y': float,
+            'Y_expected': float,
+            'Y_uncertainty': float,
+            'is_pareto': bool,
+            'config_id': int,
+            'batch_id': int,
         }
 
     def init_data(self, X, Y=None):
@@ -88,7 +96,7 @@ class DataAgent:
         batch_id = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
-            is_pareto = check_pareto(Y, self.obj_type).astype(int)
+            is_pareto = check_pareto(Y, self.problem_cfg['obj_type']).astype(int)
 
         # update data
         if Y is None:
@@ -143,7 +151,7 @@ class DataAgent:
             rowid: row index to be updated (count from 1)
         '''
         # update data
-        Y_prev = self.load('Y', dtype=float)
+        Y_prev = self.load('Y')
         rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
         Y_prev = Y_prev[rowids_prev - 1]
 
@@ -154,7 +162,7 @@ class DataAgent:
         else:
             Y_all = np.vstack([Y_prev, y])
             rowids_all = np.concatenate([rowids_prev, [rowid]])
-            is_pareto = check_pareto(Y_all, self.obj_type).astype(int)
+            is_pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
             self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
 
         # update stats
@@ -168,13 +176,13 @@ class DataAgent:
             rowids: row indices to be updated (count from 1)
         '''
         # update data
-        Y_prev = self.load('Y', dtype=float)
+        Y_prev = self.load('Y')
         rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
         Y_prev = Y_prev[rowids_prev - 1]
 
         Y_all = np.vstack([Y_prev, Y])
         rowids_all = np.concatenate([rowids_prev, rowids])
-        is_pareto = check_pareto(Y_all, self.obj_type).astype(int)
+        is_pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
 
         self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
         self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
@@ -197,7 +205,7 @@ class DataAgent:
         data_str = np.array(data, dtype=str)
         return data_str
 
-    def load(self, keys, rowid=None, dtype=None):
+    def load(self, keys, rowid=None):
         '''
         Load data from database table
         '''
@@ -221,26 +229,21 @@ class DataAgent:
                             result_list[res_idx].append([])
                         result_list[res_idx][-1].append(data[row][col])
 
-            if dtype is not None:
-                if type(dtype) == list:
-                    assert len(dtype) == len(result_list)
-                    for i in range(len(dtype)):
-                        result_list[i] = np.array(result_list[i], dtype=dtype[i])
-                else:
-                    for i in range(len(result_list)):
-                        result_list[i] = np.array(result_list[i], dtype=dtype)
+            dtype = [self.type_map[key] for key in keys]
+            for i in range(len(dtype)):
+                result_list[i] = np.array(result_list[i], dtype=dtype[i])
             return result_list
+
         else:
-            if dtype is not None:
-                data = np.array(data, dtype=dtype)
-            return data
+            dtype = self.type_map[keys]
+            return np.array(data, dtype=dtype)
 
     def _predict(self, config, X_next):
         '''
         Performance prediction of given design variables X_next
         '''
         # read current data from database
-        X, Y = self.load(['X', 'Y'], dtype=float)
+        X, Y = self.load(['X', 'Y'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         X, Y = X[valid_idx], Y[valid_idx]
 
@@ -256,7 +259,7 @@ class DataAgent:
         self.db.connect(force=True)
         
         # load design variables
-        x_next = self.load('X', rowid=rowid, dtype=float)[0]
+        x_next = self.load('X', rowid=rowid)[0]
         self.db.update_data(table=self.table_name, column=['status'], data=['evaluating'], rowid=rowid)
 
         # run evaluation
@@ -274,7 +277,7 @@ class DataAgent:
         Optimization of next batch of samples to evaluate, stored in 'rowids' rows in database
         '''
         # read current data from database
-        X, Y = self.load(['X', 'Y'], dtype=float)
+        X, Y = self.load(['X', 'Y'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         X, Y = X[valid_idx], Y[valid_idx]
 

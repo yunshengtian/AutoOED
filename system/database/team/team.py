@@ -32,7 +32,7 @@ class TeamDatabase:
             'user': user,
             'passwd': passwd,
         }
-        self.database = 'openmobo'
+        self.database = 'autooed'
 
         # connect mysql
         self.conn = mysql.connector.connect(**self.login_info, autocommit=True)
@@ -373,9 +373,19 @@ class TeamDatabase:
             raise Exception(f'Table {name} exists')
         self.insert_data(table='_empty_table', column=None, data=[name])
 
-    def init_table(self, name, var_type, n_var, n_obj, n_constr, obj_type):
+    def init_table(self, name, problem_cfg):
         '''
         '''
+        n_var, n_obj, n_constr = problem_cfg['n_var'], problem_cfg['n_obj'], problem_cfg['n_constr']
+        var_type, obj_type = problem_cfg['type'], problem_cfg['obj_type']
+
+        var_type_map = {
+            'continuous': 'float',
+            'integer': 'int',
+            'binary': 'boolean',
+            'categorical': 'varchar(50)',
+        }
+
         if isinstance(obj_type, str):
             obj_type_str = obj_type
         elif isinstance(obj_type, Iterable):
@@ -383,8 +393,13 @@ class TeamDatabase:
         else:
             raise Exception('invalid objective type')
 
+        if var_type == 'mixed':
+            var_str = ','.join([var_info['type'] for var_info in problem_cfg['var'].values()])
+        else:
+            var_str = ''
+
         query = f'''
-            call init_table('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{obj_type_str}')
+            call init_table('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{obj_type_str}', '{var_str}')
             '''
         self.execute(query)
 

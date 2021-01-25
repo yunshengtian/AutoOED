@@ -212,9 +212,8 @@ class ScientistController:
                 column_names = self.database.get_column_names(self.table_name)
                 data_n_var = len([name for name in column_names if name.startswith('x')])
                 data_n_obj = len([name for name in column_names if name.startswith('f') and '_' not in name])
-                try:
-                    assert problem.n_var == data_n_var and problem.n_obj == data_n_obj
-                except:
+                problem_cfg = problem.get_config()
+                if problem_cfg['n_var'] != data_n_var or problem_cfg['n_obj'] != data_n_obj:
                     tk.messagebox.showinfo('Error', 'Problem dimension mismatch between configuration and history data', parent=window)
                     return False
 
@@ -228,7 +227,7 @@ class ScientistController:
             # TODO: give hint of initializing
 
             # configure agents
-            self.data_agent.configure(n_var=problem.n_var, n_obj=problem.n_obj, n_constr=problem.n_constr, obj_type=problem.obj_type)
+            self.data_agent.configure(self.problem_cfg)
             self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_objective'))
 
             self.data_agent.init_table(create=not table_exist)
@@ -252,7 +251,7 @@ class ScientistController:
 
             # calculate reference point
             if self.config['problem']['ref_point'] is None:
-                Y = self.data_agent.load('Y', dtype=float)
+                Y = self.data_agent.load('Y')
                 valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
                 Y = Y[valid_idx]
                 ref_point = np.zeros(problem.n_obj)

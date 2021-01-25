@@ -220,12 +220,26 @@ class PersonalDatabase:
             self.execute(f'insert into _empty_table values ("{name}")')
             self.commit()
 
-    def init_table(self, name, var_type, n_var, n_obj, n_constr, obj_type):
+    def init_table(self, name, problem_cfg):
         '''
         '''
+        n_var, n_obj, n_constr = problem_cfg['n_var'], problem_cfg['n_obj'], problem_cfg['n_constr']
+        var_type, obj_type = problem_cfg['type'], problem_cfg['obj_type']
+
+        var_type_map = {
+            'continuous': 'float',
+            'integer': 'int',
+            'binary': 'boolean',
+            'categorical': 'varchar(50)',
+        }
+
         description = ['status varchar(20) not null default "unevaluated"']
-        for i in range(1, n_var + 1):
-            description.append(f'x{i} float not null')
+        if var_type == 'mixed':
+            for i, var_info in enumerate(problem_cfg['var'].values()):
+                description.append(f'x{i + 1} {var_type_map[var_info["type"]]} not null')
+        else:
+            for i in range(1, n_var + 1):
+                description.append(f'x{i} {var_type_map[var_type]} not null')
         for i in range(1, n_obj + 1):
             description.append(f'f{i} float')
         for i in range(1, n_obj + 1):

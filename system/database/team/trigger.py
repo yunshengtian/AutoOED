@@ -3,7 +3,7 @@ def get_trigger_queries(table_name, n_var, n_obj):
     '''
     
     trigger_update_status = f'''
-        create trigger update_status
+        create trigger update_status_{table_name}
         before update
         on {table_name} for each row
         begin

@@ -2,6 +2,7 @@ import os
 import yaml
 from collections.abc import Iterable
 from problem.common import get_problem_config, check_problem_exist
+from problem.config import transform_config
 from algorithm.utils import check_algorithm_exist
 
 
@@ -187,8 +188,10 @@ def complete_config(config, check=False):
             'name': 'hvi',
         }
 
+    # update arguments for algorithm config
     full_prob_cfg = get_problem_config(prob_cfg['name'])
-    n_var, n_obj = full_prob_cfg['n_var'], full_prob_cfg['n_obj']
+    trans_prob_cfg = transform_config(full_prob_cfg)
+    n_var, n_obj = trans_prob_cfg['n_var'], full_prob_cfg['n_obj']
     n_process, batch_size = algo_cfg['n_process'], exp_cfg['batch_size']
 
     algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})

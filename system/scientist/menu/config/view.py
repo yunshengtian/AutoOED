@@ -59,6 +59,8 @@ class MenuConfigView:
         # evaluation subsection
         frame_experiment = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Experiment')
         grid_configure(frame_experiment, 0, 0)
+        self.widget['batch_size'] = create_widget('labeled_entry',
+            master=frame_experiment, row=0, column=0, text=config_map['experiment']['batch_size'], class_type='int', required=True)
         self.widget['n_worker'] = create_widget('labeled_entry',
             master=frame_experiment, row=1, column=0, text=config_map['experiment']['n_worker'], class_type='int')
 
@@ -78,6 +80,7 @@ class MenuConfigView:
                 'n_process': self.widget['n_process'],
             },
             'experiment': {
+                'batch_size': self.widget['batch_size'],
                 'n_worker': self.widget['n_worker'],
             }
         }

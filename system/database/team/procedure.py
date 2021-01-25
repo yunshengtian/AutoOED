@@ -5,7 +5,7 @@ def get_procedure_queries(database_name):
 
         'init_table': f'''
             create procedure init_table( 
-                in name_ varchar(50), in var_type_ varchar(20), in n_var_ int, in n_obj_ int, in n_constr_ int, in obj_type_ varchar(100)
+                in name_ varchar(50), in var_type_ varchar(20), in n_var_ int, in n_obj_ int, in n_constr_ int, in obj_type_ varchar(100), in var_ varchar(10000)
             )
             begin
                 declare i int;
@@ -17,11 +17,38 @@ def get_procedure_queries(database_name):
                 set @query = concat('create table ', name_, '(rowid int auto_increment primary key,
                     status varchar(20) not null default "unevaluated",');
 
-                set i = 1;
-                while i <= n_var_ do
-                    set @query = concat(@query, 'x', i, ' double not null,');
-                    set i = i + 1;
-                end while;
+                if strcmp(var_type_, 'mixed') = 0 then
+                    set i = 1;
+                    while i <= n_var_ do
+                        set @var_type = replace(substring(substring_index(var_, ',', i), length(substring_index(var_, ',', i - 1)) + 1), ',', '');
+                        if strcmp(@var_type, 'continuous') = 0 then
+                            set @data_type = 'double';
+                        elseif strcmp(@var_type, 'integer') = 0 then
+                            set @data_type = 'int';
+                        elseif strcmp(@var_type, 'binary') = 0 then
+                            set @data_type = 'boolean';
+                        else
+                            set @data_type = 'varchar(50)';
+                        end if;
+                        set @query = concat(@query, 'x', i, ' ', @data_type, ' not null,');
+                        set i = i + 1;
+                    end while;
+                else
+                    if strcmp(var_type_, 'continuous') = 0 then
+                        set @data_type = 'double';
+                    elseif strcmp(var_type_, 'integer') = 0 then
+                        set @data_type = 'int';
+                    elseif strcmp(var_type_, 'binary') = 0 then
+                        set @data_type = 'boolean';
+                    else
+                        set @data_type = 'varchar(50)';
+                    end if;
+                    set i = 1;
+                    while i <= n_var_ do
+                        set @query = concat(@query, 'x', i, ' ', @data_type, ' not null,');
+                        set i = i + 1;
+                    end while;
+                end if;
 
                 set i = 1;
                 while i <= n_obj_ do
