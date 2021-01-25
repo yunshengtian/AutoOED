@@ -1,4 +1,4 @@
-name: mobo
+name: autooed
 channels:
   - defaults
 dependencies:

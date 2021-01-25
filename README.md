@@ -1,6 +1,6 @@
-# OpenMOBO
+# AutoOED: Automated Optimal Experiment Design Platform
 
-Open-source software for multi-objective Bayesian optimization (MOBO).
+An Optimal Experiment Design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated.
 
 ## Installation
 
@@ -8,7 +8,7 @@ Install by conda:
 
 ```
 conda env create -f environment.yml
-conda activate mobo
+conda activate autooed
 ```
 
 Or install by pip:
@@ -27,6 +27,17 @@ Tested with Python 3.7 on Ubuntu 18.04.
 
 ## Getting Started
 
+### Personal Version
+
+```bash
+python scripts/personal/run.py
 ```
-python run_scientist.py
+
+### Team Version
+
+```bash
+python scripts/team/run_server.py
+python scripts/team/run_scientist.py
+python scripts/team/run_worker.py
 ```
+
