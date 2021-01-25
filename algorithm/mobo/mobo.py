@@ -27,6 +27,7 @@ class MOBO:
 
         bounds = np.array([problem.xl, problem.xu])
         self.normalization = StandardNormalization(bounds) # data normalization for surrogate model fitting
+        self.transformation = self.real_problem.transformation # data transformation between all input types and continuous
 
         # framework components
         framework = init_framework(self.spec, algo_cfg)
@@ -43,6 +44,9 @@ class MOBO:
         '''
         Solve the real multi-objective problem from initial data (X_init, Y_init)
         '''
+        # forward transformation
+        X_init = self.transformation.do(X_init)
+
         # determine reference point from data if not specified by arguments
         if self.ref_point is None:
             self.ref_point = np.max(Y_init, axis=0)
@@ -75,12 +79,19 @@ class MOBO:
         X_next, self.info = self.selection.select(solution, self.surrogate_model, self.normalization, curr_pset, curr_pfront)
         timer.log('Next sample batch selected')
 
+        # backward transformation
+        X_next = self.transformation.undo(X_next)
+
         return X_next
 
     def predict(self, X_init, Y_init, X_next):
         '''
         Predict the performance of X_next based on initial data (X_init, Y_init)
         '''
+        # forward transformation
+        X_init = self.transformation.do(X_init)
+        X_next = self.transformation.do(X_next)
+        
         timer = Timer(stdout=False)
 
         # data normalization

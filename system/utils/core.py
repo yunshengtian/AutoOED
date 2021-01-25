@@ -8,11 +8,11 @@ def build_optimizer(config):
     '''
     Build optimizer based on problem and configurations
     Input:
-        config: algorithm configuration
+        config: experiment configuration
     '''
-    problem_cfg, algo_cfg = config['problem'], config['algorithm']
+    prob_cfg, algo_cfg = config['problem'], config['algorithm']
 
-    problem = build_problem(problem_cfg)
+    problem = build_problem(prob_cfg['name'])
     algo = get_algorithm(algo_cfg['name'])
     optimizer = algo(problem, algo_cfg)
     
@@ -56,7 +56,7 @@ def evaluate(config, x_next):
     Evaluate performance of x_next
     '''
     # build problem
-    problem = build_problem(config['problem'])
+    problem = build_problem(config['problem']['name'])
 
     # evaluate x_next with real problem
     y_next = np.array(problem.evaluate_objective(x_next))

@@ -8,12 +8,15 @@ from pymoo.problems.util import load_pareto_front_from_file
 class DTLZ(Problem):
 
     config = {
+        'type': 'continuous',
         'n_var': 6,
         'n_obj': 2,
+        'var_lb': 0,
+        'var_ub': 1,
     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.k = self.n_var - self.n_obj + 1
 
     def g1(self, x_m):

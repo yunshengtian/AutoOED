@@ -7,8 +7,11 @@ from pymoo.util.normalization import normalize
 class ZDT(Problem):
 
     config = {
+        'type': 'continuous',
         'n_var': 6,
         'n_obj': 2,
+        'var_lb': 0,
+        'var_ub': 1,
     }
 
 

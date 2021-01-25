@@ -23,11 +23,12 @@ class Excel(tk.Frame):
         self.n_column = columns
         self.width = width
         self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
+        self.title = title
 
         # make titles
-        if title is not None:
+        if self.title is not None:
             for column in range(self.n_column):
-                self._make_entry(0, column + 1, self.width, title[column], False) 
+                self._make_entry(0, column + 1, self.width, self.title[column], False) 
 
         # make entries
         for row in range(self.n_row):
@@ -75,9 +76,10 @@ class Excel(tk.Frame):
 
     def get(self, row, column):
         val = self.entries[row][column].get()
+        column_name = f'"{self.title[column]}"' if self.title is not None else f'column {column}'
         if val == '':
             if self.required[column]:
-                raise Exception(f'Required value for column {column} not specified')
+                raise Exception(f'Required value for {column_name} not specified')
             else:
                 result = self.default[column]
         else:
@@ -89,9 +91,9 @@ class Excel(tk.Frame):
                 else:
                     result = self.dtype[column](val)
             except:
-                raise Exception('Invalid value specified in the entry')
+                raise Exception(f'Invalid value specified in the entry of {column_name}')
         if self.valid_check[column] is not None and not self.valid_check[column](result):
-            raise Exception('Invalid value specified in the entry')
+            raise Exception(f'Invalid value specified in the entry of {column_name}')
         return result
 
     def get_row(self, row):

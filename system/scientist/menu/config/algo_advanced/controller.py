@@ -60,7 +60,8 @@ class AlgoAdvancedController:
                     widget.set(algo_value_map[cfg_type][cfg_name][val])
                 else:
                     widget.set(val)
-                widget.select()
+                if hasattr(widget, 'select'):
+                    widget.select()
 
     def save_config_algo(self):
         '''

@@ -7,6 +7,7 @@ class OKA1(Problem):
     Okabe, Tatsuya, et al. "On test functions for evolutionary multi-objective optimization." International Conference on Parallel Problem Solving from Nature. Springer, Berlin, Heidelberg, 2004.
     '''
     config = {
+        'type': 'continuous',
         'n_var': 2,
         'n_obj': 2,
         'var_lb': [6 * np.sin(np.pi / 12), -2 * np.pi * np.sin(np.pi / 12)],
@@ -38,6 +39,7 @@ class OKA2(Problem):
     Okabe, Tatsuya, et al. "On test functions for evolutionary multi-objective optimization." International Conference on Parallel Problem Solving from Nature. Springer, Berlin, Heidelberg, 2004.
     '''
     config = {
+        'type': 'continuous',
         'n_var': 3,
         'n_obj': 2,
         'var_lb': [-np.pi, -5.0, -5.0],

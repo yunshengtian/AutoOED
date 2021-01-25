@@ -1,15 +1,15 @@
 # example configuration file
 
-general: 
-  n_worker: 5 # max number of evaluation workers
-  batch_size: 5
-  n_iter: 10 # number of algorithm iterations
-problem: 
+problem:
   name: zdt1
   ref_point: [1.0, 6.0] # reference point for hypervolume calculation (optional)
-  n_init_sample: 20 # number of random initial samples
-  init_sample_path: null # path of provided initial samples
-algorithm: 
+  n_random_sample: 20 # number of random initial samples
+  init_sample_path: null # path to provided initial samples
+experiment:
+  batch_size: 5
+  n_iter: 10 # number of algorithm iterations (default: 1)
+  n_worker: 5 # max number of evaluation workers (default: batch_size)
+algorithm:
   name: tsemo
   n_process: 1 # number of parallel processes used in algorithm (optional)
   # specific algorithm settings below (optional)

@@ -22,6 +22,7 @@ class MOO:
         '''
         self.real_problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
+        self.transformation = self.real_problem.transformation # data transformation between all input types and continuous
 
         self.batch_size = algo_cfg['selection']['batch_size']
         self.algo = self.algo(pop_size=self.batch_size)
@@ -30,6 +31,9 @@ class MOO:
         '''
         Solve the real multi-objective problem from initial data (X_init, Y_init)
         '''
+        # forward transformation
+        X_init = self.transformation.do(X_init)
+
         # convert maximization to minimization
         X, Y = X_init, Y_init.copy()
         obj_type = self.real_problem.obj_type
@@ -63,14 +67,23 @@ class MOO:
                 off = Population.merge(off, new_off[valid_idx])
 
         X_next = off.get('X')[:self.batch_size]
+        
+        # backward transformation
+        X_next = self.transformation.undo(X_next)
+
         return X_next
 
     def predict(self, X_init, Y_init, X_next):
         '''
         Predict the performance of X_next based on initial data (X_init, Y_init), not supported for moo algorithms
         '''
+        # forward transformation
+        X_init = self.transformation.do(X_init)
+        X_next = self.transformation.do(X_next)
+
         sample_len = len(X_next)
         Y_expected = np.ones((sample_len, self.n_obj)) * np.inf
         Y_uncertainty = np.zeros((sample_len, self.n_obj))
+        
         return Y_expected, Y_uncertainty
 

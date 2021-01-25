@@ -55,14 +55,14 @@ class PanelControlController:
         '''
         Execute optimization
         '''
-        config = self.get_config().copy()
+        config = self.get_config()
         for key in ['batch_size', 'n_iter']:
             try:
-                config['general'][key] = self.view.cfg_widget[key].get()
+                config['experiment'][key] = self.view.cfg_widget[key].get()
             except:
                 error_msg = self.view.cfg_widget[key].get_error_msg()
                 error_msg = '' if error_msg is None else ': ' + error_msg
-                tk.messagebox.showinfo('Error', 'Invalid value for "' + config_map['general'][key] + '"' + error_msg, parent=self.root_view.root)
+                tk.messagebox.showinfo('Error', 'Invalid value for "' + config_map['experiment'][key] + '"' + error_msg, parent=self.root_view.root)
                 return
 
         self.set_config(config)

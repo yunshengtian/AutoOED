@@ -33,6 +33,7 @@ class RE1(RE):
     Four bar truss design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 4,
         'n_obj': 2,
         'var_lb': [1, np.sqrt(2), np.sqrt(2), 1],
@@ -58,6 +59,7 @@ class RE2(RE):
     Reinforced concrete beam design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 3,
         'n_obj': 2,
         'var_lb': [0.2, 0, 0],
@@ -89,6 +91,7 @@ class RE3(RE):
     Hatch cover design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 2,
         'n_obj': 2,
         'var_lb': [0.5, 0.5],
@@ -131,6 +134,7 @@ class RE4(RE):
     Welded beam design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 4,
         'n_obj': 3,
         'var_lb': [0.125, 0.1, 0.1, 0.125],
@@ -186,6 +190,7 @@ class RE5(RE):
     Disc brake design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 4,
         'n_obj': 3,
         'var_lb': [55, 75, 1000, 11],
@@ -220,6 +225,7 @@ class RE6(RE):
     Gear train design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 4,
         'n_obj': 3,
         'var_lb': [12] * 4,
@@ -248,6 +254,7 @@ class RE7(RE):
     Rocket injector design
     '''
     config = {
+        'type': 'continuous',
         'n_var': 4,
         'n_obj': 3,
         'var_lb': [0] * 4,

@@ -61,11 +61,9 @@ class VizSpaceController:
         self.view.fig.subplots_adjust(bottom=0.15)
         self.redraw_performance_space(reset_scaler=True)
 
-    def set_config(self, config=None, problem_cfg=None):
+    def set_config(self, config=None):
         if config is not None:
             self.config = config
-        if problem_cfg is not None:
-            self.problem_cfg = problem_cfg
 
     def redraw(self, val):
         '''

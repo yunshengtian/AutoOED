@@ -21,3 +21,10 @@ def get_algorithm(name):
     if algo is None:
         raise Exception('Invalid algorithm name')
     return algo
+
+
+def check_algorithm_exist(name):
+    '''
+    Check if algorithm exists
+    '''
+    return name in get_algorithm_list()

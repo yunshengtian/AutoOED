@@ -2,7 +2,9 @@ import numpy as np
 from collections.abc import Iterable
 from pymoo.model.problem import Problem as PymooProblem
 
+from problem.config import check_config, transform_config, complete_config
 from problem.utils import import_obj_func, import_constr_func
+from problem.transformation import get_transformation
 
 
 class class_or_instance_method(classmethod):
@@ -13,27 +15,46 @@ class class_or_instance_method(classmethod):
 
 class Problem(PymooProblem):
     '''
-    Base class for problems, inherit this with a custom config, evaluate_objective() and evaluate_constraint()
+    Base class for problems, for custom problem specification, do either of the following:
+    1) Inherit this with a custom config, evaluate_objective() and evaluate_constraint()
+    2) Initialize this with a custom config with 'obj_func' and 'constr_func' specified
     '''
     config = {}
 
-    def __init__(self, ref_point=None, **kwargs):
+    def __init__(self, config=None):
+        # pre-process config
+        if config is not None:
+            self.config = config
+        if 'name' not in self.config:
+            self.config['name'] = self.__class__.__name__
+        check_config(self.config)
 
-        self.config = self.process_config(self.config, **kwargs)
+        # initialize continuous problem with transformed config
+        PymooProblem.__init__(self, **transform_config(self.config))
 
-        PymooProblem.__init__(self, 
-            n_var=self.config['n_var'], 
-            n_obj=self.config['n_obj'], 
-            n_constr=self.config['n_constr'], 
-            xl=self.config['var_lb'], 
-            xu=self.config['var_ub'],
-        )
+        # complete config
+        self.config = complete_config(self.config)
 
-        self.ref_point = ref_point # TODO: check
-
-        self.obj_type = self.config['obj_type']
+        # problem properties
         self.var_name = self.config['var_name']
         self.obj_name = self.config['obj_name']
+        self.obj_type = self.config['obj_type']
+        self.ref_point = self.config['ref_point']
+        self.transformation = get_transformation(self.config)
+
+        # import objective evaluation function
+        if self.config['obj_func'] is None:
+            if not hasattr(self, 'evaluate_objective'):
+                raise Exception('no objective function is provided')
+        else:
+            self.evaluate_objective = import_obj_func(self.config['obj_func'], self.config['n_var'], self.config['n_obj'])
+
+        # import constraint evaluation function
+        if self.config['constr_func'] is None:
+            if self.config['n_constr'] > 0:
+                raise Exception('no constraint function is provided')
+        else:
+            self.evaluate_constraint = import_constr_func(self.config['constr_func'], self.config['n_var'], self.config['n_constr'])
 
     def name(self):
         return self.config['name']
@@ -47,83 +68,12 @@ class Problem(PymooProblem):
             cls = cls_or_self
         else:
             cls = cls_or_self.__class__
-        return cls.process_config(cls_or_self.config, *args, **kwargs)
 
-    @classmethod
-    def process_config(cls, config, var_lb=None, var_ub=None, init_sample_path=None, **kwargs):
-        '''
-        Post-process problem config
-        ''' 
-        config = config.copy()
-
-        # default values for config
-        default_config = {
-            'name': cls.__name__,
-            'n_var': 'required',
-            'n_obj': 'required',
-            'obj_type': 'min', # minimization by default
-            'n_constr': 0, # no constraints by default
-            'var_lb': 0, # 0 as var lower bound by default
-            'var_ub': 1, # 1 as var upper bound by default
-            'var_name': None,
-            'obj_name': None,
-            'init_sample_path': None, # no provided initial sample path by default
-        }
-
-        # TODO: type check
-
-        # fill config with default_config when there are key missings
-        for key, value in default_config.items():
-            if key not in config:
-                if type(value) == str and value == 'required':
-                    raise Exception('Invalid config for custom problem, required values are not provided')
-                config[key] = value
-            elif config[key] is None:
-                config[key] = value
+        config = cls_or_self.config.copy()
+        if 'name' not in config:
+            config['name'] = cls.__name__
         
-        # update config if kwargs are specified
-        if var_lb is not None: config['var_lb'] = var_lb
-        if var_ub is not None: config['var_ub'] = var_ub
-        if init_sample_path is not None: config['init_sample_path'] = init_sample_path
-
-        n_var, n_obj = config['n_var'], config['n_obj']
-
-        # post-process obj_type
-        obj_type = config['obj_type']
-        if isinstance(obj_type, str):
-            obj_type = [obj_type] * n_obj
-        assert isinstance(obj_type, Iterable)
-        assert len(obj_type) == n_obj, f'dimension mismatch, obj_type should have {n_obj} dimensions'
-        config['obj_type'] = np.array(obj_type)
-
-        # post-process bounds
-        var_lb, var_ub = config['var_lb'], config['var_ub']
-
-        if var_lb is None: var_lb = np.zeros(n_var)
-        elif isinstance(var_lb, Iterable):
-            assert not isinstance(var_lb, str), 'invalid lower bounds'
-            var_lb = np.array(var_lb)
-            var_lb[var_lb == None] = 0
-            var_lb = var_lb.astype(float)
-        else:
-            var_lb = np.array([var_lb] * n_var, dtype=float)
-        
-        if var_ub is None: var_ub = np.ones(n_var)
-        elif isinstance(var_ub, Iterable):
-            assert not isinstance(var_ub, str), 'invalid upper bounds'
-            var_ub = np.array(var_ub)
-            var_ub[var_ub == None] = 1
-            var_ub = var_ub.astype(float)
-        else:
-            var_ub = np.array([var_ub] * n_var, dtype=float)
-
-        config['var_lb'], config['var_ub'] = var_lb, var_ub
-
-        # post-process names
-        if config['var_name'] is None: config['var_name'] = [f'x{i + 1}' for i in range(n_var)]
-        if config['obj_name'] is None: config['obj_name'] = [f'f{i + 1}' for i in range(n_obj)]
-
-        return config
+        return complete_config(config, check=True)
 
     def set_ref_point(self, ref_point):
         '''
@@ -172,26 +122,4 @@ class Problem(PymooProblem):
         s += "# n_obj: %s\n" % self.n_obj
         s += "# n_constr: %s\n" % self.n_constr
         return s
-
-
-class GeneratedProblem(Problem):
-    '''
-    Generated custom problems from GUI, to be initialized from a config dict
-    '''
-    def __init__(self, config, **kwargs):
-        self.config = config.copy()
-
-        # import objective evaluation function
-        if 'obj_func' in self.config:
-            obj_func_path = self.config.pop('obj_func')
-            if obj_func_path is not None:
-                self.evaluate_objective = import_obj_func(obj_func_path, self.config['n_var'], self.config['n_obj'])
-
-        # import constraint evaluation function
-        if 'constr_func' in self.config:
-            constr_func_path = self.config.pop('constr_func')
-            if constr_func_path is not None and self.config['n_constr'] > 0:
-                self.evaluate_constraint = import_constr_func(constr_func_path, self.config['n_var'], self.config['n_constr'])
-
-        super().__init__(**kwargs)
 

@@ -1,12 +1,11 @@
 import os
 import tkinter as tk
-from config.utils import load_config
+from experiment.config import load_config
 from problem.common import get_problem_config
 from system.gui.widgets.factory import show_widget_error
 from system.scientist.map import config_map
 from .view import MenuConfigView
 
-from .design_bound import DesignBoundController
 from .algo_advanced import AlgoAdvancedController
 
 
@@ -16,9 +15,8 @@ class MenuConfigController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.problem_static_cfg = {} # static part of problem config (problem definition)
-        self.problem_dynamic_cfg = {} # dynamic part of problem config (experiment customization)
-        self.algo_cfg = {} # store advanced config of algorithm
+        self.problem_cfg = {} # problem config
+        self.algo_cfg = {} # advanced algorithm config
         
         self.first_time = True
 
@@ -53,10 +51,9 @@ class MenuConfigController:
 
         self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
         self.view.widget['ref_point'].config(
-            valid_check=lambda x: len(x) == self.problem_static_cfg['n_obj'], 
+            valid_check=lambda x: len(x) == self.problem_cfg['n_obj'], 
             error_msg='dimension of reference point mismatches number of objectives',
         )
-        self.view.widget['set_design'].configure(command=self.config_design)
 
         if self.first_time:
             self.view.widget['n_init'].config(
@@ -98,7 +95,6 @@ class MenuConfigController:
         # disable widgets
         self.view.widget['ref_point'].disable()
         if self.first_time:
-            self.view.widget['set_design'].disable()
             self.view.widget['set_advanced'].disable()
         else:
             self.view.widget['problem_name'].disable()
@@ -122,17 +118,13 @@ class MenuConfigController:
         Select problem to configure
         '''
         self.view.widget['ref_point'].enable()
-        self.view.widget['set_design'].enable()
 
         # find problem static config by name selected
         name = event.widget.get()
         config = get_problem_config(name)
 
-        self.problem_static_cfg.clear()
-        self.problem_static_cfg.update(config)
-
-        for key in ['var_lb', 'var_ub']:
-            self.problem_dynamic_cfg.update({key: config[key]})
+        self.problem_cfg.clear()
+        self.problem_cfg.update(config)
         
         if self.first_time:
             init_sample_path = config['init_sample_path']
@@ -146,12 +138,6 @@ class MenuConfigController:
                     self.view.widget['disp_x_init'].set(x_init_path)
                 else:
                     tk.messagebox.showinfo('Error', 'Error in problem definition: init_sample_path must be specified as 1) a list [x_path, y_path]; or 2) a string x_path', parent=self.view.window)
-
-    def config_design(self):
-        '''
-        Configure bounds for design variables
-        '''
-        DesignBoundController(self)
 
     def set_x_init(self):
         '''
@@ -186,31 +172,31 @@ class MenuConfigController:
         Set values of widgets as current configuration values
         '''
         curr_config = self.get_config()
-        self.problem_dynamic_cfg.clear()
         for cfg_type, val_map in self.view.cfg_widget.items():
             for cfg_name, widget in val_map.items():
                 widget.enable()
                 widget.set(curr_config[cfg_type][cfg_name])
                 widget.select()
         self.view.widget['set_advanced'].enable()
-        self.problem_dynamic_cfg.update(curr_config['problem'])
 
     def save_config(self):
         '''
         Save specified configuration values
         '''
-        config = {
-            'general': {}, 
-            'problem': {}, 
-            'algorithm': {},
-        }
+        config = self.get_config()
+        if config is None:
+            config = {
+                'problem': {},
+                'experiment': {},
+                'algorithm': {},
+            }
 
         # specifically deal with initial samples (TODO: clean)
         if self.first_time:
             try:
-                config['problem']['n_init_sample'] = self.view.widget['n_init'].get()
+                config['problem']['n_random_sample'] = self.view.widget['n_init'].get()
             except:
-                show_widget_error(master=self.view.window, widget=self.view.widget['n_init'], name=config_map['problem']['n_init_sample'])
+                show_widget_error(master=self.view.window, widget=self.view.widget['n_init'], name=config_map['problem']['n_random_sample'])
                 return
             try:
                 x_init_path = self.view.widget['disp_x_init'].get()
@@ -247,7 +233,6 @@ class MenuConfigController:
                 tk.messagebox.showinfo('Error', 'Either number of initial samples or path of initial design variables needs to be provided', parent=self.view.window)
                 return
 
-        config['problem'].update(self.problem_dynamic_cfg)
         config['algorithm'].update(self.algo_cfg)
 
         success = self.set_config(config, self.view.window)

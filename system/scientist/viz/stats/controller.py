@@ -31,11 +31,9 @@ class VizStatsController:
         self.view.fig.tight_layout()
         self.redraw()
 
-    def set_config(self, config=None, problem_cfg=None):
+    def set_config(self, config=None):
         if config is not None:
             self.config = config
-        if problem_cfg is not None:
-            self.problem_cfg = problem_cfg
 
     def redraw(self):
         '''

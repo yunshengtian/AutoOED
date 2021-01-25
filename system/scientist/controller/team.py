@@ -5,7 +5,7 @@ from time import time, sleep
 import numpy as np
 import matplotlib.pyplot as plt
 
-from config.utils import load_config, process_config
+from experiment.config import complete_config
 from problem.common import build_problem, get_initial_samples
 from problem.problem import Problem
 
@@ -173,13 +173,19 @@ class ScientistController:
         self.controller['viz_stats'].redraw()
 
     def get_config(self):
-        return self.config
+        if self.config is None:
+            return None
+        else:
+            return self.config.copy()
 
     def get_config_id(self):
         return self.config_id
 
     def get_problem_cfg(self):
-        return self.problem_cfg
+        if self.problem_cfg is None:
+            return None
+        else:
+            return self.problem_cfg.copy()
 
     def set_config(self, config, window=None):
         '''
@@ -189,7 +195,7 @@ class ScientistController:
         if window is None: window = self.root
 
         try:
-            config = process_config(config)
+            config = complete_config(config, check=True)
         except Exception as e:
             tk.messagebox.showinfo('Error', 'Invalid configurations: ' + str(e), parent=window)
             return False
@@ -206,7 +212,7 @@ class ScientistController:
 
             # initialize problem
             try:
-                problem, self.true_pfront = build_problem(config['problem'], get_pfront=True)
+                problem, self.true_pfront = build_problem(config['problem']['name'], get_pfront=True)
             except Exception as e:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
                 return False
@@ -225,10 +231,7 @@ class ScientistController:
 
             # update config
             self.config = config
-            self.problem_cfg = problem.get_config(
-                var_lb=config['problem']['var_lb'],
-                var_ub=config['problem']['var_ub'],
-            )
+            self.problem_cfg = problem.get_config()
 
             # remove tutorial image
             self.view.image_tutorial.destroy()
@@ -245,7 +248,7 @@ class ScientistController:
 
             if not table_exist:
                 # data initialization
-                X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(config['problem'], problem)
+                X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, config['problem']['n_random_sample'], config['problem']['init_sample_path'])
                 if X_init_evaluated is not None:
                     self.data_agent.init_data(X_init_evaluated, Y_init_evaluated)
                 if X_init_unevaluated is not None:
@@ -299,14 +302,14 @@ class ScientistController:
             entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
             entry_batch_size.enable()
             try:
-                entry_batch_size.set(self.config['general']['batch_size'])
+                entry_batch_size.set(self.config['experiment']['batch_size'])
             except:
                 entry_batch_size.set(5)
 
             entry_n_iter = self.controller['panel_control'].view.widget['n_iter']
             entry_n_iter.enable()
             try:
-                entry_n_iter.set(self.config['general']['n_iter'])
+                entry_n_iter.set(self.config['experiment']['n_iter'])
             except:
                 entry_n_iter.set(1)
 
@@ -321,7 +324,7 @@ class ScientistController:
         else: # user changed config in the middle
             try:
                 # some keys cannot be changed
-                unchanged_keys = ['name', 'n_init_sample', 'init_sample_path']
+                unchanged_keys = ['name', 'n_random_sample', 'init_sample_path']
                 if self.config_raw['problem']['ref_point'] is not None:
                     unchanged_keys.append('ref_point')
                 for key in unchanged_keys:
@@ -331,18 +334,13 @@ class ScientistController:
                 return False
 
             self.config = config
-            self.problem_cfg = Problem.process_config(
-                self.problem_cfg,
-                var_lb=config['problem']['var_lb'],
-                var_ub=config['problem']['var_ub'],
-            )
             
         self.database.update_config(name=self.table_name, config=self.config)
         
         if self.config != old_config:
             self.worker_agent.set_config(self.config, self.config_id)
-            self.controller['viz_space'].set_config(self.config, self.problem_cfg)
-            self.controller['viz_stats'].set_config(self.config, self.problem_cfg)
+            self.controller['viz_space'].set_config(self.config)
+            self.controller['viz_stats'].set_config(self.config)
 
         return True
 

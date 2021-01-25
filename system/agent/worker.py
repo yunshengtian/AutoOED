@@ -80,7 +80,7 @@ class WorkerAgent:
         '''
         Start an evaluation worker
         '''
-        if len(self.eval_workers_run) >= self.config['general']['n_worker'] or len(self.eval_workers_wait) == 0: return False
+        if len(self.eval_workers_run) >= self.config['experiment']['n_worker'] or len(self.eval_workers_wait) == 0: return False
         worker, rowid = self.eval_workers_wait.pop(0)
         worker.start()
         self.eval_worker_id += 1
@@ -99,7 +99,7 @@ class WorkerAgent:
         '''
         Add an optimization worker process
         '''
-        n_iter = self.config['general']['n_iter']
+        n_iter = self.config['experiment']['n_iter']
         self.opt_worker_cmd = lambda: Process(target=process_safe_func, args=(self.data_agent.optimize, self.config, self.config_id, self.queue))
         with self.lock_opt_worker:
             self._queue_opt_worker(n_iter, 0)
@@ -215,7 +215,7 @@ class WorkerAgent:
 
             # launch new optimization workers in auto mode
             if self.mode == 'auto' and not self.stopped and self.eval:
-                while len(self.opt_workers_run) * self.config['general']['batch_size'] < self.config['general']['n_worker'] - len(self.eval_workers_run):
+                while len(self.opt_workers_run) * self.config['experiment']['batch_size'] < self.config['experiment']['n_worker'] - len(self.eval_workers_run):
                     self._queue_opt_worker(1, 0)
                     self._start_opt_worker()
 
@@ -229,7 +229,7 @@ class WorkerAgent:
         '''
         Check if number of running evaluation workers reaches maximum
         '''
-        return len(self.eval_workers_run) == self.config['general']['n_worker']
+        return len(self.eval_workers_run) == self.config['experiment']['n_worker']
 
     def _add_log(self, log):
         with self.lock_log:

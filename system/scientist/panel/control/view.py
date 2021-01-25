@@ -16,9 +16,9 @@ class PanelControlView:
         self.widget['mode'] = create_widget('labeled_combobox',
             master=frame_control, row=0, column=0, columnspan=2, text='Optimization mode', values=['manual', 'auto'], required=True, required_mark=False)
         self.widget['batch_size'] = create_widget('labeled_entry', 
-            master=frame_control, row=1, column=0, columnspan=2, text=config_map['general']['batch_size'], class_type='int', required=True, required_mark=False)
+            master=frame_control, row=1, column=0, columnspan=2, text=config_map['experiment']['batch_size'], class_type='int', required=True, required_mark=False)
         self.widget['n_iter'] = create_widget('labeled_entry', 
-            master=frame_control, row=2, column=0, columnspan=2, text=config_map['general']['n_iter'], class_type='int', required=True, required_mark=False)
+            master=frame_control, row=2, column=0, columnspan=2, text=config_map['experiment']['n_iter'], class_type='int', required=True, required_mark=False)
 
         self.widget['set_stop_cri'] = create_widget('labeled_button', 
             master=frame_control, row=3, column=0, columnspan=2, label_text='Stopping criterion', button_text='Set', pady=5)

@@ -29,7 +29,7 @@ class MenuConfigView:
         # problem subsection
         frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='Problem')
         if self.first_time:
-            grid_configure(frame_problem, 5, 0)
+            grid_configure(frame_problem, 4, 0)
         else:
             grid_configure(frame_problem, 2, 0)
 
@@ -37,19 +37,15 @@ class MenuConfigView:
             master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
         self.widget['ref_point'] = create_widget('labeled_entry', 
             master=frame_problem, row=1, column=0, text=config_map['problem']['ref_point'], class_type='floatlist', width=10)
-
-        frame_space = tk.Frame(master=frame_problem)
-        frame_space.grid(row=2, column=0)
-        self.widget['set_design'] = create_widget('button', master=frame_space, row=0, column=0, text='Set design bounds')
-
+        
         # initial samples related
         if self.first_time:
             self.widget['n_init'] = create_widget('labeled_entry', 
-                master=frame_problem, row=3, column=0, text=config_map['problem']['n_init_sample'], class_type='int')
+                master=frame_problem, row=2, column=0, text=config_map['problem']['n_random_sample'], class_type='int')
             self.widget['set_x_init'], self.widget['disp_x_init'] = create_widget('labeled_button_entry',
-                master=frame_problem, row=4, column=0, label_text='Path of provided initial design variables', button_text='Browse', width=30)
+                master=frame_problem, row=3, column=0, label_text='Path of provided initial design variables', button_text='Browse', width=30)
             self.widget['set_y_init'], self.widget['disp_y_init'] = create_widget('labeled_button_entry',
-                master=frame_problem, row=5, column=0, label_text='Path of provided initial performance values', button_text='Browse', width=30)
+                master=frame_problem, row=4, column=0, label_text='Path of provided initial performance values', button_text='Browse', width=30)
 
         # algorithm subsection
         frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')
@@ -61,10 +57,10 @@ class MenuConfigView:
         self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', sticky=None)
 
         # evaluation subsection
-        frame_general = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Evaluation')
-        grid_configure(frame_general, 0, 0)
+        frame_experiment = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Experiment')
+        grid_configure(frame_experiment, 0, 0)
         self.widget['n_worker'] = create_widget('labeled_entry',
-            master=frame_general, row=1, column=0, text=config_map['general']['n_worker'], class_type='int')
+            master=frame_experiment, row=1, column=0, text=config_map['experiment']['n_worker'], class_type='int')
 
         # action section
         frame_action = tk.Frame(master=self.window)
@@ -81,7 +77,7 @@ class MenuConfigView:
                 'name': self.widget['algo_name'],
                 'n_process': self.widget['n_process'],
             },
-            'general': {
+            'experiment': {
                 'n_worker': self.widget['n_worker'],
             }
         }

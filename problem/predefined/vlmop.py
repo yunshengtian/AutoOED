@@ -7,6 +7,7 @@ class VLMOP2(Problem):
     Van Veldhuizen, David A., and Gary B. Lamont. "Multiobjective evolutionary algorithm test suites." Proceedings of the 1999 ACM symposium on Applied computing. 1999.
     '''
     config = {
+        'type': 'continuous',
         'n_var': 2,
         'n_obj': 2,
         'var_lb': -2,
@@ -33,6 +34,7 @@ class VLMOP3(Problem):
     Van Veldhuizen, David A., and Gary B. Lamont. "Multiobjective evolutionary algorithm test suites." Proceedings of the 1999 ACM symposium on Applied computing. 1999.
     '''
     config = {
+        'type': 'continuous',
         'n_var': 2,
         'n_obj': 3,
         'var_lb': -3,
