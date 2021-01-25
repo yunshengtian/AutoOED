@@ -162,16 +162,30 @@ def complete_config(config, check=False):
         algo_cfg['n_process'] = 1
     
     if 'surrogate' not in algo_cfg or algo_cfg['surrogate'] is None:
-        algo_cfg['surrogate'] = {}
+        algo_cfg['surrogate'] = {
+            'name': 'gp',
+            'n_spectral_pts': 100,
+            'nu': 5,
+            'mean_sample': False,
+        }
 
     if 'acquisition' not in algo_cfg or algo_cfg['acquisition'] is None:
-        algo_cfg['acquisition'] = {}
+        algo_cfg['acquisition'] = {
+            'name': 'identity',
+        }
 
     if 'solver' not in algo_cfg or algo_cfg['solver'] is None:
-        algo_cfg['solver'] = {}
+        algo_cfg['solver'] = {
+            'name': 'nsga2',
+            'pop_size': 100,
+            'n_gen': 200,
+            'pop_init_method': 'nds',
+        }
 
     if 'selection' not in algo_cfg or algo_cfg['selection'] is None:
-        algo_cfg['selection'] = {}
+        algo_cfg['selection'] = {
+            'name': 'hvi',
+        }
 
     full_prob_cfg = get_problem_config(prob_cfg['name'])
     n_var, n_obj = full_prob_cfg['n_var'], full_prob_cfg['n_obj']
