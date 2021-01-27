@@ -192,27 +192,27 @@ class WorkerController:
         '''
         ManualLockController(self, lock=False)
 
-    def check_entry(self, row):
+    def check_entry(self, rowid):
         '''
         '''
-        return self.database.check_entry(self.table_name, row)
+        return self.database.check_entry(self.table_name, rowid)
 
-    def lock_entry(self, row):
+    def lock_entry(self, rowid):
         '''
         '''
-        if self.database.check_entry(self.table_name, row): return False
+        if self.database.check_entry(self.table_name, rowid): return False
         try:
-            self.database.lock_entry(self.table_name, row)
+            self.database.lock_entry(self.table_name, rowid)
         except:
             return False
         return True
 
-    def release_entry(self, row):
+    def release_entry(self, rowid):
         '''
         '''
-        if not self.database.check_entry(self.table_name, row): return False
+        if not self.database.check_entry(self.table_name, rowid): return False
         try:
-            self.database.release_entry(self.table_name, row)
+            self.database.release_entry(self.table_name, rowid)
         except:
             return False
         return True

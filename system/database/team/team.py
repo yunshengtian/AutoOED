@@ -502,28 +502,28 @@ class TeamDatabase:
     entry lock
     '''
 
-    def check_entry(self, name, row):
+    def check_entry(self, name, rowid):
         '''
         '''
         query = f'''
-            select check_entry('{name}', {row})
+            select check_entry('{name}', {rowid})
             '''
         self.execute(query)
         return self.fetchone()[0]
 
-    def lock_entry(self, name, row):
+    def lock_entry(self, name, rowid):
         '''
         '''
         query = f'''
-            call lock_entry('{name}', {row})
+            call lock_entry('{name}', {rowid})
             '''
         self.execute(query)
 
-    def release_entry(self, name, row):
+    def release_entry(self, name, rowid):
         '''
         '''
         query = f'''
-            call release_entry('{name}', {row})
+            call release_entry('{name}', {rowid})
             '''
         self.execute(query)
 

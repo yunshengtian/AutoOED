@@ -31,7 +31,7 @@ def get_table_descriptions():
 
         '_lock': '''
             name varchar(50) not null,
-            row int not null
+            rowid int not null
             ''',
     }
 
@@ -44,7 +44,7 @@ def get_table_post_processes():
     post_processes = {
 
         '_lock': '''
-            alter table _lock add unique index(name, row)
+            alter table _lock add unique index(name, rowid)
             ''',
     }
     

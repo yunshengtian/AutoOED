@@ -52,11 +52,11 @@ def get_function_queries(database_name):
 
         'check_entry': f'''
             create function check_entry(
-                name_ varchar(50), row_ int
+                name_ varchar(50), rowid_ int
             )
             returns boolean
             begin
-                return (select exists(select * from _lock where name=name_ and row=row_));
+                return (select exists(select * from _lock where name=name_ and rowid=rowid_));
             end
             ''',
     }

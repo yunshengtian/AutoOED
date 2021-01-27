@@ -112,19 +112,19 @@ def get_procedure_queries(database_name):
 
         'lock_entry': f'''
             create procedure lock_entry(
-                in name_ varchar(50), in row_ int
+                in name_ varchar(50), in rowid_ int
             )
             begin
-                insert into _lock values (name_, row_);
+                insert into _lock values (name_, rowid_);
             end
             ''',
 
         'release_entry': f'''
             create procedure release_entry(
-                in name_ varchar(50), in row_ int
+                in name_ varchar(50), in rowid_ int
             )
             begin
-                delete from _lock where name=name_ and row=row_;
+                delete from _lock where name=name_ and rowid=rowid_;
             end
             ''',
     }
