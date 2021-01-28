@@ -39,7 +39,6 @@ def find_predefined_python_problems():
     problems = {}
     for module in modules:
         for key, val in importlib.import_module(f'problem.{module}').__dict__.items():
-            key = key.lower()
             if not key.startswith('_') and val in get_subclasses(Problem):
                 problems[key] = val
     return problems
@@ -62,7 +61,6 @@ def find_custom_python_problems():
     problems = {}
     for module in modules:
         for key, val in importlib.import_module(f'problem.{module}').__dict__.items():
-            key = key.lower()
             if not key.startswith('_') and val in get_subclasses(Problem):
                 problems[key] = val
     return problems
