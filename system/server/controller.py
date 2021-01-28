@@ -1,6 +1,7 @@
 import numpy as np
 import tkinter as tk
 from tkinter import messagebox
+from problem.common import get_problem_config
 from system.params import *
 from system.database import TeamDatabase
 from system.server.view import ServerLoginView, ServerInitView, ServerView
@@ -155,8 +156,10 @@ class ServerController:
         self.view = ServerView(self.root)
         self.bind_command()
 
-        self.problem_info = self.database.query_problem(self.table_name)
-        self.view.widget['problem_info'].set_info(**self.problem_info)
+        problem_name = self.database.query_problem(self.table_name)
+        if problem_name is not None:
+            problem_cfg = get_problem_config(problem_name)
+            self.view.widget['problem_info'].set_info(problem_cfg)
 
         self.root.after(self.refresh_rate, self.refresh)
 
@@ -249,6 +252,9 @@ class ServerController:
                 self.database.execute(f'describe {self.table_name}')
                 columns = [res[0] for res in self.database.fetchall() if res[0] != 'rowid']
                 self.view.init_db_table(columns)
+                problem_name = self.database.query_problem(self.table_name)
+                problem_cfg = get_problem_config(problem_name)
+                self.view.widget['problem_info'].set_info(problem_cfg)
             else:
                 return
 

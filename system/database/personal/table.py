@@ -9,11 +9,7 @@ def get_table_descriptions():
 
         '_problem_info': '''
             name varchar(50) not null primary key,
-            var_type varchar(20),
-            n_var int,
-            n_obj int,
-            n_constr int,
-            obj_type varchar(100)
+            problem_name varchar(50) not null
             ''',
 
         '_config': '''

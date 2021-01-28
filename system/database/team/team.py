@@ -376,22 +376,9 @@ class TeamDatabase:
     def init_table(self, name, problem_cfg):
         '''
         '''
-        n_var, n_obj, n_constr = problem_cfg['n_var'], problem_cfg['n_obj'], problem_cfg['n_constr']
-        var_type, obj_type = problem_cfg['type'], problem_cfg['obj_type']
-
-        var_type_map = {
-            'continuous': 'float',
-            'integer': 'int',
-            'binary': 'boolean',
-            'categorical': 'varchar(50)',
-        }
-
-        if isinstance(obj_type, str):
-            obj_type_str = obj_type
-        elif isinstance(obj_type, Iterable):
-            obj_type_str = ','.join(obj_type)
-        else:
-            raise Exception('invalid objective type')
+        problem_name = problem_cfg['name']
+        n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
+        var_type = problem_cfg['type']
 
         if var_type == 'mixed':
             var_str = ','.join([var_info['type'] for var_info in problem_cfg['var'].values()])
@@ -399,7 +386,7 @@ class TeamDatabase:
             var_str = ''
 
         query = f'''
-            call init_table('{name}', '{var_type}', '{n_var}', '{n_obj}', '{n_constr}', '{obj_type_str}', '{var_str}')
+            call init_table('{name}', '{problem_name}', '{var_type}', '{n_var}', '{n_obj}', '{var_str}')
             '''
         self.execute(query)
 
@@ -445,20 +432,9 @@ class TeamDatabase:
         self.execute(query)
         result = self.fetchone()
         if result is None:
-            var_type, n_var, n_obj, n_constr, obj_type = [None] * 5
+            return None
         else:
-            var_type, n_var, n_obj, n_constr, obj_type = result[1:]
-            if ',' in obj_type:
-                obj_type = obj_type.split(',')
- 
-        return {
-            'name': name,
-            'var_type': var_type,
-            'n_var': n_var,
-            'n_obj': n_obj,
-            'n_constr': n_constr,
-            'obj_type': obj_type,
-        }
+            return result[0]
 
     '''
     config

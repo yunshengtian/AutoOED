@@ -6,7 +6,7 @@ class ProblemInfoWidget:
     def __init__(self, master, row, column):
         self.desc = {
             'name': 'Name',
-            'var_type': 'Variable type',
+            'type': 'Variable type',
             'n_var': 'Number of variables',
             'n_obj': 'Number of objectives',
             'n_constr': 'Number of constraints',
@@ -19,37 +19,21 @@ class ProblemInfoWidget:
             self.widget[key] = create_widget('label', master=frame_info, row=row + 1, column=0, pady=5, text=f'{self.desc[key]}: unknown')
         create_widget('label', master=frame_info, row=7, column=0, pady=0, text='')
 
-    def set_info(self, name=None, var_type=None, n_var=None, n_obj=None, n_constr=None, obj_type=None):
+    def set_info(self, problem_cfg):
         '''
         '''
-        info = {
-            'name': name,
-            'var_type': var_type,
-            'n_var': n_var,
-            'n_obj': n_obj,
-            'n_constr': n_constr,
-            'obj_type': obj_type,
-        }
-        for key, value in info.items():
-            if value is not None:
-                self.widget[key].config(text=f'{self.desc[key]}: {value}')
+        for key in self.desc:
+            if problem_cfg[key] is not None:
+                self.widget[key].config(text=f'{self.desc[key]}: {problem_cfg[key]}')
             else:
                 self.widget[key].config(text=f'{self.desc[key]}: unknown')
 
-    def update_info(self, name=None, var_type=None, n_var=None, n_obj=None, n_constr=None, obj_type=None):
+    def update_info(self, problem_cfg):
         '''
         '''
-        info = {
-            'name': name,
-            'var_type': var_type,
-            'n_var': n_var,
-            'n_obj': n_obj,
-            'n_constr': n_constr,
-            'obj_type': obj_type,
-        }
-        for key, value in info.items():
-            if value is not None:
-                self.widget[key].config(text=f'{self.desc[key]}: {value}')
+        for key in self.desc:
+            if problem_cfg[key] is not None:
+                self.widget[key].config(text=f'{self.desc[key]}: {problem_cfg[key]}')
 
     def clear_info(self):
         '''

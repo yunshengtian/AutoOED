@@ -231,8 +231,7 @@ class ScientistController:
             self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_objective'))
 
             self.data_agent.init_table(create=not table_exist)
-            problem_info = self.database.query_problem(self.table_name)
-            self.controller['panel_info'].set_info(**problem_info)
+            self.controller['panel_info'].set_info(self.problem_cfg)
 
             if not table_exist:
                 # data initialization

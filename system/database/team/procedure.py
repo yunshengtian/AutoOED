@@ -5,7 +5,7 @@ def get_procedure_queries(database_name):
 
         'init_table': f'''
             create procedure init_table( 
-                in name_ varchar(50), in var_type_ varchar(20), in n_var_ int, in n_obj_ int, in n_constr_ int, in obj_type_ varchar(100), in var_ varchar(10000)
+                in name_ varchar(50), in problem_name_ varchar(50), in var_type_ varchar(20), in n_var_ int, in n_obj_ int, in var_ varchar(10000)
             )
             begin
                 declare i int;
@@ -75,7 +75,7 @@ def get_procedure_queries(database_name):
                 deallocate prepare stmt;
 
                 delete from _empty_table where name=name_;
-                insert into _problem_info values (name_, var_type_, n_var_, n_obj_, n_constr_, obj_type_);
+                insert into _problem_info values (name_, problem_name_);
 
                 open user_cur;
                 grant_access_loop: loop
@@ -97,7 +97,7 @@ def get_procedure_queries(database_name):
                 in name_ varchar(50)
             )
             begin
-                select * from _problem_info where name=name_;
+                select problem_name from _problem_info where name=name_;
             end
             ''',
 
