@@ -84,7 +84,7 @@ class WorkerController:
         self.table_name = table_name
         
         self.root = tk.Tk()
-        self.root.title('OpenMOBO - Worker')
+        self.root.title(f'{TITLE} - Worker')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
         self.view = WorkerView(self.root)
         self.bind_command()

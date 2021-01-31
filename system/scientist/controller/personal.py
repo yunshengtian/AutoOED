@@ -79,7 +79,7 @@ class ScientistController:
         self.table_name = table_name
 
         self.root = tk.Tk()
-        self.root.title('OpenMOBO')
+        self.root.title(f'{TITLE}')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
 
         # TODO: use customized theme

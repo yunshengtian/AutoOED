@@ -134,7 +134,7 @@ class ServerController:
         self._quit_login()
         
         self.root_init = tk.Tk()
-        self.root_init.title('OpenMOBO - Server')
+        self.root_init.title(f'{TITLE} - Server')
         self.root_init.protocol('WM_DELETE_WINDOW', self._quit_init)
         self.root_init.resizable(False, False)
         self.view_init = ServerInitView(self.root_init)
@@ -151,7 +151,7 @@ class ServerController:
         self.table_name = table_name
         
         self.root = tk.Tk()
-        self.root.title('OpenMOBO - Server')
+        self.root.title(f'{TITLE} - Server')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
         self.view = ServerView(self.root)
         self.bind_command()
