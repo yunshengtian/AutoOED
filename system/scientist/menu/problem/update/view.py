@@ -309,7 +309,7 @@ class UpdateProblemView:
         def _reload_var():
             '''
             '''
-            var_list = self.var_cfg.keys()
+            var_list = list(self.var_cfg.keys())
             if len(var_list) == 0:
                 self.widget['design_mixed']['delete'].disable()
             else:

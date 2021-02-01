@@ -93,7 +93,7 @@ class PersonalDatabase:
 
         # reserved tables
         table_descriptions = get_table_descriptions()
-        self.reserved_tables = table_descriptions.keys()
+        self.reserved_tables = list(table_descriptions.keys())
 
         # reserved tables
         for name, desc in table_descriptions.items():
@@ -111,8 +111,7 @@ class PersonalDatabase:
         '''
         '''
         if force: return # TODO
-        self.daemon = Process(target=daemon_func, args=(self.data_path, self.task_queue, self.result_queue))
-        self.daemon.start()
+        Process(target=daemon_func, args=(self.data_path, self.task_queue, self.result_queue)).start()
 
     def commit(self):
         '''

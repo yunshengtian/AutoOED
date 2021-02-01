@@ -48,7 +48,7 @@ class TeamDatabase:
 
         # reserved tables
         table_descriptions = get_table_descriptions()
-        self.reserved_tables = table_descriptions.keys()
+        self.reserved_tables = list(table_descriptions.keys())
         
         # initialize reserved utilities
         if user == 'root':
