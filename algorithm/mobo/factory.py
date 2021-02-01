@@ -3,13 +3,11 @@ Factory for importing different components of the MOBO framework by name
 '''
 
 def get_surrogate_model(name):
-    from algorithm.mobo.surrogate_model import GaussianProcess, ThompsonSampling, NeuralNetwork, DNGO
+    from algorithm.mobo.surrogate_model import GaussianProcess, ThompsonSampling
     
     surrogate_model = {
         'gp': GaussianProcess,
         'ts': ThompsonSampling,
-        'nn': NeuralNetwork,
-        'dngo': DNGO,
     }
 
     surrogate_model['default'] = GaussianProcess

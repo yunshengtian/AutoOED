@@ -25,12 +25,10 @@ class SurrogateView:
         self.activate = {
             'Gaussian Process': self.activate_gp,
             'Thompson Sampling': self.activate_ts,
-            'Neural Network': self.activate_nn,
         }
         self.deactivate = {
             'Gaussian Process': self.deactivate_gp,
             'Thompson Sampling': self.deactivate_ts,
-            'Neural Network': self.deactivate_nn,
         }
 
     def create_frame_param(self):
@@ -68,24 +66,5 @@ class SurrogateView:
 
     def deactivate_ts(self):
         for key in ['nu', 'n_spectral_pts', 'mean_sample']:
-            self.label.pop(key)
-            self.widget.pop(key)
-
-    def activate_nn(self):
-        self.label['hidden_sizes'], self.widget['hidden_sizes'] = create_widget('labeled_entry',
-            master=self.frame_param, row=0, column=0, text=algo_config_map['surrogate']['hidden_sizes'], class_type='intlist', return_label=True,
-            default=[50, 50, 50], valid_check=lambda x: all([s > 0 for s in x]), error_msg='all layer sizes must be positive')
-        self.label['activation'], self.widget['activation'] = create_widget('labeled_combobox',
-            master=self.frame_param, row=1, column=0, text=algo_config_map['surrogate']['activation'], values=['tanh', 'relu'], class_type='string', return_label=True,
-            default='tanh')
-        self.label['lr'], self.widget['lr'] = create_widget('labeled_entry',
-            master=self.frame_param, row=2, column=0, text=algo_config_map['surrogate']['lr'], class_type='float', return_label=True,
-            default=1e-3, valid_check=lambda x: x > 0, error_msg='learning rate must be positive')
-        self.label['n_epoch'], self.widget['n_epoch'] = create_widget('labeled_entry',
-            master=self.frame_param, row=3, column=0, text=algo_config_map['surrogate']['n_epoch'], class_type='int', return_label=True,
-            default=100, valid_check=lambda x: x > 0, error_msg='number of epoch must be positive')
-        
-    def deactivate_nn(self):
-        for key in ['hidden_sizes', 'activation', 'lr', 'n_epoch']:
             self.label.pop(key)
             self.widget.pop(key)

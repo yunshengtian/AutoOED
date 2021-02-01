@@ -57,7 +57,6 @@ algo_value_map = {
         'name': {
             'gp': 'Gaussian Process',
             'ts': 'Thompson Sampling',
-            'nn': 'Neural Network',
         },
     },
     'acquisition': {
