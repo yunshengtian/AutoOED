@@ -96,7 +96,6 @@ class ScientistController:
         # s.theme_use('awdark')
 
         self.refresh_rate = REFRESH_RATE # ms
-        self.result_dir = RESULT_DIR # initial result directory
         self.config = None
         self.config_raw = None
         self.config_id = -1
@@ -206,10 +205,6 @@ class ScientistController:
         old_config = None if self.config is None else self.config.copy()
 
         if self.config is None: # first time setting config
-            # create directory for saving results
-            if not self.create_result_dir(window):
-                return False
-
             # initialize problem
             try:
                 problem, self.true_pfront = build_problem(config['problem']['name'], get_pfront=True)
@@ -347,20 +342,6 @@ class ScientistController:
 
     def set_timestamp(self):
         self.timestamp = time()
-
-    def set_result_dir(self, result_dir):
-        self.result_dir = result_dir
-
-    def create_result_dir(self, window):
-        # check if result_dir folder is not empty
-        if os.path.exists(self.result_dir) and os.listdir(self.result_dir) != []:
-            overwrite = tk.messagebox.askquestion('Error', f'Result folder {self.result_dir} is not empty, do you want to overwrite? If not, please change another folder for saving results by clicking: File -> Save in...', parent=window)
-            if overwrite == 'no':
-                return False
-            else:
-                shutil.rmtree(self.result_dir)
-        os.makedirs(self.result_dir, exist_ok=True)
-        return True
 
     def refresh(self):
         '''
