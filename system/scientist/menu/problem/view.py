@@ -48,7 +48,7 @@ class MenuProblemView:
             'n_constr': config['n_constr'],
             'obj_type': config['obj_type'],
         }
-        self.widget['info'].set_info(**problem_info)
+        self.widget['info'].set_info(problem_info)
 
     def clear_problem_info(self):
         '''
