@@ -10,31 +10,58 @@ Welcome to AutoOED's documentation!
    :maxdepth: 2
    :caption: About
 
-   content/about/introduction.rst
-   content/about/installation.rst
+   content/about/introduction
+   content/about/prerequisites
+   content/about/platform-design
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
 
-   content/getting-started/basic-usage.rst
-   content/getting-started/example-simulation.rst
-   content/getting-started/example-fabricated.rst
+   content/getting-started/installation
+   content/getting-started/basic-usage
+   content/getting-started/example-simulation
+   content/getting-started/example-fabricated
+
 
 .. toctree::
    :maxdepth: 2
    :caption: User Manual
 
-   content/user-manual/problem-config.rst
-   content/user-manual/experiment-config.rst
-   content/user-manual/algorithms.rst
-   content/user-manual/distributed.rst
+   content/user-manual/build-problem
+   content/user-manual/build-experiment
+   content/user-manual/run-optimization
+   content/user-manual/statistics
+   content/user-manual/database
+   content/user-manual/distributed
+
 
 .. toctree::
    :maxdepth: 2
-   :caption: Algorithm APIs
+   :caption: Optimization Algorithms
 
-   content/algorithm-apis/structure.rst
+   content/algorithms/moo
+   content/algorithms/mobo
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
+   content/api/algorithms
+   content/api/surrogate
+   content/api/acquisition
+   content/api/solver
+   content/api/selection
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Changelog
+
+   content/changelog
+
 
 .. Indices and tables
 .. ==================
