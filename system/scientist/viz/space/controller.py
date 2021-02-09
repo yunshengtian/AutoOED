@@ -248,7 +248,9 @@ class VizSpaceController:
         if n_obj == 3: self.view.ax1.set_zlim(z_min - z_offset, z_max + z_offset)
 
         # replot new evaluated & predicted points
+        line_vis = True
         for line in self.line_y_pred_list:
+            line_vis = line_vis and line.get_visible()
             line.remove()
         self.line_y_pred_list = []
 
@@ -262,6 +264,7 @@ class VizSpaceController:
                 self.scatter_y_pred._offsets3d = Y_expected[last_batch_idx].T
             for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
                 line = self.view.ax1.plot(*[[y[i], y_expected[i]] for i in range(n_obj)], '--', color='m', alpha=0.5)[0]
+                line.set_visible(line_vis)
                 self.line_y_pred_list.append(line)
         else:
             empty_y = np.empty((0, n_obj))
