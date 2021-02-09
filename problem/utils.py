@@ -47,6 +47,28 @@ def import_c_func(path, lib_name, func_name, n_in, n_out, dtype='float'):
     return lambda x: getattr(c_lib, func_name)(np.array(x, dtype=py_type))
 
 
+class MatlabEngine:
+
+    def __init__(self, path, n_out):
+        self.dir_name, self.func_name = os.path.dirname(path), os.path.basename(path)
+        assert self.func_name.endswith('.m')
+        self.func_name = self.func_name[:-2]
+        self.n_out = n_out
+
+    def evaluate(self, x):
+        import matlab.engine
+        eng = matlab.engine.start_matlab()
+        eng.addpath(self.dir_name)
+        return getattr(eng, self.func_name)(*x, nargout=self.n_out)
+
+
+def import_matlab_func(path, n_out):
+    '''
+    Import matlab function from path
+    '''
+    return MatlabEngine(path, n_out).evaluate
+
+
 def import_obj_func(path, n_var, n_obj):
     '''
     '''
@@ -62,6 +84,11 @@ def import_obj_func(path, n_var, n_obj):
                 n_in=n_var, n_out=n_obj)
         except:
             raise Exception('failed to import objective evaluation function from c/cpp file')
+    elif ftype == 'm':
+        try:
+            eval_func = import_matlab_func(path=path, n_out=n_obj)
+        except:
+            raise Exception('failed to import objective evaluation function from matlab file')
     else:
         raise Exception('only python and c/cpp files are supported')
     return eval_func
@@ -82,6 +109,11 @@ def import_constr_func(path, n_var, n_constr):
                 n_in=n_var, n_out=n_constr)
         except:
             raise Exception('failed to import constraint evaluation function from c/cpp file')
+    elif ftype == 'm':
+        try:
+            eval_func = import_matlab_func(path=path, n_out=n_constr)
+        except:
+            raise Exception('failed to import objective evaluation function from matlab file')
     else:
         raise Exception('only python and c/cpp files are supported')
     return eval_func
