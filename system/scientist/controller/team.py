@@ -261,9 +261,9 @@ class ScientistController:
                 Y = Y[valid_idx]
                 ref_point = np.zeros(problem.n_obj)
                 for i, m in enumerate(problem.obj_type):
-                    if m == 'max':
+                    if m == 'min':
                         ref_point[i] = np.max(Y[:, i])
-                    elif m == 'min':
+                    elif m == 'max':
                         ref_point[i] = np.min(Y[:, i])
                     else:
                         raise Exception('obj_type must be min/max')
