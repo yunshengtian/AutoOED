@@ -2,7 +2,6 @@ import os
 import numpy as np
 from multiprocessing import Value
 
-from system.utils.process_safe import ProcessSafeExit
 from system.utils.core import optimize, predict, evaluate
 from system.utils.performance import check_pareto
 
@@ -14,10 +13,6 @@ class DataAgent:
     def __init__(self, database, table_name):
         self.db = database
         self.table_name = table_name
-
-        self.n_init_sample = Value('i', 0)
-        self.n_valid_sample = Value('i', 0)
-        self.n_sample = Value('i', 0)
 
         self.problem_cfg = None
 
@@ -107,17 +102,6 @@ class DataAgent:
             self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'is_pareto', 'config_id', 'batch_id'], flatten=True),
                 data=[status, X, Y, is_pareto, config_id, batch_id], transform=True)
 
-        # update stats
-        with self.n_init_sample.get_lock():
-            self.n_init_sample.value += n_init_sample
-        
-        with self.n_sample.get_lock():
-            self.n_sample.value += n_init_sample
-        
-        with self.n_valid_sample.get_lock():
-            if Y is not None:
-                self.n_valid_sample.value += n_init_sample
-
         rowids = np.arange(n_init_sample, dtype=int) + 1
         return rowids.tolist()
 
@@ -136,10 +120,6 @@ class DataAgent:
         self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
             data=[X, Y_expected, Y_uncertainty, config_id, batch_id], transform=True)
         n_row = self.db.get_n_row(self.table_name)
-
-        # update stats
-        with self.n_sample.get_lock():
-            self.n_sample.value += sample_len
             
         rowids = np.arange(n_row - sample_len, n_row, dtype=int) + 1
         return rowids.tolist()
@@ -165,10 +145,6 @@ class DataAgent:
             is_pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
             self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
 
-        # update stats
-        with self.n_valid_sample.get_lock():
-            self.n_valid_sample.value += 1
-
     def update_batch(self, Y, rowids):
         '''
         Update batch evaluation result to database
@@ -186,10 +162,6 @@ class DataAgent:
 
         self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
         self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
-
-        # update stats
-        with self.n_valid_sample.get_lock():
-            self.n_valid_sample.value += len(Y)
 
     def _load(self, keys, rowid=None):
         '''
@@ -266,11 +238,7 @@ class DataAgent:
         y_next = evaluate(config, x_next)
 
         # update evaluation result to database
-        try:
-            self.update(y_next, rowid)
-        except ProcessSafeExit:
-            self.correct_stats()
-            raise ProcessSafeExit()
+        self.update(y_next, rowid)
 
     def optimize(self, config, config_id, queue=None):
         '''
@@ -288,11 +256,7 @@ class DataAgent:
         Y_expected, Y_uncertainty = self._predict(config, X_next)
 
         # insert optimization and prediction result to database
-        try:
-            rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
-        except ProcessSafeExit:
-            self.correct_stats()
-            raise ProcessSafeExit()
+        rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
 
         if queue is None:
             return rowids
@@ -307,11 +271,7 @@ class DataAgent:
         Y_expected, Y_uncertainty = self._predict(config, X_next)
 
         # insert design variables and prediction result to database
-        try:
-            rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
-        except ProcessSafeExit:
-            self.correct_stats()
-            raise ProcessSafeExit()
+        rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
 
         if queue is None:
             return rowids
@@ -319,31 +279,15 @@ class DataAgent:
             queue.put(rowids)
 
     def get_n_init_sample(self):
-        with self.n_init_sample.get_lock():
-            num = self.n_init_sample.value
-        return num
+        batch_id = self.load('batch_id')
+        return np.sum(batch_id == 0)
 
     def get_n_sample(self):
-        with self.n_sample.get_lock():
-            num = self.n_sample.value
-        return num
+        return self.db.get_n_row(self.table_name)
 
     def get_n_valid_sample(self):
-        with self.n_valid_sample.get_lock():
-            num = self.n_valid_sample.value
-        return num
-
-    def correct_stats(self):
-        '''
-        Correct stats variables due to process termination
-        '''
-        status = self.load_str('status')
-        n_sample = len(status)
-        n_valid_sample = np.sum(status == 'evaluated')
-        with self.n_sample.get_lock():
-            self.n_sample.value = n_sample
-        with self.n_valid_sample.get_lock():
-            self.n_valid_sample.value = n_valid_sample
+        status = self.load('status')
+        return np.sum(status == 'evaluated')
 
     def quit(self):
         '''

@@ -20,8 +20,7 @@ class VizStatsController:
         self.data_agent = self.root_controller.data_agent
 
         # compute n_init_sample
-        batch_id = self.data_agent.load('batch_id')
-        self.n_init_sample = np.sum(batch_id == 0)
+        self.n_init_sample = self.data_agent.get_n_init_sample()
 
         # initialize hypervolume curve & prediction error curve
         self.line_hv = self.view.ax1.plot([], [])[0]
