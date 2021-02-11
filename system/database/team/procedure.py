@@ -68,7 +68,7 @@ def get_procedure_queries(database_name):
                     set i = i + 1;
                 end while;
 
-                set @query = concat(@query, 'is_pareto boolean, config_id int not null, batch_id int not null)');
+                set @query = concat(@query, 'pareto boolean, config_id int not null, batch_id int not null)');
 
                 prepare stmt from @query;
                 execute stmt;

@@ -17,12 +17,12 @@ def check_pareto(Y, obj_type):
 
     # find pareto indices
     sorted_indices = np.argsort(Y.T[0])
-    is_pareto = np.zeros(len(Y), dtype=bool)
+    pareto = np.zeros(len(Y), dtype=bool)
     for idx in sorted_indices:
         # check domination relationship
         if not (np.logical_and((Y <= Y[idx]).all(axis=1), (Y < Y[idx]).any(axis=1))).any():
-            is_pareto[idx] = True
-    return is_pareto
+            pareto[idx] = True
+    return pareto
 
 
 def calc_hypervolume(Y, ref_point, obj_type):

@@ -199,10 +199,10 @@ class VizSpaceController:
         Redraw performance space
         '''
         # load data
-        X, Y, Y_expected, is_pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'is_pareto', 'batch_id'])
+        X, Y, Y_expected, pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'pareto', 'batch_id'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         if len(valid_idx) == 0: return
-        X, Y, Y_expected, is_pareto, batch_id = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], is_pareto[valid_idx], batch_id[valid_idx]
+        X, Y, Y_expected, pareto, batch_id = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], pareto[valid_idx], batch_id[valid_idx]
         max_iter = batch_id[-1]
 
         if reset_scaler:
@@ -219,17 +219,17 @@ class VizSpaceController:
             draw_idx = batch_id <= draw_iter
             X, Y, Y_expected, batch_id = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch_id[draw_idx]
             max_iter = batch_id[-1]
-            is_pareto = check_pareto(Y, self.problem_cfg['obj_type'])
+            pareto = check_pareto(Y, self.problem_cfg['obj_type'])
         
         # replot evaluated & pareto points
         self.scatter_x = X
         n_obj = Y.shape[1]
         if n_obj == 2:
             self.scatter_y.set_offsets(Y)
-            self.scatter_y_pareto.set_offsets(Y[is_pareto])
+            self.scatter_y_pareto.set_offsets(Y[pareto])
         elif n_obj == 3:
             self.scatter_y._offsets3d = Y.T
-            self.scatter_y_pareto._offsets3d = Y[is_pareto].T
+            self.scatter_y_pareto._offsets3d = Y[pareto].T
         
         # rescale plot according to Y and true_pfront
         n_obj = self.problem_cfg['n_obj']

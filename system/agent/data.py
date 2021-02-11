@@ -31,7 +31,7 @@ class DataAgent:
             'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
             'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
             'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
-            'is_pareto': 'is_pareto',
+            'pareto': 'pareto',
             'config_id': 'config_id',
             'batch_id': 'batch_id',
         }
@@ -51,7 +51,7 @@ class DataAgent:
             'Y': float,
             'Y_expected': float,
             'Y_uncertainty': float,
-            'is_pareto': bool,
+            'pareto': bool,
             'config_id': int,
             'batch_id': int,
         }
@@ -89,7 +89,7 @@ class DataAgent:
         batch_id = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
-            is_pareto = check_pareto(Y, self.problem_cfg['obj_type']).astype(int)
+            pareto = check_pareto(Y, self.problem_cfg['obj_type']).astype(int)
 
         # update data
         if Y is None:
@@ -97,8 +97,8 @@ class DataAgent:
                 data=[X, config_id, batch_id], transform=True)
         else:
             status = ['evaluated'] * n_init_sample
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'is_pareto', 'config_id', 'batch_id'], flatten=True),
-                data=[status, X, Y, is_pareto, config_id, batch_id], transform=True)
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'pareto', 'config_id', 'batch_id'], flatten=True),
+                data=[status, X, Y, pareto, config_id, batch_id], transform=True)
 
         rowids = np.arange(n_init_sample, dtype=int) + 1
         return rowids.tolist()
@@ -136,12 +136,12 @@ class DataAgent:
         self.db.update_data(table=self.table_name, column=['status'] + self._map_key('Y'), data=['evaluated', y], rowid=rowid, transform=True)
 
         if len(Y_prev) == 0:
-            self.db.update_data(table=self.table_name, column=['is_pareto'], data=[1], rowid=rowid, transform=True)
+            self.db.update_data(table=self.table_name, column=['pareto'], data=[1], rowid=rowid, transform=True)
         else:
             Y_all = np.vstack([Y_prev, y])
             rowids_all = np.concatenate([rowids_prev, [rowid]])
-            is_pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
-            self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
+            pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
+            self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
 
     def update_batch(self, Y, rowids):
         '''
@@ -156,10 +156,10 @@ class DataAgent:
 
         Y_all = np.vstack([Y_prev, Y])
         rowids_all = np.concatenate([rowids_prev, rowids])
-        is_pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
+        pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
 
         self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
-        self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
+        self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
 
     def load(self, keys, rowid=None):
         '''
