@@ -236,16 +236,15 @@ class ScientistController:
             self.data_agent.configure(self.problem_cfg)
             self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_objective'))
 
-            self.data_agent.init_table(create=not table_exist)
             self.controller['panel_info'].set_info(self.problem_cfg)
 
             if not table_exist:
                 # data initialization
                 X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, config['problem']['n_random_sample'], config['problem']['init_sample_path'])
                 if X_init_evaluated is not None:
-                    self.data_agent.init_data(X_init_evaluated, Y_init_evaluated)
+                    self.data_agent.initialize(X_init_evaluated, Y_init_evaluated)
                 if X_init_unevaluated is not None:
-                    rowids = self.data_agent.init_data(X_init_unevaluated)
+                    rowids = self.data_agent.initialize(X_init_unevaluated)
                     for rowid in rowids:
                         self.worker_agent.add_eval_worker(rowid)
                     

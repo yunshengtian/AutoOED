@@ -33,9 +33,9 @@ def optimize(config, X_init, Y_init):
     optimizer = build_optimizer(config)
 
     # solve for best X_next
-    X_next = optimizer.solve(X_init, Y_init)
+    X_next, (Y_expected, Y_uncertainty) = optimizer.solve(X_init, Y_init)
     
-    return X_next
+    return X_next, (Y_expected, Y_uncertainty)
 
 
 def predict(config, X_init, Y_init, X_next):

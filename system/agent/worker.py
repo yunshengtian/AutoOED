@@ -1,7 +1,5 @@
 from multiprocessing import Process, Queue, Lock
 
-from system.utils.process_safe import process_safe_func
-
 
 class WorkerAgent:
     '''
@@ -100,7 +98,7 @@ class WorkerAgent:
         Add an optimization worker process
         '''
         n_iter = self.config['experiment']['n_iter']
-        self.opt_worker_cmd = lambda: Process(target=process_safe_func, args=(self.data_agent.optimize, self.config, self.config_id, self.queue))
+        self.opt_worker_cmd = lambda: Process(target=self.data_agent.optimize, args=(self.config, self.config_id, self.queue))
         with self.lock_opt_worker:
             self._queue_opt_worker(n_iter, 0)
             self._start_opt_worker()
@@ -111,7 +109,7 @@ class WorkerAgent:
         Add an evaluation worker process
         '''
         if not self.eval: return # TODO: check
-        worker = Process(target=process_safe_func, args=(self.data_agent.evaluate, self.config, rowid))
+        worker = Process(target=self.data_agent.evaluate, args=(self.config, rowid))
         with self.lock_eval_worker:
             self.eval_workers_wait.append([worker, rowid])
             self._start_eval_worker()

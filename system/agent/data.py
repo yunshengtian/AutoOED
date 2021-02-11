@@ -15,12 +15,46 @@ class DataAgent:
         self.table_name = table_name
 
         self.problem_cfg = None
+        self.key_map = None
+        self.type_map = None
 
     def configure(self, problem_cfg):
         '''
         '''
         assert problem_cfg is not None
         self.problem_cfg = problem_cfg.copy()
+
+        # mapping from keys to database columns (e.g., X -> [x1, x2, ...])
+        self.key_map = {
+            'status': 'status',
+            'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
+            'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
+            'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
+            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
+            'is_pareto': 'is_pareto',
+            'config_id': 'config_id',
+            'batch_id': 'batch_id',
+        }
+
+        var_type_map = {
+            'continuous': float,
+            'integer': int,
+            'binary': int,
+            'categorical': str,
+            'mixed': object,
+        }
+
+        # mapping from keys to data types
+        self.type_map = {
+            'status': str,
+            'X': var_type_map[self.problem_cfg['type']],
+            'Y': float,
+            'Y_expected': float,
+            'Y_uncertainty': float,
+            'is_pareto': bool,
+            'config_id': int,
+            'batch_id': int,
+        }
 
     def _map_key(self, key, flatten=False):
         '''
@@ -43,48 +77,12 @@ class DataAgent:
         else:
             raise NotImplementedError
 
-    def init_table(self, create=False):
-        '''
-        Initialize database table
-        '''
-        if create:
-            self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
-
-        # high level key mapping (e.g., X -> [x1, x2, ...])
-        self.key_map = {
-            'status': 'status',
-            'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
-            'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
-            'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
-            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
-            'is_pareto': 'is_pareto',
-            'config_id': 'config_id',
-            'batch_id': 'batch_id',
-        }
-
-        var_type_map = {
-            'continuous': float,
-            'integer': int,
-            'binary': int,
-            'categorical': str,
-            'mixed': object,
-        }
-
-        self.type_map = {
-            'status': str,
-            'X': var_type_map[self.problem_cfg['type']],
-            'Y': float,
-            'Y_expected': float,
-            'Y_uncertainty': float,
-            'is_pareto': bool,
-            'config_id': int,
-            'batch_id': int,
-        }
-
-    def init_data(self, X, Y=None):
+    def initialize(self, X, Y=None):
         '''
         Initialize database table with initial data X, Y
         '''
+        self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
+
         n_init_sample = X.shape[0]
 
         config_id = np.zeros(n_init_sample, dtype=int)
@@ -163,25 +161,11 @@ class DataAgent:
         self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
         self.db.update_multiple_data(table=self.table_name, column=['is_pareto'], data=[is_pareto], rowid=rowids_all, transform=True)
 
-    def _load(self, keys, rowid=None):
-        '''
-        '''
-        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), rowid=rowid)
-        return data
-
-    def load_str(self, keys, rowid=None):
-        '''
-        Load data represented as string from database table
-        '''
-        data = self._load(keys, rowid)
-        data_str = np.array(data, dtype=str)
-        return data_str
-
     def load(self, keys, rowid=None):
         '''
         Load data from database table
         '''
-        data = self._load(keys, rowid)
+        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), rowid=rowid)
 
         if type(keys) == list:
             mapped_keys = self._map_key(keys)
@@ -210,20 +194,6 @@ class DataAgent:
             dtype = self.type_map[keys]
             return np.array(data, dtype=dtype)
 
-    def _predict(self, config, X_next):
-        '''
-        Performance prediction of given design variables X_next
-        '''
-        # read current data from database
-        X, Y = self.load(['X', 'Y'])
-        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
-        X, Y = X[valid_idx], Y[valid_idx]
-
-        # predict performance of given input X_next
-        Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
-
-        return Y_expected, Y_uncertainty
-
     def evaluate(self, config, rowid):
         '''
         Evaluation of design variables given the associated rowid in database
@@ -250,10 +220,7 @@ class DataAgent:
         X, Y = X[valid_idx], Y[valid_idx]
 
         # optimize for best X_next
-        X_next = optimize(config, X, Y)
-
-        # predict performance of X_next
-        Y_expected, Y_uncertainty = self._predict(config, X_next)
+        X_next, (Y_expected, Y_uncertainty) = optimize(config, X, Y)
 
         # insert optimization and prediction result to database
         rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
@@ -267,8 +234,13 @@ class DataAgent:
         '''
         Performance prediction of given design variables X_next, stored in 'rowids' rows in database
         '''
+        # read current data from database
+        X, Y = self.load(['X', 'Y'])
+        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        X, Y = X[valid_idx], Y[valid_idx]
+
         # predict performance of given input X_next
-        Y_expected, Y_uncertainty = self._predict(config, X_next)
+        Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
 
         # insert design variables and prediction result to database
         rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)

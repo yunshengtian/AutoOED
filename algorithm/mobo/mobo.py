@@ -79,10 +79,16 @@ class MOBO:
         X_next, self.info = self.selection.select(solution, self.surrogate_model, self.normalization, curr_pset, curr_pfront)
         timer.log('Next sample batch selected')
 
+        # evaluate prediction and uncertainty on surrogate models
+        val = self.surrogate_model.evaluate(self.normalization.do(x=X_next), std=True)
+        Y_expected = self.normalization.undo(y=val['F'])
+        Y_uncertainty = val['S']
+        timer.log('Performance of next batch predicted')
+
         # backward transformation
         X_next = self.transformation.undo(X_next)
 
-        return X_next
+        return X_next, (Y_expected, Y_uncertainty)
 
     def predict(self, X_init, Y_init, X_next):
         '''
