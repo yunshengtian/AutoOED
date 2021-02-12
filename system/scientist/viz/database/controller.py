@@ -24,7 +24,7 @@ class VizDatabaseController:
         self.view = VizDatabaseView(self.root_view, columns=self.columns)
         self.table = self.view.widget['table']
 
-        data = self.database.load_table(name=self.table_name)
+        data = self.database.load_table(name=self.table_name, column=self.columns)
         self.table.load(data)
 
     def update_data(self):

@@ -203,12 +203,12 @@ class PersonalDatabase:
         table_list = self.execute(f'select * from sqlite_master where type="table" and name="{name}"', fetchall=True)
         return len(table_list) > 0
 
-    def load_table(self, name):
+    def load_table(self, name, column=None):
         '''
         '''
         with SafeLock(self.lock):
             assert self.check_table_exist(name, block=False), f'Table {name} does not exist'
-            result = self.execute(f'select * from {name}', fetchall=True)
+            result = self.select_data(name, column)
         return result
     
     def create_table(self, name):
