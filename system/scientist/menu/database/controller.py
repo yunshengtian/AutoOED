@@ -23,9 +23,6 @@ class MenuDatabaseController:
     def get_config(self):
         return self.root_controller.get_config()
 
-    def get_config_id(self):
-        return self.root_controller.get_config_id()
-
     def get_problem_cfg(self):
         return self.root_controller.get_problem_cfg()
 

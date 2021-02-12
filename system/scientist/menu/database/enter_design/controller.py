@@ -45,10 +45,10 @@ class EnterDesignController:
         self.view.window.destroy()
 
         data_agent, worker_agent = self.root_controller.data_agent, self.root_controller.worker_agent
-        config, config_id = self.root_controller.get_config(), self.root_controller.get_config_id()
+        config = self.root_controller.get_config()
 
         # predict, add result to database
-        rowids = data_agent.predict(config, config_id, X_next)
+        rowids = data_agent.predict(config, X_next)
 
         # call evaluation worker
         if if_eval:

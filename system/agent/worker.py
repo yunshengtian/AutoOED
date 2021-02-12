@@ -9,7 +9,6 @@ class WorkerAgent:
         self.data_agent = data_agent
         self.mode = 'manual'
         self.config = None
-        self.config_id = -1
         self.eval = True
 
         self.opt_workers_run = [] # active optimization workers
@@ -32,7 +31,7 @@ class WorkerAgent:
         
         self.logs = [] # for recording scheduling history
 
-    def configure(self, mode=None, config=None, config_id=None, eval=None):
+    def configure(self, mode=None, config=None, eval=None):
         '''
         Set configurations, a required step before starting any worker
         Input:
@@ -41,8 +40,8 @@ class WorkerAgent:
         '''
         if mode is not None:
             self.set_mode(mode)
-        if config is not None and config_id is not None:
-            self.set_config(config, config_id)
+        if config is not None:
+            self.set_config(config)
         if eval is not None:
             self.eval = eval
 
@@ -51,12 +50,11 @@ class WorkerAgent:
         assert self.eval or mode == 'auto', 'auto mode is invalid when evaluation function is not defined'
         self.mode = mode
 
-    def set_config(self, config, config_id):
+    def set_config(self, config):
         '''
         Required to set correct configurations before optimization / evaluation
         '''
         self.config = config.copy()
-        self.config_id = config_id
 
     def _start_opt_worker(self):
         '''
@@ -98,7 +96,7 @@ class WorkerAgent:
         Add an optimization worker process
         '''
         n_iter = self.config['experiment']['n_iter']
-        self.opt_worker_cmd = lambda: Process(target=self.data_agent.optimize, args=(self.config, self.config_id, self.queue))
+        self.opt_worker_cmd = lambda: Process(target=self.data_agent.optimize, args=(self.config, self.queue))
         with self.lock_opt_worker:
             self._queue_opt_worker(n_iter, 0)
             self._start_opt_worker()

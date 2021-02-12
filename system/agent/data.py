@@ -32,7 +32,6 @@ class DataAgent:
             'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
             'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
             'pareto': 'pareto',
-            'config_id': 'config_id',
             'batch_id': 'batch_id',
         }
 
@@ -52,7 +51,6 @@ class DataAgent:
             'Y_expected': float,
             'Y_uncertainty': float,
             'pareto': bool,
-            'config_id': int,
             'batch_id': int,
         }
 
@@ -85,7 +83,6 @@ class DataAgent:
 
         n_init_sample = X.shape[0]
 
-        config_id = np.zeros(n_init_sample, dtype=int)
         batch_id = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
@@ -93,30 +90,27 @@ class DataAgent:
 
         # update data
         if Y is None:
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'config_id', 'batch_id'], flatten=True),
-                data=[X, config_id, batch_id], transform=True)
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'batch_id'], flatten=True),
+                data=[X, batch_id], transform=True)
         else:
             status = ['evaluated'] * n_init_sample
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'pareto', 'config_id', 'batch_id'], flatten=True),
-                data=[status, X, Y, pareto, config_id, batch_id], transform=True)
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'pareto', 'batch_id'], flatten=True),
+                data=[status, X, Y, pareto, batch_id], transform=True)
 
         rowids = np.arange(n_init_sample, dtype=int) + 1
         return rowids.tolist()
 
-    def insert(self, X, Y_expected, Y_uncertainty, config_id):
+    def insert(self, X, Y_expected, Y_uncertainty):
         '''
         Insert optimization result to database
-        Input:
-            config_id: current configuration index (user can sequentially reload different config files)
         '''
         sample_len = len(X)
-        config_id = np.full(sample_len, config_id)
 
         # update data
         batch_id = self.db.select_data(table=self.table_name, column='batch_id')[-1][0] + 1
         batch_id = np.full(sample_len, batch_id)
-        self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'config_id', 'batch_id'], flatten=True), 
-            data=[X, Y_expected, Y_uncertainty, config_id, batch_id], transform=True)
+        self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'batch_id'], flatten=True), 
+            data=[X, Y_expected, Y_uncertainty, batch_id], transform=True)
         n_row = self.db.get_n_row(self.table_name)
             
         rowids = np.arange(n_row - sample_len, n_row, dtype=int) + 1
@@ -210,7 +204,7 @@ class DataAgent:
         # update evaluation result to database
         self.update(y_next, rowid)
 
-    def optimize(self, config, config_id, queue=None):
+    def optimize(self, config, queue=None):
         '''
         Optimization of next batch of samples to evaluate, stored in 'rowids' rows in database
         '''
@@ -223,14 +217,14 @@ class DataAgent:
         X_next, (Y_expected, Y_uncertainty) = optimize(config, X, Y)
 
         # insert optimization and prediction result to database
-        rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
+        rowids = self.insert(X_next, Y_expected, Y_uncertainty)
 
         if queue is None:
             return rowids
         else:
             queue.put(rowids)
 
-    def predict(self, config, config_id, X_next, queue=None):
+    def predict(self, config, X_next, queue=None):
         '''
         Performance prediction of given design variables X_next, stored in 'rowids' rows in database
         '''
@@ -243,7 +237,7 @@ class DataAgent:
         Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
 
         # insert design variables and prediction result to database
-        rowids = self.insert(X_next, Y_expected, Y_uncertainty, config_id)
+        rowids = self.insert(X_next, Y_expected, Y_uncertainty)
 
         if queue is None:
             return rowids

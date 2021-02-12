@@ -93,7 +93,6 @@ class ScientistController:
         self.refresh_rate = REFRESH_RATE # ms
         self.config = None
         self.config_raw = None
-        self.config_id = -1
         self.problem_cfg = None
         self.timestamp = None
 
@@ -169,9 +168,6 @@ class ScientistController:
     def get_config(self):
         return self.config
 
-    def get_config_id(self):
-        return self.config_id
-
     def get_problem_cfg(self):
         return self.problem_cfg
 
@@ -223,7 +219,7 @@ class ScientistController:
 
             # configure agents
             self.data_agent.configure(self.problem_cfg)
-            self.worker_agent.configure(mode='manual', config=config, config_id=0, eval=hasattr(problem, 'evaluate_objective'))
+            self.worker_agent.configure(mode='manual', config=config, eval=hasattr(problem, 'evaluate_objective'))
 
             self.controller['panel_info'].set_info(self.problem_cfg)
 
@@ -319,8 +315,7 @@ class ScientistController:
         self.database.update_config(name=self.table_name, config=self.config)
         
         if self.config != old_config:
-            self.config_id += 1
-            self.worker_agent.set_config(self.config, self.config_id)
+            self.worker_agent.set_config(self.config)
             self.controller['viz_space'].set_config(self.config)
             self.controller['viz_stats'].set_config(self.config)
 

@@ -19,7 +19,7 @@ class VizDatabaseController:
             [f'f{i + 1}' for i in range(n_obj)] + \
             [f'f{i + 1}_expected' for i in range(n_obj)] + \
             [f'f{i + 1}_uncertainty' for i in range(n_obj)] + \
-            ['pareto', 'config_id', 'batch_id']
+            ['pareto', 'batch_id']
 
         self.view = VizDatabaseView(self.root_view, columns=self.columns)
         self.table = self.view.widget['table']

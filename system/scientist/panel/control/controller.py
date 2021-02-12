@@ -33,9 +33,6 @@ class PanelControlController:
     def get_config(self):
         return self.root_controller.get_config()
 
-    def get_config_id(self):
-        return self.root_controller.get_config_id()
-
     def set_config(self, *args, **kwargs):
         return self.root_controller.set_config(*args, **kwargs)
 
@@ -75,8 +72,8 @@ class PanelControlController:
         self.view.widget['stop'].enable()
 
         mode = self.view.widget['mode'].get()
-        config, config_id = self.get_config(), self.get_config_id()
-        self.worker_agent.configure(mode=mode, config=config, config_id=config_id)
+        config = self.get_config()
+        self.worker_agent.configure(mode=mode, config=config)
         self.worker_agent.add_opt_worker()
 
     def stop_optimize(self):
