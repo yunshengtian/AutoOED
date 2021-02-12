@@ -32,7 +32,7 @@ class DataAgent:
             'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
             'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
             'pareto': 'pareto',
-            'batch_id': 'batch_id',
+            'batch': 'batch',
         }
 
         var_type_map = {
@@ -51,7 +51,7 @@ class DataAgent:
             'Y_expected': float,
             'Y_uncertainty': float,
             'pareto': bool,
-            'batch_id': int,
+            'batch': int,
         }
 
     def _map_key(self, key, flatten=False):
@@ -83,19 +83,19 @@ class DataAgent:
 
         n_init_sample = X.shape[0]
 
-        batch_id = np.zeros(n_init_sample, dtype=int)
+        batch = np.zeros(n_init_sample, dtype=int)
 
         if Y is not None:
             pareto = check_pareto(Y, self.problem_cfg['obj_type']).astype(int)
 
         # update data
         if Y is None:
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'batch_id'], flatten=True),
-                data=[X, batch_id], transform=True)
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'batch'], flatten=True),
+                data=[X, batch], transform=True)
         else:
             status = ['evaluated'] * n_init_sample
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'pareto', 'batch_id'], flatten=True),
-                data=[status, X, Y, pareto, batch_id], transform=True)
+            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'pareto', 'batch'], flatten=True),
+                data=[status, X, Y, pareto, batch], transform=True)
 
         rowids = np.arange(n_init_sample, dtype=int) + 1
         return rowids.tolist()
@@ -107,10 +107,10 @@ class DataAgent:
         sample_len = len(X)
 
         # update data
-        batch_id = self.db.select_data(table=self.table_name, column='batch_id')[-1][0] + 1
-        batch_id = np.full(sample_len, batch_id)
-        self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'batch_id'], flatten=True), 
-            data=[X, Y_expected, Y_uncertainty, batch_id], transform=True)
+        batch = self.db.select_data(table=self.table_name, column='batch')[-1][0] + 1
+        batch = np.full(sample_len, batch)
+        self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'batch'], flatten=True), 
+            data=[X, Y_expected, Y_uncertainty, batch], transform=True)
         n_row = self.db.get_n_row(self.table_name)
             
         rowids = np.arange(n_row - sample_len, n_row, dtype=int) + 1
@@ -245,8 +245,8 @@ class DataAgent:
             queue.put(rowids)
 
     def get_n_init_sample(self):
-        batch_id = self.load('batch_id')
-        return np.sum(batch_id == 0)
+        batch = self.load('batch')
+        return np.sum(batch == 0)
 
     def get_n_sample(self):
         return self.db.get_n_row(self.table_name)

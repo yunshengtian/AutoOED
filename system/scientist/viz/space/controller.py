@@ -199,11 +199,11 @@ class VizSpaceController:
         Redraw performance space
         '''
         # load data
-        X, Y, Y_expected, pareto, batch_id = self.data_agent.load(['X', 'Y', 'Y_expected', 'pareto', 'batch_id'])
+        X, Y, Y_expected, pareto, batch = self.data_agent.load(['X', 'Y', 'Y_expected', 'pareto', 'batch'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         if len(valid_idx) == 0: return
-        X, Y, Y_expected, pareto, batch_id = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], pareto[valid_idx], batch_id[valid_idx]
-        max_iter = batch_id[-1]
+        X, Y, Y_expected, pareto, batch = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], pareto[valid_idx], batch[valid_idx]
+        max_iter = batch[-1]
 
         if reset_scaler:
             # reset the max iteration of scaler
@@ -215,10 +215,10 @@ class VizSpaceController:
                 # no need to redraw performance space if not focusing on the max iteration
                 return
 
-        if draw_iter is not None and draw_iter < batch_id[-1]:
-            draw_idx = batch_id <= draw_iter
-            X, Y, Y_expected, batch_id = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch_id[draw_idx]
-            max_iter = batch_id[-1]
+        if draw_iter is not None and draw_iter < batch[-1]:
+            draw_idx = batch <= draw_iter
+            X, Y, Y_expected, batch = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch[draw_idx]
+            max_iter = batch[-1]
             pareto = check_pareto(Y, self.problem_cfg['obj_type'])
         
         # replot evaluated & pareto points
@@ -255,14 +255,14 @@ class VizSpaceController:
         self.line_y_pred_list = []
 
         if max_iter > 0:
-            last_batch_idx = np.where(batch_id == max_iter)[0]
+            last_batch = np.where(batch == max_iter)[0]
             if n_obj == 2:
-                self.scatter_y_new.set_offsets(Y[last_batch_idx])
-                self.scatter_y_pred.set_offsets(Y_expected[last_batch_idx])
+                self.scatter_y_new.set_offsets(Y[last_batch])
+                self.scatter_y_pred.set_offsets(Y_expected[last_batch])
             elif n_obj == 3:
-                self.scatter_y_new._offsets3d = Y[last_batch_idx].T
-                self.scatter_y_pred._offsets3d = Y_expected[last_batch_idx].T
-            for y, y_expected in zip(Y[last_batch_idx], Y_expected[last_batch_idx]):
+                self.scatter_y_new._offsets3d = Y[last_batch].T
+                self.scatter_y_pred._offsets3d = Y_expected[last_batch].T
+            for y, y_expected in zip(Y[last_batch], Y_expected[last_batch]):
                 line = self.view.ax1.plot(*[[y[i], y_expected[i]] for i in range(n_obj)], '--', color='m', alpha=0.5)[0]
                 line.set_visible(line_vis)
                 self.line_y_pred_list.append(line)
