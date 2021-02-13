@@ -225,10 +225,9 @@ class DataAgent:
         '''
         # read current data from database
         X, Y = self.load(['X', 'Y'])
+        X_next = X[np.array(rowids) - 1]
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         X, Y = X[valid_idx], Y[valid_idx]
-
-        X_next = X[np.array(rowids) - 1]
 
         # predict performance of given input X_next
         Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
