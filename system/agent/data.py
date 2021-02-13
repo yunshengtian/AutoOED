@@ -75,85 +75,81 @@ class DataAgent:
         else:
             raise NotImplementedError
 
+    def _insert(self, key_list, data_list):
+        '''
+        '''
+        sample_len = len(data_list[0])
+        for data in data_list:
+            assert len(data) == sample_len
+
+        # compute batch number
+        batch_history = self.db.select_data(table=self.table_name, column='batch')
+        if len(batch_history) == 0:
+            batch = np.zeros(sample_len, dtype=int)
+        else:
+            batch = batch_history[-1][0] + 1
+            batch = np.full(sample_len, batch)
+
+        # insert data
+        rowids = self.db.insert_multiple_data(table=self.table_name, column=self._map_key(key_list + ['batch'], flatten=True), 
+            data=data_list + [batch], transform=True)
+        return rowids
+
+    def insert_design(self, X):
+        '''
+        '''
+        return self._insert(key_list=['X'], data_list=[X])
+
+    def insert_design_and_prediction(self, X, Y_expected, Y_uncertainty):
+        '''
+        '''
+        return self._insert(key_list=['X', 'Y_expected', 'Y_uncertainty'], data_list=[X, Y_expected, Y_uncertainty])
+
+    def insert_design_and_evaluation(self, X, Y):
+        '''
+        '''
+        return self._insert(key_list=['X', 'Y'], data_list=[X, Y])
+
+    def update_prediction(self, Y_expected, Y_uncertainty, rowids):
+        '''
+        '''
+        # update data (Y_expected, Y_uncertainty)
+        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
+            data=[Y_expected, Y_uncertainty], rowid=rowids, transform=True)
+
+    def update_evaluation(self, Y, rowids):
+        '''
+        '''
+        # update data (status, Y)
+        status = ['evaluated'] * len(rowids)
+        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y', 'status'], flatten=True), 
+            data=[Y, status], rowid=rowids, transform=True)
+
+        # load data
+        Y_prev = self.load('Y')
+        if len(Y_prev) == 0:
+            Y_all = Y
+            rowids_all = rowids
+        else:
+            rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
+            Y_prev = Y_prev[rowids_prev - 1]
+            Y_all = np.vstack([Y_prev, Y])
+            rowids_all = np.concatenate([rowids_prev, rowids])
+
+        # update data (pareto)
+        pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
+        self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
+
     def initialize(self, X, Y=None):
         '''
         Initialize database table with initial data X, Y
         '''
         self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
 
-        n_init_sample = X.shape[0]
-
-        batch = np.zeros(n_init_sample, dtype=int)
-
-        if Y is not None:
-            pareto = check_pareto(Y, self.problem_cfg['obj_type']).astype(int)
-
-        # update data
         if Y is None:
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'batch'], flatten=True),
-                data=[X, batch], transform=True)
+            return self.insert_design(X)
         else:
-            status = ['evaluated'] * n_init_sample
-            self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['status', 'X', 'Y', 'pareto', 'batch'], flatten=True),
-                data=[status, X, Y, pareto, batch], transform=True)
-
-        rowids = np.arange(n_init_sample, dtype=int) + 1
-        return rowids.tolist()
-
-    def insert(self, X, Y_expected, Y_uncertainty):
-        '''
-        Insert optimization result to database
-        '''
-        sample_len = len(X)
-
-        # update data
-        batch = self.db.select_data(table=self.table_name, column='batch')[-1][0] + 1
-        batch = np.full(sample_len, batch)
-        self.db.insert_multiple_data(table=self.table_name, column=self._map_key(['X', 'Y_expected', 'Y_uncertainty', 'batch'], flatten=True), 
-            data=[X, Y_expected, Y_uncertainty, batch], transform=True)
-        n_row = self.db.get_n_row(self.table_name)
-            
-        rowids = np.arange(n_row - sample_len, n_row, dtype=int) + 1
-        return rowids.tolist()
-
-    def update(self, y, rowid):
-        '''
-        Update evaluation result to database
-        Input:
-            rowid: row index to be updated (count from 1)
-        '''
-        # update data
-        Y_prev = self.load('Y')
-        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
-        Y_prev = Y_prev[rowids_prev - 1]
-
-        self.db.update_data(table=self.table_name, column=['status'] + self._map_key('Y'), data=['evaluated', y], rowid=rowid, transform=True)
-
-        if len(Y_prev) == 0:
-            self.db.update_data(table=self.table_name, column=['pareto'], data=[1], rowid=rowid, transform=True)
-        else:
-            Y_all = np.vstack([Y_prev, y])
-            rowids_all = np.concatenate([rowids_prev, [rowid]])
-            pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
-            self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
-
-    def update_batch(self, Y, rowids):
-        '''
-        Update batch evaluation result to database
-        Input:
-            rowids: row indices to be updated (count from 1)
-        '''
-        # update data
-        Y_prev = self.load('Y')
-        rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
-        Y_prev = Y_prev[rowids_prev - 1]
-
-        Y_all = np.vstack([Y_prev, Y])
-        rowids_all = np.concatenate([rowids_prev, rowids])
-        pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
-
-        self.db.update_multiple_data(table=self.table_name, column=self._map_key('Y'), data=[Y], rowid=rowids, transform=True)
-        self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
+            return self.insert_design_and_evaluation(X, Y)
 
     def load(self, keys, rowid=None):
         '''
@@ -202,7 +198,7 @@ class DataAgent:
         y_next = evaluate(config, x_next)
 
         # update evaluation result to database
-        self.update(y_next, rowid)
+        self.update_evaluation(np.atleast_2d(y_next), [rowid])
 
     def optimize(self, config, queue=None):
         '''
@@ -217,32 +213,28 @@ class DataAgent:
         X_next, (Y_expected, Y_uncertainty) = optimize(config, X, Y)
 
         # insert optimization and prediction result to database
-        rowids = self.insert(X_next, Y_expected, Y_uncertainty)
+        rowids = self.insert_design_and_prediction(X_next, Y_expected, Y_uncertainty)
 
         if queue is None:
             return rowids
         else:
             queue.put(rowids)
 
-    def predict(self, config, X_next, queue=None):
+    def predict(self, config, rowids):
         '''
-        Performance prediction of given design variables X_next, stored in 'rowids' rows in database
         '''
         # read current data from database
         X, Y = self.load(['X', 'Y'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         X, Y = X[valid_idx], Y[valid_idx]
 
+        X_next = X[np.array(rowids) - 1]
+
         # predict performance of given input X_next
         Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
 
-        # insert design variables and prediction result to database
-        rowids = self.insert(X_next, Y_expected, Y_uncertainty)
-
-        if queue is None:
-            return rowids
-        else:
-            queue.put(rowids)
+        # update prediction result to database
+        self.update_prediction(Y_expected, Y_uncertainty, rowids)
 
     def get_n_init_sample(self):
         batch = self.load('batch')

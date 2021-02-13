@@ -47,8 +47,11 @@ class EnterDesignController:
         data_agent, worker_agent = self.root_controller.data_agent, self.root_controller.worker_agent
         config = self.root_controller.get_config()
 
-        # predict, add result to database
-        rowids = data_agent.predict(config, X_next)
+        # insert design to database
+        rowids = data_agent.insert_design(X_next)
+
+        # update prediction to database
+        data_agent.predict(config, rowids)
 
         # call evaluation worker
         if if_eval:
