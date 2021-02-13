@@ -354,14 +354,8 @@ class ScientistController:
             if self.view.menu_config.entrycget(2, 'state') == tk.DISABLED:
                 self.view.menu_config.entryconfig(2, state=tk.NORMAL)
 
-        # post-process worker logs
-        log_list = []
-        for log in self.worker_agent.read_log():
-            log = log.split('/') 
-            log_text = log[0]
-            log_list.append(log_text)
-
         # log display
+        log_list = self.worker_agent.read_log()
         self.controller['panel_log'].log(log_list)
 
         # check if database has changed

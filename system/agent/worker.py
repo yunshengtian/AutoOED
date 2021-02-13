@@ -81,7 +81,7 @@ class WorkerAgent:
         worker.start()
         self.eval_worker_id += 1
         self.eval_workers_run.append([self.eval_worker_id, worker, rowid])
-        self._add_log(f'evaluation worker {self.eval_worker_id} started' + f'/{rowid}') # NOTE: for passing rowid to gui for updating status
+        self._add_log(f'evaluation worker {self.eval_worker_id} started')
         return True
         
     def _queue_opt_worker(self, n_iter, curr_iter):
@@ -146,7 +146,7 @@ class WorkerAgent:
                 wid, worker, rowid = w
                 if (stop_all or wid == worker_id or rowid == row_id) and worker.is_alive():
                     worker.terminate()
-                    self._add_log(f'evaluation worker {wid} stopped' + f'/{rowid}')
+                    self._add_log(f'evaluation worker {wid} stopped')
                     if worker_id is not None:
                         self.eval_workers_run.remove(w)
                         break
@@ -175,7 +175,7 @@ class WorkerAgent:
                     wid, worker, rowid = w
                     if not worker.is_alive():
                         completed_eval.append(w)
-                        self._add_log(f'evaluation worker {wid} completed' + f'/{rowid}')
+                        self._add_log(f'evaluation worker {wid} completed')
                 
                 # remove completed evaluation workers
                 for w in completed_eval:
