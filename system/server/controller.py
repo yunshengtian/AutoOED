@@ -250,7 +250,7 @@ class ServerController:
         if self.view.widget['db_table'] is None:
             if self.database.check_inited_table_exist(self.table_name):
                 self.database.execute(f'describe {self.table_name}')
-                columns = [res[0] for res in self.database.fetchall() if res[0] != 'rowid']
+                columns = self.database.get_column_names(self.table_name)
                 self.view.init_db_table(columns)
                 problem_name = self.database.query_problem(self.table_name)
                 problem_cfg = get_problem_config(problem_name)

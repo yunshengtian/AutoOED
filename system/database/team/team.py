@@ -357,12 +357,11 @@ class TeamDatabase:
         table_list = [res[0] for res in self.cursor]
         return name in table_list
 
-    def load_table(self, name):
+    def load_table(self, name, column=None):
         '''
         '''
         assert self.check_table_exist(name), f"Table {name} doesn't exist"
-        self.execute(f'select * from {name}')
-        data = [res[1:] for res in self.cursor.fetchall()] # omit rowid
+        data = [res[1:] for res in self.select_data(name, column)] # omit rowid
         return data
 
     @root
@@ -523,6 +522,10 @@ class TeamDatabase:
             query = f"insert into {table} ({','.join(column)}) values ({','.join(['%s'] * len(data))})"
         self.execute(query, data)
 
+        self.execute('select last_insert_id()')
+        rowid = self.fetchone()[0]
+        return rowid
+
     def insert_multiple_data(self, table, column, data, transform=False):
         '''
         '''
@@ -538,6 +541,11 @@ class TeamDatabase:
             # assert len(column) == len(data[0]), 'length mismatch of keys and values'
             query = f"insert into {table} ({','.join(column)}) values ({','.join(['%s'] * len(data[0]))})"
         self.executemany(query, data)
+
+        self.execute('select last_insert_id()')
+        rowid = self.fetchone()[0]
+        rowids = list(range(rowid, rowid + len(data)))
+        return rowids
 
     def _get_rowid_condition(self, rowid):
         '''
@@ -658,7 +666,7 @@ class TeamDatabase:
         '''
         query = f"select column_name from information_schema.columns where table_name = '{table}'"
         self.execute(query)
-        column_names = [res[0] for res in self.cursor]
+        column_names = [res[0] for res in self.cursor if res[0] != 'rowid']
         return column_names
 
     def get_checksum(self, table):

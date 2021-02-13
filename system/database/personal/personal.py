@@ -348,6 +348,10 @@ class PersonalDatabase:
             self.execute(query, data)
             self.commit()
             self._update_checksum()
+            n_row = self.get_n_row(table)
+
+        rowid = n_row
+        return rowid
 
     def insert_multiple_data(self, table, column, data, transform=False):
         '''
@@ -368,6 +372,10 @@ class PersonalDatabase:
             self.executemany(query, data)
             self.commit()
             self._update_checksum()
+            n_row = self.get_n_row(table)
+
+        rowids = list(range(n_row - len(data) + 1, n_row + 1))
+        return rowids
 
     def _get_rowid_condition(self, rowid):
         '''
