@@ -317,7 +317,6 @@ class ScientistController:
         if self.config != old_config:
             self.worker_agent.set_config(self.config)
             self.controller['viz_space'].set_config(self.config)
-            self.controller['viz_stats'].set_config(self.config)
 
         return True
 

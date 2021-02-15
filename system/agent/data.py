@@ -1,9 +1,9 @@
 import os
 import numpy as np
-from multiprocessing import Value
+from multiprocessing import Lock
 
 from system.utils.core import optimize, predict, evaluate
-from system.utils.performance import check_pareto
+from system.utils.performance import check_pareto, calc_hypervolume, calc_pred_error
 
 
 class DataAgent:
@@ -17,12 +17,20 @@ class DataAgent:
         self.problem_cfg = None
         self.key_map = None
         self.type_map = None
+        self.ref_point = None
+
+        self.lock = Lock()
 
     def configure(self, problem_cfg):
         '''
         '''
         assert problem_cfg is not None
+        first_time = self.problem_cfg == None
         self.problem_cfg = problem_cfg.copy()
+        if first_time:
+            self.ref_point = self.problem_cfg['ref_point']
+        else:
+            self.set_ref_point(self.problem_cfg['ref_point'])
 
         # mapping from keys to database columns (e.g., X -> [x1, x2, ...])
         self.key_map = {
@@ -31,8 +39,8 @@ class DataAgent:
             'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
             'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
             'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
-            'pareto': 'pareto',
-            'batch': 'batch',
+            'pareto': 'pareto', 'batch': 'batch', 
+            '_order': '_order', '_hypervolume': '_hypervolume',
         }
 
         var_type_map = {
@@ -52,6 +60,8 @@ class DataAgent:
             'Y_uncertainty': float,
             'pareto': bool,
             'batch': int,
+            '_order': int,
+            '_hypervolume': float,
         }
 
     def _map_key(self, key, flatten=False):
@@ -72,6 +82,14 @@ class DataAgent:
                     else:
                         result.append(mapped_key)
                 return result
+        else:
+            raise NotImplementedError
+
+    def _get_valid_idx(self, data):
+        if len(data.shape) == 1:
+            return np.where((~np.isnan(data)).all())[0]
+        elif len(data.shape) == 2:
+            return np.where((~np.isnan(data)).all(axis=1))[0]
         else:
             raise NotImplementedError
 
@@ -108,7 +126,9 @@ class DataAgent:
     def insert_design_and_evaluation(self, X, Y):
         '''
         '''
-        return self._insert(key_list=['X', 'Y'], data_list=[X, Y])
+        rowids = self.insert_design(X)
+        self.update_evaluation(Y, rowids)
+        return rowids
 
     def update_prediction(self, Y_expected, Y_uncertainty, rowids):
         '''
@@ -117,28 +137,135 @@ class DataAgent:
         self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
             data=[Y_expected, Y_uncertainty], rowid=rowids, transform=True)
 
+    def _update_hypervolume(self, rowids):
+        '''
+        '''
+        if self.ref_point is None: return
+
+        # load and check order (assume only called after some evaluations)
+        all_order = self.load('_order')
+        assert (all_order >= 0).any()
+        curr_order = all_order[np.array(rowids) - 1]
+        assert (curr_order >= 0).all()
+
+        # find previously evaluated Y
+        min_curr_order = np.min(curr_order)
+        prev_order_idx = np.logical_and(all_order < min_curr_order, all_order >= 0)
+        Y_all = self.load('Y')
+        Y = Y_all[prev_order_idx]
+        
+        # compute hypervolume according to evaluation order
+        hv_list = []
+        for rowid in rowids:
+            if len(Y) > 0:
+                Y = np.vstack([Y, np.atleast_2d(Y_all[rowid - 1])])
+            else:
+                Y = np.atleast_2d(Y_all[rowid - 1])
+            hv = calc_hypervolume(Y, self.ref_point, self.problem_cfg['obj_type'])
+            hv_list.append(hv)
+
+        self.db.update_multiple_data(table=self.table_name, column=['_hyperolume'], data=[hv_list], rowid=rowids, transform=True)
+        
     def update_evaluation(self, Y, rowids):
         '''
         '''
-        # update data (status, Y)
+        # update data (Y, status, _order)
         status = ['evaluated'] * len(rowids)
-        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y', 'status'], flatten=True), 
-            data=[Y, status], rowid=rowids, transform=True)
-
-        # load data
-        Y_prev = self.load('Y')
-        if len(Y_prev) == 0:
-            Y_all = Y
-            rowids_all = rowids
-        else:
-            rowids_prev = np.where((~np.isnan(Y_prev)).all(axis=1))[0] + 1
-            Y_prev = Y_prev[rowids_prev - 1]
-            Y_all = np.vstack([Y_prev, Y])
-            rowids_all = np.concatenate([rowids_prev, rowids])
+        with self.lock:
+            prev_order = self.load('_order')
+            valid_idx = prev_order >= 0
+            max_order = np.max(prev_order[valid_idx]) + 1 if valid_idx.any() else 0
+            order = np.arange(max_order, max_order + len(rowids))
+            self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y', 'status', '_order'], flatten=True), 
+                data=[Y, status, order], rowid=rowids, transform=True)
 
         # update data (pareto)
+        Y_all = self.load('Y')
+        valid_idx = self._get_valid_idx(Y_all)
+        Y_all = Y_all[valid_idx]
+        rowids_all = valid_idx + 1
         pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
         self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
+
+        # update data (hypervolume)
+        self._update_hypervolume(rowids)
+
+    def _reload_hypervolume(self):
+        '''
+        '''
+        if self.ref_point is None: return
+
+        # load and check order
+        all_order, Y = self.load(['_order', 'Y'])
+        if len(all_order) == 0: return
+        valid_idx = all_order >= 0
+        if not valid_idx.any(): return
+
+        # compute hypervolume according to evaluation order
+        rowids = []
+        hv_list = []
+        Y_curr = np.zeros((0, Y.shape[1]))
+        for i in range(valid_idx.sum()):
+            idx = np.where(all_order == i)[0]
+            rowids.append(idx + 1)
+            Y_curr = np.vstack([Y_curr, np.atleast_2d(Y[idx])])
+            hv = calc_hypervolume(Y_curr, self.ref_point, self.problem_cfg['obj_type'])
+            hv_list.append(hv)
+
+        self.db.update_multiple_data(table=self.table_name, column=['_hyperolume'], data=[hv_list], rowid=rowids, transform=True)
+
+    def set_ref_point(self, ref_point=None):
+        '''
+        '''
+        # compute reference point based on current data
+        if ref_point is None:
+            Y = self.load('Y')
+            valid_idx = self._get_valid_idx(Y)
+            assert len(valid_idx) > 0, 'no evaluated data so far, cannot set default reference point'
+            Y = Y[valid_idx]
+
+            ref_point = np.zeros(Y.shape[1])
+            for i, m in enumerate(self.problem_cfg['obj_type']):
+                if m == 'min':
+                    ref_point[i] = np.max(Y[:, i])
+                elif m == 'max':
+                    ref_point[i] = np.min(Y[:, i])
+                else:
+                    raise Exception('obj_type must be min/max')
+
+        assert len(ref_point) == self.problem_cfg['n_obj']
+        if (ref_point != self.ref_point).any():
+            self.ref_point = ref_point
+            self._reload_hypervolume()
+
+    def load_hypervolume(self):
+        '''
+        '''
+        order, hypervolume = self.load(['_order', '_hypervolume'])
+        if len(order) == 0: return np.array([])
+        valid_idx = order >= 0
+        if valid_idx.sum() == 0: return np.array([])
+        order, hypervolume = order[valid_idx], hypervolume[valid_idx]
+
+        ordered_hypervolume = np.zeros_like(hypervolume)
+        ordered_hypervolume[order] = hypervolume
+        return ordered_hypervolume
+
+    def load_model_error(self):
+        '''
+        '''
+        order, Y, Y_expected = self.load(['_order', 'Y', 'Y_expected'])
+        if len(order) == 0: return np.array([])
+        valid_idx = order >= 0
+        if valid_idx.sum() == 0: return np.array([])
+        order, Y, Y_expected = order[valid_idx], Y[valid_idx], Y_expected[valid_idx]
+
+        ordered_Y, ordered_Y_expected = np.zeros_like(Y), np.zeros_like(Y_expected)
+        ordered_Y[order] = Y
+        ordered_Y_expected[order] = Y_expected
+        valid_idx = np.intersect1d(self._get_valid_idx(ordered_Y), self._get_valid_idx(ordered_Y_expected))
+        ordered_Y, ordered_Y_expected = ordered_Y[valid_idx], ordered_Y_expected[valid_idx]
+        return calc_pred_error(ordered_Y, ordered_Y_expected, average=False)
 
     def initialize(self, X, Y=None):
         '''
@@ -146,10 +273,13 @@ class DataAgent:
         '''
         self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
 
-        if Y is None:
-            return self.insert_design(X)
-        else:
-            return self.insert_design_and_evaluation(X, Y)
+        rowids = self.insert_design(X)
+
+        if Y is not None:
+            self.update_evaluation(Y, rowids)
+            if self.ref_point is None: self.set_ref_point()
+
+        return rowids
 
     def load(self, keys, rowid=None):
         '''
@@ -182,7 +312,11 @@ class DataAgent:
 
         else:
             dtype = self.type_map[keys]
-            return np.array(data, dtype=dtype)
+            result = np.array(data, dtype=dtype)
+            if type(self._map_key(keys)) == str:
+                return result.squeeze()
+            else:
+                return result
 
     def evaluate(self, config, rowid):
         '''
@@ -206,7 +340,7 @@ class DataAgent:
         '''
         # read current data from database
         X, Y = self.load(['X', 'Y'])
-        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        valid_idx = self._get_valid_idx(Y)
         X, Y = X[valid_idx], Y[valid_idx]
 
         # optimize for best X_next
@@ -226,7 +360,7 @@ class DataAgent:
         # read current data from database
         X, Y = self.load(['X', 'Y'])
         X_next = X[np.array(rowids) - 1]
-        valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
+        valid_idx = self._get_valid_idx(Y)
         X, Y = X[valid_idx], Y[valid_idx]
 
         # predict performance of given input X_next

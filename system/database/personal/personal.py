@@ -247,6 +247,7 @@ class PersonalDatabase:
         for i in range(1, n_obj + 1):
             description.append(f'f{i}_uncertainty float')
         description += ['pareto boolean', 'batch int not null']
+        description += ['_order int default -1', '_hypervolume float']
         
         with SafeLock(self.lock):
             self.execute(f'create table {name} ({",".join(description)})')
