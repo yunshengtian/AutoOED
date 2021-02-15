@@ -164,7 +164,7 @@ class DataAgent:
             hv = calc_hypervolume(Y, self.ref_point, self.problem_cfg['obj_type'])
             hv_list.append(hv)
 
-        self.db.update_multiple_data(table=self.table_name, column=['_hyperolume'], data=[hv_list], rowid=rowids, transform=True)
+        self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
         
     def update_evaluation(self, Y, rowids):
         '''
@@ -212,7 +212,7 @@ class DataAgent:
             hv = calc_hypervolume(Y_curr, self.ref_point, self.problem_cfg['obj_type'])
             hv_list.append(hv)
 
-        self.db.update_multiple_data(table=self.table_name, column=['_hyperolume'], data=[hv_list], rowid=rowids, transform=True)
+        self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
 
     def set_ref_point(self, ref_point=None):
         '''

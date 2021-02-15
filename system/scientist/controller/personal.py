@@ -237,6 +237,7 @@ class ScientistController:
                     while not self.worker_agent.empty():
                         self.worker_agent.refresh()
                         sleep(self.refresh_rate / 1000.0)
+                    self.data_agent.set_ref_point(self.problem_cfg['ref_point'])
 
             # calculate reference point
             if self.config['problem']['ref_point'] is None:
