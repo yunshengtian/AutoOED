@@ -219,7 +219,7 @@ class ScientistController:
             # TODO: give hint of initializing
 
             # configure
-            self.agent.configure(problem)
+            self.agent.set_problem(self.problem_cfg['name'])
             self.controller['panel_info'].set_info(self.problem_cfg)
 
             if not table_exist:

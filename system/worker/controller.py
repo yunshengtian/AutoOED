@@ -94,7 +94,7 @@ class WorkerController:
         problem_name = self.database.query_problem(self.table_name)
         if problem_name is not None:
             problem_cfg = get_problem_config(problem_name)
-            self.agent.configure(problem_cfg)
+            self.agent.set_problem(problem_name)
             self.view.widget['problem_info'].set_info(problem_cfg)
 
         self.root.after(self.refresh_rate, self.refresh)
@@ -136,9 +136,8 @@ class WorkerController:
                 self.view.init_db_table(columns)
                 problem_name = self.database.query_problem(self.table_name)
                 problem_cfg = get_problem_config(problem_name)
+                self.agent.set_problem(problem_name)
                 self.view.widget['problem_info'].set_info(problem_cfg)
-                self.agent.configure(problem_cfg)
-                self.agent.init_table(create=False)
             else:
                 return
 

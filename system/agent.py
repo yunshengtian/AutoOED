@@ -2,6 +2,7 @@ import os
 import numpy as np
 from multiprocessing import Lock
 
+from problem.common import build_problem
 from system.utils.core import optimize, predict, evaluate
 from system.utils.performance import check_pareto, calc_hypervolume, calc_pred_error
 
@@ -22,11 +23,12 @@ class Agent:
 
         self.lock = Lock()
 
-    def configure(self, problem):
+    def set_problem(self, name):
         '''
         '''
         first_time = self.problem_cfg == None
-        self.problem_cfg = problem.get_config()
+        problem = build_problem(name) 
+        self.problem_cfg = problem.get_config()      
         self.can_eval = hasattr(problem, 'evaluate_objective') or self.problem_cfg['obj_func'] is not None
         if first_time:
             self.ref_point = self.problem_cfg['ref_point']
