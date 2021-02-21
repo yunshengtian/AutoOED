@@ -4,7 +4,7 @@ from tkinter import messagebox
 from problem.common import get_problem_config
 from system.params import *
 from system.database import TeamDatabase
-from system.agent import DataAgent
+from system.agent import Agent
 from .view import WorkerLoginView, WorkerView
 
 from .auto_set_script import AutoSetScriptController
@@ -32,7 +32,7 @@ class WorkerController:
         self.problem_info = None
         self.eval_script = None
 
-        self.data_agent = None
+        self.agent = None
 
         self.refresh_rate = REFRESH_RATE
 
@@ -89,12 +89,12 @@ class WorkerController:
         self.view = WorkerView(self.root)
         self.bind_command()
         
-        self.data_agent = DataAgent(self.database, self.table_name)
+        self.agent = Agent(self.database, self.table_name)
 
         problem_name = self.database.query_problem(self.table_name)
         if problem_name is not None:
             problem_cfg = get_problem_config(problem_name)
-            self.data_agent.configure(problem_cfg)
+            self.agent.configure(problem_cfg)
             self.view.widget['problem_info'].set_info(problem_cfg)
 
         self.root.after(self.refresh_rate, self.refresh)
@@ -137,8 +137,8 @@ class WorkerController:
                 problem_name = self.database.query_problem(self.table_name)
                 problem_cfg = get_problem_config(problem_name)
                 self.view.widget['problem_info'].set_info(problem_cfg)
-                self.data_agent.configure(problem_cfg)
-                self.data_agent.init_table(create=False)
+                self.agent.configure(problem_cfg)
+                self.agent.init_table(create=False)
             else:
                 return
 
@@ -216,4 +216,4 @@ class WorkerController:
     def update_data(self, Y, rowids):
         '''
         '''
-        self.data_agent.update_batch(Y, rowids)
+        self.agent.update_evaluation(Y, rowids)

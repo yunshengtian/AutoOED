@@ -43,10 +43,7 @@ class Problem(PymooProblem):
         self.transformation = get_transformation(self.config)
 
         # import objective evaluation function
-        if self.config['obj_func'] is None:
-            if not hasattr(self, 'evaluate_objective'):
-                raise Exception('no objective function is provided')
-        else:
+        if self.config['obj_func'] is not None:
             self.evaluate_objective = import_obj_func(self.config['obj_func'], self.config['n_var'], self.config['n_obj'])
 
         # import constraint evaluation function

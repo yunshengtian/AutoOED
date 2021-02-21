@@ -51,7 +51,7 @@ class EnterPerformanceController:
 
         n_obj = self.root_controller.get_problem_cfg()['n_obj']
         table = self.root_controller.get_table()
-        data_agent = self.root_controller.data_agent
+        agent = self.root_controller.agent
 
         # check for overwriting
         overwrite = False
@@ -70,4 +70,4 @@ class EnterPerformanceController:
         self.view.window.destroy()
 
         # update database
-        data_agent.update_batch(Y, rowids)
+        agent.update_evaluation(Y, rowids)

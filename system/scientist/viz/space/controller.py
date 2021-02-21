@@ -12,7 +12,7 @@ class VizSpaceController:
 
         # set values from root
         self.config, self.problem_cfg = self.root_controller.config, self.root_controller.problem_cfg
-        self.data_agent = self.root_controller.data_agent
+        self.agent = self.root_controller.agent
 
         self.view = VizSpaceView(self.root_view, self.problem_cfg)
 
@@ -199,7 +199,7 @@ class VizSpaceController:
         Redraw performance space
         '''
         # load data
-        X, Y, Y_expected, pareto, batch = self.data_agent.load(['X', 'Y', 'Y_expected', 'pareto', 'batch'])
+        X, Y, Y_expected, pareto, batch = self.agent.load(['X', 'Y', 'Y_expected', 'pareto', 'batch'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         if len(valid_idx) == 0: return
         X, Y, Y_expected, pareto, batch = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], pareto[valid_idx], batch[valid_idx]

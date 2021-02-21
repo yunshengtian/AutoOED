@@ -6,7 +6,7 @@ from system.utils.core import optimize, predict, evaluate
 from system.utils.performance import check_pareto, calc_hypervolume, calc_pred_error
 
 
-class DataAgent:
+class Agent:
     '''
     Agent controlling data communication from & to database
     '''
@@ -15,18 +15,19 @@ class DataAgent:
         self.table_name = table_name
 
         self.problem_cfg = None
+        self.can_eval = False
         self.key_map = None
         self.type_map = None
         self.ref_point = None
 
         self.lock = Lock()
 
-    def configure(self, problem_cfg):
+    def configure(self, problem):
         '''
         '''
-        assert problem_cfg is not None
         first_time = self.problem_cfg == None
-        self.problem_cfg = problem_cfg.copy()
+        self.problem_cfg = problem.get_config()
+        self.can_eval = hasattr(problem, 'evaluate_objective') or self.problem_cfg['obj_func'] is not None
         if first_time:
             self.ref_point = self.problem_cfg['ref_point']
         else:
@@ -64,6 +65,10 @@ class DataAgent:
             '_hypervolume': float,
         }
 
+    '''
+    Utilities
+    '''
+
     def _map_key(self, key, flatten=False):
         '''
         Get mapped keys from self.key_map
@@ -87,11 +92,15 @@ class DataAgent:
 
     def _get_valid_idx(self, data):
         if len(data.shape) == 1:
-            return np.where((~np.isnan(data)).all())[0]
+            return np.where((~np.isnan(data)))[0]
         elif len(data.shape) == 2:
             return np.where((~np.isnan(data)).all(axis=1))[0]
         else:
             raise NotImplementedError
+
+    '''
+    Design and performance
+    '''
 
     def _insert(self, key_list, data_list):
         '''
@@ -136,6 +145,34 @@ class DataAgent:
         # update data (Y_expected, Y_uncertainty)
         self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
             data=[Y_expected, Y_uncertainty], rowid=rowids, transform=True)
+        
+    def update_evaluation(self, Y, rowids):
+        '''
+        '''
+        # update data (Y, status, _order)
+        status = ['evaluated'] * len(rowids)
+        with self.lock:
+            prev_order = self.load('_order')
+            valid_idx = prev_order >= 0
+            max_order = np.max(prev_order[valid_idx]) + 1 if valid_idx.any() else 0
+            order = np.arange(max_order, max_order + len(rowids))
+            self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y', 'status', '_order'], flatten=True), 
+                data=[Y, status, order], rowid=rowids, transform=True)
+
+        # update data (pareto)
+        Y_all = self.load('Y')
+        valid_idx = self._get_valid_idx(Y_all)
+        Y_all = Y_all[valid_idx]
+        rowids_all = valid_idx + 1
+        pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
+        self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
+
+        # update data (hypervolume)
+        self._update_hypervolume(rowids)
+
+    '''
+    Hypervolume and model error
+    '''
 
     def _update_hypervolume(self, rowids):
         '''
@@ -165,30 +202,6 @@ class DataAgent:
             hv_list.append(hv)
 
         self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
-        
-    def update_evaluation(self, Y, rowids):
-        '''
-        '''
-        # update data (Y, status, _order)
-        status = ['evaluated'] * len(rowids)
-        with self.lock:
-            prev_order = self.load('_order')
-            valid_idx = prev_order >= 0
-            max_order = np.max(prev_order[valid_idx]) + 1 if valid_idx.any() else 0
-            order = np.arange(max_order, max_order + len(rowids))
-            self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y', 'status', '_order'], flatten=True), 
-                data=[Y, status, order], rowid=rowids, transform=True)
-
-        # update data (pareto)
-        Y_all = self.load('Y')
-        valid_idx = self._get_valid_idx(Y_all)
-        Y_all = Y_all[valid_idx]
-        rowids_all = valid_idx + 1
-        pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
-        self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
-
-        # update data (hypervolume)
-        self._update_hypervolume(rowids)
 
     def _reload_hypervolume(self):
         '''
@@ -206,7 +219,7 @@ class DataAgent:
         hv_list = []
         Y_curr = np.zeros((0, Y.shape[1]))
         for i in range(valid_idx.sum()):
-            idx = np.where(all_order == i)[0]
+            idx = int(np.where(all_order == i)[0][0])
             rowids.append(idx + 1)
             Y_curr = np.vstack([Y_curr, np.atleast_2d(Y[idx])])
             hv = calc_hypervolume(Y_curr, self.ref_point, self.problem_cfg['obj_type'])
@@ -267,19 +280,50 @@ class DataAgent:
         ordered_Y, ordered_Y_expected = ordered_Y[valid_idx], ordered_Y_expected[valid_idx]
         return calc_pred_error(ordered_Y, ordered_Y_expected, average=False)
 
-    def initialize(self, X, Y=None):
+    '''
+    High-level commands
+    '''
+
+    def initialize(self, X_evaluated, X_unevaluated, Y_evaluated):
         '''
         Initialize database table with initial data X, Y
         '''
         self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
 
-        rowids = self.insert_design(X)
+        # check validity of input
+        assert (X_unevaluated is not None) or (X_evaluated is not None)
+        if X_evaluated is not None:
+            assert Y_evaluated is not None
+            assert len(X_evaluated) == len(Y_evaluated)
 
-        if Y is not None:
-            self.update_evaluation(Y, rowids)
-            if self.ref_point is None: self.set_ref_point()
+        if X_evaluated is not None and X_unevaluated is not None:
+            rowids = self.insert_design([X_evaluated, X_unevaluated])
+            rowids_evaluated, rowids_unevaluated = rowids[:len(X_evaluated)], rowids[len(X_evaluated):]
+        elif X_evaluated is not None:
+            rowids = self.insert_design(X_evaluated)
+            rowids_evaluated, rowids_unevaluated = rowids, None
+        elif X_unevaluated is not None:
+            rowids = self.insert_design(X_unevaluated)
+            rowids_evaluated, rowids_unevaluated = None, rowids
+        else:
+            raise Exception()
 
-        return rowids
+        if Y_evaluated is not None:
+            self.update_evaluation(Y_evaluated, rowids_evaluated)
+
+        return rowids_unevaluated
+
+    def check_initialized(self):
+        '''
+        '''
+        exist = self.db.check_inited_table_exist(name=self.table_name)
+        if exist:
+            batch, order = self.load(['batch', '_order'])
+            if len(batch) == 0: return False
+            init_idx = np.where(batch == 0)[0]
+            return (order[init_idx] >= 0).all()
+        else:
+            return False
 
     def load(self, keys, rowid=None):
         '''
@@ -322,6 +366,7 @@ class DataAgent:
         '''
         Evaluation of design variables given the associated rowid in database
         '''
+        if not self.can_eval: return
         self.db.connect(force=True)
         
         # load design variables
@@ -369,6 +414,17 @@ class DataAgent:
         # update prediction result to database
         self.update_prediction(Y_expected, Y_uncertainty, rowids)
 
+    def quit(self):
+        '''
+        Quit database
+        '''
+        if self.db is not None:
+            self.db.quit()
+
+    '''
+    Status
+    '''
+
     def get_n_init_sample(self):
         batch = self.load('batch')
         return np.sum(batch == 0)
@@ -380,9 +436,9 @@ class DataAgent:
         status = self.load('status')
         return np.sum(status == 'evaluated')
 
-    def quit(self):
-        '''
-        Quit database
-        '''
-        if self.db is not None:
-            self.db.quit()
+    def get_max_hv(self):
+        hypervolume = self.load('_hypervolume')
+        if len(hypervolume) == 0: return None
+        valid_idx = self._get_valid_idx(hypervolume)
+        if len(valid_idx) == 0: return None
+        return hypervolume[valid_idx].max()

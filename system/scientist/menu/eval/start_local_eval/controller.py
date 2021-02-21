@@ -45,7 +45,6 @@ class StartLocalEvalController:
 
         n_obj = self.root_controller.get_problem_cfg()['n_obj']
         table = self.root_controller.get_table()
-        worker_agent = self.root_controller.worker_agent
 
         # check for overwriting
         overwrite = False
@@ -57,5 +56,5 @@ class StartLocalEvalController:
 
         self.view.window.destroy()
 
-        for rowid in rowids:
-            worker_agent.add_eval_worker(rowid)
+        config, scheduler = self.root_controller.get_config(), self.root_controller.scheduler
+        scheduler.evaluate_manual(config, rowids)

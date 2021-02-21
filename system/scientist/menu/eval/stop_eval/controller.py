@@ -45,7 +45,7 @@ class StopEvalController:
 
         self.view.window.destroy()
         
-        worker_agent = self.root_controller.worker_agent
+        scheduler = self.root_controller.scheduler
 
         for rowid in rowids:
-            worker_agent.stop_eval_worker(row_id=rowid)
+            scheduler.stop_evaluate(rowid=rowid)

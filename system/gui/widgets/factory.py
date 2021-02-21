@@ -68,6 +68,23 @@ def create_checkbutton(master, row, column, text,
         return variable
 
 
+def create_radiobutton(master, row, column, text_list, default=None, orientation='horizontal',
+        rowspan=1, columnspan=1, padx=padx, pady=pady, sticky=None):
+    assert orientation in ['horizontal', 'vertical']
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+    var = tk.StringVar(master=None, value=default)
+    buttons = {}
+    for i, text in enumerate(text_list):
+        button = ttk.Radiobutton(master=frame, text=text, variable=var, value=text)
+        if orientation == 'horizontal':
+            button.grid(row=0, column=i)
+        elif orientation == 'vertical':
+            button.grid(row=1, column=0)
+        buttons[text] = button
+    variable = get_variable('radiobutton', var, buttons)
+    return variable
+
+
 def create_spinbox(master, row, column, text, from_, to, width=entry_width,
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky=None, return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
@@ -180,6 +197,7 @@ def create_widget(name, *args, **kwargs):
         'button': create_button,
         'entry': create_entry,
         'checkbutton': create_checkbutton,
+        'radiobutton': create_radiobutton,
         'spinbox': create_spinbox,
         'labeled_frame': create_labeled_frame,
         'labeled_combobox': create_labeled_combobox,

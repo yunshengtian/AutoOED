@@ -53,6 +53,26 @@ class CheckbuttonVar(Variable):
         self.var.set(int(val))
 
 
+class RadiobuttonVar(Variable):
+    '''
+    Variable for radiobutton
+    '''
+    def enable(self, readonly=None):
+        '''
+        Enable changing variable value
+        '''
+        for widget in self.widget.values():
+            if widget['state'] != 'normal':
+                widget.configure(state='normal')
+    
+    def disable(self):
+        '''
+        Disable changing variable value
+        '''
+        for widget in self.widget.values():
+            if widget['state'] != 'disabled':
+                widget.configure(state='disabled')
+
 class SpinboxVar(Variable):
     '''
     Variable for spinbox
@@ -66,6 +86,7 @@ def get_variable(name, *args, **kwargs):
     '''
     factory = {
         'checkbutton': CheckbuttonVar,
+        'radiobutton': RadiobuttonVar,
         'spinbox': SpinboxVar,
     }
     return factory[name](*args, **kwargs)

@@ -13,7 +13,8 @@ import tkinter as tk
 from tkinter import messagebox
 from system.params import *
 from system.database import PersonalDatabase
-from system.agent import DataAgent, WorkerAgent
+from system.agent import Agent
+from system.scheduler import Scheduler
 
 from system.scientist.view.init import ScientistInitView
 from system.scientist.view.main import ScientistView
@@ -96,8 +97,8 @@ class ScientistController:
         self.problem_cfg = None
         self.timestamp = None
 
-        self.data_agent = DataAgent(self.database, self.table_name)
-        self.worker_agent = WorkerAgent(self.data_agent)
+        self.agent = Agent(self.database, self.table_name)
+        self.scheduler = Scheduler(self.agent)
 
         self.true_pfront = None
 
@@ -217,42 +218,13 @@ class ScientistController:
 
             # TODO: give hint of initializing
 
-            # configure agents
-            self.data_agent.configure(self.problem_cfg)
-            self.worker_agent.configure(mode='manual', config=config, eval=hasattr(problem, 'evaluate_objective'))
-
+            # configure
+            self.agent.configure(problem)
             self.controller['panel_info'].set_info(self.problem_cfg)
 
             if not table_exist:
                 # data initialization
-                X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, config['problem']['n_random_sample'], config['problem']['init_sample_path'])
-                if X_init_evaluated is not None:
-                    self.data_agent.initialize(X_init_evaluated, Y_init_evaluated)
-                if X_init_unevaluated is not None:
-                    rowids = self.data_agent.initialize(X_init_unevaluated)
-                    for rowid in rowids:
-                        self.worker_agent.add_eval_worker(rowid)
-                    
-                    # wait until initialization is completed
-                    while not self.worker_agent.empty():
-                        self.worker_agent.refresh()
-                        sleep(self.refresh_rate / 1000.0)
-                    self.data_agent.set_ref_point(self.problem_cfg['ref_point'])
-
-            # calculate reference point
-            if self.config['problem']['ref_point'] is None:
-                Y = self.data_agent.load('Y')
-                valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
-                Y = Y[valid_idx]
-                ref_point = np.zeros(problem.n_obj)
-                for i, m in enumerate(problem.obj_type):
-                    if m == 'min':
-                        ref_point[i] = np.max(Y[:, i])
-                    elif m == 'max':
-                        ref_point[i] = np.min(Y[:, i])
-                    else:
-                        raise Exception('obj_type must be min/max')
-                self.config['problem']['ref_point'] = ref_point
+                self.scheduler.initialize(self.config, problem)
 
             # initialize visualization widgets
             self._init_visualization()
@@ -273,9 +245,7 @@ class ScientistController:
 
             # activate widgets
             entry_mode = self.controller['panel_control'].view.widget['mode']
-            entry_mode.enable(readonly=False)
-            entry_mode.set('manual')
-            entry_mode.enable(readonly=True)
+            entry_mode.enable()
 
             entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
             entry_batch_size.enable()
@@ -284,14 +254,8 @@ class ScientistController:
             except:
                 entry_batch_size.set(5)
 
-            entry_n_iter = self.controller['panel_control'].view.widget['n_iter']
-            entry_n_iter.enable()
-            try:
-                entry_n_iter.set(self.config['experiment']['n_iter'])
-            except:
-                entry_n_iter.set(1)
-
-            self.controller['panel_control'].view.widget['optimize'].enable()
+            self.controller['panel_control'].view.widget['optimize_manual'].enable()
+            self.controller['panel_control'].view.widget['optimize_auto'].enable()
             self.controller['panel_control'].view.widget['set_stop_cri'].enable()
 
             self.controller['panel_log'].view.widget['clear'].enable()
@@ -316,7 +280,6 @@ class ScientistController:
         self.database.update_config(name=self.table_name, config=self.config)
         
         if self.config != old_config:
-            self.worker_agent.set_config(self.config)
             self.controller['viz_space'].set_config(self.config)
 
         return True
@@ -331,20 +294,16 @@ class ScientistController:
         '''
         Refresh current GUI status and redraw if data has changed
         '''
-        self.worker_agent.refresh()
+        self.scheduler.refresh()
         
         # can optimize and load config when worker agent is empty
-        if self.worker_agent.empty():
-            self.controller['panel_control'].view.widget['mode'].enable()
-            self.controller['panel_control'].view.widget['optimize'].enable()
-            self.controller['panel_control'].view.widget['stop'].disable()
-            if self.view.menu_config.entrycget(0, 'state') == tk.DISABLED:
-                self.view.menu_config.entryconfig(0, state=tk.NORMAL)
-            if self.view.menu_config.entrycget(2, 'state') == tk.DISABLED:
-                self.view.menu_config.entryconfig(2, state=tk.NORMAL)
+        if not self.scheduler.is_optimizing():
+            self.controller['panel_control'].enable_manual()
+            if not self.scheduler.is_evaluating_auto():
+                self.controller['panel_control'].enable_auto()
 
         # log display
-        log_list = self.worker_agent.read_log()
+        log_list = self.scheduler.read_log()
         self.controller['panel_log'].log(log_list)
 
         # check if database has changed
@@ -358,44 +317,9 @@ class ScientistController:
             # update space visualization (TODO: only redraw when evaluation is done)
             self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
             self.controller['viz_stats'].redraw()
-
-        # check stopping criterion
-        self.check_stop_criterion()
         
         # trigger another refresh
         self.root.after(self.refresh_rate, self.refresh)
-
-    def check_stop_criterion(self):
-        '''
-        Check if stopping criterion is met
-        '''
-        stop = False
-        stop_criterion = self.controller['panel_control'].stop_criterion
-        n_valid_sample = self.data_agent.get_n_valid_sample()
-
-        for key, val in stop_criterion.items():
-            if key == 'time': # optimization & evaluation time
-                if time() - self.timestamp >= val:
-                    stop = True
-                    self.timestamp = None
-            elif key == 'n_sample': # number of samples
-                if n_valid_sample >= val:
-                    stop = True
-            elif key == 'hv_value': # hypervolume value
-                if self.controller['viz_stats'].line_hv.get_ydata()[-1] >= val:
-                    stop = True
-            elif key == 'hv_conv': # hypervolume convergence
-                hv_history = self.controller['viz_stats'].line_hv.get_ydata()
-                checkpoint = np.clip(int(n_valid_sample * val / 100.0), 1, n_valid_sample - 1)
-                if hv_history[-checkpoint] == hv_history[-1]:
-                    stop = True
-            else:
-                raise NotImplementedError
-        
-        if stop:
-            stop_criterion.clear()
-            self.worker_agent.stop_worker()
-            self.controller['panel_log'].log('stopping criterion is met')
         
     def _quit(self):
         '''
@@ -403,8 +327,8 @@ class ScientistController:
         '''
         plt.close('all')
         self.database.quit()
-        self.data_agent.quit()
-        self.worker_agent.quit()
+        self.agent.quit()
+        self.scheduler.quit()
 
         self.root.quit()
         self.root.destroy()

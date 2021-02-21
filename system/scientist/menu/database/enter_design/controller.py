@@ -44,16 +44,15 @@ class EnterDesignController:
         if_eval = self.view.widget['eval_var'].get() == 1 # TODO: fail when no eval script is linked
         self.view.window.destroy()
 
-        data_agent, worker_agent = self.root_controller.data_agent, self.root_controller.worker_agent
+        agent, scheduler = self.root_controller.agent, self.root_controller.scheduler
         config = self.root_controller.get_config()
 
         # insert design to database
-        rowids = data_agent.insert_design(X_next)
+        rowids = agent.insert_design(X_next)
 
         # update prediction to database
-        data_agent.predict(config, rowids)
+        agent.predict(config, rowids)
 
         # call evaluation worker
         if if_eval:
-            for rowid in rowids:
-                worker_agent.add_eval_worker(rowid)
+            scheduler.evaluate_manual(config, rowids)

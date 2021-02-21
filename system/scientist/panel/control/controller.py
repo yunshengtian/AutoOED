@@ -11,8 +11,9 @@ class PanelControlController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.worker_agent = self.root_controller.worker_agent
-        self.stop_criterion = {}
+        self.agent = self.root_controller.agent
+        self.scheduler = self.root_controller.scheduler
+        self.stop_criterion = []
 
         self.view = PanelControlView(self.root_view)
 
@@ -20,15 +21,12 @@ class PanelControlController:
             valid_check=lambda x: x > 0, 
             error_msg='number of batch size must be positive',
         )
-        self.view.widget['n_iter'].config(
-            valid_check=lambda x: x > 0, 
-            error_msg='number of optimization iteration must be positive',
-        )
-
         self.view.widget['set_stop_cri'].configure(command=self.set_stop_criterion)
 
-        self.view.widget['optimize'].configure(command=self.optimize)
-        self.view.widget['stop'].configure(command=self.stop_optimize)
+        self.view.widget['optimize_manual'].configure(command=self.optimize_manual)
+        self.view.widget['optimize_auto'].configure(command=self.optimize_auto)
+        self.view.widget['stop_manual'].configure(command=self.stop_manual)
+        self.view.widget['stop_auto'].configure(command=self.stop_auto)
 
     def get_config(self):
         return self.root_controller.get_config()
@@ -48,38 +46,77 @@ class PanelControlController:
         '''
         StopCriterionController(self)
 
-    def optimize(self):
+    def _set_optimize_config(self):
         '''
-        Execute optimization
         '''
         config = self.get_config()
-        for key in ['batch_size', 'n_iter']:
-            try:
-                config['experiment'][key] = self.view.cfg_widget[key].get()
-            except:
-                error_msg = self.view.cfg_widget[key].get_error_msg()
-                error_msg = '' if error_msg is None else ': ' + error_msg
-                tk.messagebox.showinfo('Error', 'Invalid value for "' + config_map['experiment'][key] + '"' + error_msg, parent=self.root_view.root)
-                return
-
+        try:
+            config['experiment']['batch_size'] = self.view.widget['batch_size'].get()
+        except:
+            error_msg = self.view.widget['batch_size'].get_error_msg()
+            error_msg = '' if error_msg is None else ': ' + error_msg
+            tk.messagebox.showinfo('Error', 'Invalid value for "' + config_map['experiment']['batch_size'] + '"' + error_msg, parent=self.root_view.root)
+            return
         self.set_config(config)
+        return config
 
+    def enable_manual(self):
+        self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
+        self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
+        self.view.widget['mode'].enable()
+        self.view.widget['optimize_manual'].enable()
+        self.view.widget['stop_manual'].disable()
+
+    def enable_auto(self):
+        self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
+        self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
+        self.view.widget['mode'].enable()
+        self.view.widget['set_stop_cri'].enable()
+        self.view.widget['optimize_auto'].enable()
+        self.view.widget['stop_auto'].disable()
+
+    def disable_manual(self):
         self.root_view.menu_config.entryconfig(0, state=tk.DISABLED)
         self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
         self.view.widget['mode'].disable()
-        if self.view.widget['mode'].get() == 'auto':
-            self.view.widget['optimize'].disable()
-        self.view.widget['stop'].enable()
+        self.view.widget['optimize_manual'].disable()
+        self.view.widget['stop_manual'].enable()
 
-        mode = self.view.widget['mode'].get()
-        config = self.get_config()
-        self.worker_agent.configure(mode=mode, config=config)
-        self.worker_agent.add_opt_worker()
+    def disable_auto(self):
+        self.root_view.menu_config.entryconfig(0, state=tk.DISABLED)
+        self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
+        self.view.widget['mode'].disable()
+        self.view.widget['set_stop_cri'].disable()
+        self.view.widget['optimize_auto'].disable()
+        self.view.widget['stop_auto'].enable()
 
-    def stop_optimize(self):
+    def optimize_manual(self):
         '''
-        Stop optimization (TODO: support stopping individual process)
+        Execute manual optimization
         '''
-        self.worker_agent.stop_worker()
-        self.view.widget['mode'].enable()
-        self.view.widget['stop'].disable()
+        self.disable_manual()
+        config = self._set_optimize_config()
+        self.scheduler.optimize_manual(config)
+
+    def optimize_auto(self):
+        '''
+        Execute auto optimization
+        '''
+        self.disable_auto()
+        config = self._set_optimize_config()
+        self.scheduler.optimize_auto(config, stop_criterion=self.stop_criterion)
+
+    def stop_manual(self):
+        '''
+        Stop manual optimization (TODO: support stopping individual process)
+        '''
+        self.scheduler.stop_optimize()
+        self.enable_manual()
+
+    def stop_auto(self):
+        '''
+        Stop auto optimization (TODO: support stopping individual process)
+        '''
+        self.scheduler.stop_optimize()
+        self.enable_auto()
+        self.stop_criterion.clear()

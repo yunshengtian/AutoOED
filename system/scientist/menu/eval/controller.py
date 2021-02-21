@@ -10,7 +10,8 @@ class MenuEvalController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.data_agent, self.worker_agent = self.root_controller.data_agent, self.root_controller.worker_agent
+        self.agent = self.root_controller.agent
+        self.scheduler = self.root_controller.scheduler
 
         self.view = MenuEvalView(self.root_view)
 
@@ -40,3 +41,6 @@ class MenuEvalController:
 
     def get_problem_cfg(self):
         return self.root_controller.get_problem_cfg()
+
+    def get_config(self):
+        return self.root_controller.get_config()

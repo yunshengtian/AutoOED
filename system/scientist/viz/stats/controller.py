@@ -10,7 +10,7 @@ class VizStatsController:
 
         # set values from root
         self.problem_cfg = self.root_controller.problem_cfg
-        self.data_agent = self.root_controller.data_agent
+        self.agent = self.root_controller.agent
 
         self.view = VizStatsView(self.root_view, self.problem_cfg)
 
@@ -25,7 +25,7 @@ class VizStatsController:
         '''
         Redraw hypervolume and prediction error curves
         '''
-        hypervolume = self.data_agent.load_hypervolume()
-        model_error = self.data_agent.load_model_error()
+        hypervolume = self.agent.load_hypervolume()
+        model_error = self.agent.load_model_error()
 
         self.view.redraw(hypervolume, model_error)
