@@ -227,8 +227,6 @@ class ScientistController:
             # remove tutorial image
             self.view.image_tutorial.destroy()
 
-            # TODO: give hint of initializing
-
             # configure
             self.agent.set_problem(self.problem_cfg['name'])
             self.controller['panel_info'].set_info(self.problem_cfg)
@@ -261,10 +259,6 @@ class ScientistController:
                 entry_batch_size.set(self.config['experiment']['batch_size'])
             except:
                 entry_batch_size.set(5)
-
-            self.controller['panel_control'].view.widget['optimize_manual'].enable()
-            self.controller['panel_control'].view.widget['optimize_auto'].enable()
-            self.controller['panel_control'].view.widget['set_stop_cri'].enable()
 
             self.controller['panel_log'].view.widget['clear'].enable()
 
@@ -305,9 +299,10 @@ class ScientistController:
         '''
         self.scheduler.refresh()
         
-        # can optimize and load config when worker agent is empty
+        # change button status when scheduler is free
         if not self.scheduler.is_optimizing():
-            self.controller['panel_control'].enable_manual()
+            if not self.scheduler.is_evaluating_manual():
+                self.controller['panel_control'].enable_manual()
             if not self.scheduler.is_evaluating_auto():
                 self.controller['panel_control'].enable_auto()
 
