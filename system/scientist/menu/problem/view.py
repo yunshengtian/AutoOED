@@ -42,7 +42,7 @@ class MenuProblemView:
         '''
         problem_info = {
             'name': config['name'],
-            'var_type': config['type'],
+            'type': config['type'],
             'n_var': config['n_var'],
             'n_obj': config['n_obj'],
             'n_constr': config['n_constr'],

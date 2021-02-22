@@ -1,4 +1,4 @@
-import os
+import os, sys
 import importlib
 import ctypes
 import numpy as np
@@ -72,9 +72,11 @@ def import_matlab_func(path, n_out):
 def import_obj_func(path, n_var, n_obj):
     '''
     '''
+    # TODO: deal with custom import in obj func
     ftype = path.split('.')[-1]
     if ftype == 'py':
         try:
+            sys.path.insert(0, os.path.dirname(path))
             eval_func = import_python_func(path=path, module_name='obj_func', func_name='evaluate_objective')
         except:
             raise Exception('failed to import objective evaluation function from python file')
@@ -97,9 +99,11 @@ def import_obj_func(path, n_var, n_obj):
 def import_constr_func(path, n_var, n_constr):
     '''
     '''
+    # TODO: deal with custom import in constr func
     ftype = path.split('.')[-1]
     if ftype == 'py':
         try:
+            sys.path.insert(0, os.path.dirname(path))
             eval_func = import_python_func(path=path, module_name='constr_func', func_name='evaluate_constraint')
         except:
             raise Exception('failed to import constraint evaluation function from python file')  

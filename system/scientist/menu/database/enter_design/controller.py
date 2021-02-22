@@ -51,7 +51,7 @@ class EnterDesignController:
         rowids = agent.insert_design(X_next)
 
         # update prediction to database
-        agent.predict(config, rowids)
+        scheduler.predict(config, rowids)
 
         # call evaluation worker
         if if_eval:
