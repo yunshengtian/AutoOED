@@ -60,30 +60,38 @@ class PanelControlController:
         self.set_config(config)
 
     def enable_manual(self):
-        self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
-        self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
+        if self.root_view.menu_config.entrycget(0, 'state') != tk.NORMAL:
+            self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
+        if self.root_view.menu_config.entrycget(2, 'state') != tk.NORMAL:
+            self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
         self.view.widget['mode'].enable()
         self.view.widget['optimize_manual'].enable()
         self.view.widget['stop_manual'].disable()
 
     def enable_auto(self):
-        self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
-        self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
+        if self.root_view.menu_config.entrycget(0, 'state') != tk.NORMAL:
+            self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
+        if self.root_view.menu_config.entrycget(2, 'state') != tk.NORMAL:
+            self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
         self.view.widget['mode'].enable()
         self.view.widget['set_stop_cri'].enable()
         self.view.widget['optimize_auto'].enable()
         self.view.widget['stop_auto'].disable()
 
     def disable_manual(self):
-        self.root_view.menu_config.entryconfig(0, state=tk.DISABLED)
-        self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
+        if self.root_view.menu_config.entrycget(0, 'state') != tk.DISABLED:
+            self.root_view.menu_config.entryconfig(0, state=tk.DISABLED)
+        if self.root_view.menu_config.entrycget(2, 'state') != tk.DISABLED:
+            self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
         self.view.widget['mode'].disable()
         self.view.widget['optimize_manual'].disable()
         self.view.widget['stop_manual'].enable()
 
     def disable_auto(self):
-        self.root_view.menu_config.entryconfig(0, state=tk.DISABLED)
-        self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
+        if self.root_view.menu_config.entrycget(0, 'state') != tk.DISABLED:
+            self.root_view.menu_config.entryconfig(0, state=tk.DISABLED)
+        if self.root_view.menu_config.entrycget(2, 'state') != tk.DISABLED:
+            self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
         self.view.widget['mode'].disable()
         self.view.widget['set_stop_cri'].disable()
         self.view.widget['optimize_auto'].disable()
