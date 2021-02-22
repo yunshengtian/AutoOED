@@ -56,5 +56,5 @@ class StartLocalEvalController:
 
         self.view.window.destroy()
 
-        config, scheduler = self.root_controller.get_config(), self.root_controller.scheduler
-        scheduler.evaluate_manual(config, rowids)
+        scheduler = self.root_controller.scheduler
+        scheduler.evaluate_manual(rowids)

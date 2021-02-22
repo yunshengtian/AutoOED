@@ -232,10 +232,7 @@ class ScientistController:
             # configure
             self.agent.set_problem(self.problem_cfg['name'])
             self.controller['panel_info'].set_info(self.problem_cfg)
-
-            if not table_exist:
-                # data initialization
-                self.scheduler.initialize(self.config, problem)
+            self.scheduler.set_config(self.config)
 
             # initialize visualization widgets
             self._init_visualization()
@@ -287,6 +284,7 @@ class ScientistController:
                 return False
 
             self.config = config
+            self.scheduler.set_config(self.config)
             
         self.database.update_config(name=self.table_name, config=self.config)
         

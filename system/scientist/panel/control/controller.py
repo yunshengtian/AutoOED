@@ -58,7 +58,6 @@ class PanelControlController:
             tk.messagebox.showinfo('Error', 'Invalid value for "' + config_map['experiment']['batch_size'] + '"' + error_msg, parent=self.root_view.root)
             return
         self.set_config(config)
-        return config
 
     def enable_manual(self):
         self.root_view.menu_config.entryconfig(0, state=tk.NORMAL)
@@ -95,16 +94,16 @@ class PanelControlController:
         Execute manual optimization
         '''
         self.disable_manual()
-        config = self._set_optimize_config()
-        self.scheduler.optimize_manual(config)
+        self._set_optimize_config()
+        self.scheduler.optimize_manual()
 
     def optimize_auto(self):
         '''
         Execute auto optimization
         '''
         self.disable_auto()
-        config = self._set_optimize_config()
-        self.scheduler.optimize_auto(config, stop_criterion=self.stop_criterion)
+        self._set_optimize_config()
+        self.scheduler.optimize_auto(stop_criterion=self.stop_criterion)
 
     def stop_manual(self):
         '''

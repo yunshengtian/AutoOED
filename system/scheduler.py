@@ -1,5 +1,5 @@
 from multiprocessing import Process, Queue
-from problem.common import get_problem_config, get_initial_samples
+from problem.common import build_problem, get_initial_samples, get_problem_config
 
 
 class Scheduler:
@@ -15,35 +15,45 @@ class Scheduler:
         self.logs = []
 
         self.initialized = False
+        self.agent_initializing = False
+
         self.config = None
         self.stop_criterion = []
         self.auto_scheduling = False
 
-    def initialize(self, config, problem):
+    def set_config(self, config):
         '''
         '''
-        X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, config['problem']['n_random_sample'], config['problem']['init_sample_path'])
-        rowids_unevaluated = self.agent.initialize(X_init_evaluated, X_init_unevaluated, Y_init_evaluated)
-        if rowids_unevaluated is not None:
-            self.evaluate_manual(config, rowids_unevaluated)
+        self.config = config.copy()
 
-    def _optimize(self, config):
+        if not self.initialized: # check if initialized
+            self.initialized = self.agent.check_initialized()
+
+        if not self.initialized and not self.agent_initializing: # check if initializing
+            self.agent_initializing = True
+
+            problem = build_problem(self.config['problem']['name'])
+            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, self.config['problem']['n_random_sample'], self.config['problem']['init_sample_path'])
+            rowids_unevaluated = self.agent.initialize(X_init_evaluated, X_init_unevaluated, Y_init_evaluated)
+            if rowids_unevaluated is not None:
+                self.evaluate_manual(rowids_unevaluated)
+
+    def _optimize(self):
         '''
         '''
         if not self.initialized:
             raise Exception('initialization has not finished')
         assert self.opt_worker is None, 'optimization worker is running'
         self._add_log(f'optimization worker started')
-        self.config = config
-        self.opt_worker = Process(target=self.agent.optimize, args=(config, self.opt_queue))
+        self.opt_worker = Process(target=self.agent.optimize, args=(self.config, self.opt_queue))
         self.opt_worker.start()
 
-    def optimize_manual(self, config):
+    def optimize_manual(self):
         '''
         '''
-        self._optimize(config)
+        self._optimize()
 
-    def optimize_auto(self, config, stop_criterion=[]):
+    def optimize_auto(self, stop_criterion=[]):
         '''
         '''
         assert self.agent.can_eval
@@ -51,33 +61,33 @@ class Scheduler:
         self.stop_criterion = stop_criterion
         for criterion in self.stop_criterion:
             criterion.start()
-        self._optimize(config)
+        self._optimize()
 
-    def predict(self, config, rowids):
+    def predict(self, rowids):
         '''
         '''
         self._add_log(f'prediction worker for row {",".join([str(r) for r in rowids])} started')
-        worker = Process(target=self.agent.predict, args=(config, rowids))
+        worker = Process(target=self.agent.predict, args=(self.config, rowids))
         worker.start()
         self.pred_workers.append([worker, rowids])
 
-    def evaluate_manual(self, config, rowids):
+    def evaluate_manual(self, rowids):
         '''
         '''
         if not self.agent.can_eval: return
         self._add_log(f'evaluation worker for row {",".join([str(r) for r in rowids])} started')
         for rowid in rowids:
-            worker = Process(target=self.agent.evaluate, args=(config, rowid))
+            worker = Process(target=self.agent.evaluate, args=(self.config, rowid))
             worker.start()
             self.eval_workers_manual.append([worker, rowid])
 
-    def evaluate_auto(self, config, rowids):
+    def evaluate_auto(self, rowids):
         '''
         '''
         if not self.agent.can_eval: return
         self._add_log(f'evaluation worker for row {",".join([str(r) for r in rowids])} started')
         for rowid in rowids:
-            worker = Process(target=self.agent.evaluate, args=(config, rowid))
+            worker = Process(target=self.agent.evaluate, args=(self.config, rowid))
             worker.start()
             self.eval_workers_auto.append([worker, rowid])
 
@@ -187,9 +197,9 @@ class Scheduler:
 
         if opt_finished:
             if self.auto_scheduling:
-                self.evaluate_auto(self.config, opt_rowids)
+                self.evaluate_auto(opt_rowids)
             else:
-                self.evaluate_manual(self.config, opt_rowids)
+                self.evaluate_manual(opt_rowids)
 
         if self.auto_scheduling and eval_auto_finished:
             for criterion in self.stop_criterion:
@@ -197,7 +207,7 @@ class Scheduler:
                 self.auto_scheduling = self.auto_scheduling and (not stop)
 
             if self.auto_scheduling:
-                self._optimize(self.config)
+                self._optimize()
             else:
                 self._add_log('stopping criterion met')
         

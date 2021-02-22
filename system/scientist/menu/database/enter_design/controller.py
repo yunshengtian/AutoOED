@@ -45,14 +45,13 @@ class EnterDesignController:
         self.view.window.destroy()
 
         agent, scheduler = self.root_controller.agent, self.root_controller.scheduler
-        config = self.root_controller.get_config()
 
         # insert design to database
         rowids = agent.insert_design(X_next)
 
         # update prediction to database
-        scheduler.predict(config, rowids)
+        scheduler.predict(rowids)
 
         # call evaluation worker
         if if_eval:
-            scheduler.evaluate_manual(config, rowids)
+            scheduler.evaluate_manual(rowids)
