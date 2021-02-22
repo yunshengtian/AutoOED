@@ -361,7 +361,9 @@ class TeamDatabase:
         '''
         '''
         assert self.check_table_exist(name), f"Table {name} doesn't exist"
-        data = [res[1:] for res in self.select_data(name, column)] # omit rowid
+        data = self.select_data(name, column)
+        if column is None:
+            data = [d[1:] for d in data] # omit rowid
         return data
 
     @root

@@ -76,3 +76,6 @@ class WorkerView:
 
         for widget_name in ['auto_set_script', 'manual_lock', 'manual_release', 'manual_fill']:
             self.widget[widget_name].configure(state=tk.NORMAL)
+
+    def get_table_columns(self):
+        return self.widget['db_table'].columns

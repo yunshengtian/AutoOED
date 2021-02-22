@@ -251,6 +251,7 @@ class ServerController:
             if self.database.check_inited_table_exist(self.table_name):
                 self.database.execute(f'describe {self.table_name}')
                 columns = self.database.get_column_names(self.table_name)
+                columns = [col for col in columns if not col.startswith('_')]
                 self.view.init_db_table(columns)
                 problem_name = self.database.query_problem(self.table_name)
                 problem_cfg = get_problem_config(problem_name)
@@ -262,5 +263,5 @@ class ServerController:
         if checksum == self.table_checksum or checksum == 0: return
         self.table_checksum = checksum
 
-        data = self.database.load_table(name=self.table_name)
+        data = self.database.load_table(name=self.table_name, column=self.view.get_table_columns())
         self.view.widget['db_table'].load(data)

@@ -11,3 +11,6 @@ class VizDatabaseView:
         
         frame_db = create_widget('frame', master=self.root_view.frame_db, row=0, column=0, padx=0, pady=0)
         self.widget['table'] = AdjustableTable(master=frame_db, columns=columns)
+
+    def get_table_columns(self):
+        return self.widget['table'].columns

@@ -126,3 +126,6 @@ class ServerView:
 
         self.widget['db_placeholder'].destroy()
         self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)
+
+    def get_table_columns(self):
+        return self.widget['db_table'].columns

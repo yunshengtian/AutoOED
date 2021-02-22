@@ -13,6 +13,7 @@ class VizDatabaseController:
         self.table_name = self.root_controller.table_name
 
         columns = self.database.get_column_names(self.table_name)
+        columns = [col for col in columns if not col.startswith('_')]
         self.view = VizDatabaseView(self.root_view, columns=columns)
         self.table = self.view.widget['table']
 
@@ -22,5 +23,5 @@ class VizDatabaseController:
         '''
         Update table data
         '''
-        data = self.database.load_table(name=self.table_name)
+        data = self.database.load_table(name=self.table_name, column=self.view.get_table_columns())
         self.table.load(data)
