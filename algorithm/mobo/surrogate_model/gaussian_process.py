@@ -27,17 +27,17 @@ class GaussianProcess(SurrogateModel):
     '''
     Gaussian process
     '''
-    def __init__(self, n_var, n_obj, nu, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, problem_cfg, nu, **kwargs):
+        super().__init__(problem_cfg)
         
         self.nu = nu
         self.gps = []
 
-        for _ in range(n_obj):
+        for _ in range(self.n_obj):
             if nu > 0:
-                main_kernel = Matern(length_scale=np.ones(n_var), length_scale_bounds=(np.sqrt(1e-3), np.sqrt(1e3)), nu=0.5 * nu)
+                main_kernel = Matern(length_scale=np.ones(self.n_var), length_scale_bounds=(np.sqrt(1e-3), np.sqrt(1e3)), nu=0.5 * nu)
             else:
-                main_kernel = RBF(length_scale=np.ones(n_var), length_scale_bounds=(np.sqrt(1e-3), np.sqrt(1e3)))
+                main_kernel = RBF(length_scale=np.ones(self.n_var), length_scale_bounds=(np.sqrt(1e-3), np.sqrt(1e3)))
             
             kernel = ConstantKernel(constant_value=1.0, constant_value_bounds=(np.sqrt(1e-3), np.sqrt(1e3))) * \
                 main_kernel + \
@@ -46,11 +46,11 @@ class GaussianProcess(SurrogateModel):
             gp = GaussianProcessRegressor(kernel=kernel, optimizer=constrained_optimization)
             self.gps.append(gp)
 
-    def fit(self, X, Y):
+    def _fit(self, X, Y):
         for i, gp in enumerate(self.gps):
             gp.fit(X, Y[:, i])
         
-    def evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
+    def _evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
         F, dF, hF = [], [], [] # mean
         S, dS, hS = [], [], [] # std
 

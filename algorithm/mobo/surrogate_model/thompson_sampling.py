@@ -11,14 +11,14 @@ class ThompsonSampling(GaussianProcess):
     '''
     Sampled functions from Gaussian process using Thompson Sampling
     '''
-    def __init__(self, n_var, n_obj, nu, n_spectral_pts, mean_sample, **kwargs):
-        super().__init__(n_var, n_obj, nu)
+    def __init__(self, problem_cfg, nu, n_spectral_pts, mean_sample, **kwargs):
+        super().__init__(problem_cfg, nu)
 
         self.M = n_spectral_pts
         self.thetas, self.Ws, self.bs, self.sf2s = None, None, None, None
         self.mean_sample = mean_sample
 
-    def fit(self, X, Y):
+    def _fit(self, X, Y):
         self.thetas, self.Ws, self.bs, self.sf2s = [], [], [], []
         n_sample = X.shape[0]
 
@@ -52,7 +52,7 @@ class ThompsonSampling(GaussianProcess):
             self.bs.append(b.copy())
             self.sf2s.append(sf2)
 
-    def evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
+    def _evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
         F, dF, hF = [], [], []
         n_sample = X.shape[0] if len(X.shape) > 1 else 1
 

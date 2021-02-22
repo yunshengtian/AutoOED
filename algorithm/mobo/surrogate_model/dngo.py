@@ -106,14 +106,14 @@ class DNGO(NeuralNetwork):
 
         self.regressor = [BayesianRegression()] * self.n_obj
 
-    def fit(self, X, Y):
-        super().fit(X, Y)
+    def _fit(self, X, Y):
+        super()._fit(X, Y)
         
         for i in range(self.n_obj):
             phi = self.net[i].basis_func(torch.FloatTensor(X)).data.numpy()
             self.regressor[i].fit(phi, Y[:, i])
     
-    def evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
+    def _evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
         F, dF, hF = [], [], [] # mean
         S, dS, hS = [], [], [] # std
 

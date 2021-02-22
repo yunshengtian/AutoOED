@@ -5,7 +5,10 @@ import numpy as np
 class Transformation(ABC):
 
     def __init__(self, config):
-        pass
+        self.config = config.copy()
+        self.n_var = self.config['n_var']
+        self.n_var_T = self.n_var
+        self.n_obj = self.config['n_obj']
 
     def do(self, X):
         X = np.array(X, dtype=object)
@@ -15,6 +18,10 @@ class Transformation(ABC):
         X = np.array(X, dtype=float)
         return self._undo(X)
 
+    def constr(self, X):
+        X = np.array(X, dtype=float)
+        return self._constr(X)
+
     @abstractmethod
     def _do(self, X):
         pass
@@ -23,6 +30,9 @@ class Transformation(ABC):
     def _undo(self, X):
         pass
 
+    @abstractmethod
+    def _constr(self, X):
+        pass
     
 class ContinuousTransformation(Transformation):
     
@@ -30,6 +40,9 @@ class ContinuousTransformation(Transformation):
         return X.astype(float)
 
     def _undo(self, X):
+        return X
+
+    def _constr(self, X):
         return X
 
 
@@ -41,6 +54,9 @@ class IntegerTransformation(Transformation):
     def _undo(self, X):
         return np.round(X).astype(int)
 
+    def _constr(self, X):
+        return np.round(X)
+
 
 class BinaryTransformation(Transformation):
 
@@ -48,7 +64,10 @@ class BinaryTransformation(Transformation):
         return X.astype(float)
 
     def _undo(self, X):
-        return np.round(X).astype(int)
+        return np.clip(np.round(X), 0, 1).astype(int)
+
+    def _constr(self, X):
+        return np.clip(np.round(X), 0, 1)
 
 
 class CategoricalTransformation(Transformation):
@@ -81,6 +100,9 @@ class CategoricalTransformation(Transformation):
             new_X[:, i] = self.choices[i][np.argmax(X_slice, axis=1)]
         return new_X
 
+    def _constr(self, X):
+        return np.clip(np.round(X), 0, 1)
+
 
 class MixedTransformation(Transformation):
 
@@ -108,8 +130,6 @@ class MixedTransformation(Transformation):
             idx_begin, idx_end = self.offsets[i], self.offsets[i + 1]
             if self.types[i] == 'categorical':
                 X_slice = (X[:, i][:, None] == np.repeat(self.choices[i][None, :], n_sample, axis=0))
-            elif self.types[i] == 'continuous':
-                X_slice = X[:, i][:, None]
             else:
                 X_slice = X[:, i][:, None].astype(float)
             new_X[:, idx_begin:idx_end] = X_slice
@@ -125,8 +145,28 @@ class MixedTransformation(Transformation):
                 new_X[:, i] = self.choices[i][np.argmax(X_slice, axis=1)]
             elif self.types[i] == 'continuous':
                 new_X[:, i] = X_slice.T
-            else:
+            elif self.types[i] == 'integer':
                 new_X[:, i] = np.round(X_slice.T).astype(int)
+            elif self.types[i] == 'binary':
+                new_X[:, i] = np.clip(np.round(X_slice.T), 0, 1).astype(int)
+            else:
+                raise Exception()
+        return new_X
+
+    def _constr(self, X):
+        n_sample = X.shape[0]
+        new_X = np.empty((n_sample, self.n_var_T), dtype=float)
+        for i in range(self.n_var):
+            idx_begin, idx_end = self.offsets[i], self.offsets[i + 1]
+            if self.types[i] in ['categorical', 'binary']:
+                X_slice = np.clip(np.round(X[:, idx_begin:idx_end]), 0, 1)
+            elif self.types[i] == 'continuous':
+                X_slice = X[:, idx_begin:idx_end]
+            elif self.types[i] == 'integer':
+                X_slice = np.round(X[:, idx_begin:idx_end])
+            else:
+                raise Exception()
+            new_X[:, idx_begin:idx_end] = X_slice
         return new_X
 
 

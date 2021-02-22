@@ -194,7 +194,7 @@ def complete_config(config, check=False):
     n_var, n_obj = trans_prob_cfg['n_var'], full_prob_cfg['n_obj']
     n_process, batch_size = algo_cfg['n_process'], exp_cfg['batch_size']
 
-    algo_cfg['surrogate'].update({'n_var': n_var, 'n_obj': n_obj})
+    algo_cfg['surrogate'].update({'problem_cfg': full_prob_cfg})
     algo_cfg['solver'].update({'n_obj': n_obj, 'n_process': n_process, 'batch_size': batch_size})
     algo_cfg['selection'].update({'batch_size': batch_size})
 

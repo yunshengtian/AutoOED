@@ -72,15 +72,15 @@ class NeuralNetwork(SurrogateModel):
     '''
     Simple neural network
     '''
-    def __init__(self, n_var, n_obj, hidden_sizes=(50, 50, 50), activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
-        super().__init__(n_var, n_obj)
+    def __init__(self, problem_cfg, hidden_sizes=(50, 50, 50), activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
+        super().__init__(problem_cfg)
 
         self.net = [MLP(n_in=n_var, n_out=1, hidden_sizes=hidden_sizes, activation=activation) for _ in range(n_obj)]
         self.criterion = nn.MSELoss()
         self.optimizer = [optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay) for net in self.net]
         self.n_epoch = n_epoch
 
-    def fit(self, X, Y):
+    def _fit(self, X, Y):
         X, Y = torch.FloatTensor(X), torch.FloatTensor(Y)
         for i in range(self.n_obj):
             for _ in range(self.n_epoch):
@@ -90,7 +90,7 @@ class NeuralNetwork(SurrogateModel):
                 loss.backward()
                 self.optimizer[i].step()
 
-    def evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
+    def _evaluate(self, X, std=False, calc_gradient=False, calc_hessian=False):
         F, dF, hF = [], [], []
         n_sample = X.shape[0] if len(X.shape) > 1 else 1
         X = torch.FloatTensor(X)
