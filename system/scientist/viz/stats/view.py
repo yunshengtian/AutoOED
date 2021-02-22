@@ -33,7 +33,7 @@ class VizStatsView:
             self.ax[f'error_{i}'].xaxis.set_major_locator(MaxNLocator(integer=True))
             self.line[f'error_{i}'] = self.ax[f'error_{i}'].plot([], [])[0]
 
-    def redraw(self, hypervolume, model_error):
+    def redraw(self, hypervolume, model_error, n_init_sample):
         # hypervolume
         if len(hypervolume) > 0:
             self.line['hv'].set_data(np.arange(len(hypervolume)), hypervolume)
@@ -44,7 +44,7 @@ class VizStatsView:
         # model prediction error
         if len(model_error) > 0:
             for i in range(self.n_obj):
-                self.line[f'error_{i}'].set_data(np.arange(len(model_error)), model_error[:, i])
+                self.line[f'error_{i}'].set_data(np.arange(len(model_error)) + n_init_sample, model_error[:, i])
                 self.ax[f'error_{i}'].relim()
                 self.ax[f'error_{i}'].autoscale_view()
                 self.ax[f'error_{i}'].set_title(f'Model Prediction Error of {self.obj_name[i]}: %.4f' % model_error[-1, i])

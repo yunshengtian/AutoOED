@@ -27,5 +27,6 @@ class VizStatsController:
         '''
         hypervolume = self.agent.load_hypervolume()
         model_error = self.agent.load_model_error()
+        n_init_sample = self.agent.get_n_init_sample()
 
-        self.view.redraw(hypervolume, model_error)
+        self.view.redraw(hypervolume, model_error, n_init_sample)
