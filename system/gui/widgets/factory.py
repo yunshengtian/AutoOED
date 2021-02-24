@@ -22,9 +22,9 @@ combobox_width = 10
 entry_width = 5
 
 
-def create_logo(master, row, column):
+def create_logo(master, row, column, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     image_logo = StaticImageFrame(master=master, img_path=get_logo_path(), width=LOGO_WIDTH, height=LOGO_HEIGHT)
-    image_logo.grid(row=row, column=column)
+    image_logo.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
     return image_logo
 
 

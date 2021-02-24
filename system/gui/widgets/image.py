@@ -14,7 +14,7 @@ class ImageFrame(tk.Frame):
         self.background = tk.Label(self, image=self.background_image)
         self.background.grid(row=0, column=0, sticky='NSEW')
         self.background.bind('<Configure>', self._resize_image)
-        grid_configure(self, [0], [0])
+        grid_configure(self, 0, 0)
 
     def _resize_image(self, event):
         new_width = event.width
@@ -41,3 +41,4 @@ class StaticImageFrame(tk.Frame):
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background = tk.Label(self, image=self.background_image)
         self.background.grid(row=0, column=0, sticky='NSEW')
+        grid_configure(self, 0, 0)
