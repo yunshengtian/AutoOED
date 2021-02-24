@@ -73,8 +73,8 @@ class MenuProblemController:
             self.model.save_problem(config)
 
             self.view.widget['list'].insert(tk.END, config['name'])
-            self.view.widget['list'].select_clear(0, tk.END)
             self.view.widget['list'].select_set(tk.END)
+            self.view.widget['list'].select_event()
         
         self._enable_buttons()
 

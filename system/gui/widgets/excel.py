@@ -25,10 +25,15 @@ class Excel(tk.Frame):
         self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
         self.title = title
 
+        self.config(default=default, required=required, valid_check=valid_check)
+
         # make titles
         if self.title is not None:
             for column in range(self.n_column):
-                self._make_entry(0, column + 1, self.width, self.title[column], False) 
+                column_name = self.title[column]
+                if self.required[column]:
+                    column_name += ' (*)'
+                self._make_entry(0, column + 1, self.width, column_name, False) 
 
         # make entries
         for row in range(self.n_row):
@@ -37,31 +42,32 @@ class Excel(tk.Frame):
 
         # set data types
         if dtype is None:
-            self.dtype = [str for _ in range(self.n_column)]
+            self.dtype = [str] * self.n_column
         else:
             assert len(dtype) == self.n_column
             self.dtype = dtype
 
-        self.config(default=default, required=required, valid_check=valid_check)
-
     def config(self, default=None, required=None, valid_check=None):
         # set default values
         if default is None:
-            self.default = [None for _ in range(self.n_column)]
+            self.default = [None] * self.n_column
         else:
             assert len(default) == self.n_column
             self.default = default
 
         # set required flags
         if required is None:
-            self.required = [False for _ in range(self.n_column)]
+            self.required = [False] * self.n_column
         else:
-            assert len(required) == self.n_column
-            self.required = required
+            if type(required) == bool:
+                self.required = [required] * self.n_column
+            else:
+                assert len(required) == self.n_column
+                self.required = required
 
         # set validity check functions
         if valid_check is None:
-            self.valid_check = [None for _ in range(self.n_column)]
+            self.valid_check = [None] * self.n_column
         else:
             assert len(valid_check) == self.n_column
             self.valid_check = valid_check
