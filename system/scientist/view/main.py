@@ -85,7 +85,7 @@ class ScientistView:
         self.nb_viz.tab(2, state=tk.DISABLED)
 
         # initialize tutorial image
-        img_path = os.path.join(get_root_dir(), 'system', 'scientist', 'tutorial.png')
+        img_path = os.path.join(get_root_dir(), 'system', 'static', 'tutorial.png')
         self.image_tutorial = ImageFrame(master=self.root, img_path=img_path)
         self.image_tutorial.grid(row=0, column=0, rowspan=3, sticky='NSEW')
 

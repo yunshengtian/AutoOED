@@ -9,3 +9,7 @@ def get_root_dir():
     system_dir = os.path.dirname(utils_dir)
     root_dir = os.path.dirname(system_dir)
     return root_dir
+
+
+def get_logo_path():
+    return os.path.join(get_root_dir(), 'system', 'static', 'logo.png')
