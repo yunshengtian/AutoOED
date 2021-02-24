@@ -6,7 +6,7 @@ class LoadTaskController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
-        self.root_view = self.root_controller.view
+        self.root_view = self.root_controller.view_init
 
         self.database = self.root_controller.database
 

@@ -12,12 +12,8 @@ class MenuConfigView:
         self.root_view = root_view
         self.first_time = first_time
 
-        self.window = tk.Toplevel(master=self.root_view.root)
-        if self.first_time:
-            self.window.title('Create Configurations')
-        else:
-            self.window.title('Change Configurations')
-        self.window.resizable(False, False)
+        title = 'Create Configurations' if self.first_time else 'Change Configurations'
+        self.window = create_widget('toplevel', master=self.root_view.root, title=title)
 
         self.widget = {}
 

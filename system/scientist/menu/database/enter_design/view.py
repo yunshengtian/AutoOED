@@ -24,9 +24,7 @@ class EnterDesignView:
         else:
             dtype = [var_type_map[var_type]] * n_var
 
-        self.window = tk.Toplevel(master=self.root_view.root)
-        self.window.title('Enter Design Variables')
-        self.window.resizable(False, False)
+        self.window = create_widget('toplevel', master=self.root_view.root, title='Enter Design Variables')
 
         self.widget = {}
 

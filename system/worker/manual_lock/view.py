@@ -8,12 +8,8 @@ class ManualLockView:
     def __init__(self, root_view, lock):
         self.root_view = root_view
 
-        self.window = tk.Toplevel(master=self.root_view.root)
-        if lock:
-            self.window.title('Lock Entries')
-        else:
-            self.window.title('Release Entries')
-        self.window.resizable(False, False)
+        title = 'Lock Entries' if lock else 'Release Entries'
+        self.window = create_widget('toplevel', master=self.root_view.root, title=title)
 
         self.widget = {}
 

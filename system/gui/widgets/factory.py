@@ -22,6 +22,17 @@ combobox_width = 10
 entry_width = 5
 
 
+def create_toplevel(master, title=None, resizable=False):
+    toplevel = tk.Toplevel(master=master)
+    if title is not None:
+        toplevel.title(title)
+    if not resizable:
+        toplevel.resizable(False, False)
+    x, y = master.winfo_x(), master.winfo_y()
+    toplevel.geometry(f'+{x}+{y}')
+    return toplevel
+
+
 def create_logo(master, row, column, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     image_logo = StaticImageFrame(master=master, img_path=get_logo_path(), width=LOGO_WIDTH, height=LOGO_HEIGHT)
     image_logo.grid(row=row, column=column, rowspan=rowspan, columnspan=columnspan, padx=padx, pady=pady, sticky=sticky)
@@ -201,6 +212,7 @@ def create_widget(name, *args, **kwargs):
     Create widget by name and other arguments
     '''
     factory = {
+        'toplevel': create_toplevel,
         'logo': create_logo,
         'label': create_label,
         'frame': create_frame,

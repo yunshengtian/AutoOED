@@ -10,9 +10,7 @@ class UpdateProblemView:
     def __init__(self, root_view):
         self.root_view = root_view
 
-        self.window = tk.Toplevel(master=self.root_view.window)
-        self.window.title('Create Problem')
-        self.window.resizable(False, False)
+        self.window = create_widget('toplevel', master=self.root_view.window, title='Create Problem')
         grid_configure(self.window, 0, 0)
 
         self.frame = {}
