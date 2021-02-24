@@ -10,12 +10,22 @@ from system.gui.widgets.entry import get_entry
 from system.gui.widgets.variable import get_variable
 from system.gui.utils.grid import grid_configure
 
+from system.params import LOGO_WIDTH, LOGO_HEIGHT
+from system.utils.path import get_logo_path
+from system.gui.widgets.image import StaticImageFrame
+
 
 # predefined formatting
 padx = 10
 pady = 10
 combobox_width = 10
 entry_width = 5
+
+
+def create_logo(master, row, column):
+    image_logo = StaticImageFrame(master=master, img_path=get_logo_path(), width=LOGO_WIDTH, height=LOGO_HEIGHT)
+    image_logo.grid(row=row, column=column)
+    return image_logo
 
 
 def create_label(master, row, column, text, 
@@ -191,6 +201,7 @@ def create_widget(name, *args, **kwargs):
     Create widget by name and other arguments
     '''
     factory = {
+        'logo': create_logo,
         'label': create_label,
         'frame': create_frame,
         'combobox': create_combobox,

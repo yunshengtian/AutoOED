@@ -30,12 +30,14 @@ class ImageFrame(tk.Frame):
 
 
 class StaticImageFrame(tk.Frame):
-    def __init__(self, master, img_path, *pargs):
+    def __init__(self, master, img_path, width=None, height=None, *pargs):
         tk.Frame.__init__(self, master, *pargs)
         self.image = Image.open(img_path)
-        width, height = self.image.size
-        self.ratio = width / height
-        self.img_copy = self.image.copy()
+        if width is None:
+            width = self.image.size[0]
+        if height is None:
+            height = self.image.size[1]
+        self.image = self.image.resize((width, height))
         self.background_image = ImageTk.PhotoImage(self.image)
         self.background = tk.Label(self, image=self.background_image)
         self.background.grid(row=0, column=0, sticky='NSEW')
