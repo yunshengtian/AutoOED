@@ -12,14 +12,8 @@ class CreateTaskController:
 
         self.view = CreateTaskView(self.root_view)
 
-        self.view.widget['set_file_path'].configure(command=self.set_file_path)
         self.view.widget['create'].configure(command=self.create_task)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
-
-    def set_file_path(self):
-        filename = tk.filedialog.askopenfilename(parent=self.view.window)
-        if not isinstance(filename, str) or filename == '': return
-        self.view.widget['disp_file_path'].set(filename)
 
     def create_task(self):
         try:
@@ -29,16 +23,7 @@ class CreateTaskController:
             return
 
         try:
-            file_path = self.view.widget['disp_file_path'].get()
-        except Exception as e:
-            tk.messagebox.showinfo('Error', e, parent=self.view.window)
-            return
-
-        try:
-            if file_path is None:
-                self.database.create_table(name)
-            else:
-                self.database.import_table_from_file(name, file_path)
+            self.database.create_table(name)
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return

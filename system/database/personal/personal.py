@@ -255,12 +255,6 @@ class PersonalDatabase:
             self.execute(f'insert into _problem_info values ("{name}", "{problem_name}")')
             self.commit()
 
-    def import_table_from_file(self, name, file_path):
-        '''
-        '''
-        # TODO
-        raise NotImplementedError
-
     def remove_table(self, name):
         '''
         '''

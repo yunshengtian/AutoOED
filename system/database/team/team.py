@@ -395,17 +395,6 @@ class TeamDatabase:
             self.execute(query)
 
     @root
-    def import_table_from_file(self, name, file_path):
-        '''
-        '''
-        # TODO
-        raise NotImplementedError
-        # if not os.path.exists(file_path):
-        #     raise Exception(f'Table file {file_path} does not exist')
-        # self.create_table(name)
-        # self.init_table(...)
-
-    @root
     def remove_table(self, name):
         '''
         '''
