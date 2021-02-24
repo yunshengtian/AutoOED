@@ -142,7 +142,7 @@ class TeamDatabase:
         '''
         '''
         query = f'''
-            select exists(select * from information_schema.routines where routine_type='function' and routine_schema='{self.database}' and routine_name='{name}');
+            select exists(select * from information_schema.routines where routine_type='FUNCTION' and routine_schema='{self.database}' and routine_name='{name}');
             '''
         self.execute(query)
         return self.fetchone()[0]
@@ -152,7 +152,7 @@ class TeamDatabase:
         '''
         '''
         query = f'''
-            select exists(select * from information_schema.routines where routine_type='procedure' and routine_schema='{self.database}' and routine_name='{name}');
+            select exists(select * from information_schema.routines where routine_type='PROCEDURE' and routine_schema='{self.database}' and routine_name='{name}');
             '''
         self.execute(query)
         return self.fetchone()[0]
