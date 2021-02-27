@@ -78,8 +78,8 @@ def check_config(config):
     for key in exp_cfg:
         assert key in ['batch_size', 'n_iter', 'n_worker'], f'invalid key {key} in experiment config dictionary'
 
-    assert 'batch_size' in exp_cfg, 'batch size is not provided'
-    assert type(exp_cfg['batch_size']) == int and exp_cfg['batch_size'] > 0, 'batch size must be a positive integer'
+    if 'batch_size' in exp_cfg and exp_cfg['batch_size'] is not None:
+        assert type(exp_cfg['batch_size']) == int and exp_cfg['batch_size'] > 0, 'batch size must be a positive integer'
 
     if 'n_iter' in exp_cfg and exp_cfg['n_iter'] is not None:
         assert type(exp_cfg['n_iter']) == int and exp_cfg['n_iter'] > 0, 'number of algorithm iterations must be a positive integer'
@@ -145,6 +145,9 @@ def complete_config(config, check=False):
     prob_cfg, exp_cfg, algo_cfg = new_config['problem'], new_config['experiment'], new_config['algorithm']
     
     # problem
+    if 'ref_point' not in prob_cfg:
+        prob_cfg['ref_point'] = None
+        
     if 'n_random_sample' not in prob_cfg or prob_cfg['n_random_sample'] is None:
         prob_cfg['n_random_sample'] = 0
 
@@ -152,6 +155,9 @@ def complete_config(config, check=False):
         prob_cfg['init_sample_path'] = None
 
     # experiment
+    if 'batch_size' not in exp_cfg or exp_cfg['batch_size'] is None:
+        exp_cfg['batch_size'] = 1
+
     if 'n_iter' not in exp_cfg or exp_cfg['n_iter'] is None:
         exp_cfg['n_iter'] = 1
 

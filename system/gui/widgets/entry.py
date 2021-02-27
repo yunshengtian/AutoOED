@@ -18,7 +18,9 @@ class Entry(ABC):
         '''
         self.widget = widget
         self.required = required
-        self.default = default
+        if default is not None:
+            self.default = default
+            self.set(self.default)
         self.readonly = readonly
         self.valid_check = valid_check
         self.error_msg = error_msg
@@ -28,6 +30,7 @@ class Entry(ABC):
             self.required = required
         if default is not None:
             self.default = default
+            self.set(self.default)
         if readonly is not None:
             self.readonly = readonly
         if valid_check is not None:

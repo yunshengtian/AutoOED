@@ -229,6 +229,7 @@ class ScientistController:
                 self._load_existing_data()
             
             # change config create/change status
+            self.view.menu_config.entryconfig(0, state=tk.DISABLED)
             self.view.menu_config.entryconfig(1, state=tk.DISABLED)
             self.view.menu_config.entryconfig(2, state=tk.NORMAL)
 

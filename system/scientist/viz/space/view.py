@@ -101,7 +101,7 @@ class VizSpaceView:
                     self.text_lb[i] = self.ax2.text(self.xticks[i] - 0.5, 0, str(self.var_lb[i]), horizontalalignment='right', verticalalignment='center')
                     self.text_ub[i] = self.ax2.text(self.xticks[i] - 0.5, 1, str(self.var_ub[i]), horizontalalignment='right', verticalalignment='center')
             self.ax2.set_xticklabels(var_name)
-            self.ax2.set_title('Design Space')
+            self.ax2.set_title('Selected Design')
             self.ax2.set_xlim(-3, 3)
             self.ax2.set_ylim(0, 1.04)
 

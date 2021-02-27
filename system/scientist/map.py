@@ -1,11 +1,10 @@
 config_map = {
     'experiment': {
-        'n_worker': 'Max number of evaluation workers',
+        'n_worker': 'Number of evaluation workers',
         'batch_size': 'Batch size',
-        'n_iter': 'Number of iterations',
     },
     'problem': {
-        'name': 'Name of problem',
+        'name': 'Problem name',
         'n_var': 'Number of design variables',
         'n_obj': 'Number of objectives',
         'n_constr': 'Number of constraints',
@@ -21,7 +20,7 @@ config_map = {
         'init_sample_path': 'Path of provided initial samples',
     },
     'algorithm': {
-        'name': 'Name of algorithm',
+        'name': 'Algorithm name',
         'n_process': 'Number of parallel processes to use',
     },
 }
