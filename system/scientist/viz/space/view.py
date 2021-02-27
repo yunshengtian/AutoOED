@@ -83,7 +83,7 @@ class VizSpaceView:
             self.ax2.set_xticks(self.theta)
             self.ax2.set_varlabels(var_name)
             self.ax2.set_yticklabels([])
-            self.ax2.set_title('Design Space', position=(0.5, 1.1))
+            self.ax2.set_title('Selected Design', position=(0.5, 1.1))
             self.ax2.set_ylim(0, 1)
         else:
             self.ax2 = self.fig.add_subplot(self.gs[1])

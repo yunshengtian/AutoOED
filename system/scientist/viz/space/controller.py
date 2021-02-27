@@ -48,7 +48,7 @@ class VizSpaceController:
         self.view.fig.canvas.mpl_connect('button_press_event', self.check_design_values)
 
         # set pick event on legend to enable/disable certain visualization
-        legend = self.view.fig.legend(loc='lower center', ncol=5)
+        legend = self.view.fig.legend(loc='lower center', ncol=5, frameon=False)
         self.picker_map = {}
         for plot_obj, leg_obj, text in zip(scatter_list, legend.legendHandles, legend.get_texts()):
             leg_obj.set_picker(True)
@@ -284,6 +284,10 @@ class VizSpaceController:
         plot_obj = self.picker_map[event.artist]
         vis = not plot_obj.get_visible()
         plot_obj.set_visible(vis)
+        if vis:
+            event.artist.set_color('black')
+        else:
+            event.artist.set_color('gray')
 
         if not self.scatter_y_new.get_visible() or not self.scatter_y_pred.get_visible():
             for line in self.line_y_pred_list:
