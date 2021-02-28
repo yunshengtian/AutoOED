@@ -46,7 +46,7 @@ def check_config(config):
     prob_cfg = config['problem']
 
     for key in prob_cfg:
-        assert key in ['name', 'ref_point', 'n_random_sample', 'init_sample_path'], f'invalid key {key} in problem config dictionary'
+        assert key in ['name', 'ref_point'], f'invalid key {key} in problem config dictionary'
 
     assert 'name' in prob_cfg, 'problem name not provided'
     assert type(prob_cfg['name']) == str, 'problem name is not a string'
@@ -58,25 +58,25 @@ def check_config(config):
         n_obj = full_prob_cfg['n_obj']
         assert len(prob_cfg['ref_point']) == n_obj, 'dimension of reference point mismatches number of objectives'
 
-    assert 'n_random_sample' in prob_cfg or 'init_sample_path' in prob_cfg, 'either number of random initial samples or path to initial samples need to be provided'
-    init_sample_exist = False
-    if 'n_random_sample' in prob_cfg and prob_cfg['n_random_sample'] is not None:
-        assert type(prob_cfg['n_random_sample']) == int, 'invalid type of random initial samples'
-        if prob_cfg['n_random_sample'] > 1:
-            init_sample_exist = True
-    if 'init_sample_path' in prob_cfg and prob_cfg['init_sample_path'] is not None:
-        assert type(prob_cfg['init_sample_path']) == str, 'invalid type of initial sample path'
-        # TODO: check whether initial sample path is valid
-        init_sample_exist = True
-    assert init_sample_exist, 'either let the number of random initial samples be a integer greater than 1 or provide a valid path to initial samples'
-
     # experiment
     assert 'experiment' in config, 'experiment settings are not specified'
     assert isinstance(config['experiment'], dict), 'experiment settings must be specified as a dictionary'
     exp_cfg = config['experiment']
 
     for key in exp_cfg:
-        assert key in ['batch_size', 'n_iter', 'n_worker'], f'invalid key {key} in experiment config dictionary'
+        assert key in ['n_random_sample', 'init_sample_path', 'batch_size', 'n_iter', 'n_worker'], f'invalid key {key} in experiment config dictionary'
+
+    assert 'n_random_sample' in exp_cfg or 'init_sample_path' in exp_cfg, 'either number of random initial samples or path to initial samples need to be provided'
+    init_sample_exist = False
+    if 'n_random_sample' in exp_cfg and exp_cfg['n_random_sample'] is not None:
+        assert type(exp_cfg['n_random_sample']) == int, 'invalid type of random initial samples'
+        if exp_cfg['n_random_sample'] > 1:
+            init_sample_exist = True
+    if 'init_sample_path' in exp_cfg and exp_cfg['init_sample_path'] is not None:
+        assert type(exp_cfg['init_sample_path']) == str, 'invalid type of initial sample path'
+        # TODO: check whether initial sample path is valid
+        init_sample_exist = True
+    assert init_sample_exist, 'either let the number of random initial samples be a integer greater than 1 or provide a valid path to initial samples'
 
     if 'batch_size' in exp_cfg and exp_cfg['batch_size'] is not None:
         assert type(exp_cfg['batch_size']) == int and exp_cfg['batch_size'] > 0, 'batch size must be a positive integer'
@@ -147,14 +147,14 @@ def complete_config(config, check=False):
     # problem
     if 'ref_point' not in prob_cfg:
         prob_cfg['ref_point'] = None
-        
-    if 'n_random_sample' not in prob_cfg or prob_cfg['n_random_sample'] is None:
-        prob_cfg['n_random_sample'] = 0
-
-    if 'init_sample_path' not in prob_cfg:
-        prob_cfg['init_sample_path'] = None
 
     # experiment
+    if 'n_random_sample' not in exp_cfg or exp_cfg['n_random_sample'] is None:
+        exp_cfg['n_random_sample'] = 0
+
+    if 'init_sample_path' not in exp_cfg:
+        exp_cfg['init_sample_path'] = None
+        
     if 'batch_size' not in exp_cfg or exp_cfg['batch_size'] is None:
         exp_cfg['batch_size'] = 1
 

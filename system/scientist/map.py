@@ -1,5 +1,7 @@
 config_map = {
     'experiment': {
+        'n_random_sample': 'Number of random initial samples',
+        'init_sample_path': 'Path of provided initial samples',
         'n_worker': 'Number of evaluation workers',
         'batch_size': 'Batch size',
     },
@@ -16,8 +18,6 @@ config_map = {
         'var_name': 'Names',
         'obj_name': 'Names',
         'ref_point': 'Reference point',
-        'n_random_sample': 'Number of random initial samples',
-        'init_sample_path': 'Path of provided initial samples',
     },
     'algorithm': {
         'name': 'Algorithm name',

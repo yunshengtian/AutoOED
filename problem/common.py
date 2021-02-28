@@ -268,18 +268,14 @@ def generate_random_initial_samples(problem, n_sample):
     return problem.transformation.undo(X)
 
 
-def load_provided_initial_samples(problem, init_sample_path):
+def load_provided_initial_samples(init_sample_path):
     '''
     Load provided initial samples from file
     Input:
-        problem: the optimization problem
         init_sample_path: path of provided initial samples
     Output:
         X, Y: initial samples (design parameters, performance values)
     '''
-    # use problem default path if not specified
-    if init_sample_path is None:
-        init_sample_path = problem.get_config()['init_sample_path']
     assert init_sample_path is not None, 'path of initial samples is not provided'
 
     if isinstance(init_sample_path, list) and len(init_sample_path) == 2:
@@ -328,7 +324,7 @@ def get_initial_samples(problem, n_random_sample=0, init_sample_path=None):
         X_init_unevaluated = generate_random_initial_samples(problem, n_random_sample)
 
     if provided_init:
-        X_init_provided, Y_init_provided = load_provided_initial_samples(problem, init_sample_path)
+        X_init_provided, Y_init_provided = load_provided_initial_samples(init_sample_path)
         if Y_init_provided is None:
             if random_init:
                 X_init_unevaluated = np.vstack([X_init_unevaluated, X_init_provided])

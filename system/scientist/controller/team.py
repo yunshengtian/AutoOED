@@ -269,7 +269,7 @@ class ScientistController:
         else: # user changed config in the middle
             try:
                 # some keys cannot be changed
-                unchanged_keys = ['name', 'n_random_sample', 'init_sample_path']
+                unchanged_keys = ['name']
                 if self.config_raw['problem']['ref_point'] is not None:
                     unchanged_keys.append('ref_point')
                 for key in unchanged_keys:

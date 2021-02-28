@@ -51,12 +51,12 @@ class MenuConfigController:
 
         self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
 
+        self.view.widget['algo_name'].widget.bind('<<ComboboxSelected>>', self.select_algorithm)
+        self.view.widget['set_advanced'].configure(command=self.set_algo_advanced)
+
         if self.first_time:
             self.view.widget['set_x_init'].configure(command=self.set_x_init)
             self.view.widget['set_y_init'].configure(command=self.set_y_init)
-
-        self.view.widget['algo_name'].widget.bind('<<ComboboxSelected>>', self.select_algorithm)
-        self.view.widget['set_advanced'].configure(command=self.set_algo_advanced)
 
         self.view.widget['save'].configure(command=self.save_config)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
@@ -154,28 +154,28 @@ class MenuConfigController:
 
             if init_type == 'Random':
                 try:
-                    config['problem']['n_random_sample'] = self.view.widget['n_init'].get()
+                    config['experiment']['n_random_sample'] = self.view.widget['n_init'].get()
                 except:
-                    show_widget_error(master=self.view.window, widget=self.view.widget['n_init'], name=config_map['problem']['n_random_sample'])
+                    show_widget_error(master=self.view.window, widget=self.view.widget['n_init'], name=config_map['experiment']['n_random_sample'])
                     return
 
             elif init_type == 'Provided':
                 try:
                     x_init_path = self.view.widget['disp_x_init'].get()
                 except:
-                    show_widget_error(master=self.view.window, widget=self.view.widget['disp_x_init'], name='Path of provided initial design variables')
+                    show_widget_error(master=self.view.window, widget=self.view.widget['disp_x_init'], name='Path of initial design variables')
                     return
                 try:
                     y_init_path = self.view.widget['disp_y_init'].get()
                 except:
-                    show_widget_error(master=self.view.window, widget=self.view.widget['disp_y_init'], name='Path of provided initial performance values')
+                    show_widget_error(master=self.view.window, widget=self.view.widget['disp_y_init'], name='Path of initial performance values')
                     return
 
                 assert x_init_path is not None, 'Path of initial design variables must be provided'
                 if y_init_path is None: # only path of initial X is provided
-                    config['problem']['init_sample_path'] = x_init_path
+                    config['experiment']['init_sample_path'] = x_init_path
                 else: # both path of initial X and initial Y are provided
-                    config['problem']['init_sample_path'] = [x_init_path, y_init_path]
+                    config['experiment']['init_sample_path'] = [x_init_path, y_init_path]
 
             else:
                 raise Exception()

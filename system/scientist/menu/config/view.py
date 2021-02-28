@@ -29,10 +29,20 @@ class MenuConfigView:
 
         self.widget['problem_name'] = create_widget('labeled_combobox', 
             master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
+
+        # algorithm subsection
+        frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')
+        grid_configure(frame_algorithm, 0, 0)
+        self.widget['algo_name'] = create_widget('labeled_combobox', 
+            master=frame_algorithm, row=0, column=0, text=config_map['algorithm']['name'], values=get_algorithm_list(), required=True)
+        self.widget['n_process'] = create_widget('labeled_entry', 
+            master=frame_algorithm, row=1, column=0, text=config_map['algorithm']['n_process'], class_type='int', default=1,
+            valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
+        self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', sticky=None)
         
         # initialization subsection
         if self.first_time:
-            frame_init = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Initialization')
+            frame_init = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Initialization')
             grid_configure(frame_init, 1, 0)
 
             self.widget['init_type'] = create_widget('radiobutton',
@@ -42,14 +52,14 @@ class MenuConfigView:
             frame_provided_init = create_widget('frame', master=frame_init, row=1, column=0, padx=0, pady=0)
 
             self.widget['n_init'] = create_widget('labeled_entry', 
-                master=frame_random_init, row=0, column=0, text=config_map['problem']['n_random_sample'], class_type='int', required=True,
-                valid_check=lambda x: x > 0, error_msg='number of random initial samples must be positive',)
+                master=frame_random_init, row=0, column=0, text=config_map['experiment']['n_random_sample'], class_type='int', required=True,
+                valid_check=lambda x: x > 0, error_msg='number of random initial samples must be positive')
 
             self.widget['set_x_init'], self.widget['disp_x_init'] = create_widget('labeled_button_entry',
-                master=frame_provided_init, row=0, column=0, label_text='Path of provided initial design variables', button_text='Browse', width=30, required=True,
+                master=frame_provided_init, row=0, column=0, label_text='Path of initial design variables', button_text='Browse', width=30, required=True,
                 valid_check=lambda x: os.path.exists(x), error_msg='file does not exist')
             self.widget['set_y_init'], self.widget['disp_y_init'] = create_widget('labeled_button_entry',
-                master=frame_provided_init, row=1, column=0, label_text='Path of provided initial performance values', button_text='Browse', width=30,
+                master=frame_provided_init, row=1, column=0, label_text='Path of initial performance values', button_text='Browse', width=30,
                 valid_check=lambda x: os.path.exists(x), error_msg='file does not exist')
 
             def set_random_init():
@@ -69,16 +79,6 @@ class MenuConfigView:
                     raise Exception()
 
             set_random_init()
-
-        # algorithm subsection
-        frame_algorithm = create_widget('labeled_frame', master=frame_param, row=2 if self.first_time else 1, column=0, text='Algorithm')
-        grid_configure(frame_algorithm, 0, 0)
-        self.widget['algo_name'] = create_widget('labeled_combobox', 
-            master=frame_algorithm, row=0, column=0, text=config_map['algorithm']['name'], values=get_algorithm_list(), required=True)
-        self.widget['n_process'] = create_widget('labeled_entry', 
-            master=frame_algorithm, row=1, column=0, text=config_map['algorithm']['n_process'], class_type='int', default=1,
-            valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
-        self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', sticky=None)
 
         # evaluation subsection
         frame_experiment = create_widget('labeled_frame', master=frame_param, row=3 if self.first_time else 2, column=0, text='Experiment')

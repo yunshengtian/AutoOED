@@ -35,7 +35,8 @@ class Scheduler:
             self.agent_initializing = True
 
             problem = build_problem(self.config['problem']['name'])
-            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, self.config['problem']['n_random_sample'], self.config['problem']['init_sample_path'])
+            n_random_sample, init_sample_path = self.config['experiment']['n_random_sample'], self.config['experiment']['init_sample_path']
+            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, n_random_sample, init_sample_path)
             rowids_unevaluated = self.agent.initialize(X_init_evaluated, X_init_unevaluated, Y_init_evaluated)
             if rowids_unevaluated is not None:
                 self.evaluate_manual(rowids_unevaluated)
