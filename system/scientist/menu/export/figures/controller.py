@@ -23,6 +23,9 @@ class MenuExportFiguresController:
             tk.messagebox.showinfo('Error', str(e), parent=self.view.window)
             return
 
+        if path is None:
+            return
+
         viz_space_controller = self.root_controller.root_controller.controller['viz_space']
         viz_stats_controller = self.root_controller.root_controller.controller['viz_stats']
 

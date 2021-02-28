@@ -22,10 +22,21 @@ class MenuExportStatsController:
         '''
         '''
         choice = self.view.widget['choice'].get()
+
         if choice == 'Hypervolume':
             data = self.agent.load_hypervolume()
+            x = np.arange(len(data))
+            df = pd.DataFrame({'Number of samples': x, 'Hypervolume': data})
+
         elif choice == 'Model Error':
             data = self.agent.load_model_error()
+            obj_name = self.agent.problem_cfg['obj_name']
+            x = np.arange(len(data))
+            df_dict = {'Number of samples': x}
+            for name, d in zip(obj_name, data):
+                df_dict[f'{name} error'] = d
+            df = pd.DataFrame(df_dict)
+            
         else:
             tk.messagebox.showinfo('Invalid Choice', f'Cannot export {choice}', parent=self.view.window)
             return
@@ -39,11 +50,12 @@ class MenuExportStatsController:
         except Exception as e:
             tk.messagebox.showinfo('Error', str(e), parent=self.view.window)
             return
+
+        if path is None:
+            return
         
         try:
-            x = np.arange(len(data))
-            df = pd.DataFrame({'Number of samples': x, choice: data})
-            df.to_csv(path.name)
+            df.to_csv(path.name, index=False)
         except Exception as e:
             tk.messagebox.showinfo('Error', str(e), parent=self.view.window)
             return

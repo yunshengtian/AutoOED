@@ -129,9 +129,8 @@ class ScientistController:
         self.view.menu_problem.entryconfig(0, command=self.controller['menu_problem'].manage_problem)
 
         self.controller['menu_database'] = MenuDatabaseController(self)
-        self.view.menu_database.entryconfig(0, command=self.controller['menu_database'].export_csv, state=tk.DISABLED)
-        self.view.menu_database.entryconfig(1, command=self.controller['menu_database'].enter_design, state=tk.DISABLED)
-        self.view.menu_database.entryconfig(2, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
+        self.view.menu_database.entryconfig(0, command=self.controller['menu_database'].enter_design, state=tk.DISABLED)
+        self.view.menu_database.entryconfig(1, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
 
         self.controller['menu_eval'] = MenuEvalController(self)
         self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_local_eval, state=tk.DISABLED)
@@ -232,17 +231,13 @@ class ScientistController:
             if table_exist:
                 self._load_existing_data()
             
-            # change config create/change status
-            self.view.menu_config.entryconfig(0, state=tk.DISABLED)
-            self.view.menu_config.entryconfig(1, state=tk.DISABLED)
-            self.view.menu_config.entryconfig(2, state=tk.NORMAL)
-            self.view.menu_export.entryconfig(0, state=tk.NORMAL)
-            self.view.menu_export.entryconfig(1, state=tk.NORMAL)
-            self.view.menu_export.entryconfig(2, state=tk.NORMAL)
-
-            for i in range(4):
+            # change menu button status
+            for i in range(3):
+                self.view.menu_config.entryconfig(i, state=tk.NORMAL)
+            for i in range(3):
+                self.view.menu_export.entryconfig(i, state=tk.NORMAL)
+            for i in range(2):
                 self.view.menu_database.entryconfig(i, state=tk.NORMAL)
-            
             for i in range(3):
                 self.view.menu_eval.entryconfig(i, state=tk.NORMAL)
 

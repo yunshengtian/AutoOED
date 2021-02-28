@@ -26,13 +26,6 @@ class MenuDatabaseController:
     def get_problem_cfg(self):
         return self.root_controller.get_problem_cfg()
 
-    def export_csv(self):
-        '''
-        Export database to csv file
-        '''
-        table = self.get_table()
-        table.export_csv()
-
     def enter_design(self):
         '''
         Enter design variables

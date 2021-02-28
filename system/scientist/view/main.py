@@ -47,7 +47,6 @@ class ScientistView:
 
         self.menu_database = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Database', menu=self.menu_database)
-        self.menu_database.add_command(label='Export')
         self.menu_database.add_command(label='Enter design')
         self.menu_database.add_command(label='Enter performance')
 
