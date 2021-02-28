@@ -129,10 +129,9 @@ class ScientistController:
         self.view.menu_problem.entryconfig(0, command=self.controller['menu_problem'].manage_problem)
 
         self.controller['menu_database'] = MenuDatabaseController(self)
-        self.view.menu_database.entryconfig(0, command=None, state=tk.DISABLED) # TODO
-        self.view.menu_database.entryconfig(1, command=self.controller['menu_database'].export_csv, state=tk.DISABLED)
-        self.view.menu_database.entryconfig(2, command=self.controller['menu_database'].enter_design, state=tk.DISABLED)
-        self.view.menu_database.entryconfig(3, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
+        self.view.menu_database.entryconfig(0, command=self.controller['menu_database'].export_csv, state=tk.DISABLED)
+        self.view.menu_database.entryconfig(1, command=self.controller['menu_database'].enter_design, state=tk.DISABLED)
+        self.view.menu_database.entryconfig(2, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
 
         self.controller['menu_eval'] = MenuEvalController(self)
         self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_local_eval, state=tk.DISABLED)
