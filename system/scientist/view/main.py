@@ -56,6 +56,12 @@ class ScientistView:
         self.menu_eval.add_command(label='Start local')
         self.menu_eval.add_command(label='Start remote')
         self.menu_eval.add_command(label='Stop')
+
+        self.menu_export = tk.Menu(master=self.menu, tearoff=0)
+        self.menu.add_cascade(label='Export', menu=self.menu_export)
+        self.menu_export.add_command(label='Database')
+        self.menu_export.add_command(label='Statistics')
+        self.menu_export.add_command(label='Figures')
         
     def _init_viz(self):
         '''

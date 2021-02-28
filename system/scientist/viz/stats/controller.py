@@ -30,3 +30,9 @@ class VizStatsController:
         n_init_sample = self.agent.get_n_init_sample()
 
         self.view.redraw(hypervolume, model_error, n_init_sample)
+
+    def save_hv_figure(self, path, title=None):
+        self.view.save_hv_figure(path, title=title)
+
+    def save_error_figure(self, path, title=None):
+        self.view.save_error_figure(path, title=title)

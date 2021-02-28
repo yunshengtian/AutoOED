@@ -50,3 +50,41 @@ class VizStatsView:
                 self.ax[f'error_{i}'].set_title(f'Model Prediction Error of {self.obj_name[i]}: %.4f' % model_error[-1, i])
 
         self.fig.canvas.draw()
+
+    def save_hv_figure(self, path, title=None):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        if title is None:
+            ax.set_title(self.ax['hv'].get_title())
+        else:
+            ax.set_title(title)
+        
+        ax.set_xlabel(self.ax['hv'].get_xlabel())
+        ax.set_ylabel(self.ax['hv'].get_ylabel())
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        ax.plot(*self.line['hv'].get_data())
+
+        fig.tight_layout()
+        fig.savefig(path)
+    
+    def save_error_figure(self, path, title=None):
+        fig = plt.figure()
+
+        for i in range(self.n_obj):
+            ax = fig.add_subplot(self.n_obj, 1, i + 1)
+
+            if title is None:
+                ax.set_title(self.ax[f'error_{i}'].get_title())
+            elif title != '':
+                ax.set_title(title + f' of {self.obj_name[i]}')
+
+            ax.set_xlabel(self.ax[f'error_{i}'].get_xlabel())
+            ax.set_ylabel(self.ax[f'error_{i}'].get_ylabel())
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+            ax.plot(*self.line[f'error_{i}'].get_data())
+        
+        fig.tight_layout()
+        fig.savefig(path)

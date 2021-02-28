@@ -18,7 +18,7 @@ from system.scheduler import Scheduler
 
 from system.scientist.view.login import ScientistLoginView
 from system.scientist.view.main import ScientistView
-from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController
+from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController, MenuExportController
 from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController
 from system.scientist.viz import VizSpaceController, VizStatsController, VizDatabaseController
 
@@ -144,6 +144,11 @@ class ScientistController:
         self.view.menu_eval.entryconfig(1, command=None, state=tk.DISABLED) # TODO
         self.view.menu_eval.entryconfig(2, command=self.controller['menu_eval'].stop_eval, state=tk.DISABLED)
 
+        self.controller['menu_export'] = MenuExportController(self)
+        self.view.menu_export.entryconfig(0, command=self.controller['menu_export'].export_db, state=tk.DISABLED)
+        self.view.menu_export.entryconfig(1, command=self.controller['menu_export'].export_stats, state=tk.DISABLED)
+        self.view.menu_export.entryconfig(2, command=self.controller['menu_export'].export_figures, state=tk.DISABLED)
+
     def _init_panel(self):
         '''
         Panel initialization
@@ -243,6 +248,9 @@ class ScientistController:
             self.view.menu_config.entryconfig(0, state=tk.DISABLED)
             self.view.menu_config.entryconfig(1, state=tk.DISABLED)
             self.view.menu_config.entryconfig(2, state=tk.NORMAL)
+            self.view.menu_export.entryconfig(0, state=tk.NORMAL)
+            self.view.menu_export.entryconfig(1, state=tk.NORMAL)
+            self.view.menu_export.entryconfig(2, state=tk.NORMAL)
 
             for i in range(4):
                 self.view.menu_database.entryconfig(i, state=tk.NORMAL)

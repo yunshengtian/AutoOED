@@ -100,7 +100,7 @@ def create_radiobutton(master, row, column, text_list, default=None, orientation
         if orientation == 'horizontal':
             button.grid(row=0, column=i)
         elif orientation == 'vertical':
-            button.grid(row=1, column=0)
+            button.grid(row=i, column=0)
         buttons[text] = button
     variable = get_variable('radiobutton', var, buttons)
     return variable

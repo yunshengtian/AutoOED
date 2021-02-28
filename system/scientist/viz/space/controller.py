@@ -297,3 +297,13 @@ class VizSpaceController:
                 line.set_visible(True)
 
         self.view.fig.canvas.draw()
+
+    def save_performance_figure(self, path, title=None):
+        '''
+        '''
+        self.view.save_performance_figure(path, title=title)
+
+    def save_design_figure(self, path, title=None):
+        '''
+        '''
+        self.view.save_design_figure(path, self.line_x, self.bar_x, self.text_x, title=title)
