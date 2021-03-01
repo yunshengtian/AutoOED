@@ -1,6 +1,6 @@
 from .view import MenuEvalView
 
-from .start_local_eval import StartLocalEvalController
+from .start_eval import StartEvalController
 from .stop_eval import StopEvalController
 
 
@@ -21,17 +21,11 @@ class MenuEvalController:
         '''
         return self.root_controller.controller['viz_database'].table
 
-    def start_local_eval(self):
+    def start_eval(self):
         '''
         Manually start local evaluation workers for certain rows (TODO: disable when no eval script linked)
         '''
-        StartLocalEvalController(self)
-
-    def start_remove_eval(self):
-        '''
-        TODO
-        '''
-        pass
+        StartEvalController(self)
 
     def stop_eval(self):
         '''

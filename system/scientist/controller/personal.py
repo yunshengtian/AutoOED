@@ -133,9 +133,8 @@ class ScientistController:
         self.view.menu_database.entryconfig(1, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
 
         self.controller['menu_eval'] = MenuEvalController(self)
-        self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_local_eval, state=tk.DISABLED)
-        self.view.menu_eval.entryconfig(1, command=None, state=tk.DISABLED) # TODO
-        self.view.menu_eval.entryconfig(2, command=self.controller['menu_eval'].stop_eval, state=tk.DISABLED)
+        self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_eval, state=tk.DISABLED)
+        self.view.menu_eval.entryconfig(1, command=self.controller['menu_eval'].stop_eval, state=tk.DISABLED)
 
         self.controller['menu_export'] = MenuExportController(self)
         self.view.menu_export.entryconfig(0, command=self.controller['menu_export'].export_db, state=tk.DISABLED)
@@ -238,7 +237,7 @@ class ScientistController:
                 self.view.menu_export.entryconfig(i, state=tk.NORMAL)
             for i in range(2):
                 self.view.menu_database.entryconfig(i, state=tk.NORMAL)
-            for i in range(3):
+            for i in range(2):
                 self.view.menu_eval.entryconfig(i, state=tk.NORMAL)
 
             # activate widgets

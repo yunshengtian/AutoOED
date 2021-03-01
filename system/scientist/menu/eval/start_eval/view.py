@@ -3,12 +3,12 @@ from system.gui.widgets.factory import create_widget
 from system.gui.widgets.excel import Excel
 
 
-class StartLocalEvalView:
+class StartEvalView:
 
     def __init__(self, root_view):
         self.root_view = root_view
 
-        self.window = create_widget('toplevel', master=self.root_view.root, title='Local Evaluation')
+        self.window = create_widget('toplevel', master=self.root_view.root, title='Start Evaluation')
 
         self.widget = {}
 

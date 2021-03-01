@@ -215,12 +215,13 @@ class Agent:
         if len(all_order) == 0: return
         valid_idx = all_order >= 0
         if not valid_idx.any(): return
+        valid_order = all_order[valid_idx]
 
         # compute hypervolume according to evaluation order
         rowids = []
         hv_list = []
         Y_curr = np.zeros((0, Y.shape[1]))
-        for i in range(valid_idx.sum()):
+        for i in np.sort(valid_order):
             idx = int(np.where(all_order == i)[0][0])
             rowids.append(idx + 1)
             Y_curr = np.vstack([Y_curr, np.atleast_2d(Y[idx])])
@@ -260,7 +261,7 @@ class Agent:
         if len(order) == 0: return np.array([])
         valid_idx = order >= 0
         if valid_idx.sum() == 0: return np.array([])
-        order, hypervolume = order[valid_idx], hypervolume[valid_idx]
+        order, hypervolume = np.argsort(order[valid_idx]), hypervolume[valid_idx]
 
         ordered_hypervolume = np.zeros_like(hypervolume)
         ordered_hypervolume[order] = hypervolume
@@ -273,7 +274,7 @@ class Agent:
         if len(order) == 0: return np.array([])
         valid_idx = order >= 0
         if valid_idx.sum() == 0: return np.array([])
-        order, Y, Y_expected = order[valid_idx], Y[valid_idx], Y_expected[valid_idx]
+        order, Y, Y_expected = np.argsort(order[valid_idx]), Y[valid_idx], Y_expected[valid_idx]
 
         ordered_Y, ordered_Y_expected = np.zeros_like(Y), np.zeros_like(Y_expected)
         ordered_Y[order] = Y

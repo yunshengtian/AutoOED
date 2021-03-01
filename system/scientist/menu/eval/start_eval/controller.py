@@ -1,14 +1,14 @@
 import tkinter as tk
-from .view import StartLocalEvalView
+from .view import StartEvalView
 
 
-class StartLocalEvalController:
+class StartEvalController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.view = StartLocalEvalView(self.root_view)
+        self.view = StartEvalView(self.root_view)
 
         self.view.widget['disp_n_row'].config(
             default=1, 
@@ -23,7 +23,7 @@ class StartLocalEvalController:
             valid_check=[lambda x: x > 0 and x <= table.n_rows]
         )
         
-        self.view.widget['start'].configure(command=self.start_local_worker)
+        self.view.widget['start'].configure(command=self.start_eval_worker)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
     def update_table(self):
@@ -33,7 +33,7 @@ class StartLocalEvalController:
         n_row = self.view.widget['disp_n_row'].get()
         self.view.widget['rowid_excel'].update_n_row(n_row)
 
-    def start_local_worker(self):
+    def start_eval_worker(self):
         '''
         Start local evaluation workers
         '''

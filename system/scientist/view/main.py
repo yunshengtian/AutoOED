@@ -52,8 +52,7 @@ class ScientistView:
 
         self.menu_eval = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Evaluation', menu=self.menu_eval)
-        self.menu_eval.add_command(label='Start local')
-        self.menu_eval.add_command(label='Start remote')
+        self.menu_eval.add_command(label='Start')
         self.menu_eval.add_command(label='Stop')
 
         self.menu_export = tk.Menu(master=self.menu, tearoff=0)
