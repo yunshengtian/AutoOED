@@ -98,7 +98,7 @@ class MenuConfigController:
         self.problem_cfg.clear()
         self.problem_cfg.update(config)
 
-        self.view.widget['set_ref_point'].configure(state=tk.NORMAL)
+        self.view.widget['set_ref_point'].enable()
 
     def set_ref_point(self):
         '''

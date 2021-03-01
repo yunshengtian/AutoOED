@@ -73,7 +73,7 @@ def check_config(config):
         if exp_cfg['n_random_sample'] > 1:
             init_sample_exist = True
     if 'init_sample_path' in exp_cfg and exp_cfg['init_sample_path'] is not None:
-        assert type(exp_cfg['init_sample_path']) == str, 'invalid type of initial sample path'
+        assert type(exp_cfg['init_sample_path']) in [str, list], 'invalid type of initial sample path'
         # TODO: check whether initial sample path is valid
         init_sample_exist = True
     assert init_sample_exist, 'either let the number of random initial samples be a integer greater than 1 or provide a valid path to initial samples'

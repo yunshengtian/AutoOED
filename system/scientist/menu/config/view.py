@@ -31,7 +31,7 @@ class MenuConfigView:
             master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
         self.widget['set_ref_point'] = create_widget('button',
             master=frame_problem, row=1, column=0, text='Set reference point', sticky=None)
-        self.widget['set_ref_point'].configure(state=tk.DISABLED)
+        self.widget['set_ref_point'].disable()
 
         # algorithm subsection
         frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')

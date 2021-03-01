@@ -28,7 +28,7 @@ class Scheduler:
         self.config = config.copy()
         self.agent.set_config(self.config)
 
-        if not self.agent.initialized and not self.initializing: # check if initializing
+        if not self.agent.table_exist and not self.initializing: # check if initializing
             self.initializing = True
 
             problem = build_problem(self.config['problem']['name'])

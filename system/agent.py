@@ -20,6 +20,8 @@ class Agent:
         self.key_map = None
         self.type_map = None
         self.ref_point = None
+
+        self.table_exist = False
         self.initialized = False
 
         self.lock = Lock()
@@ -79,6 +81,9 @@ class Agent:
         elif config != self.problem_cfg: # update in the middle
             self.problem_cfg.update(config['problem'])
             self._set_ref_point(self.problem_cfg['ref_point'])
+
+        if not self.table_exist:
+            self.table_exist = self.check_table_exist()
 
         if not self.initialized:
             self.initialized = self.check_initialized()
@@ -359,14 +364,18 @@ class Agent:
     def check_initialized(self):
         '''
         '''
-        exist = self.db.check_inited_table_exist(name=self.table_name)
-        if exist:
+        if self.check_table_exist():
             batch, order = self.load(['batch', '_order'])
             if len(batch) == 0: return False
             init_idx = np.where(batch == 0)[0]
             return (order[init_idx] >= 0).all()
         else:
             return False
+
+    def check_table_exist(self):
+        '''
+        '''
+        return self.db.check_inited_table_exist(name=self.table_name)
 
     def load(self, keys, rowid=None):
         '''

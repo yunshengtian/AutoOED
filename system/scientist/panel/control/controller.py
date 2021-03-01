@@ -62,14 +62,14 @@ class PanelControlController:
     def enable_manual(self):
         if self.root_view.menu_config.entrycget(2, 'state') != tk.NORMAL:
             self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
-        self.view.widget['mode'].enable()
+        self.view.widget['mode'].enable('Manual')
         self.view.widget['optimize_manual'].enable()
         self.view.widget['stop_manual'].disable()
 
     def enable_auto(self):
         if self.root_view.menu_config.entrycget(2, 'state') != tk.NORMAL:
             self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
-        self.view.widget['mode'].enable()
+        self.view.widget['mode'].enable('Auto')
         self.view.widget['set_stop_cri'].enable()
         self.view.widget['optimize_auto'].enable()
         self.view.widget['stop_auto'].disable()
@@ -77,14 +77,14 @@ class PanelControlController:
     def disable_manual(self):
         if self.root_view.menu_config.entrycget(2, 'state') != tk.DISABLED:
             self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
-        self.view.widget['mode'].disable()
+        self.view.widget['mode'].disable('Manual')
         self.view.widget['optimize_manual'].disable()
         self.view.widget['stop_manual'].enable()
 
     def disable_auto(self):
         if self.root_view.menu_config.entrycget(2, 'state') != tk.DISABLED:
             self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
-        self.view.widget['mode'].disable()
+        self.view.widget['mode'].disable('Auto')
         self.view.widget['set_stop_cri'].disable()
         self.view.widget['optimize_auto'].disable()
         self.view.widget['stop_auto'].enable()

@@ -8,7 +8,7 @@ class Variable:
         self.var = var
         self.widget = widget
 
-    def enable(self, readonly=None):
+    def enable(self):
         '''
         Enable changing variable value
         '''
@@ -57,21 +57,31 @@ class RadiobuttonVar(Variable):
     '''
     Variable for radiobutton
     '''
-    def enable(self, readonly=None):
+    def enable(self, name=None):
         '''
         Enable changing variable value
         '''
-        for widget in self.widget.values():
-            if widget['state'] != 'normal':
-                widget.configure(state='normal')
+        if name is None:
+            for widget in self.widget.values():
+                if widget['state'] != 'normal':
+                    widget.configure(state='normal')
+        else:
+            assert name in self.widget
+            if self.widget[name]['state'] != 'normal':
+                self.widget[name].configure(state='normal')
     
-    def disable(self):
+    def disable(self, name=None):
         '''
         Disable changing variable value
         '''
-        for widget in self.widget.values():
-            if widget['state'] != 'disabled':
-                widget.configure(state='disabled')
+        if name is None:
+            for widget in self.widget.values():
+                if widget['state'] != 'disabled':
+                    widget.configure(state='disabled')
+        else:
+            assert name in self.widget
+            if self.widget[name]['state'] != 'disabled':
+                self.widget[name].configure(state='disabled')
 
 class SpinboxVar(Variable):
     '''

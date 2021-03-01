@@ -248,6 +248,8 @@ class ScientistController:
             # activate widgets
             entry_mode = self.controller['panel_control'].view.widget['mode']
             entry_mode.enable()
+            if not self.agent.can_eval:
+                entry_mode.widget['Auto'].configure(state=tk.DISABLED)
 
             entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
             entry_batch_size.enable()
@@ -289,10 +291,10 @@ class ScientistController:
         self.scheduler.refresh()
         
         # change button status when scheduler is free
-        if not self.scheduler.is_optimizing():
+        if not self.scheduler.is_optimizing() and self.agent.initialized:
             if not self.scheduler.is_evaluating_manual():
                 self.controller['panel_control'].enable_manual()
-            if not self.scheduler.is_evaluating_auto():
+            if self.agent.can_eval and not self.scheduler.is_evaluating_auto():
                 self.controller['panel_control'].enable_auto()
 
         # log display
