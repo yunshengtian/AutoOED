@@ -15,6 +15,7 @@ class UpdateProblemController:
 
         self.view = UpdateProblemView(self.root_view)
         self.view.widget['cancel'].configure(command=self.cancel)
+        self.view.window.protocol('WM_DELETE_WINDOW', self.cancel)
 
         self.set_general(forward=True)
 

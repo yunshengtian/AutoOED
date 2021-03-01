@@ -76,7 +76,11 @@ class MenuProblemController:
             self.view.widget['list'].select_set(tk.END)
             self.view.widget['list'].select_event()
         
-        self._enable_buttons()
+        selected_problem = self.view.widget['list'].curselection()
+        if len(selected_problem) > 0:
+            self._enable_buttons()
+        else:
+            self.view.widget['create'].enable()
 
     def update_problem(self):
         '''
@@ -97,7 +101,11 @@ class MenuProblemController:
         if config is not None:
             self.model.save_problem(config)
         
-        self._enable_buttons()
+        selected_problem = self.view.widget['list'].curselection()
+        if len(selected_problem) > 0:
+            self._enable_buttons()
+        else:
+            self.view.widget['create'].enable()
 
     def delete_problem(self):
         '''
