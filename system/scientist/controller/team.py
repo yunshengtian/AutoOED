@@ -173,10 +173,7 @@ class ScientistController:
         self.controller['viz_stats'].redraw()
 
     def get_config(self):
-        if self.config is None:
-            return None
-        else:
-            return self.config.copy()
+        return self.agent.get_config()
 
     def get_problem_cfg(self):
         if self.problem_cfg is None:

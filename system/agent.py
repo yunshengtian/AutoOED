@@ -254,7 +254,7 @@ class Agent:
     def _init_ref_point(self):
         '''
         '''
-        if None not in self.ref_point: return
+        if self.ref_point is not None and None not in self.ref_point: return
 
         # compute reference point based on current data
         Y = self.load('Y')
@@ -272,8 +272,9 @@ class Agent:
                 raise Exception('obj_type must be min/max')
 
         # set reference point where values are not provided
-        keep_idx = np.array(self.ref_point) != None
-        ref_point[keep_idx] = np.array(self.ref_point)[keep_idx]
+        if self.ref_point is not None:
+            keep_idx = np.array(self.ref_point) != None
+            ref_point[keep_idx] = np.array(self.ref_point)[keep_idx]
         self._set_ref_point(ref_point.tolist())
 
         # update config
@@ -286,7 +287,7 @@ class Agent:
         '''
         # only called when ref_point is inited from data or user changed ref_point in the middle
         assert len(ref_point) == self.problem_cfg['n_obj']
-        assert type(ref_point) == list and type(self.ref_point) == list
+        assert type(ref_point) == list
         if ref_point != self.ref_point:
             self.ref_point = ref_point
             self._reload_hypervolume()
