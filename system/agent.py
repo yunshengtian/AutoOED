@@ -20,52 +20,68 @@ class Agent:
         self.key_map = None
         self.type_map = None
         self.ref_point = None
+        self.initialized = False
 
         self.lock = Lock()
 
-    def set_problem(self, name):
+    def get_config(self):
         '''
         '''
-        first_time = self.problem_cfg == None
-        problem = build_problem(name) 
-        self.problem_cfg = problem.get_config()      
-        self.can_eval = hasattr(problem, 'evaluate_objective') or self.problem_cfg['obj_func'] is not None
-        if first_time:
+        return self.db.query_config(self.table_name)
+
+    def set_config(self, config):
+        '''
+        '''
+        self.db.update_config(self.table_name, config)
+
+        if self.problem_cfg is None: # first time
+
+            problem_cfg = config['problem']
+            problem = build_problem(problem_cfg['name']) 
+            self.problem_cfg = problem.get_config()
+            self.problem_cfg.update(problem_cfg)
+
             self.ref_point = self.problem_cfg['ref_point']
-        else:
-            self.set_ref_point(self.problem_cfg['ref_point'])
+            self.can_eval = hasattr(problem, 'evaluate_objective') or self.problem_cfg['obj_func'] is not None
 
-        # mapping from keys to database columns (e.g., X -> [x1, x2, ...])
-        self.key_map = {
-            'status': 'status',
-            'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
-            'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
-            'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
-            'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
-            'pareto': 'pareto', 'batch': 'batch', 
-            '_order': '_order', '_hypervolume': '_hypervolume',
-        }
+            # mapping from keys to database columns (e.g., X -> [x1, x2, ...])
+            self.key_map = {
+                'status': 'status',
+                'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
+                'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
+                'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
+                'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
+                'pareto': 'pareto', 'batch': 'batch', 
+                '_order': '_order', '_hypervolume': '_hypervolume',
+            }
 
-        var_type_map = {
-            'continuous': float,
-            'integer': int,
-            'binary': int,
-            'categorical': str,
-            'mixed': object,
-        }
+            var_type_map = {
+                'continuous': float,
+                'integer': int,
+                'binary': int,
+                'categorical': str,
+                'mixed': object,
+            }
 
-        # mapping from keys to data types
-        self.type_map = {
-            'status': str,
-            'X': var_type_map[self.problem_cfg['type']],
-            'Y': float,
-            'Y_expected': float,
-            'Y_uncertainty': float,
-            'pareto': bool,
-            'batch': int,
-            '_order': int,
-            '_hypervolume': float,
-        }
+            # mapping from keys to data types
+            self.type_map = {
+                'status': str,
+                'X': var_type_map[self.problem_cfg['type']],
+                'Y': float,
+                'Y_expected': float,
+                'Y_uncertainty': float,
+                'pareto': bool,
+                'batch': int,
+                '_order': int,
+                '_hypervolume': float,
+            }
+
+        elif config != self.problem_cfg: # update in the middle
+            self.problem_cfg.update(config['problem'])
+            self._set_ref_point(self.problem_cfg['ref_point'])
+
+        if not self.initialized:
+            self.initialized = self.check_initialized()
 
     '''
     Utilities
@@ -161,6 +177,9 @@ class Agent:
             self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y', 'status', '_order'], flatten=True), 
                 data=[Y, status, order], rowid=rowids, transform=True)
 
+            # update data (hypervolume)
+            self._update_hypervolume(rowids)
+
         # update data (pareto)
         Y_all = self.load('Y')
         valid_idx = self._get_valid_idx(Y_all)
@@ -169,8 +188,10 @@ class Agent:
         pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
         self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
 
-        # update data (hypervolume)
-        self._update_hypervolume(rowids)
+        if not self.initialized:
+            self.initialized = self.check_initialized()
+            if self.initialized:
+                self._init_ref_point()
 
     '''
     Hypervolume and model error
@@ -230,34 +251,52 @@ class Agent:
 
         self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
 
-    def set_ref_point(self, ref_point=None):
+    def _init_ref_point(self):
         '''
         '''
+        if None not in self.ref_point: return
+
         # compute reference point based on current data
-        if ref_point is None:
-            Y = self.load('Y')
-            valid_idx = self._get_valid_idx(Y)
-            assert len(valid_idx) > 0, 'no evaluated data so far, cannot set default reference point'
-            Y = Y[valid_idx]
+        Y = self.load('Y')
+        valid_idx = self._get_valid_idx(Y)
+        assert len(valid_idx) > 0, 'no evaluated data so far, cannot set default reference point'
+        Y = Y[valid_idx]
 
-            ref_point = np.zeros(Y.shape[1])
-            for i, m in enumerate(self.problem_cfg['obj_type']):
-                if m == 'min':
-                    ref_point[i] = np.max(Y[:, i])
-                elif m == 'max':
-                    ref_point[i] = np.min(Y[:, i])
-                else:
-                    raise Exception('obj_type must be min/max')
+        ref_point = np.zeros(Y.shape[1])
+        for i, m in enumerate(self.problem_cfg['obj_type']):
+            if m == 'min':
+                ref_point[i] = np.max(Y[:, i])
+            elif m == 'max':
+                ref_point[i] = np.min(Y[:, i])
+            else:
+                raise Exception('obj_type must be min/max')
 
+        # set reference point where values are not provided
+        keep_idx = np.array(self.ref_point) != None
+        ref_point[keep_idx] = np.array(self.ref_point)[keep_idx]
+        self._set_ref_point(ref_point.tolist())
+
+        # update config
+        config = self.get_config()
+        config['problem']['ref_point'] = self.ref_point
+        self.db.update_config(self.table_name, config)
+
+    def _set_ref_point(self, ref_point):
+        '''
+        '''
+        # only called when ref_point is inited from data or user changed ref_point in the middle
         assert len(ref_point) == self.problem_cfg['n_obj']
-        if (ref_point != self.ref_point).any():
+        assert type(ref_point) == list and type(self.ref_point) == list
+        if ref_point != self.ref_point:
             self.ref_point = ref_point
             self._reload_hypervolume()
 
     def load_hypervolume(self):
         '''
         '''
-        order, hypervolume = self.load(['_order', '_hypervolume'])
+        with self.lock:
+            order, hypervolume = self.load(['_order', '_hypervolume'])
+
         if len(order) == 0: return np.array([])
         valid_idx = order >= 0
         if valid_idx.sum() == 0: return np.array([])

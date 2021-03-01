@@ -93,7 +93,6 @@ class ScientistController:
 
         self.refresh_rate = REFRESH_RATE # ms
         self.config = None
-        self.config_raw = None
         self.problem_cfg = None
         self.timestamp = None
 
@@ -186,9 +185,6 @@ class ScientistController:
         except Exception as e:
             tk.messagebox.showinfo('Error', 'Invalid configurations: ' + str(e), parent=window)
             return False
-
-        # update raw config (config will be processed and changed later)
-        self.config_raw = config.copy()
         
         old_config = None if self.config is None else self.config.copy()
 
@@ -214,12 +210,12 @@ class ScientistController:
             # update config
             self.config = config
             self.problem_cfg = problem.get_config()
+            self.problem_cfg.update(self.config['problem'])
 
             # remove tutorial image
             self.view.image_tutorial.destroy()
 
             # configure
-            self.agent.set_problem(self.problem_cfg['name'])
             self.controller['panel_info'].set_info(self.problem_cfg)
             self.scheduler.set_config(self.config)
 
@@ -231,8 +227,9 @@ class ScientistController:
                 self._load_existing_data()
             
             # change menu button status
-            for i in range(3):
-                self.view.menu_config.entryconfig(i, state=tk.NORMAL)
+            self.view.menu_config.entryconfig(0, state=tk.DISABLED)
+            self.view.menu_config.entryconfig(1, state=tk.DISABLED)
+            self.view.menu_config.entryconfig(2, state=tk.NORMAL)
             for i in range(3):
                 self.view.menu_export.entryconfig(i, state=tk.NORMAL)
             for i in range(2):
@@ -258,20 +255,13 @@ class ScientistController:
 
         else: # user changed config in the middle
             try:
-                # some keys cannot be changed
-                unchanged_keys = ['name']
-                if self.config_raw['problem']['ref_point'] is not None:
-                    unchanged_keys.append('ref_point')
-                for key in unchanged_keys:
-                    assert (np.array(self.config_raw['problem'][key]) == np.array(config['problem'][key])).all()
+                assert self.config['problem']['name'] == config['problem']['name']
             except:
-                tk.messagebox.showinfo('Error', 'Invalid configuration values for reloading', parent=window)
+                tk.messagebox.showinfo('Error', 'Cannot change problem', parent=window)
                 return False
 
             self.config = config
             self.scheduler.set_config(self.config)
-            
-        self.database.update_config(name=self.table_name, config=self.config)
         
         if self.config != old_config:
             self.controller['viz_space'].set_config(self.config)

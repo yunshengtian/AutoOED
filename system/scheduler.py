@@ -16,8 +16,7 @@ class Scheduler:
         self.eval_workers_auto_wait = []
         self.logs = []
 
-        self.initialized = False
-        self.agent_initializing = False
+        self.initializing = False
 
         self.config = None
         self.stop_criterion = []
@@ -27,12 +26,10 @@ class Scheduler:
         '''
         '''
         self.config = config.copy()
+        self.agent.set_config(self.config)
 
-        if not self.initialized: # check if initialized
-            self.initialized = self.agent.check_initialized()
-
-        if not self.initialized and not self.agent_initializing: # check if initializing
-            self.agent_initializing = True
+        if not self.agent.initialized and not self.initializing: # check if initializing
+            self.initializing = True
 
             problem = build_problem(self.config['problem']['name'])
             n_random_sample, init_sample_path = self.config['experiment']['n_random_sample'], self.config['experiment']['init_sample_path']
@@ -44,7 +41,7 @@ class Scheduler:
     def _optimize(self):
         '''
         '''
-        if not self.initialized:
+        if not self.agent.initialized:
             raise Exception('initialization has not finished')
         assert self.opt_worker is None, 'optimization worker is running'
         self._add_log(f'optimization worker started')
@@ -207,11 +204,6 @@ class Scheduler:
         pred_finished = self._refresh_predict()
         eval_manual_finished, eval_auto_finished = self._refresh_evaluate()
         assert not (opt_finished and eval_auto_finished)
-
-        if not self.initialized:
-            self.initialized = self.agent.check_initialized()
-            if self.initialized and self.agent.ref_point is None:
-                self.agent.set_ref_point()
 
         if opt_finished:
             if self.auto_scheduling:

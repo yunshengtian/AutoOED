@@ -6,6 +6,7 @@ from system.gui.widgets.factory import show_widget_error
 from system.scientist.map import config_map
 from .view import MenuConfigView
 
+from .ref_point import RefPointController
 from .algo_advanced import AlgoAdvancedController
 
 
@@ -17,7 +18,7 @@ class MenuConfigController:
 
         self.problem_cfg = {} # problem config
         self.algo_cfg = {} # advanced algorithm config
-        
+
         self.first_time = True
 
         self.view = None
@@ -50,6 +51,7 @@ class MenuConfigController:
         self.view = MenuConfigView(self.root_view, self.first_time)
 
         self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
+        self.view.widget['set_ref_point'].configure(command=self.set_ref_point)
 
         self.view.widget['algo_name'].widget.bind('<<ComboboxSelected>>', self.select_algorithm)
         self.view.widget['set_advanced'].configure(command=self.set_algo_advanced)
@@ -95,6 +97,14 @@ class MenuConfigController:
 
         self.problem_cfg.clear()
         self.problem_cfg.update(config)
+
+        self.view.widget['set_ref_point'].configure(state=tk.NORMAL)
+
+    def set_ref_point(self):
+        '''
+        Set reference point
+        '''
+        RefPointController(self)
         
     def set_x_init(self):
         '''
@@ -134,6 +144,7 @@ class MenuConfigController:
                 widget.enable()
                 widget.set(curr_config[cfg_type][cfg_name])
                 widget.select()
+        self.problem_cfg.update(curr_config['problem'])
         self.view.widget['set_advanced'].enable()
 
     def save_config(self):
@@ -189,6 +200,7 @@ class MenuConfigController:
                     show_widget_error(master=self.view.window, widget=widget, name=config_map[cfg_type][cfg_name])
                     return
 
+        config['problem']['ref_point'] = self.problem_cfg['ref_point']
         config['algorithm'].update(self.algo_cfg)
 
         success = self.set_config(config, self.view.window)
