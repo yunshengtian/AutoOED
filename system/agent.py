@@ -7,9 +7,9 @@ from system.utils.core import optimize, predict, evaluate
 from system.utils.performance import check_pareto, calc_hypervolume, calc_pred_error
 
 
-class Agent:
+class LoadAgent:
     '''
-    Agent controlling data communication from & to database
+    Agent for data loading
     '''
     def __init__(self, database, table_name):
         self.db = database
@@ -19,21 +19,21 @@ class Agent:
         self.can_eval = False
         self.key_map = None
         self.type_map = None
-        self.ref_point = None
-
-        self.initialized = False
 
         self.lock = Lock()
+
+    '''
+    Config
+    '''
 
     def get_config(self):
         '''
         '''
         return self.db.query_config(self.table_name)
 
-    def set_config(self, config):
-        '''
-        '''
-        self.db.update_config(self.table_name, config)
+    def refresh(self):
+
+        config = self.get_config()
 
         if self.problem_cfg is None: # first time
 
@@ -42,7 +42,6 @@ class Agent:
             self.problem_cfg = problem.get_config()
             self.problem_cfg.update(problem_cfg)
 
-            self.ref_point = self.problem_cfg['ref_point']
             self.can_eval = hasattr(problem, 'evaluate_objective') or self.problem_cfg['obj_func'] is not None
 
             # mapping from keys to database columns (e.g., X -> [x1, x2, ...])
@@ -79,10 +78,6 @@ class Agent:
 
         elif config != self.problem_cfg: # update in the middle
             self.problem_cfg.update(config['problem'])
-            self._set_ref_point(self.problem_cfg['ref_point'])
-
-        if not self.initialized:
-            self.initialized = self.check_initialized()
 
     '''
     Utilities
@@ -118,53 +113,120 @@ class Agent:
             raise NotImplementedError
 
     '''
-    Design and performance
+    Main functions: data loading
     '''
 
-    def _insert(self, key_list, data_list):
+    def check_initialized(self):
         '''
         '''
-        sample_len = len(data_list[0])
-        for data in data_list:
-            assert len(data) == sample_len
-
-        # compute batch number
-        batch_history = self.db.select_data(table=self.table_name, column='batch')
-        if len(batch_history) == 0:
-            batch = np.zeros(sample_len, dtype=int)
+        if self.check_table_exist():
+            batch, order = self.load(['batch', '_order'])
+            if len(batch) == 0: return False
+            init_idx = np.where(batch == 0)[0]
+            return (order[init_idx] >= 0).all()
         else:
-            batch = batch_history[-1][0] + 1
-            batch = np.full(sample_len, batch)
+            return False
 
-        # insert data
-        rowids = self.db.insert_multiple_data(table=self.table_name, column=self._map_key(key_list + ['batch'], flatten=True), 
-            data=data_list + [batch], transform=True)
-        return rowids
+    def check_table_exist(self):
+        '''
+        '''
+        return self.db.check_inited_table_exist(name=self.table_name)
 
-    def insert_design(self, X):
+    def load(self, keys, rowid=None):
         '''
+        Load data from database table
         '''
-        return self._insert(key_list=['X'], data_list=[X])
+        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), rowid=rowid)
 
-    def insert_design_and_prediction(self, X, Y_expected, Y_uncertainty):
-        '''
-        '''
-        return self._insert(key_list=['X', 'Y_expected', 'Y_uncertainty'], data_list=[X, Y_expected, Y_uncertainty])
+        if type(keys) == list:
+            mapped_keys = self._map_key(keys)
+            res_len = [len(k) if type(k) == list else 1 for k in mapped_keys]
+            res_cumsum = np.cumsum(res_len)
+            result_list = [[] for _ in range(len(keys))]
 
-    def insert_design_and_evaluation(self, X, Y):
-        '''
-        '''
-        rowids = self.insert_design(X)
-        self.update_evaluation(Y, rowids)
-        return rowids
+            for row in range(len(data)):
+                res_idx = 0
+                for col in range(len(data[row])):
+                    if col >= res_cumsum[res_idx]:
+                        res_idx += 1
+                    if res_len[res_idx] == 1:
+                        result_list[res_idx].append(data[row][col])
+                    else:
+                        if col == 0 or col == res_cumsum[res_idx - 1]:
+                            result_list[res_idx].append([])
+                        result_list[res_idx][-1].append(data[row][col])
 
-    def update_prediction(self, Y_expected, Y_uncertainty, rowids):
+            dtype = [self.type_map[key] for key in keys]
+            for i in range(len(dtype)):
+                result_list[i] = np.array(result_list[i], dtype=dtype[i])
+            return result_list
+
+        else:
+            dtype = self.type_map[keys]
+            result = np.array(data, dtype=dtype)
+            if type(self._map_key(keys)) == str:
+                return result.squeeze()
+            else:
+                return result
+
+    def quit(self):
+        '''
+        Quit database
+        '''
+        if self.db is not None:
+            self.db.quit()
+
+    '''
+    Status
+    '''
+
+    def get_n_init_sample(self):
+        batch = self.load('batch')
+        return np.sum(batch == 0)
+
+    def get_n_sample(self):
+        return self.db.get_n_row(self.table_name)
+
+    def get_n_valid_sample(self):
+        status = self.load('status')
+        return np.sum(status == 'evaluated')
+
+    def get_max_hv(self):
+        hypervolume = self.load('_hypervolume')
+        if len(hypervolume) == 0: return None
+        valid_idx = self._get_valid_idx(hypervolume)
+        if len(valid_idx) == 0: return None
+        return hypervolume[valid_idx].max()
+
+
+class EvaluateAgent(LoadAgent):
+    '''
+    Agent for data loading and evaluation
+    '''
+    def __init__(self, database, table_name):
+        super().__init__(database, table_name)
+
+        self.ref_point = None
+        self.initialized = False
+        self.lock = Lock()
+
+    '''
+    Config
+    '''
+
+    def set_config(self, config):
         '''
         '''
-        # update data (Y_expected, Y_uncertainty)
-        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
-            data=[Y_expected, Y_uncertainty], rowid=rowids, transform=True)
-        
+        self.db.update_config(self.table_name, config)
+        self.refresh()
+        self._set_ref_point(self.problem_cfg['ref_point'])
+        if not self.initialized:
+            self.initialized = self.check_initialized()
+
+    '''
+    Main functions: evaluation
+    '''
+
     def update_evaluation(self, Y, rowids):
         '''
         '''
@@ -194,9 +256,68 @@ class Agent:
             if self.initialized:
                 self._init_ref_point()
 
+    def evaluate(self, rowid):
+        '''
+        Evaluation of design variables given the associated rowid in database
+        '''
+        if not self.can_eval: return
+        self.db.connect(force=True)
+        
+        # load design variables
+        x_next = self.load('X', rowid=rowid)[0]
+        self.db.update_data(table=self.table_name, column=['status'], data=['evaluating'], rowid=rowid)
+
+        # run evaluation
+        problem_name = self.problem_cfg['name']
+        y_next = evaluate(problem_name, x_next)
+
+        # update evaluation result to database
+        self.update_evaluation(np.atleast_2d(y_next), [rowid])
+
     '''
-    Hypervolume and model error
+    Statistics
     '''
+
+    def _init_ref_point(self):
+        '''
+        '''
+        if self.ref_point is not None and None not in self.ref_point: return
+
+        # compute reference point based on current data
+        Y = self.load('Y')
+        valid_idx = self._get_valid_idx(Y)
+        assert len(valid_idx) > 0, 'no evaluated data so far, cannot set default reference point'
+        Y = Y[valid_idx]
+
+        ref_point = np.zeros(Y.shape[1])
+        for i, m in enumerate(self.problem_cfg['obj_type']):
+            if m == 'min':
+                ref_point[i] = np.max(Y[:, i])
+            elif m == 'max':
+                ref_point[i] = np.min(Y[:, i])
+            else:
+                raise Exception('obj_type must be min/max')
+
+        # set reference point where values are not provided
+        if self.ref_point is not None:
+            keep_idx = np.array(self.ref_point) != None
+            ref_point[keep_idx] = np.array(self.ref_point)[keep_idx]
+        self._set_ref_point(ref_point.tolist())
+
+        # update config
+        config = self.get_config()
+        config['problem']['ref_point'] = self.ref_point
+        self.db.update_config(self.table_name, config)
+
+    def _set_ref_point(self, ref_point):
+        '''
+        '''
+        assert len(ref_point) == self.problem_cfg['n_obj']
+        assert type(ref_point) == list
+        if ref_point != self.ref_point:
+            self.ref_point = ref_point
+            if self.check_table_exist():
+                self._reload_hypervolume()
 
     def _update_hypervolume(self, rowids):
         '''
@@ -252,47 +373,6 @@ class Agent:
 
         self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
 
-    def _init_ref_point(self):
-        '''
-        '''
-        if self.ref_point is not None and None not in self.ref_point: return
-
-        # compute reference point based on current data
-        Y = self.load('Y')
-        valid_idx = self._get_valid_idx(Y)
-        assert len(valid_idx) > 0, 'no evaluated data so far, cannot set default reference point'
-        Y = Y[valid_idx]
-
-        ref_point = np.zeros(Y.shape[1])
-        for i, m in enumerate(self.problem_cfg['obj_type']):
-            if m == 'min':
-                ref_point[i] = np.max(Y[:, i])
-            elif m == 'max':
-                ref_point[i] = np.min(Y[:, i])
-            else:
-                raise Exception('obj_type must be min/max')
-
-        # set reference point where values are not provided
-        if self.ref_point is not None:
-            keep_idx = np.array(self.ref_point) != None
-            ref_point[keep_idx] = np.array(self.ref_point)[keep_idx]
-        self._set_ref_point(ref_point.tolist())
-
-        # update config
-        config = self.get_config()
-        config['problem']['ref_point'] = self.ref_point
-        self.db.update_config(self.table_name, config)
-
-    def _set_ref_point(self, ref_point):
-        '''
-        '''
-        # only called when ref_point is inited from data or user changed ref_point in the middle
-        assert len(ref_point) == self.problem_cfg['n_obj']
-        assert type(ref_point) == list
-        if ref_point != self.ref_point:
-            self.ref_point = ref_point
-            self._reload_hypervolume()
-
     def load_hypervolume(self):
         '''
         '''
@@ -324,9 +404,59 @@ class Agent:
         ordered_Y, ordered_Y_expected = ordered_Y[valid_idx], ordered_Y_expected[valid_idx]
         return calc_pred_error(ordered_Y, ordered_Y_expected, average=False)
 
+
+class OptimizeAgent(EvaluateAgent):
     '''
-    High-level commands
+    Agent for data loading, evaluation, initialization, prediction and optimization
     '''
+
+    '''
+    Main functions: initialization, prediction and optimization
+    '''
+
+    def _insert(self, key_list, data_list):
+        '''
+        '''
+        sample_len = len(data_list[0])
+        for data in data_list:
+            assert len(data) == sample_len
+
+        # compute batch number
+        batch_history = self.db.select_data(table=self.table_name, column='batch')
+        if len(batch_history) == 0:
+            batch = np.zeros(sample_len, dtype=int)
+        else:
+            batch = batch_history[-1][0] + 1
+            batch = np.full(sample_len, batch)
+
+        # insert data
+        rowids = self.db.insert_multiple_data(table=self.table_name, column=self._map_key(key_list + ['batch'], flatten=True), 
+            data=data_list + [batch], transform=True)
+        return rowids
+
+    def insert_design(self, X):
+        '''
+        '''
+        return self._insert(key_list=['X'], data_list=[X])
+
+    def insert_design_and_prediction(self, X, Y_expected, Y_uncertainty):
+        '''
+        '''
+        return self._insert(key_list=['X', 'Y_expected', 'Y_uncertainty'], data_list=[X, Y_expected, Y_uncertainty])
+
+    def insert_design_and_evaluation(self, X, Y):
+        '''
+        '''
+        rowids = self.insert_design(X)
+        self.update_evaluation(Y, rowids)
+        return rowids
+
+    def update_prediction(self, Y_expected, Y_uncertainty, rowids):
+        '''
+        '''
+        # update data (Y_expected, Y_uncertainty)
+        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
+            data=[Y_expected, Y_uncertainty], rowid=rowids, transform=True)
 
     def initialize(self, X_evaluated, X_unevaluated, Y_evaluated):
         '''
@@ -356,77 +486,6 @@ class Agent:
             self.update_evaluation(Y_evaluated, rowids_evaluated)
 
         return rowids_unevaluated
-
-    def check_initialized(self):
-        '''
-        '''
-        if self.check_table_exist():
-            batch, order = self.load(['batch', '_order'])
-            if len(batch) == 0: return False
-            init_idx = np.where(batch == 0)[0]
-            return (order[init_idx] >= 0).all()
-        else:
-            return False
-
-    def check_table_exist(self):
-        '''
-        '''
-        return self.db.check_inited_table_exist(name=self.table_name)
-
-    def load(self, keys, rowid=None):
-        '''
-        Load data from database table
-        '''
-        data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), rowid=rowid)
-
-        if type(keys) == list:
-            mapped_keys = self._map_key(keys)
-            res_len = [len(k) if type(k) == list else 1 for k in mapped_keys]
-            res_cumsum = np.cumsum(res_len)
-            result_list = [[] for _ in range(len(keys))]
-
-            for row in range(len(data)):
-                res_idx = 0
-                for col in range(len(data[row])):
-                    if col >= res_cumsum[res_idx]:
-                        res_idx += 1
-                    if res_len[res_idx] == 1:
-                        result_list[res_idx].append(data[row][col])
-                    else:
-                        if col == 0 or col == res_cumsum[res_idx - 1]:
-                            result_list[res_idx].append([])
-                        result_list[res_idx][-1].append(data[row][col])
-
-            dtype = [self.type_map[key] for key in keys]
-            for i in range(len(dtype)):
-                result_list[i] = np.array(result_list[i], dtype=dtype[i])
-            return result_list
-
-        else:
-            dtype = self.type_map[keys]
-            result = np.array(data, dtype=dtype)
-            if type(self._map_key(keys)) == str:
-                return result.squeeze()
-            else:
-                return result
-
-    def evaluate(self, rowid):
-        '''
-        Evaluation of design variables given the associated rowid in database
-        '''
-        if not self.can_eval: return
-        self.db.connect(force=True)
-        
-        # load design variables
-        x_next = self.load('X', rowid=rowid)[0]
-        self.db.update_data(table=self.table_name, column=['status'], data=['evaluating'], rowid=rowid)
-
-        # run evaluation
-        problem_name = self.problem_cfg['name']
-        y_next = evaluate(problem_name, x_next)
-
-        # update evaluation result to database
-        self.update_evaluation(np.atleast_2d(y_next), [rowid])
 
     def optimize(self, config, queue=None):
         '''
@@ -462,32 +521,3 @@ class Agent:
 
         # update prediction result to database
         self.update_prediction(Y_expected, Y_uncertainty, rowids)
-
-    def quit(self):
-        '''
-        Quit database
-        '''
-        if self.db is not None:
-            self.db.quit()
-
-    '''
-    Status
-    '''
-
-    def get_n_init_sample(self):
-        batch = self.load('batch')
-        return np.sum(batch == 0)
-
-    def get_n_sample(self):
-        return self.db.get_n_row(self.table_name)
-
-    def get_n_valid_sample(self):
-        status = self.load('status')
-        return np.sum(status == 'evaluated')
-
-    def get_max_hv(self):
-        hypervolume = self.load('_hypervolume')
-        if len(hypervolume) == 0: return None
-        valid_idx = self._get_valid_idx(hypervolume)
-        if len(valid_idx) == 0: return None
-        return hypervolume[valid_idx].max()

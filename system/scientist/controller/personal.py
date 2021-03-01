@@ -13,7 +13,7 @@ import tkinter as tk
 from tkinter import messagebox
 from system.params import *
 from system.database import PersonalDatabase
-from system.agent import Agent
+from system.agent import OptimizeAgent
 from system.scheduler import Scheduler
 
 from system.scientist.view.init import ScientistInitView
@@ -96,7 +96,7 @@ class ScientistController:
         self.problem_cfg = None
         self.timestamp = None
 
-        self.agent = Agent(self.database, self.table_name)
+        self.agent = OptimizeAgent(self.database, self.table_name)
         self.scheduler = Scheduler(self.agent)
 
         self.true_pfront = None
