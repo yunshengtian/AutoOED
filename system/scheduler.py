@@ -28,7 +28,7 @@ class Scheduler:
         self.config = config.copy()
         self.agent.set_config(self.config)
 
-        if not self.agent.table_exist and not self.initializing: # check if initializing
+        if not self.agent.check_table_exist() and not self.initializing: # check if initializing
             self.initializing = True
 
             problem = build_problem(self.config['problem']['name'])
@@ -41,7 +41,7 @@ class Scheduler:
     def _optimize(self):
         '''
         '''
-        if not self.agent.initialized:
+        if not self.agent.check_initialized():
             raise Exception('initialization has not finished')
         assert self.opt_worker is None, 'optimization worker is running'
         self._add_log(f'optimization worker started')

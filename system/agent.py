@@ -21,7 +21,6 @@ class Agent:
         self.type_map = None
         self.ref_point = None
 
-        self.table_exist = False
         self.initialized = False
 
         self.lock = Lock()
@@ -81,9 +80,6 @@ class Agent:
         elif config != self.problem_cfg: # update in the middle
             self.problem_cfg.update(config['problem'])
             self._set_ref_point(self.problem_cfg['ref_point'])
-
-        if not self.table_exist:
-            self.table_exist = self.check_table_exist()
 
         if not self.initialized:
             self.initialized = self.check_initialized()

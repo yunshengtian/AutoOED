@@ -291,7 +291,7 @@ class ScientistController:
         self.scheduler.refresh()
         
         # change button status when scheduler is free
-        if not self.scheduler.is_optimizing() and self.agent.initialized:
+        if not self.scheduler.is_optimizing() and self.agent.check_initialized():
             if not self.scheduler.is_evaluating_manual():
                 self.controller['panel_control'].enable_manual()
             if self.agent.can_eval and not self.scheduler.is_evaluating_auto():
