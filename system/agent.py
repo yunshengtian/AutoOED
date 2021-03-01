@@ -410,7 +410,7 @@ class Agent:
             else:
                 return result
 
-    def evaluate(self, config, rowid):
+    def evaluate(self, rowid):
         '''
         Evaluation of design variables given the associated rowid in database
         '''
@@ -422,7 +422,8 @@ class Agent:
         self.db.update_data(table=self.table_name, column=['status'], data=['evaluating'], rowid=rowid)
 
         # run evaluation
-        y_next = evaluate(config, x_next)
+        problem_name = self.problem_cfg['name']
+        y_next = evaluate(problem_name, x_next)
 
         # update evaluation result to database
         self.update_evaluation(np.atleast_2d(y_next), [rowid])

@@ -76,7 +76,7 @@ class Scheduler:
         '''
         if not self.agent.can_eval: return
         for rowid in rowids:
-            worker = Process(target=self.agent.evaluate, args=(self.config, rowid))
+            worker = Process(target=self.agent.evaluate, args=(rowid,))
             self.eval_workers_manual_wait.append([worker, rowid])
 
     def evaluate_auto(self, rowids):
@@ -84,7 +84,7 @@ class Scheduler:
         '''
         if not self.agent.can_eval: return
         for rowid in rowids:
-            worker = Process(target=self.agent.evaluate, args=(self.config, rowid))
+            worker = Process(target=self.agent.evaluate, args=(rowid,))
             self.eval_workers_auto_wait.append([worker, rowid])
 
     def is_optimizing(self):
