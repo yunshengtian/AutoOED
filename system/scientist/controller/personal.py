@@ -14,7 +14,7 @@ from tkinter import messagebox
 from system.params import *
 from system.database import PersonalDatabase
 from system.agent import OptimizeAgent
-from system.scheduler import Scheduler
+from system.scheduler import OptimizeScheduler
 
 from system.scientist.view.init import ScientistInitView
 from system.scientist.view.main import ScientistView
@@ -97,7 +97,7 @@ class ScientistController:
         self.timestamp = None
 
         self.agent = OptimizeAgent(self.database, self.table_name)
-        self.scheduler = Scheduler(self.agent)
+        self.scheduler = OptimizeScheduler(self.agent)
 
         self.true_pfront = None
 
@@ -200,9 +200,9 @@ class ScientistController:
                 return False
 
             # check if config is compatible with history data (problem dimension)
-            table_exist = self.database.check_inited_table_exist(self.table_name)
+            table_exist = self.agent.check_table_exist()
             if table_exist:
-                column_names = self.database.get_column_names(self.table_name)
+                column_names = self.agent.get_column_names()
                 data_n_var = len([name for name in column_names if name.startswith('x')])
                 data_n_obj = len([name for name in column_names if name.startswith('f') and '_' not in name])
                 problem_cfg = problem.get_config()
@@ -293,7 +293,7 @@ class ScientistController:
                 self.controller['panel_control'].enable_auto()
 
         # log display
-        log_list = self.scheduler.read_log()
+        log_list = self.scheduler.logger.read()
         self.controller['panel_log'].log(log_list)
 
         # check if database has changed

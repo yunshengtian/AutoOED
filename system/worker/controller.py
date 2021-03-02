@@ -4,7 +4,8 @@ from tkinter import messagebox
 from problem.common import get_problem_config
 from system.params import *
 from system.database import TeamDatabase
-from system.agent import Agent
+from system.agent import EvaluateAgent
+from system.scheduler import EvaluateScheduler
 from .view import WorkerLoginView, WorkerView
 
 from .auto_set_script import AutoSetScriptController
@@ -89,12 +90,12 @@ class WorkerController:
         self.view = WorkerView(self.root)
         self.bind_command()
         
-        self.agent = Agent(self.database, self.table_name)
+        self.agent = EvaluateAgent(self.database, self.table_name)
+        self.agent.refresh()
+        self.scheduler = EvaluateScheduler(self.agent)
 
-        problem_name = self.database.query_problem(self.table_name)
-        if problem_name is not None:
-            problem_cfg = get_problem_config(problem_name)
-            self.agent.set_problem(problem_name)
+        problem_cfg = self.agent.problem_cfg
+        if problem_cfg is not None:
             self.view.widget['problem_info'].set_info(problem_cfg)
 
         self.root.after(self.refresh_rate, self.refresh)
@@ -104,6 +105,7 @@ class WorkerController:
     def refresh(self):
         '''
         '''
+        self.scheduler.refresh()
         self.refresh_table()
         self.root.after(self.refresh_rate, self.refresh)
 
@@ -130,15 +132,12 @@ class WorkerController:
         assert self.table_name is not None
 
         if self.view.widget['db_table'] is None:
-            if self.database.check_inited_table_exist(self.table_name):
-                self.database.execute(f'describe {self.table_name}')
-                columns = self.database.get_column_names(self.table_name)
-                columns = [col for col in columns if not col.startswith('_')]
+            if self.agent.check_table_exist():
+                columns = self.agent.get_column_names()
                 self.view.init_db_table(columns)
-                problem_name = self.database.query_problem(self.table_name)
-                problem_cfg = get_problem_config(problem_name)
-                self.agent.set_problem(problem_name)
-                self.view.widget['problem_info'].set_info(problem_cfg)
+                
+                self.agent.refresh()
+                self.view.widget['problem_info'].set_info(self.agent.problem_cfg)
             else:
                 return
 
@@ -171,7 +170,13 @@ class WorkerController:
     def evaluate(self, eval_func, rowids):
         '''
         '''
-        pass
+        try:
+            n_worker = self.view.widget['n_worker'].get()
+        except Exception as e:
+            tk.messagebox.showinfo('Error', str(e), parent=self.view.root)
+            return
+
+        self.scheduler.evaluate(eval_func, rowids, n_worker)
 
     def manual_lock(self):
         '''

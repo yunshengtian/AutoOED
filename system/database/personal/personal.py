@@ -498,7 +498,7 @@ class PersonalDatabase:
         column_names = [name[0] for name in column_names]
         return column_names
 
-    def get_checksum(self):
+    def get_checksum(self, table=None):
         '''
         '''
         return self.checksum.value

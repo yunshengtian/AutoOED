@@ -4,6 +4,7 @@ from tkinter import messagebox
 from problem.common import get_problem_config
 from system.params import *
 from system.database import TeamDatabase
+from system.agent import LoadAgent
 from system.server.view import ServerLoginView, ServerInitView, ServerView
 from system.server.task import CreateTaskController, LoadTaskController, RemoveTaskController
 from system.server.access import ManageAdminController, ManageUserController 
@@ -156,9 +157,11 @@ class ServerController:
         self.view = ServerView(self.root)
         self.bind_command()
 
-        problem_name = self.database.query_problem(self.table_name)
-        if problem_name is not None:
-            problem_cfg = get_problem_config(problem_name)
+        self.agent = LoadAgent(self.database, self.table_name)
+        self.agent.refresh()
+
+        problem_cfg = self.agent.problem_cfg
+        if problem_cfg is not None:
             self.view.widget['problem_info'].set_info(problem_cfg)
 
         self.root.after(self.refresh_rate, self.refresh)
@@ -248,14 +251,12 @@ class ServerController:
         assert self.table_name is not None
 
         if self.view.widget['db_table'] is None:
-            if self.database.check_inited_table_exist(self.table_name):
-                self.database.execute(f'describe {self.table_name}')
-                columns = self.database.get_column_names(self.table_name)
-                columns = [col for col in columns if not col.startswith('_')]
+            if self.agent.check_table_exist():
+                columns = self.agent.get_column_names()
                 self.view.init_db_table(columns)
-                problem_name = self.database.query_problem(self.table_name)
-                problem_cfg = get_problem_config(problem_name)
-                self.view.widget['problem_info'].set_info(problem_cfg)
+
+                self.agent.refresh()
+                self.view.widget['problem_info'].set_info(self.agent.problem_cfg)
             else:
                 return
 

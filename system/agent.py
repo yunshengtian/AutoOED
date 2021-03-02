@@ -34,6 +34,7 @@ class LoadAgent:
     def refresh(self):
 
         config = self.get_config()
+        if config is None: return
 
         if self.problem_cfg is None: # first time
 
@@ -198,6 +199,11 @@ class LoadAgent:
         if len(valid_idx) == 0: return None
         return hypervolume[valid_idx].max()
 
+    def get_column_names(self):
+        columns = self.db.get_column_names(self.table_name)
+        columns = [col for col in columns if not col.startswith('_')]
+        return columns
+
 
 class EvaluateAgent(LoadAgent):
     '''
@@ -214,11 +220,10 @@ class EvaluateAgent(LoadAgent):
     Config
     '''
 
-    def set_config(self, config):
+    def refresh(self):
         '''
         '''
-        self.db.update_config(self.table_name, config)
-        self.refresh()
+        super().refresh()
         self._set_ref_point(self.problem_cfg['ref_point'])
         if not self.initialized:
             self.initialized = self.check_initialized()
@@ -256,7 +261,7 @@ class EvaluateAgent(LoadAgent):
             if self.initialized:
                 self._init_ref_point()
 
-    def evaluate(self, rowid):
+    def evaluate(self, rowid, eval_func=None):
         '''
         Evaluation of design variables given the associated rowid in database
         '''
@@ -268,8 +273,11 @@ class EvaluateAgent(LoadAgent):
         self.db.update_data(table=self.table_name, column=['status'], data=['evaluating'], rowid=rowid)
 
         # run evaluation
-        problem_name = self.problem_cfg['name']
-        y_next = evaluate(problem_name, x_next)
+        if eval_func is None:
+            problem_name = self.problem_cfg['name']
+            y_next = evaluate(problem_name, x_next)
+        else:
+            y_next = np.array(eval_func(x_next))
 
         # update evaluation result to database
         self.update_evaluation(np.atleast_2d(y_next), [rowid])
@@ -411,6 +419,15 @@ class OptimizeAgent(EvaluateAgent):
     '''
 
     '''
+    Config
+    '''
+    def set_config(self, config):
+        '''
+        '''
+        self.db.update_config(self.table_name, config)
+        self.refresh()
+
+    '''
     Main functions: initialization, prediction and optimization
     '''
 
@@ -487,7 +504,7 @@ class OptimizeAgent(EvaluateAgent):
 
         return rowids_unevaluated
 
-    def optimize(self, config, queue=None):
+    def optimize(self, queue=None):
         '''
         Optimization of next batch of samples to evaluate, stored in 'rowids' rows in database
         '''
@@ -497,6 +514,7 @@ class OptimizeAgent(EvaluateAgent):
         X, Y = X[valid_idx], Y[valid_idx]
 
         # optimize for best X_next
+        config = self.get_config()
         X_next, (Y_expected, Y_uncertainty) = optimize(config, X, Y)
 
         # insert optimization and prediction result to database
@@ -507,7 +525,7 @@ class OptimizeAgent(EvaluateAgent):
         else:
             queue.put(rowids)
 
-    def predict(self, config, rowids):
+    def predict(self, rowids):
         '''
         '''
         # read current data from database
@@ -517,6 +535,7 @@ class OptimizeAgent(EvaluateAgent):
         X, Y = X[valid_idx], Y[valid_idx]
 
         # predict performance of given input X_next
+        config = self.get_config()
         Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
 
         # update prediction result to database

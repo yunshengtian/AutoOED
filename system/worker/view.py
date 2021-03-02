@@ -52,13 +52,42 @@ class WorkerView:
 
         frame_ctrl = create_widget('frame', master=self.root, row=0, column=1, padx=0, pady=0)
         self.widget['problem_info'] = ProblemInfoWidget(master=frame_ctrl, row=0, column=0)
-        frame_auto = create_widget('labeled_frame', master=frame_ctrl, row=1, column=0, text='Auto mode')
-        self.widget['auto_set_script'] = create_widget('button', master=frame_auto, row=0, column=0, text='Set script')
-        self.widget['auto_evaluate'] = create_widget('button', master=frame_auto, row=1, column=0, text='Evaluate')
-        frame_manual = create_widget('labeled_frame', master=frame_ctrl, row=2, column=0, text='Manual mode')
+
+        frame_eval = create_widget('labeled_frame', master=frame_ctrl, row=1, column=0, text='Evaluation')
+        self.widget['mode'] = create_widget('radiobutton',
+            master=frame_eval, row=0, column=0, text_list=['Manual', 'Auto'], default='Manual')
+
+        frame_manual = create_widget('frame', master=frame_eval, row=1, column=0, padx=0, pady=0)
         self.widget['manual_lock'] = create_widget('button', master=frame_manual, row=0, column=0, text='Lock entry')
-        self.widget['manual_release'] = create_widget('button', master=frame_manual, row=1, column=0, text='Release entry')
-        self.widget['manual_fill'] = create_widget('button', master=frame_manual, row=2, column=0, text='Fill value')
+        self.widget['manual_release'] = create_widget('button', master=frame_manual, row=0, column=1, text='Release entry')
+        self.widget['manual_fill'] = create_widget('button', master=frame_manual, row=1, column=0, columnspan=2, text='Fill value')
+
+        frame_auto = create_widget('frame', master=frame_eval, row=1, column=0, padx=0, pady=0)
+        self.widget['n_worker'] = create_widget('labeled_entry', master=frame_auto, row=0, column=0, columnspan=2, text='Number of workers',
+            class_type='int', valid_check=lambda x: x > 0, error_msg='Number of evaluation workers must be positive', required=True, default=1)
+        self.widget['auto_set_script'] = create_widget('button', master=frame_auto, row=1, column=0, text='Set script')
+        self.widget['auto_evaluate'] = create_widget('button', master=frame_auto, row=1, column=1, text='Evaluate')
+
+        grid_configure(frame_eval, 0, 0)
+        grid_configure(frame_manual, 1, 1)
+        grid_configure(frame_auto, 1, 1)
+        frame_auto.grid_remove()
+
+        def set_manual():
+            frame_auto.grid_remove()
+            frame_manual.grid()
+
+        def set_auto():
+            frame_manual.grid_remove()
+            frame_auto.grid()
+
+        for text, button in self.widget['mode'].widget.items():
+            if text == 'Manual':
+                button.configure(command=set_manual)
+            elif text == 'Auto':
+                button.configure(command=set_auto)
+            else:
+                raise Exception()
 
         for widget_name in ['auto_set_script', 'auto_evaluate', 'manual_lock', 'manual_release', 'manual_fill']:
             self.widget[widget_name].configure(state=tk.DISABLED)
