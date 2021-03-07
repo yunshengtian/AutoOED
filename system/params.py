@@ -1,44 +1,62 @@
 import tkinter as tk
 
+# window title
 TITLE = 'AutoOED'
 
+# refresh rate
 REFRESH_RATE = 100 # ms
 
-GEOMETRY_MAX_WIDTH = 1280
-GEOMETRY_WIDTH_RATIO = 0.8
-GEOMETRY_HEIGHT_RATIO = 0.5
-
+# window resolution
+MAX_WIDTH = 1280
+WIDTH_RATIO = 0.8
+HEIGHT_RATIO = 0.6
 WIDTH = None
 HEIGHT = None
 
+# widget resolution
 PADX = 10
 PADY = 10
 COMBOBOX_WIDTH = 10
 ENTRY_WIDTH = 5
 TEXT_WIDTH = 10
 TEXT_HEIGHT = 10
+
+# logo resolution
 LOGO_WIDTH = 250
 LOGO_HEIGHT = 100
 
-def set_resolution():
-    global WIDTH, HEIGHT, PADX, PADY
+# figure resolution
+FIGURE_DPI = 100
 
+# adapt resolution to screen
+def set_resolution():
+    global WIDTH, HEIGHT, PADX, PADY, FIGURE_DPI
+
+    # detect screen resolution
     root = tk.Tk()
     screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
     root.destroy()
 
-    if screen_width * GEOMETRY_WIDTH_RATIO > GEOMETRY_MAX_WIDTH:
-        WIDTH = GEOMETRY_MAX_WIDTH
+    # set window width
+    if screen_width * WIDTH_RATIO > MAX_WIDTH:
+        WIDTH = MAX_WIDTH
     else:
-        WIDTH = screen_width * GEOMETRY_WIDTH_RATIO
+        WIDTH = screen_width * WIDTH_RATIO
         
-    HEIGHT = WIDTH * GEOMETRY_HEIGHT_RATIO
+    # set window height
+    HEIGHT = WIDTH * HEIGHT_RATIO
     if HEIGHT > screen_height:
         HEIGHT = screen_height
     WIDTH, HEIGHT = int(WIDTH), int(HEIGHT)
 
-    if WIDTH < GEOMETRY_MAX_WIDTH or HEIGHT < WIDTH * GEOMETRY_HEIGHT_RATIO:
+    # if small window
+    if WIDTH < MAX_WIDTH or HEIGHT < WIDTH * HEIGHT_RATIO:
+
+        # set window resolution
         PADX = 5
         PADY = 5
+
+        # set figure resolution
+        FIGURE_DPI = 90
 
 set_resolution()

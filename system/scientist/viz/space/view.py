@@ -3,6 +3,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from system.gui.utils.radar import radar_factory
+from system.params import FIGURE_DPI
 
 import tkinter as tk
 from system.gui.utils.grid import grid_configure
@@ -58,7 +59,7 @@ class VizSpaceView:
         self.var_lb, self.var_ub = np.array(var_lb), np.array(var_ub)
 
         # figure placeholder in GUI
-        self.fig = plt.figure(figsize=(10, 5))
+        self.fig = plt.figure(dpi=FIGURE_DPI)
         self.gs = GridSpec(1, 2, figure=self.fig, width_ratios=[3, 2])
 
         # connect matplotlib figure with tkinter GUI

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
+from system.params import FIGURE_DPI
 
 
 class VizStatsView:
@@ -10,7 +11,7 @@ class VizStatsView:
         self.n_obj, self.obj_name = problem_cfg['n_obj'], problem_cfg['obj_name']
 
         # figure placeholder in GUI
-        self.fig = plt.figure(figsize=(10, 5))
+        self.fig = plt.figure(dpi=FIGURE_DPI)
         grid = plt.GridSpec(self.n_obj, 2)
 
         self.ax = {}
