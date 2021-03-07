@@ -224,7 +224,8 @@ class EvaluateAgent(LoadAgent):
         '''
         '''
         super().refresh()
-        self._set_ref_point(self.problem_cfg['ref_point'])
+        if self.problem_cfg is not None:
+            self._set_ref_point(self.problem_cfg['ref_point'])
         if not self.initialized:
             self.initialized = self.check_initialized()
 
