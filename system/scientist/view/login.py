@@ -7,9 +7,7 @@ class ScientistLoginView:
     def __init__(self, root):
         self.root = root
 
-        frame_login = tk.Frame(master=self.root)
-        frame_login.grid(row=0, column=0, padx=20, pady=20, sticky='NSEW')
-
+        frame_login = create_widget('frame', master=self.root, row=0, column=0)
         create_widget('logo', master=frame_login, row=0, column=0)
 
         self.widget = {}

@@ -11,9 +11,7 @@ class ServerLoginView:
     def __init__(self, root):
         self.root = root
 
-        frame_login = tk.Frame(master=self.root)
-        frame_login.grid(row=0, column=0, padx=20, pady=20, sticky='NSEW')
-
+        frame_login = create_widget('frame', master=self.root, row=0, column=0)
         create_widget('logo', master=frame_login, row=0, column=0)
 
         self.widget = {}
@@ -29,8 +27,7 @@ class ServerInitView:
     def __init__(self, root):
         self.root = root
 
-        frame_init = tk.Frame(master=self.root)
-        frame_init.grid(row=0, column=0, padx=20, pady=20, sticky='NSEW')
+        frame_init = create_widget('frame', master=self.root, row=0, column=0)
         grid_configure(frame_init, 1, 0)
 
         self.widget = {}

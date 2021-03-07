@@ -10,9 +10,7 @@ class WorkerLoginView:
     def __init__(self, root):
         self.root = root
 
-        frame_login = tk.Frame(master=self.root)
-        frame_login.grid(row=0, column=0, padx=20, pady=20, sticky='NSEW')
-
+        frame_login = create_widget('frame', master=self.root, row=0, column=0)
         create_widget('logo', master=frame_login, row=0, column=0)
 
         self.widget = {}
@@ -90,7 +88,7 @@ class WorkerView:
                 raise Exception()
 
         for widget_name in ['auto_set_script', 'auto_evaluate', 'manual_lock', 'manual_release', 'manual_fill']:
-            self.widget[widget_name].configure(state=tk.DISABLED)
+            self.widget[widget_name].disable()
 
     def init_db_table(self, columns):
         '''
@@ -106,7 +104,7 @@ class WorkerView:
         self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)
 
         for widget_name in ['auto_set_script', 'manual_lock', 'manual_release', 'manual_fill']:
-            self.widget[widget_name].configure(state=tk.NORMAL)
+            self.widget[widget_name].enable()
 
     def get_table_columns(self):
         return self.widget['db_table'].columns

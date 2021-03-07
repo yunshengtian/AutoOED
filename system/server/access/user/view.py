@@ -16,7 +16,7 @@ class ManageUserView:
         # problem section
         frame_user = create_widget('frame', master=self.window, row=0, column=0)
         frame_list = create_widget('labeled_frame', master=frame_user, row=0, column=0, text='User List')
-        frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, padx=5, pady=5)
+        frame_list_display = create_widget('frame', master=frame_list, row=0, column=0)
         frame_list_action = create_widget('frame', master=frame_list, row=1, column=0, padx=0, pady=0)
         frame_info = create_widget('labeled_frame', master=frame_user, row=0, column=1, text='User Information')
         frame_info_display = create_widget('frame', master=frame_info, row=0, column=0, padx=0, pady=0)

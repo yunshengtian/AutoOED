@@ -156,7 +156,7 @@ class WorkerController:
         '''
         '''
         self.eval_script = script_path
-        self.view.widget['auto_eval'].configure(state=tk.NORMAL)
+        self.view.widget['auto_eval'].enable()
 
     def load_eval_script(self):
         return self.eval_script

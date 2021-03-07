@@ -20,6 +20,8 @@ padx = 10
 pady = 10
 combobox_width = 10
 entry_width = 5
+text_width = 10
+text_height = 10
 
 
 def create_toplevel(master, title=None, resizable=False):
@@ -121,6 +123,15 @@ def create_spinbox(master, row, column, text, from_, to, width=entry_width,
         return variable
 
 
+def create_text(master, row, column, width=text_width, height=text_height, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
+    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+    grid_configure(frame, 0, 0)
+    scrtext = scrolledtext.ScrolledText(master=frame, width=width, height=height)
+    scrtext.grid(row=0, column=0, sticky='NSEW')
+    entry = get_entry('string', scrtext)
+    return entry
+
+
 def create_labeled_frame(master, row, column, text, 
         rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW'):
     frame = tk.LabelFrame(master=master, text=text)
@@ -193,20 +204,6 @@ def create_labeled_button_entry(master, row, column, label_text, button_text, co
         return button, entry
 
 
-def create_labeled_text(master, row, column, text, width, height, rowspan=1, columnspan=1, padx=padx, pady=pady, sticky='NSEW', return_label=False):
-    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
-    label_text = text + ':'
-    label = tk.Label(master=frame, text=label_text)
-    label.grid(row=0, column=0, sticky='W')
-    scrtext = scrolledtext.ScrolledText(master=frame, width=width, height=height)
-    scrtext.grid(row=1, column=0, pady=pady / 2, sticky='EW')
-    entry = get_entry('string', scrtext)
-    if return_label:
-        return label, entry
-    else:
-        return entry
-
-
 def create_widget(name, *args, **kwargs):
     '''
     Create widget by name and other arguments
@@ -222,12 +219,12 @@ def create_widget(name, *args, **kwargs):
         'checkbutton': create_checkbutton,
         'radiobutton': create_radiobutton,
         'spinbox': create_spinbox,
+        'text': create_text,
         'labeled_frame': create_labeled_frame,
         'labeled_combobox': create_labeled_combobox,
         'labeled_button': create_labeled_button,
         'labeled_entry': create_labeled_entry,
         'labeled_button_entry': create_labeled_button_entry,
-        'labeled_text': create_labeled_text,
     }
     return factory[name](*args, **kwargs)
 

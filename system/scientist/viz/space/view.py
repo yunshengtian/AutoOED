@@ -7,6 +7,7 @@ from system.gui.utils.radar import radar_factory
 import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.utils.figure import embed_figure
+from system.gui.widgets.factory import create_widget
 
 
 class VizSpaceView:
@@ -106,8 +107,7 @@ class VizSpaceView:
             self.ax2.set_ylim(0, 1.04)
 
         # configure slider widget
-        frame_slider = tk.Frame(master=self.root_view.frame_plot)
-        frame_slider.grid(row=2, column=0, padx=5, pady=0, sticky='EW')
+        frame_slider = create_widget('frame', master=self.root_view.frame_plot, row=2, column=0)
         grid_configure(frame_slider, [0], [1])
         
         label_iter = tk.Label(master=frame_slider, text='Iteration:')

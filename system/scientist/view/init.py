@@ -7,9 +7,7 @@ class ScientistInitView:
     def __init__(self, root):
         self.root = root
 
-        frame_init = tk.Frame(master=self.root)
-        frame_init.grid(row=0, column=0, padx=20, pady=20)
-
+        frame_init = create_widget('frame', master=self.root, row=0, column=0)
         create_widget('logo', master=frame_init, row=0, column=0, columnspan=3)
 
         self.widget = {}
