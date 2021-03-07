@@ -9,7 +9,7 @@ class ManualFillController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        n_obj = self.root_controller.problem_info['n_obj']
+        n_obj = self.root_controller.agent.problem_cfg['n_obj']
 
         self.view = ManualFillView(self.root_view, n_obj)
 

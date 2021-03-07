@@ -30,7 +30,6 @@ class WorkerController:
         self.database = None
         self.table_name = None
         self.table_checksum = None
-        self.problem_info = None
         self.eval_script = None
 
         self.agent = None

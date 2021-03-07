@@ -320,6 +320,7 @@ class EvaluateAgent(LoadAgent):
     def _set_ref_point(self, ref_point):
         '''
         '''
+        if ref_point is None: return
         assert len(ref_point) == self.problem_cfg['n_obj']
         assert type(ref_point) == list
         if ref_point != self.ref_point:
