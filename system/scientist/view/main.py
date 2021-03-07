@@ -15,8 +15,8 @@ class ScientistView:
         '''
         # GUI root initialization
         self.root = root
+        self.root.geometry(f'{WIDTH}x{HEIGHT}')
         grid_configure(self.root, 2, 0, row_weights=[1, 1, 20]) # configure for resolution change
-        set_resolution(self.root)
 
         self._init_menu()
         self._init_viz()

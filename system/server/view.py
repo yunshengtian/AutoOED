@@ -116,7 +116,7 @@ class ServerView:
     def init_db_table(self, columns):
         '''
         '''
-        set_resolution(self.root)
+        self.root.geometry(f'{WIDTH}x{HEIGHT}')
 
         self.widget['db_placeholder'].destroy()
         self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)

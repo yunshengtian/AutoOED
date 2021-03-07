@@ -107,7 +107,7 @@ class VizSpaceView:
             self.ax2.set_ylim(0, 1.04)
 
         # configure slider widget
-        frame_slider = create_widget('frame', master=self.root_view.frame_plot, row=2, column=0)
+        frame_slider = create_widget('frame', master=self.root_view.frame_plot, row=2, column=0, pady=0)
         grid_configure(frame_slider, [0], [1])
         
         label_iter = tk.Label(master=frame_slider, text='Iteration:')
