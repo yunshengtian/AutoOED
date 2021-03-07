@@ -60,7 +60,7 @@ class EvaluateScheduler:
         for worker_info in self.eval_workers_run:
             eval_worker, rowid = worker_info
             if not eval_worker.is_alive():
-                self.logger.add(f'evaluation worker for row {rowid} finished')
+                self.logger.add(f'evaluation for row {rowid} finished')
                 completed_workers.append(worker_info)
 
         for worker_info in completed_workers:
@@ -70,7 +70,7 @@ class EvaluateScheduler:
         while len(self.eval_workers_run) < self.n_worker and self.eval_workers_wait != []:
             worker, rowid = self.eval_workers_wait.pop(0)
             worker.start()
-            self.logger.add(f'evaluation worker for row {rowid} started')
+            self.logger.add(f'evaluation for row {rowid} started')
             self.eval_workers_run.append([worker, rowid])
 
         eval_finished = len(completed_workers) > 0 and self.eval_workers_run == []
@@ -96,7 +96,7 @@ class EvaluateScheduler:
             worker, rowid_ = worker_info
             if (stop_all or rowid_ == rowid) and worker.is_alive():
                 worker.terminate()
-                self.logger.add(f'evaluation worker for row {rowid_} stopped')
+                self.logger.add(f'evaluation for row {rowid_} stopped')
                 if not stop_all:
                     worker_run_stopped = worker_info
                     break
@@ -168,8 +168,8 @@ class OptimizeScheduler:
         '''
         if not self.agent.check_initialized():
             raise Exception('initialization has not finished')
-        assert self.opt_worker is None, 'optimization worker is running'
-        self.logger.add(f'optimization worker started')
+        assert self.opt_worker is None, 'optimization is running'
+        self.logger.add(f'optimization started')
         self.opt_worker = Process(target=self.agent.optimize, args=(self.opt_queue,))
         self.opt_worker.start()
 
@@ -191,7 +191,7 @@ class OptimizeScheduler:
     def predict(self, rowids):
         '''
         '''
-        self.logger.add(f'prediction worker for row {",".join([str(r) for r in rowids])} started')
+        self.logger.add(f'prediction for row {",".join([str(r) for r in rowids])} started')
         worker = Process(target=self.agent.predict, args=(rowids,))
         worker.start()
         self.pred_workers.append([worker, rowids])
@@ -254,7 +254,7 @@ class OptimizeScheduler:
             pass
 
         if rowids is not None:
-            self.logger.add(f'optimization worker for row {",".join([str(r) for r in rowids])} finished')
+            self.logger.add(f'optimization for row {",".join([str(r) for r in rowids])} finished')
             if self.opt_worker.is_alive():
                 self.opt_worker.terminate()
             self.opt_worker = None
@@ -269,7 +269,7 @@ class OptimizeScheduler:
         for worker_info in self.pred_workers:
             pred_worker, rowids = worker_info
             if not pred_worker.is_alive():
-                self.logger.add(f'prediction worker for row {",".join([str(r) for r in rowids])} finished')
+                self.logger.add(f'prediction for row {",".join([str(r) for r in rowids])} finished')
                 completed_workers.append(worker_info)
 
         for worker_info in completed_workers:
@@ -287,7 +287,7 @@ class OptimizeScheduler:
         for worker_info in self.eval_workers_manual_run:
             eval_worker, rowid = worker_info
             if not eval_worker.is_alive():
-                self.logger.add(f'evaluation worker for row {rowid} finished')
+                self.logger.add(f'evaluation for row {rowid} finished')
                 completed_workers_manual.append(worker_info)
 
         for worker_info in completed_workers_manual:
@@ -297,7 +297,7 @@ class OptimizeScheduler:
         for worker_info in self.eval_workers_auto_run:
             eval_worker, rowid = worker_info
             if not eval_worker.is_alive():
-                self.logger.add(f'evaluation worker for row {rowid} finished')
+                self.logger.add(f'evaluation for row {rowid} finished')
                 completed_workers_auto.append(worker_info)
 
         for worker_info in completed_workers_auto:
@@ -307,14 +307,14 @@ class OptimizeScheduler:
         while len(self.eval_workers_manual_run) + len(self.eval_workers_auto_run) < self.config['experiment']['n_worker'] and self.eval_workers_manual_wait != []:
             worker, rowid = self.eval_workers_manual_wait.pop(0)
             worker.start()
-            self.logger.add(f'evaluation worker for row {rowid} started')
+            self.logger.add(f'evaluation for row {rowid} started')
             self.eval_workers_manual_run.append([worker, rowid])
 
         # launch waiting auto eval workers
         while len(self.eval_workers_manual_run) + len(self.eval_workers_auto_run) < self.config['experiment']['n_worker'] and self.eval_workers_auto_wait != []:
             worker, rowid = self.eval_workers_auto_wait.pop(0)
             worker.start()
-            self.logger.add(f'evaluation worker for row {rowid} started')
+            self.logger.add(f'evaluation for row {rowid} started')
             self.eval_workers_auto_run.append([worker, rowid])
 
         eval_manual_finished = len(completed_workers_manual) > 0 and self.eval_workers_manual_run == []
@@ -357,7 +357,7 @@ class OptimizeScheduler:
         if self.opt_worker.is_alive():
             self.opt_worker.terminate()
 
-        self.logger.add(f'optimization worker stopped')
+        self.logger.add(f'optimization stopped')
         self.opt_worker = None
 
     def stop_predict(self):
@@ -368,7 +368,7 @@ class OptimizeScheduler:
             worker, rowids = worker_info
             if worker.is_alive():
                 worker.terminate()
-                self.logger.add(f'prediction worker for row {",".join(rowids)} stopped')
+                self.logger.add(f'prediction for row {",".join(rowids)} stopped')
 
         self.pred_workers = []
 
@@ -387,7 +387,7 @@ class OptimizeScheduler:
             worker, rowid_ = worker_info
             if (stop_all or rowid_ == rowid) and worker.is_alive():
                 worker.terminate()
-                self.logger.add(f'evaluation worker for row {rowid_} stopped')
+                self.logger.add(f'evaluation for row {rowid_} stopped')
                 if not stop_all:
                     worker_run_stopped = worker_info
                     break
@@ -425,7 +425,7 @@ class OptimizeScheduler:
             worker, rowid_ = worker_info
             if (stop_all or rowid_ == rowid) and worker.is_alive():
                 worker.terminate()
-                self.logger.add(f'evaluation worker for row {rowid_} stopped')
+                self.logger.add(f'evaluation for row {rowid_} stopped')
                 if not stop_all:
                     worker_run_stopped = worker_info
                     break
