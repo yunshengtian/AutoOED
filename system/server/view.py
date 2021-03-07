@@ -116,12 +116,7 @@ class ServerView:
     def init_db_table(self, columns):
         '''
         '''
-        screen_width = self.root.winfo_screenwidth()
-        max_width = GEOMETRY_MAX_WIDTH
-        width = GEOMETRY_WIDTH_RATIO * screen_width
-        if width > max_width: width = max_width
-        height = GEOMETRY_HEIGHT_RATIO * width
-        self.root.geometry(f'{int(width)}x{int(height)}')
+        set_resolution(self.root)
 
         self.widget['db_placeholder'].destroy()
         self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)
