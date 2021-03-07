@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 from experiment.config import load_config
 from problem.common import get_problem_config
+from algorithm.utils import get_algorithm_class
 from system.gui.widgets.factory import show_widget_error
 from system.scientist.map import config_map
 from .view import MenuConfigView
@@ -72,6 +73,9 @@ class MenuConfigController:
             self.view.widget['set_advanced'].disable()
         else:
             self.view.widget['problem_name'].disable()
+            algo_class = self.view.widget['algo_name'].get()
+            if algo_class != 'MOBO':
+                self.view.widget['set_advanced'].disable()
 
     def create_config(self):
         '''
@@ -126,7 +130,13 @@ class MenuConfigController:
         '''
         Select algorithm
         '''
-        self.view.widget['set_advanced'].enable()
+        name = event.widget.get()
+        algo_class = get_algorithm_class(name)
+        if algo_class == 'MOBO':
+            self.view.widget['set_advanced'].enable()
+        else:
+            self.view.widget['set_advanced'].disable()
+            self.algo_cfg.clear()
 
     def set_algo_advanced(self):
         '''

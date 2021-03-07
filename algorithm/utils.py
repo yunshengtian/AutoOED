@@ -28,3 +28,14 @@ def check_algorithm_exist(name):
     Check if algorithm exists
     '''
     return name in get_algorithm_list()
+
+
+def get_algorithm_class(name):
+    '''
+    Check if algorithm is MOBO or MOO
+    '''
+    if name in get_algo_list_mobo():
+        return 'MOBO'
+    if name in get_algo_list_moo():
+        return 'MOO'
+    raise Exception('Invalid algorithm name')

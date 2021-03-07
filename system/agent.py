@@ -519,7 +519,10 @@ class OptimizeAgent(EvaluateAgent):
         X_next, (Y_expected, Y_uncertainty) = optimize(config, X, Y)
 
         # insert optimization and prediction result to database
-        rowids = self.insert_design_and_prediction(X_next, Y_expected, Y_uncertainty)
+        if Y_expected is not None and Y_uncertainty is not None:
+            rowids = self.insert_design_and_prediction(X_next, Y_expected, Y_uncertainty)
+        else:
+            rowids = self.insert_design(X_next)
 
         if queue is None:
             return rowids
@@ -540,4 +543,5 @@ class OptimizeAgent(EvaluateAgent):
         Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
 
         # update prediction result to database
-        self.update_prediction(Y_expected, Y_uncertainty, rowids)
+        if Y_expected is not None and Y_uncertainty is not None:
+            self.update_prediction(Y_expected, Y_uncertainty, rowids)
