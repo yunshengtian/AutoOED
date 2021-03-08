@@ -1,5 +1,5 @@
 from system.gui.widgets.factory import create_widget
-from system.gui.widgets_modular import AdjustableTable
+from system.gui.modules import AdjustableTable
 
 
 class VizDatabaseView:
