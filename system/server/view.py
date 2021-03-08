@@ -91,7 +91,7 @@ class ServerView:
 
         frame_worker = create_widget('labeled_frame', master=frame_conn, row=3, column=0, text='Worker Info')
         grid_configure(frame_worker, 0, 2)
-        frame_disp = create_widget('frame', master=frame_worker, row=0, column=0, columnspan=3)
+        frame_disp = create_widget('frame', master=frame_worker, row=0, column=0)
         grid_configure(frame_disp, 0, 0)
         self.widget['worker_disp'] = ttk.Treeview(master=frame_disp, columns=(1, 2, 3))
         self.widget['worker_disp'].column('#0', width=100, minwidth=150, stretch=tk.YES)
@@ -109,9 +109,6 @@ class ServerView:
         verscrlbar.grid(row=0, rowspan=2, column=1, sticky='NSE')
         self.widget['worker_disp'].configure(xscrollcommand=horscrlbar.set)
         self.widget['worker_disp'].configure(yscrollcommand=verscrlbar.set)
-        self.widget['worker_add'] = create_widget('button', master=frame_worker, row=1, column=0, text='Add Worker')
-        self.widget['worker_stop'] = create_widget('button', master=frame_worker, row=1, column=1, text='Stop Worker')
-        self.widget['worker_remove'] = create_widget('button', master=frame_worker, row=1, column=2, text='Remove Worker')
 
     def init_db_table(self, columns):
         '''

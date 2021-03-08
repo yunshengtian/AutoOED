@@ -58,7 +58,7 @@ class WorkerView:
         frame_manual = create_widget('frame', master=frame_eval, row=1, column=0, padx=0, pady=0)
         self.widget['manual_lock'] = create_widget('button', master=frame_manual, row=0, column=0, text='Lock entry')
         self.widget['manual_release'] = create_widget('button', master=frame_manual, row=0, column=1, text='Release entry')
-        self.widget['manual_fill'] = create_widget('button', master=frame_manual, row=1, column=0, columnspan=2, text='Fill value')
+        self.widget['manual_fill'] = create_widget('button', master=frame_manual, row=1, column=0, columnspan=2, text='Enter performance')
 
         frame_auto = create_widget('frame', master=frame_eval, row=1, column=0, padx=0, pady=0)
         self.widget['n_worker'] = create_widget('labeled_entry', master=frame_auto, row=0, column=0, columnspan=2, text='Number of workers',
