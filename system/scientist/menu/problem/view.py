@@ -2,7 +2,7 @@ import tkinter as tk
 from system.gui.widgets.factory import create_widget
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.listbox import Listbox
-from system.gui.widgets_modular import ProblemInfoWidget
+from system.gui.modules import ProblemInfo
 
 
 class MenuProblemView:
@@ -28,7 +28,7 @@ class MenuProblemView:
         self.widget['list'].grid()
         self.widget['create'] = create_widget('button', master=frame_list_action, row=0, column=0, text='Create')
 
-        self.widget['info'] = ProblemInfoWidget(master=frame_config_display, row=0, column=0)
+        self.widget['info'] = ProblemInfo(master=frame_config_display, row=0, column=0)
         self.widget['update'] = create_widget('button', master=frame_config_action, row=0, column=0, text='Update')
         self.widget['delete'] = create_widget('button', master=frame_config_action, row=0, column=1, text='Delete')
 

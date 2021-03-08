@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
-from system.gui.widgets_modular import ProblemInfoWidget, AdjustableTable
+from system.gui.modules import ProblemInfo, AdjustableTable
 from system.params import *
 
 
@@ -77,7 +77,7 @@ class ServerView:
         frame_conn = create_widget('frame', master=self.root, row=0, column=1, padx=0, pady=0)
         grid_configure(frame_conn, [3], 0)
 
-        self.widget['problem_info'] = ProblemInfoWidget(master=frame_conn, row=0, column=0)
+        self.widget['problem_info'] = ProblemInfo(master=frame_conn, row=0, column=0)
 
         frame_server = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Server Info')
         self.widget['server_user'] = create_widget('label', master=frame_server, row=0, column=0, text='Username:')

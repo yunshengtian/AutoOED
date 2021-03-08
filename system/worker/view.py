@@ -1,7 +1,7 @@
 import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
-from system.gui.widgets_modular import ProblemInfoWidget, AdjustableTable
+from system.gui.modules import ProblemInfo, AdjustableTable
 from system.params import *
 
 
@@ -49,7 +49,7 @@ class WorkerView:
         self.widget['db_table'] = None
 
         frame_ctrl = create_widget('frame', master=self.root, row=0, column=1, padx=0, pady=0)
-        self.widget['problem_info'] = ProblemInfoWidget(master=frame_ctrl, row=0, column=0)
+        self.widget['problem_info'] = ProblemInfo(master=frame_ctrl, row=0, column=0)
 
         frame_eval = create_widget('labeled_frame', master=frame_ctrl, row=1, column=0, text='Evaluation')
         self.widget['mode'] = create_widget('radiobutton',

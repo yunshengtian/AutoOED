@@ -2,7 +2,7 @@ from system.gui.widgets.factory import create_widget
 from system.params import PADY
 
 
-class ProblemInfoWidget:
+class ProblemInfo:
 
     def __init__(self, master, row, column):
         self.desc = {
