@@ -48,8 +48,11 @@ class Problem(PymooProblem):
 
         # import constraint evaluation function
         if self.config['constr_func'] is None:
-            if self.config['n_constr'] > 0:
-                raise Exception('no constraint function is provided')
+            if not hasattr(self, 'evaluate_constraint'):
+                if self.config['n_constr'] > 0:
+                    raise Exception('no constraint function is provided')
+                else:
+                    self.evaluate_constraint = lambda x: None
         else:
             self.evaluate_constraint = import_constr_func(self.config['constr_func'], self.config['n_var'], self.config['n_constr'])
 
@@ -85,13 +88,13 @@ class Problem(PymooProblem):
         Main function for objective evaluation
         '''
         return None
-    """
 
     def evaluate_constraint(self, x):
         '''
         Main function for constraint evaluation
         '''
         return None
+    """
 
     def evaluate_feasible(self, x):
         '''
@@ -100,8 +103,8 @@ class Problem(PymooProblem):
         if self.n_constr == 0:
             CV = np.zeros([x.shape[0], 1])
         else:
-            G = self.evaluate_constraint(x)
-            assert G is not None
+            G = [self.evaluate_constraint(x_) for x_ in x]
+            assert None not in G
             CV = Problem.calc_constraint_violation(np.column_stack(np.atleast_2d(G)))
         feasible = (CV <= 0).flatten()
         return feasible
