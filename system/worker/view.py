@@ -62,7 +62,7 @@ class WorkerView:
 
         frame_auto = create_widget('frame', master=frame_eval, row=1, column=0, padx=0, pady=0)
         self.widget['n_worker'] = create_widget('labeled_entry', master=frame_auto, row=0, column=0, columnspan=2, text='Number of workers',
-            class_type='int', valid_check=lambda x: x > 0, error_msg='Number of evaluation workers must be positive', required=True, default=1)
+            class_type='int', valid_check=lambda x: x > 0, error_msg='Number of evaluation workers must be positive', required=True, required_mark=False, default=1)
         self.widget['auto_set_script'] = create_widget('button', master=frame_auto, row=1, column=0, text='Set script')
         self.widget['auto_evaluate'] = create_widget('button', master=frame_auto, row=1, column=1, text='Evaluate')
 

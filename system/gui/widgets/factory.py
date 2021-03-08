@@ -102,11 +102,12 @@ def create_radiobutton(master, row, column, text_list, default=None, orientation
 def create_spinbox(master, row, column, text, from_, to, width=ENTRY_WIDTH,
         rowspan=1, columnspan=1, padx=PADX, pady=PADY, sticky=None, return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
+    grid_configure(frame, 0, 1)
     label = tk.Label(master=frame, text=text)
-    label.grid(row=0, column=0)
+    label.grid(row=0, column=0, sticky='W')
     var = tk.IntVar()
     spinbox = tk.Spinbox(master=frame, from_=from_, to=to, width=width, textvariable=var)
-    spinbox.grid(row=0, column=1, padx=padx)
+    spinbox.grid(row=0, column=1, padx=padx, sticky='E')
     variable = get_variable('spinbox', var, spinbox)
     if return_label:
         return label, variable

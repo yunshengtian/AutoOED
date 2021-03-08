@@ -34,7 +34,7 @@ class EnterDesignView:
         self.widget['set_n_row'] = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
         self.widget['design_excel'] = Excel(master=self.window, rows=1, columns=n_var, width=10, 
-            title=[f'x{i + 1}' for i in range(n_var)], dtype=dtype, required=[True] * n_var)
+            title=[f'x{i + 1}' for i in range(n_var)], dtype=dtype, required=[True] * n_var, required_mark=False)
         self.widget['design_excel'].grid(row=1, column=0)
 
         self.widget['eval_var'] = create_widget('checkbutton', master=self.window, row=2, column=0, text='Automatically evaluate')

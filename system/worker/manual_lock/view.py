@@ -19,7 +19,7 @@ class ManualLockView:
         self.widget['set_n_row'] = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
         self.widget['rowid_excel'] = Excel(master=self.window, rows=1, columns=1, width=10, 
-            title=['Row number'], dtype=[int], default=None, required=[True])
+            title=['Row number'], dtype=[int], default=None, required=[True], required_mark=False)
         self.widget['rowid_excel'].grid(row=1, column=0)
 
         frame_action = create_widget('frame', master=self.window, row=2, column=0, sticky=None, pady=0)
