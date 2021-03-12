@@ -29,9 +29,9 @@ class MenuExportStatsController:
             df = pd.DataFrame({'Number of samples': x, 'Hypervolume': data})
 
         elif choice == 'Model Error':
-            data = self.agent.load_model_error()
+            data = self.agent.load_model_error().T
             obj_name = self.agent.problem_cfg['obj_name']
-            x = np.arange(len(data))
+            x = np.arange(self.agent.get_n_init_sample(), self.agent.get_n_valid_sample())
             df_dict = {'Number of samples': x}
             for name, d in zip(obj_name, data):
                 df_dict[f'{name} error'] = d
