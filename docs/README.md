@@ -8,7 +8,7 @@ To see the documentation locally as an interactive website, do the following ste
 
 1. Install python dependencies:
     ```
-    pip install sphinx sphinx_rtd_theme
+    pip install sphinx sphinx_rtd_theme recommonmark
     ```
 
 
