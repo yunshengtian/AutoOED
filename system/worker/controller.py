@@ -8,7 +8,7 @@ from system.agent import EvaluateAgent
 from system.scheduler import EvaluateScheduler
 from .view import WorkerLoginView, WorkerView
 
-from .auto_set_script import AutoSetScriptController
+from .auto_set_program import AutoSetProgramController
 from .auto_evaluate import AutoEvaluateController
 from .manual_lock import ManualLockController
 from .manual_fill import ManualFillController
@@ -30,7 +30,7 @@ class WorkerController:
         self.database = None
         self.table_name = None
         self.table_checksum = None
-        self.eval_script = None
+        self.eval_program = None
 
         self.agent = None
 
@@ -69,7 +69,7 @@ class WorkerController:
     def bind_command(self):
         '''
         '''
-        self.view.widget['auto_set_script'].configure(command=self.auto_set_script)
+        self.view.widget['auto_set_program'].configure(command=self.auto_set_program)
         self.view.widget['auto_evaluate'].configure(command=self.auto_evaluate)
         self.view.widget['manual_lock'].configure(command=self.manual_lock)
         self.view.widget['manual_release'].configure(command=self.manual_release)
@@ -147,19 +147,19 @@ class WorkerController:
         data = self.database.load_table(name=self.table_name, column=self.view.get_table_columns())
         self.view.widget['db_table'].load(data)
 
-    def auto_set_script(self):
+    def auto_set_program(self):
         '''
         '''
-        AutoSetScriptController(self)
+        AutoSetProgramController(self)
 
-    def set_eval_script(self, script_path):
+    def set_eval_program(self, program_path):
         '''
         '''
-        self.eval_script = script_path
+        self.eval_program = program_path
         self.view.widget['auto_eval'].enable()
 
-    def load_eval_script(self):
-        return self.eval_script
+    def load_eval_program(self):
+        return self.eval_program
 
     def auto_evaluate(self):
         '''

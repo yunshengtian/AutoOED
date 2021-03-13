@@ -23,13 +23,13 @@ class MenuEvalController:
 
     def start_eval(self):
         '''
-        Manually start local evaluation workers for certain rows (TODO: disable when no eval script linked)
+        Manually start local evaluation workers for certain rows (TODO: disable when no eval program linked)
         '''
         StartEvalController(self)
 
     def stop_eval(self):
         '''
-        Manually stop evaluation workers for certain rows (TODO: disable when no eval script linked)
+        Manually stop evaluation workers for certain rows (TODO: disable when no eval program linked)
         '''
         StopEvalController(self)
 

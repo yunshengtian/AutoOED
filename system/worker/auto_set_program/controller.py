@@ -1,21 +1,21 @@
 import tkinter as tk
 from tkinter import messagebox
 from problem.utils import import_obj_func, import_constr_func
-from .view import AutoSetScriptView
+from .view import AutoSetProgramView
 
 
-class AutoSetScriptController:
+class AutoSetProgramController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.view = AutoSetScriptView(self.root_view)
+        self.view = AutoSetProgramView(self.root_view)
 
         self.view.widget['browse_obj_func'].configure(command=self.set_objective_script)
         self.view.widget['disp_obj_func'].config(
             valid_check=self.eval_script_valid_check, 
-            error_msg="performance evaluation script doesn't exist or file format is invalid",
+            error_msg="performance evaluation program doesn't exist or file format is invalid",
         )
 
         self.view.widget['disp_obj_func'].config(required=True)

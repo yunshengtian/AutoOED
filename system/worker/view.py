@@ -63,7 +63,7 @@ class WorkerView:
         frame_auto = create_widget('frame', master=frame_eval, row=1, column=0, padx=0, pady=0)
         self.widget['n_worker'] = create_widget('labeled_entry', master=frame_auto, row=0, column=0, columnspan=2, text='Number of workers',
             class_type='int', valid_check=lambda x: x > 0, error_msg='Number of evaluation workers must be positive', required=True, required_mark=False, default=1)
-        self.widget['auto_set_script'] = create_widget('button', master=frame_auto, row=1, column=0, text='Set script')
+        self.widget['auto_set_program'] = create_widget('button', master=frame_auto, row=1, column=0, text='Set program')
         self.widget['auto_evaluate'] = create_widget('button', master=frame_auto, row=1, column=1, text='Evaluate')
 
         grid_configure(frame_eval, 0, 0)
@@ -87,7 +87,7 @@ class WorkerView:
             else:
                 raise Exception()
 
-        for widget_name in ['auto_set_script', 'auto_evaluate', 'manual_lock', 'manual_release', 'manual_fill']:
+        for widget_name in ['auto_set_program', 'auto_evaluate', 'manual_lock', 'manual_release', 'manual_fill']:
             self.widget[widget_name].disable()
 
     def init_db_table(self, columns):
@@ -98,7 +98,7 @@ class WorkerView:
         self.widget['db_placeholder'].destroy()
         self.widget['db_table'] = AdjustableTable(master=self.widget['db_frame'], columns=columns)
 
-        for widget_name in ['auto_set_script', 'manual_lock', 'manual_release', 'manual_fill']:
+        for widget_name in ['auto_set_program', 'manual_lock', 'manual_release', 'manual_fill']:
             self.widget[widget_name].enable()
 
     def get_table_columns(self):

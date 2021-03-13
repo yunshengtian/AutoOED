@@ -3,18 +3,18 @@ from system.gui.widgets.factory import create_widget
 from system.scientist.map import config_map
 
 
-class AutoSetScriptView:
+class AutoSetProgramView:
 
     def __init__(self, root_view):
         self.root_view = root_view
 
-        self.window = create_widget('toplevel', master=self.root_view.root, title='Set Evaluation Script')
+        self.window = create_widget('toplevel', master=self.root_view.root, title='Set Evaluation Program')
 
         self.widget = {}
 
-        frame_script = create_widget('frame', master=self.window, row=0, column=0)
+        frame_program = create_widget('frame', master=self.window, row=0, column=0)
         self.widget['browse_obj_func'], self.widget['disp_obj_func'] = create_widget('labeled_button_entry',
-            master=frame_script, row=0, column=0, label_text=config_map['problem']['obj_func'], button_text='Browse', width=30, required=True)
+            master=frame_program, row=0, column=0, label_text=config_map['problem']['obj_func'], button_text='Browse', width=30, required=True)
 
         frame_action = tk.Frame(master=self.window)
         frame_action.grid(row=1, column=0)

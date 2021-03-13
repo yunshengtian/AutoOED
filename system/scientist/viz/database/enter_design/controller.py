@@ -41,7 +41,7 @@ class EnterDesignController:
             tk.messagebox.showinfo('Error', 'Invalid design values', parent=self.view.window)
             return
 
-        if_eval = self.view.widget['eval_var'].get() == 1 # TODO: fail when no eval script is linked
+        if_eval = self.view.widget['eval_var'].get() == 1 # TODO: fail when no eval program is linked
         self.view.window.destroy()
 
         agent, scheduler = self.root_controller.agent, self.root_controller.scheduler

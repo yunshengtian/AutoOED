@@ -36,7 +36,7 @@ class AutoEvaluateController:
 
     def start_evaluate(self):
         '''
-        Start evaluation script
+        Start evaluation program
         '''
         try:
             rowids = self.view.widget['rowid_excel'].get_column(0)
@@ -66,14 +66,14 @@ class AutoEvaluateController:
                     overwrite = True
         if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=self.view.window) == 'no': return
 
-        eval_script_path = self.root_controller.load_eval_script()
-        if eval_script_path is None:
+        eval_program_path = self.root_controller.load_eval_program()
+        if eval_program_path is None:
             eval_func = None
         else:
             try:
-                eval_func = import_obj_func(eval_script_path, n_var, n_obj)
+                eval_func = import_obj_func(eval_program_path, n_var, n_obj)
             except:
-                tk.messagebox.showinfo('Error', f'Failed to load evaluation script at {eval_script_path}', parent=self.view.window)
+                tk.messagebox.showinfo('Error', f'Failed to load evaluation program at {eval_program_path}', parent=self.view.window)
                 self.view.window.destroy()
                 return
 
