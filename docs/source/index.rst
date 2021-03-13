@@ -30,6 +30,7 @@ Welcome to AutoOED's documentation!
    :caption: User Manual
 
    content/user-manual/build-problem
+   content/user-manual/eval-program
    content/user-manual/build-experiment
    content/user-manual/run-optimization
    content/user-manual/statistics
