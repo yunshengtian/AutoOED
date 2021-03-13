@@ -349,6 +349,9 @@ class UpdateProblemView:
             n_var, success = self._try_get_val(self.widget['design_unified']['disp_n_var'], 'Number of variables')
             if not success: return
 
+            if 'excel' in self.widget['design_unified']:
+                self.widget['design_unified']['excel'].grid_remove()
+
             if problem_type == 'continuous':
                 self.widget['design_unified']['excel'] = Excel(master=frame_excel, rows=n_var, columns=3, width=15,
                     title=['Name', 'Lower bound', 'Upper bound'], dtype=[str, float, float], required=[True] * 3)
