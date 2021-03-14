@@ -52,6 +52,14 @@ Contributing
 ''''''''''''
 
 
+Contact
+'''''''
+
+If you experience any issues during installing or using the software or have any feature suggestions,
+please feel free to reach out to us either by creating issues on `GitHub <https://github.com/yunshengtian/AutoOED>`_
+or directly sending emails to yunsheng@mit.edu.
+
+
 Acknowledgments
 '''''''''''''''
 

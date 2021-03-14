@@ -2,8 +2,8 @@
 Evaluation Program
 ------------------
 
-Performance Evaluation Program
-------------------------------
+Performance Evaluation
+----------------------
 
 Python
 ''''''
@@ -17,8 +17,8 @@ Matlab
 ''''''
 
 
-Constraint Evaluation Program
------------------------------
+Constraint Evaluation
+---------------------
 
 Python
 ''''''

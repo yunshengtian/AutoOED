@@ -29,6 +29,7 @@ Welcome to AutoOED's documentation!
    :maxdepth: 2
    :caption: User Manual
 
+   content/user-manual/overview
    content/user-manual/build-problem
    content/user-manual/eval-program
    content/user-manual/build-experiment
@@ -36,6 +37,7 @@ Welcome to AutoOED's documentation!
    content/user-manual/statistics
    content/user-manual/database
    content/user-manual/distributed
+   content/user-manual/export-data
 
 
 .. toctree::
