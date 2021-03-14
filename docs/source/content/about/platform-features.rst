@@ -31,9 +31,9 @@ Automation of Experiment Design
 
 The platform is designed to enable straightforward integration into an automatic experiment design optimization pipeline. 
 The pipeline may include both physical experiments (see `this example <../getting-started/example-fabricated.html>`_) 
-and an expensive simulation setup (see `this example <../getting-started/example-simulation.html>`_). The user can provide an evaluation script (written in Python/C/C++/MATLAB) 
-and link it to our platform. The evaluation script needs to either collect the values from physical experiments or perform 
-the simulation and retrieve the performance. Our platform will automatically call the evaluation script during the optimization workflow.
+and an expensive simulation setup (see `this example <../getting-started/example-simulation.html>`_). The user can provide an evaluation program (written in Python/C/C++/MATLAB) 
+and link it to our platform. The evaluation program needs to either collect the values from physical experiments or perform 
+the simulation and retrieve the performance. Our platform will automatically call the evaluation program during the optimization workflow.
 
 
 Sequential and batch evaluations
