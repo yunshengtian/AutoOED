@@ -1,7 +1,4 @@
-import os, sys
-root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-sys.path.append(root_dir)
-
+import os
 import warnings
 warnings.filterwarnings('ignore')
 
