@@ -12,6 +12,7 @@ Welcome to AutoOED's documentation!
 
    content/about/introduction
    content/about/prerequisites
+   content/about/platform-features
    content/about/platform-design
 
 

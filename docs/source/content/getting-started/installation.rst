@@ -5,8 +5,8 @@ Installation
 AutoOED can be installed either directly from the links to the executable files, or from source code.
 
 
-Executable File
----------------
+Executable File (Outdated)
+--------------------------
 
 Personal Version
 """"""""""""""""
@@ -70,7 +70,7 @@ After installing MySQL, follow the links below to install a zip file, unzip it a
 +-----------------------------+--------------------------------+
 
 
-Install from Source Code
-------------------------
+Installing from Source Code
+---------------------------
 
 Clone the github repository at https://github.com/yunshengtian/AutoOED, then follow the instructions in README to install.

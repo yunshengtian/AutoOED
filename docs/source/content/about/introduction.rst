@@ -40,10 +40,6 @@ But most of our optimization algorithms run very fast, and should be on the magn
 And the speed could be further boosted if you have a powerful CPU or enable parallelization in AutoOED.
 
 
-Supported Features
-''''''''''''''''''
-
-
 Citation
 ''''''''
 
