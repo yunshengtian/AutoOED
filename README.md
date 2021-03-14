@@ -30,14 +30,14 @@ Tested with Python 3.7 on Ubuntu 18.04.
 ### Personal Version
 
 ```bash
-python scripts/personal/run.py
+python run_personal.py
 ```
 
 ### Team Version
 
 ```bash
-python scripts/team/run_server.py
-python scripts/team/run_scientist.py
-python scripts/team/run_worker.py
+python run_team_manager.py
+python run_team_scientist.py
+python run_team_technician.py
 ```
 

@@ -5,19 +5,19 @@ from problem.common import get_problem_config
 from system.params import *
 from system.database import TeamDatabase
 from system.agent import LoadAgent
-from system.server.view import ServerLoginView, ServerInitView, ServerView
-from system.server.task import CreateTaskController, LoadTaskController, RemoveTaskController
-from system.server.access import ManageAdminController, ManageUserController 
+from system.manager.view import ManagerLoginView, ManagerInitView, ManagerView
+from system.manager.task import CreateTaskController, LoadTaskController, RemoveTaskController
+from system.manager.access import ManageAdminController, ManageUserController 
 
 
-class ServerController:
+class ManagerController:
 
     def __init__(self):
         self.root_login = tk.Tk()
-        self.root_login.title(f'{TITLE} - Server')
+        self.root_login.title(f'{TITLE} - Manager')
         self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
         self.root_login.resizable(False, False)
-        self.view_login = ServerLoginView(self.root_login)
+        self.view_login = ManagerLoginView(self.root_login)
         self.bind_command_login()
 
         self.root_init = None
@@ -114,7 +114,7 @@ class ServerController:
         '''
         '''
         self.refresh_info()
-        self.view.widget['server_refresh'].configure(command=self.refresh_info)
+        self.view.widget['manager_refresh'].configure(command=self.refresh_info)
 
     def refresh_info(self):
         '''
@@ -125,8 +125,8 @@ class ServerController:
             messagebox.showinfo('Error', e, parent=self.root_init)
             user = self.database.get_current_user()
             ip = 'unknown'
-        self.view.widget['server_user'].config(text='Username: ' + user)
-        self.view.widget['server_ip'].config(text='IP Address: ' + ip)
+        self.view.widget['manager_user'].config(text='Username: ' + user)
+        self.view.widget['manager_ip'].config(text='IP Address: ' + ip)
 
     def after_login(self):
         '''
@@ -135,10 +135,10 @@ class ServerController:
         self._quit_login()
         
         self.root_init = tk.Tk()
-        self.root_init.title(f'{TITLE} - Server')
+        self.root_init.title(f'{TITLE} - Manager')
         self.root_init.protocol('WM_DELETE_WINDOW', self._quit_init)
         self.root_init.resizable(False, False)
-        self.view_init = ServerInitView(self.root_init)
+        self.view_init = ManagerInitView(self.root_init)
         self.bind_command_init()
 
         tk.mainloop()
@@ -152,9 +152,9 @@ class ServerController:
         self.table_name = table_name
         
         self.root = tk.Tk()
-        self.root.title(f'{TITLE} - Server')
+        self.root.title(f'{TITLE} - Manager')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
-        self.view = ServerView(self.root)
+        self.view = ManagerView(self.root)
         self.bind_command()
 
         self.agent = LoadAgent(self.database, self.table_name)

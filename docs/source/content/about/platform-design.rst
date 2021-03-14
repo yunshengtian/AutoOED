@@ -26,6 +26,6 @@ Team Version
 ------------
 
 The team version enables distributed collaboration around the globe by leveraging a centralized MySQL database that can be connected through internet. 
-Using this version, the scientist can focus on controlling the optimization and data analysis, while the workers can evaluate in a distributed fashion and synchronize the 
+Using this version, the scientist can focus on controlling the optimization and data analysis, while the technicians can evaluate in a distributed fashion and synchronize the 
 evaluated results with other members in the team in real-time, through our provided simple and intuitive user interface. 
-This version provides different software for different roles of a team (server, scientist and worker) with proper privilege control implemented.
+This version provides different software for different roles of a team (manager, scientist and technician) with proper privilege control implemented.

@@ -6,7 +6,7 @@ from system.params import *
 from system.database import TeamDatabase
 from system.agent import EvaluateAgent
 from system.scheduler import EvaluateScheduler
-from .view import WorkerLoginView, WorkerView
+from .view import TechnicianLoginView, TechnicianView
 
 from .auto_set_program import AutoSetProgramController
 from .auto_evaluate import AutoEvaluateController
@@ -14,14 +14,14 @@ from .manual_lock import ManualLockController
 from .manual_fill import ManualFillController
 
 
-class WorkerController:
+class TechnicianController:
 
     def __init__(self):
         self.root_login = tk.Tk()
-        self.root_login.title(f'{TITLE} - Worker')
+        self.root_login.title(f'{TITLE} - Technician')
         self.root_login.protocol('WM_DELETE_WINDOW', self._quit_login)
         self.root_login.resizable(False, False)
-        self.view_login = WorkerLoginView(self.root_login)
+        self.view_login = TechnicianLoginView(self.root_login)
         self.bind_command_login()
 
         self.root = None
@@ -59,7 +59,7 @@ class WorkerController:
             messagebox.showinfo('Error', 'Invalid login info: ' + str(e), parent=self.root_login)
             return
 
-        valid_login = self.database.login_verify(name=user, role='Worker', access=task)
+        valid_login = self.database.login_verify(name=user, role='Technician', access=task)
         if not valid_login:
             messagebox.showinfo('Error', f'Invalid access to task {task}', parent=self.root_login)
             return
@@ -84,9 +84,9 @@ class WorkerController:
         self.table_name = table_name
         
         self.root = tk.Tk()
-        self.root.title(f'{TITLE} - Worker')
+        self.root.title(f'{TITLE} - Technician')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
-        self.view = WorkerView(self.root)
+        self.view = TechnicianView(self.root)
         self.bind_command()
         
         self.agent = EvaluateAgent(self.database, self.table_name)

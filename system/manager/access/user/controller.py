@@ -122,7 +122,7 @@ class ManageUserController:
 
     def delete_user(self):
         '''
-        Delete selected user # TODO: also stop from worker side
+        Delete selected user # TODO: also stop evaluations from the user side
         '''
         index = int(self.view.widget['user_list'].curselection()[0])
         name = self.view.widget['user_list'].get(index)

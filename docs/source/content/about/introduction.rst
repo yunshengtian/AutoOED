@@ -13,7 +13,7 @@ tailoring the code, serving as a testbed for machine learning researchers to eas
 and evaluate their own multi-objective Bayesian optimization algorithms. An intuitive
 graphical user interface (GUI) is provided to visualize and guide the experiments for users
 with little or no experience with coding, machine learning, or optimization. Furthermore,
-a distributed system is integrated to enable parallelized experimental evaluations by independent workers in remote locations.
+a distributed system is integrated to enable parallelized experimental evaluations by independent technicians in remote locations.
 
 
 Applications

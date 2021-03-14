@@ -77,6 +77,6 @@ def get_function_access():
 
     for key, value in access.items():
         access[key] = value.lower()
-        assert access[key] in ['all', 'scientist', 'worker']
+        assert access[key] in ['all', 'scientist', 'technician']
         
     return access

@@ -2,11 +2,11 @@ import os
 import warnings
 warnings.filterwarnings('ignore')
 
-from system.worker import WorkerController
+from system.manager import ManagerController
 
 
 def main():
-    WorkerController().run()
+    ManagerController().run()
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@ Welcome to AutoOED's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: API Reference
+   :caption: API Reference (Under Construction)
 
    content/api/algorithms
    content/api/surrogate

@@ -6,7 +6,7 @@ from system.gui.modules import ProblemInfo, AdjustableTable
 from system.params import *
 
 
-class ServerLoginView:
+class ManagerLoginView:
 
     def __init__(self, root):
         self.root = root
@@ -22,7 +22,7 @@ class ServerLoginView:
         self.widget['login'] = create_widget('button', master=frame_login, row=3, column=0, text='Log in')
 
 
-class ServerInitView:
+class ManagerInitView:
 
     def __init__(self, root):
         self.root = root
@@ -50,7 +50,7 @@ class ServerInitView:
         self.widget['manage_user'] = create_widget('button', master=frame_access, row=0, column=1, text='Manage User Access')
 
 
-class ServerView:
+class ManagerView:
 
     def __init__(self, root):
         self.root = root
@@ -79,10 +79,10 @@ class ServerView:
 
         self.widget['problem_info'] = ProblemInfo(master=frame_conn, row=0, column=0)
 
-        frame_server = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Server Info')
-        self.widget['server_user'] = create_widget('label', master=frame_server, row=0, column=0, text='Username:')
-        self.widget['server_ip'] = create_widget('label', master=frame_server, row=0, column=1, text='IP Address:')
-        self.widget['server_refresh'] = create_widget('button', master=frame_server, row=0, column=2, text='Refresh')
+        frame_manager = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Manager Info')
+        self.widget['manager_user'] = create_widget('label', master=frame_manager, row=0, column=0, text='Username:')
+        self.widget['manager_ip'] = create_widget('label', master=frame_manager, row=0, column=1, text='IP Address:')
+        self.widget['manager_refresh'] = create_widget('button', master=frame_manager, row=0, column=2, text='Refresh')
 
         frame_sci = create_widget('labeled_frame', master=frame_conn, row=2, column=0, text='Scientist Info')
         self.widget['sci_user'] = create_widget('label', master=frame_sci, row=0, column=0, text='Username: unknown')

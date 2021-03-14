@@ -5,7 +5,7 @@ from system.gui.modules import ProblemInfo, AdjustableTable
 from system.params import *
 
 
-class WorkerLoginView:
+class TechnicianLoginView:
 
     def __init__(self, root):
         self.root = root
@@ -25,7 +25,7 @@ class WorkerLoginView:
         self.widget['login'] = create_widget('button', master=frame_login, row=5, column=0, text='Log in')
 
 
-class WorkerView:
+class TechnicianView:
 
     def __init__(self, root):
         self.root = root

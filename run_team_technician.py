@@ -2,11 +2,11 @@ import os
 import warnings
 warnings.filterwarnings('ignore')
 
-from system.server import ServerController
+from system.technician import TechnicianController
 
 
 def main():
-    ServerController().run()
+    TechnicianController().run()
 
 
 if __name__ == '__main__':

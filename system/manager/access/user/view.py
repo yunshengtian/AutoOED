@@ -37,7 +37,7 @@ class ManageUserView:
         self.widget['passwd'] = create_widget('labeled_entry', 
             master=frame_info_display, row=1, column=0, text='Password', class_type='string', width=15, required=True)
         self.widget['role'] = create_widget('labeled_combobox',
-            master=frame_info_display, row=2, column=0, text='Role', values=['Scientist', 'Worker'], width=15, required=True)
+            master=frame_info_display, row=2, column=0, text='Role', values=['Scientist', 'Technician'], width=15, required=True)
         self.widget['access'] = create_widget('labeled_combobox',
             master=frame_info_display, row=3, column=0, text='Task access', width=15, required=True)
 
