@@ -1,3 +1,5 @@
 ------------------------------
 Example: Simulation Experiment
 ------------------------------
+
+For a simulation example, we show how the software can interface with a MATLAB function to simulate and optimize a mechanical bracket's stiffness and weight using finite element analysis.  The bracket is used to transfer a normal load to the left surface of the bracket. The simulation's primary objective is to find an optimal geometry and material for the bracket to have maximal stiffness and minimal weight. To reduce the bracket's weight, three holes of radius, d_3, and two ellipses of height d_2 and width d_1, are added to the bracket's cross-section. The bracket can also be made from 3 different materials that have different stiffness moduli and densities. AutoOED is used to suggest the design parameters of d_1, d_2, d_3, and the bracket material that have the designs with maximal stiffness and minimal weight.
