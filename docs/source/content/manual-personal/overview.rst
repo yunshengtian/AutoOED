@@ -3,11 +3,12 @@ Overview
 --------
 
 In this section, we provide a detailed user manual that covers how you should use AutoOED for
-setting up, running, and checking status of your optimization problems. Here is the overview for the content in these subsections:
+setting up, running, and checking status of your optimization problems. 
+Here is the overview for the content in these subsections, and please follow the order of these steps:
 
-To start the software and create the optimization task, please refer to `Software Entry <software-entry.html>`_.
+To start the software and create/load/remove the optimization task, please refer to `Software Entry <software-entry.html>`_.
 
-To build an optimization problem and let AutoOED recognizes it, you need to go through steps in `Building Problem <build-problem.html>`_. 
+After the software is started, to build an optimization problem and let AutoOED recognizes it, you need to go through steps in `Building Problem <build-problem.html>`_. 
 
 If there is an evaluation program available for your problem (written in Python/C/C++/MATLAB) whether for evaluating performance or constraints,
 the interface of the evaluation function in your program should be written in a specific way such that it can be automatically called by AutoOED during optimization.

@@ -64,3 +64,66 @@ when there are multiple design samples proposed by the algorithm to be evaluated
 Loading from Configuration File
 -------------------------------
 
+To build an experiment from configuration file, first click ``Config->Load`` from the menu, 
+then a system window will pop up asking the location of the configuration file.
+After loading the file, everything is done and you can start the optimization.
+
+The configuration file should be in YAML format, and here we show how to compose a valid configuration file.
+
+
+Configuration File
+''''''''''''''''''
+
+Overall, the configuration file should include three aspects: **problem**, **algorithm** and **experiment**.
+
+.. code-block:: yaml
+
+   problem:
+      # ...
+   algorithm:
+      # ...
+   experiment:
+      # ...
+
+The simplest yet working configuration file should look like this:
+
+.. code-block:: yaml
+
+   problem:
+      name: # your problem name
+   algorithm:
+      name: # algorithm name
+   experiment:
+      n_random_sample: # number of initial random samples
+      n_worker: # number of evaluation workers that can be run in parallel
+
+If you want more customization, for example, being able to specify reference point of the problem,
+setting detailed parameters of the algorithm, or initializing from provided samples, etc.,
+then a more complicated configuration file could look like this:
+
+.. code-block:: yaml
+
+   problem:
+      name: # your problem name
+      ref_point: # reference point (optional)
+   algorithm:
+      name: # algorithm name
+      # NOTE: below are all optional settings for the algorithm
+      n_process: # number of parallel processes can be used for the algorithm
+      surrogate: # surrogate model settings
+         name: ...
+         nu: ...
+      acquisition: # acquisition function settings
+         name: ...
+      solver: # solver settings
+         name: ...
+         pop_size: ...
+         n_gen: ...
+         pop_init_method: ...
+      selection: # selection method settings
+         name: ...
+   experiment:
+      n_random_sample: # number of initial random samples
+      init_sample_path: # path to provided initial samples
+      # NOTE: at least one of n_random_sample and init_sample_path must be specified
+      n_worker: # number of evaluation workers that can be run in parallel

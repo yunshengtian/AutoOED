@@ -26,7 +26,7 @@ Then, a small window will pop up like:
 .. figure:: ../../_static/manual-personal/export-data/statistics.png
    :width: 300 px
 
-You can select which statistics to export then click the ``Export`` button. Similarly a system window will pop up
+You can select which statistics to export then click the ``Export`` button. Similarly, a system window will pop up
 asking about the file location and file name. After that, the CSV file will be generated at the specified location.
 
 
@@ -39,5 +39,5 @@ Then, a small window will pop up like:
 .. figure:: ../../_static/manual-personal/export-data/figures.png
    :width: 300 px
 
-You can select which figure to export then click the ``Export`` button. Similarly a system window will pop up
+You can select which figure to export then click the ``Export`` button. Similarly, a system window will pop up
 asking about the file location and file name. After that, the image file will be generated at the specified location.
