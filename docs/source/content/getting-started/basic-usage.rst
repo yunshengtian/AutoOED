@@ -2,4 +2,91 @@
 Basic Usage
 -----------
 
-After starting the software, 
+In this section, we will briefly illustrate how to use AutoOED through a very simple test case. 
+More detailed explanations of AutoOED can be found in the User Manual of this documentation.
+
+
+Step 1: Starting the Software
+-----------------------------
+
+If you directly installed the executable file of the software, then simply double-click the executable file to start.
+Otherwise, if you installed the software through source code, please run 
+
+.. code-block::
+
+   python run_personal.py
+
+The software will start with this window:
+
+.. figure:: ../../_static/manual-personal/software-entry/initial.png
+   :width: 400 px
+
+Next, click ``Create Task``.
+
+.. figure:: ../../_static/manual-personal/software-entry/create.png
+   :width: 300 px
+
+You need to input a name for your new task, which cannot be the same as existing tasks. 
+Then, click ``Create`` to create the task, and AutoOED will enter the main interface:
+
+.. figure:: ../../_static/manual-personal/software-entry/main.png
+   :width: 700 px
+
+
+Step 2: Building the Problem
+----------------------------
+
+Now we are going to build a problem for optimization. 
+Click ``Problem->Manage`` from the menu, then this window will show:
+
+.. figure:: ../../_static/getting-started/basic-usage/build-problem/manage_before.png
+   :width: 500 px
+
+The list of the current problems that have been created is shown on the left, which is empty now.
+We can start by clicking ``Create``. 
+Just as an example, we create the continuous ZDT1 [1]_ optimization problem, named "myzdt1".
+
+.. figure:: ../../_static/getting-started/basic-usage/build-problem/create_general.png
+   :width: 350 px
+
+Next, we specify the information of the design variables. In this problem, we have 6 design variables
+bounded by 0 and 1.
+
+.. figure:: ../../_static/getting-started/basic-usage/build-problem/create_design.png
+   :width: 500 px
+
+After that, we specify the information of the performance space. In this problem, we have 2 objectives
+that are supposed to be minimized.
+
+.. figure:: ../../_static/getting-started/basic-usage/build-problem/create_performance.png
+   :width: 500 px
+
+And we have linked a performance evaluation program (objective function) for this problem, 
+which is a simple python script like this, defined by the original ZDT1 problem:
+
+.. code-block:: python
+
+    import numpy as np
+
+    def evaluate_objective(x):
+        n_var = 6
+        f1 = x[0]
+        g = 1 + 9.0 / (n_var - 1) * np.sum(x[1:])
+        f2 = g * (1 - np.power((f1 / g), 0.5))
+        return f1, f2
+
+As the last step, we specify the information of the constraints. But in this case, the problem does not have any constraints,
+so it appears like:
+
+.. figure:: ../../_static/getting-started/basic-usage/build-problem/create_constraint.png
+   :width: 450 px
+
+Finally, we click ``Finish`` and the problem list gets updated:
+
+.. figure:: ../../_static/getting-started/basic-usage/build-problem/manage_after.png
+   :width: 500 px
+
+Reference
+---------
+
+.. [1] Eckart Zitzler, Kalyanmoy Deb, and Lothar Thiele. Comparison of multiobjective evolutionary algorithms: Empirical results. Evolutionary computation, 8(2):173–195, 2000.

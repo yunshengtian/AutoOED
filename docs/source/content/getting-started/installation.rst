@@ -9,7 +9,7 @@ Executable File (Outdated)
 --------------------------
 
 Personal Version
-""""""""""""""""
+''''''''''''''''
 
 Follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
 
@@ -29,7 +29,7 @@ Follow the links below to install a zip file, unzip it and find the executable f
 
 
 Team Version
-""""""""""""
+''''''''''''
 
 There are three executable files for different roles of the team: AutoOED_Manager, AutoOED_Scientist and AutoOED_Technician.
 

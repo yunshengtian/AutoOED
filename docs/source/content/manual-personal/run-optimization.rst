@@ -27,7 +27,7 @@ Note that if you do not have the performance evaluation program linked to AutoOE
 
 
 Manual Mode
-'''''''''''
+-----------
 
 Manual mode runs optimization only for a single iteration.
 In each iteration, the user need to first set the proper batch size, then click the ``Optimize`` button to start the algorithm, as shown in the figure above.
@@ -51,7 +51,7 @@ Finally, click ``Save`` to save the performance values you have entered into the
 
 
 Auto Mode
-'''''''''
+---------
 
 Auto mode could run optimization for multiple iterations, and is recommended when user have the performance evalaution program linked to AutoOED.
 To switch to auto mode, simply select ``Auto`` in the control panel like this:
@@ -80,6 +80,6 @@ Finally, you can click the ``Optimize`` button to start the automatic iterative 
 
 
 Interrupt
-'''''''''
+---------
 
 Under either mode, at any time, the user can safely stop the optimization by just clicking the ``Stop`` button next to the ``Optimize`` button.

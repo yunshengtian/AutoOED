@@ -6,7 +6,7 @@ Click the ``Statistics`` tab in the main window and you will see the different s
 
 
 Hypervolume
-'''''''''''
+-----------
 
 Hypervolume [1]_ is the most popular performance metric in multi-objective optimzation.
 Basically, hypervolume is the Lebesgue measure of the performance space region that is strictly dominated by the Pareto front points (blue), 
@@ -25,7 +25,7 @@ Basically, the optimization can be considered as finished when the hypervolume o
 
 
 Model Prediction Error
-''''''''''''''''''''''
+----------------------
 
 In each iteration of multi-objective Bayesian optimization, we first fit a surrogate model for each objective to predict the performance of design variables based on current evaluated data, 
 then run optimization based on surrogate models instead of using real-world evaluation to boost the sample efficiency. 
@@ -44,6 +44,6 @@ However, generally you should expect the prediction would be more and more accur
 
 
 References
-''''''''''
+----------
 
 .. [1] Zitzler, Eckart, and Lothar Thiele. "Multiobjective optimization using evolutionary algorithms—a comparative case study." International conference on parallel problem solving from nature. Springer, Berlin, Heidelberg, 1998.

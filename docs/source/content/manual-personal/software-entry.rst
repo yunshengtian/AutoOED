@@ -63,3 +63,16 @@ After clicking ``Remove Task``, this window will pop up:
    :width: 300 px
 
 You need to input the name of the task you want to remove. Then, click ``Remove`` to remove that task.
+
+
+Main Interface
+--------------
+
+After the task is created or loaded, the software will enter its main interface:
+
+.. figure:: ../../_static/manual-personal/software-entry/main.png
+   :width: 700 px
+
+Currently this interface is not showing any optimization status becaus we don't have the problem initialized yet, 
+You will have to navigate to `Building Problem <build-problem.html>`_ and `Building Experiment <build-experiment.html>`_
+later on for being able to run the real optimization.

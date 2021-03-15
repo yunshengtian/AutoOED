@@ -26,10 +26,10 @@ You need to click ``Next`` to enter the information for the design space, and se
 
 
 Design Space
-''''''''''''
+------------
 
 Continuous / Integer
-""""""""""""""""""""
+''''''''''''''''''''
 
 If the design variables are continuous or integer, first you need to set the number of design variables by entering the number in the top entry and clicking the ``Set`` button.
 Next, after the window is refreshed, you need to specify the name, lower bound and upper bound of the variables.
@@ -42,7 +42,7 @@ Then click ``Next`` to move forward.
 
 
 Binary
-""""""
+''''''
 
 If the design variables are binary, first you need to set the number of design variables by entering the number in the top entry and clicking the ``Set`` button.
 Next, after the window is refreshed, you need to specify only the name of the variables.
@@ -55,7 +55,7 @@ Then click ``Next`` to move forward.
 
 
 Categorical
-"""""""""""
+'''''''''''
 
 If the design variables are categorical, first you need to set the number of design variables by entering the number in the top entry and clicking the ``Set`` button.
 Next, after the window is refreshed, you need to specify only the choices of the variables, where the different choices are separated by commas.
@@ -68,7 +68,7 @@ Then click ``Next`` to move forward.
 
 
 Mixed
-"""""
+'''''
 
 If the problem type is mixed, which means the problem involves different types of design variables,
 the window looks different than the above ones because you need to specify each design variable separately.
@@ -88,7 +88,7 @@ After all the design variables are specified correctly, click ``Next`` to move f
 
 
 Performance Space
-'''''''''''''''''
+-----------------
 
 Now let us specify the information of the performance space. First you need to set the number of objectives by entering the number in the top entry and clicking the ``Set`` button.
 Note currently AutoOED only supports 2 and 3 objectives, but we are working on supporting higher dimensions.
@@ -114,7 +114,7 @@ Then, click ``Next`` to move forward.
 
 
 Constraints
-'''''''''''
+-----------
 
 Finally, as the last step of building a problem configuration, you need to provide the constraints of the problem if it has constraints, or just click ``Finish`` if there is no constraints.
 (For now we only support constraints on the design variables.)
@@ -129,3 +129,29 @@ then click the ``Browse`` button to link the program that contains the evaluatio
 such that AutoOED will be able to call the evaluation program during the optimization when it needs to evaluate whether the design variables are feasible.
 
 After the constraint information is specified, click ``Finish`` to complete building the problem.
+
+
+Predefined Test Problems
+------------------------
+
+For test purposes, we have some built-in predefined test problems that you can play with,
+which are all standard benchmark problems in multi-objective optimization community, including:
+
+- ZDT1-3 [1]_
+- DTLZ1-6 [2]_
+- OKA1-2 [3]_
+- VLMOP2-3 [4]_
+
+And you should be able to see them directly from the problem list when you create the experiment configuration through GUI.
+
+
+References
+''''''''''
+
+.. [1] Eckart Zitzler, Kalyanmoy Deb, and Lothar Thiele. Comparison of multiobjective evolutionary algorithms: Empirical results. Evolutionary computation, 8(2):173–195, 2000.
+
+.. [2] Kalyanmoy Deb, Lothar Thiele, Marco Laumanns, and Eckart Zitzler. Scalable test problems for evolutionary multiobjective optimization. In Evolutionary multiobjective optimization, pages 105–145. Springer, 2005.
+
+.. [3] Tatsuya Okabe, Yaochu Jin, Markus Olhofer, and Bernhard Sendhoff. On test functions forevolutionary multi-objective optimization. In International Conference on Parallel Problem Solving from Nature, pages 792–802. Springer, 2004.
+
+.. [4] David A Van Veldhuizen and Gary B Lamont. Multiobjective evolutionary algorithm test suites. In Proceedings of the 1999 ACM symposium on Applied computing, pages 351–357, 1999.
