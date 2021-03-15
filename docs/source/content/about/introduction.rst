@@ -39,6 +39,11 @@ The speed of optimization is mainly determined by which algorithm you choose, an
 But most of our optimization algorithms run very fast, and should be on the magnitude of seconds with hundreds of samples for each iteration.
 And the speed could be further boosted if you have a powerful CPU or enable parallelization in AutoOED.
 
+However, there are some requirements for your optimization problem that you should pay attention to:
+
+- AutoOED only supports problems with 2 or 3 objectives at the moment, but we are working on supporting higher dimensional performance space.
+- The problem constraints should depend only on design variables. AutoOED does not support constraints on objectives.
+
 
 Citation
 ''''''''

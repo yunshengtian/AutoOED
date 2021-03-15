@@ -12,6 +12,6 @@ class MenuExportStatsView:
         self.widget['choice'] = create_widget('radiobutton',
             master=self.window, row=0, column=0, text_list=['Hypervolume', 'Model Error'], default='Hypervolume')
 
-        frame_action = create_widget('frame', master=self.window, row=1, column=0, padx=0, pady=0)
+        frame_action = create_widget('frame', master=self.window, row=1, column=0, padx=0, pady=0, sticky=None)
         self.widget['export'] = create_widget('button', master=frame_action, row=0, column=0, text='Export')
         self.widget['cancel'] = create_widget('button', master=frame_action, row=0, column=1, text='Cancel')

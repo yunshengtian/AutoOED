@@ -20,6 +20,7 @@ From this window we can see:
 - **A problem information display** showing the basic information of the problem you are optimizing.
 - **A control panel** for starting and stopping the optimization.
 - **A log display** for showing the logs during the optimization.
+- **A slider** at the bottom that controls displaying all the optimization history.
 
 Now you are ready to run the optimization after all the initial samples are evaluated. There are two different modes of the optimization: **manual mode** and **auto mode**.
 Note that if you do not have the performance evaluation program linked to AutoOED, you must choose the manual mode.
@@ -33,7 +34,7 @@ In each iteration, the user need to first set the proper batch size, then click 
 
 Then after the algorithm proposes a batch of samples to evaluate, if the performance evaluation program is provided, AutoOED will automatically calls the program 
 and do the evaluation for these samples. Otherwise, you have to manually evaluate the performance of these samples, and put the evaluated result back to AutoOED.
-To do this, you have to click the ``Database`` button at the top to navigate to the **Database** panel:
+To do this, you have to click the ``Database`` tab at the top to navigate to the **Database** panel:
 
 .. figure:: ../../_static/user-manual/run-optimization/database.png
    :width: 700 px
@@ -46,7 +47,7 @@ whose status will appear as "unevaluated" in the database table. After you click
 
 First, you have to specify how many samples you are entering performance for at the top entry, then click ``Update`` to update the below Excel-like table
 with the corresponding number of rows. Then, you need to input the row number of the samples (by looking at the database table) and their performance values.
-Finally, click ``Save`` to save the performance values you have entered to the database, and you will see the performance gets updated in the database table.
+Finally, click ``Save`` to save the performance values you have entered into the database, and you will see the performance gets updated in the database table.
 
 
 Auto Mode

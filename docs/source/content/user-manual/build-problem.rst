@@ -91,6 +91,7 @@ Performance Space
 '''''''''''''''''
 
 Now let us specify the information of the performance space. First you need to set the number of objectives by entering the number in the top entry and clicking the ``Set`` button.
+Note currently AutoOED only supports 2 and 3 objectives, but we are working on supporting higher dimensions.
 Next, after the window is refreshed, you can specify the name, type and reference point of each objective (optional).
 
 .. figure:: ../../_static/user-manual/build-problem/create_performance.png
