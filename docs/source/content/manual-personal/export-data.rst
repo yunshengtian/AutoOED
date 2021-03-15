@@ -13,7 +13,7 @@ You can export the whole database as a CSV file by clicking ``Export->Database``
 It will launch a system window asking you where should the CSV file be and the name of the file.
 Following the instructions, you will see a CSV file generated like this:
 
-.. figure:: ../../_static/user-manual/export-data/database.png
+.. figure:: ../../_static/manual-personal/export-data/database.png
    :width: 700 px
 
 
@@ -23,7 +23,7 @@ Statistics
 You can export the whole history of hypervolume or model error as a CSV file by clicking ``Export->Statistics`` from the menu.
 Then, a small window will pop up like:
 
-.. figure:: ../../_static/user-manual/export-data/statistics.png
+.. figure:: ../../_static/manual-personal/export-data/statistics.png
    :width: 300 px
 
 You can select which statistics to export then click the ``Export`` button. Similarly a system window will pop up
@@ -36,7 +36,7 @@ Figures
 You can export the existing figures shown in AutoOED as separate image files (PNG by default) by clicking ``Export->Figures`` from the menu.
 Then, a small window will pop up like:
 
-.. figure:: ../../_static/user-manual/export-data/figures.png
+.. figure:: ../../_static/manual-personal/export-data/figures.png
    :width: 300 px
 
 You can select which figure to export then click the ``Export`` button. Similarly a system window will pop up

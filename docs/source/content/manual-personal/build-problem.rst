@@ -8,7 +8,7 @@ Basically, a valid problem configuration should include necessary information of
 
 To build a problem interactively from GUI, first click ``Problem->Manage`` from the menu, then this window will show:
 
-.. figure:: ../../_static/user-manual/build-problem/manage.png
+.. figure:: ../../_static/manual-personal/build-problem/manage.png
    :width: 500 px
 
 The list of the current problems that have been created is shown on the left. You can click the ``Create`` button under that list to start creating the problem.
@@ -18,7 +18,7 @@ It is also possible to update the information of the problem after it is created
 After clicking the ``Create`` button, a window will pop up like this, where you can enter the name and type of the problem 
 (here type means the type of the design variables). 
 
-.. figure:: ../../_static/user-manual/build-problem/create_general.png
+.. figure:: ../../_static/manual-personal/build-problem/create_general.png
    :width: 400 px
 
 For different types of problem, the window for entering design space information would be different.
@@ -35,7 +35,7 @@ If the design variables are continuous or integer, first you need to set the num
 Next, after the window is refreshed, you need to specify the name, lower bound and upper bound of the variables.
 For example:
 
-.. figure:: ../../_static/user-manual/build-problem/create_design_continuous.png
+.. figure:: ../../_static/manual-personal/build-problem/create_design_continuous.png
    :width: 500 px
 
 Then click ``Next`` to move forward.
@@ -48,7 +48,7 @@ If the design variables are binary, first you need to set the number of design v
 Next, after the window is refreshed, you need to specify only the name of the variables.
 For example:
 
-.. figure:: ../../_static/user-manual/build-problem/create_design_binary.png
+.. figure:: ../../_static/manual-personal/build-problem/create_design_binary.png
    :width: 400 px
 
 Then click ``Next`` to move forward.
@@ -61,7 +61,7 @@ If the design variables are categorical, first you need to set the number of des
 Next, after the window is refreshed, you need to specify only the choices of the variables, where the different choices are separated by commas.
 For example:
 
-.. figure:: ../../_static/user-manual/build-problem/create_design_categorical.png
+.. figure:: ../../_static/manual-personal/build-problem/create_design_categorical.png
    :width: 400 px
 
 Then click ``Next`` to move forward.
@@ -74,14 +74,14 @@ If the problem type is mixed, which means the problem involves different types o
 the window looks different than the above ones because you need to specify each design variable separately.
 Here is the initial window when no design variable is specified, where the variable list is on the left and the selected variable information is displayed on the right:
 
-.. figure:: ../../_static/user-manual/build-problem/create_design_mixed_initial.png
+.. figure:: ../../_static/manual-personal/build-problem/create_design_mixed_initial.png
    :width: 500 px
 
 Next, to create a design variable, you can click the ``Create`` button on the left, and entering corresponding information on the right, 
 then click ``Save`` to save this variable. You can also delete some created variables through clicking the ``Delete`` button.
 Finally it might look like this, for example:
 
-.. figure:: ../../_static/user-manual/build-problem/create_design_mixed_final.png
+.. figure:: ../../_static/manual-personal/build-problem/create_design_mixed_final.png
    :width: 500 px
 
 After all the design variables are specified correctly, click ``Next`` to move forward.
@@ -94,7 +94,7 @@ Now let us specify the information of the performance space. First you need to s
 Note currently AutoOED only supports 2 and 3 objectives, but we are working on supporting higher dimensions.
 Next, after the window is refreshed, you can specify the name, type and reference point of each objective (optional).
 
-.. figure:: ../../_static/user-manual/build-problem/create_performance.png
+.. figure:: ../../_static/manual-personal/build-problem/create_performance.png
    :width: 500 px
 
 Here the type means whether the objective needs to be minimized or maximized. So the possible values are "min" and "max".
@@ -119,7 +119,7 @@ Constraints
 Finally, as the last step of building a problem configuration, you need to provide the constraints of the problem if it has constraints, or just click ``Finish`` if there is no constraints.
 (For now we only support constraints on the design variables.)
 
-.. figure:: ../../_static/user-manual/build-problem/create_constraint.png
+.. figure:: ../../_static/manual-personal/build-problem/create_constraint.png
    :width: 450 px
 
 For details on how to write a valid constraint evaluation program, see `this page <eval-program.html#constraint-evaluation-program>`_.

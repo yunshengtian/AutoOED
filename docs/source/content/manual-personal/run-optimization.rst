@@ -5,7 +5,7 @@ Running Optimization
 After setting up the experiment configurations, you should be able to see the initial samples in the performance space from the main window.
 Here we are taking a predefined test problem ZDT1 as an example.
 
-.. figure:: ../../_static/user-manual/run-optimization/main.png
+.. figure:: ../../_static/manual-personal/run-optimization/main.png
    :width: 700 px
 
 From this window we can see:
@@ -36,13 +36,13 @@ Then after the algorithm proposes a batch of samples to evaluate, if the perform
 and do the evaluation for these samples. Otherwise, you have to manually evaluate the performance of these samples, and put the evaluated result back to AutoOED.
 To do this, you have to click the ``Database`` tab at the top to navigate to the **Database** panel:
 
-.. figure:: ../../_static/user-manual/run-optimization/database.png
+.. figure:: ../../_static/manual-personal/run-optimization/database.png
    :width: 700 px
 
 In this panel, you will need to click the ``Enter Performance`` button at lower left to manually enter the performance for unevaluated samples,
 whose status will appear as "unevaluated" in the database table. After you click that button, this window will show:
 
-.. figure:: ../../_static/user-manual/run-optimization/enter_performance.png
+.. figure:: ../../_static/manual-personal/run-optimization/enter_performance.png
    :width: 400 px
 
 First, you have to specify how many samples you are entering performance for at the top entry, then click ``Update`` to update the below Excel-like table
@@ -56,13 +56,13 @@ Auto Mode
 Auto mode could run optimization for multiple iterations, and is recommended when user have the performance evalaution program linked to AutoOED.
 To switch to auto mode, simply select ``Auto`` in the control panel like this:
 
-.. figure:: ../../_static/user-manual/run-optimization/auto_control.png
+.. figure:: ../../_static/manual-personal/run-optimization/auto_control.png
    :width: 700 px
 
 First, the user need to set the proper batch size and the stopping criterion for optimization.
 For setting the stopping criterion, click the ``Set`` button and this window will show:
 
-.. figure:: ../../_static/user-manual/run-optimization/stop_criterion.png
+.. figure:: ../../_static/manual-personal/run-optimization/stop_criterion.png
    :width: 600 px
 
 As shown in the figure above, the stopping criterion could be one or multiple of the following:

@@ -13,12 +13,12 @@ Basically, hypervolume is the Lebesgue measure of the performance space region t
 relative to a “worst case” reference point (red). Therefore, in 2D case, hypervolume is the union of rectangle area shown in grey between the Pareto front and the reference point.
 (Here we assume the optimization is minimization).
 
-.. figure:: ../../_static/user-manual/statistics/hypervolume.png
+.. figure:: ../../_static/manual-personal/statistics/hypervolume.png
    :width: 400 px
 
 Thus, a higher hypervolume is always desired. In AutoOED, we can see how the hypervolume is evolved with increasing number of evaluated samples, for example:
 
-.. figure:: ../../_static/user-manual/statistics/hv_curve.png
+.. figure:: ../../_static/manual-personal/statistics/hv_curve.png
    :width: 400 px
 
 Basically, the optimization can be considered as finished when the hypervolume of the Pareto front has converged.
@@ -33,7 +33,7 @@ then run optimization based on surrogate models instead of using real-world eval
 Here in these plots below, we show the changes of prediction error of surrogate models with increasing number of samples.
 These are the plots come from an optimization problem with two objectives, which are simply named as "f1" and "f2".
 
-.. figure:: ../../_static/user-manual/statistics/model_error_curve.png
+.. figure:: ../../_static/manual-personal/statistics/model_error_curve.png
    :width: 400 px
 
 The error is calculated as the absolute error between the predicted performance of the proposed points and the real evaluated performance in the performance space.

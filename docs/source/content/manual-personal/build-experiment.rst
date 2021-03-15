@@ -11,7 +11,7 @@ Creating Configuration through GUI
 
 To build an experiment interactively through GUI, first click ``Config->Create`` from the menu, then this window will show:
 
-.. figure:: ../../_static/user-manual/build-experiment/create.png
+.. figure:: ../../_static/manual-personal/build-experiment/create.png
    :width: 400 px
 
 
@@ -26,14 +26,13 @@ Algorithm
 '''''''''
 
 Next, we can select the specific algorithm to use for optimization. More detailed description of all the supported algorithms can be found in 
-the "Optimization Algorithm" section of the documentation, including the most sample-efficient `multi-objective Bayesian optimization algorithms <../algorithms/mobo.html>`_ 
-and some classical `multi-objective optimization algorithms <../algorithms/moo.html>`_.
+`Supported Algorithms <../about/supported-algorithms.html>`_.
 
 In general, although the performance of each algorithm varies greatly depending on the problem, we suggest using DGEMO
 for most of the cases since it exhibits a relatively better and stabler performance. And you are also able to customize
 the parameters of the algorithms by clicking ``Advanced Settings``, if you are not satisfied with the default choices. For example:
 
-.. figure:: ../../_static/user-manual/build-experiment/algorithm_advanced.png
+.. figure:: ../../_static/manual-personal/build-experiment/algorithm_advanced.png
    :width: 500 px
 
 
@@ -47,7 +46,7 @@ For initialization with random samples, make sure the ``Random`` choice is selec
 samples you want. For initialization with provided existing samples, the ``Provided`` choice has to be selected and you have to specify
 the file location of existing samples by clicking the ``Browse`` buttons. For example:
 
-.. figure:: ../../_static/user-manual/build-experiment/initialize_provided.png
+.. figure:: ../../_static/manual-personal/build-experiment/initialize_provided.png
    :width: 400 px
 
 In this case, the initial design samples must be provided, either with or without corresponding initial performance values.

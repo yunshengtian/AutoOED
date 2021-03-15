@@ -6,7 +6,7 @@ This section shows how data is displayed through a database interface,
 and how you can make changes to the existing data or adding new data.
 Here is the main interface for the database:
 
-.. figure:: ../../_static/user-manual/database/database.png
+.. figure:: ../../_static/manual-personal/database/database.png
    :width: 700 px
 
 
@@ -32,7 +32,7 @@ Entering Design
 
 When you click the ``Enter Design`` button, this window will pop up:
 
-.. figure:: ../../_static/user-manual/database/enter_design.png
+.. figure:: ../../_static/manual-personal/database/enter_design.png
    :width: 600 px
 
 Here, you can manually enter new design samples into the database, instead of letting the algorithm generate for you.
@@ -47,7 +47,7 @@ Entering Performance
 
 When you click the ``Enter Performance`` button, this window will pop up:
 
-.. figure:: ../../_static/user-manual/database/enter_performance.png
+.. figure:: ../../_static/manual-personal/database/enter_performance.png
    :width: 400 px
 
 Here, you can manually enter the performance for existing design samples into the database.
@@ -61,7 +61,7 @@ Display Settings
 
 When you click the ``Display Settings`` button, this window will show:
 
-.. figure:: ../../_static/user-manual/database/display.png
+.. figure:: ../../_static/manual-personal/database/display.png
    :width: 300 px
 
 Here, you can change some display settings of the database, mainly the width of each cell and the displayed precision of the floating numbers.
