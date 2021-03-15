@@ -1,6 +1,6 @@
-'''''''''''''
-Prerequisites
-'''''''''''''
+''''''''''
+Background
+''''''''''
 
 Optimal Experiment Design
 -------------------------

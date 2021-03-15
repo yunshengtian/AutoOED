@@ -11,7 +11,7 @@ Welcome to AutoOED's documentation!
    :caption: About
 
    content/about/introduction
-   content/about/prerequisites
+   content/about/background
    content/about/platform-features
    content/about/platform-design
 
@@ -43,7 +43,7 @@ Welcome to AutoOED's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Optimization Algorithms
+   :caption: Supported Algorithms
 
    content/algorithms/moo
    content/algorithms/mobo
