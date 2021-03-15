@@ -13,12 +13,12 @@ import tkinter as tk
 from tkinter import messagebox
 from system.params import *
 from system.database import TeamDatabase
-from system.agent import Agent
-from system.scheduler import Scheduler
+from system.agent import OptimizeAgent
+from system.scheduler import OptimizeScheduler
 
 from system.scientist.view.login import ScientistLoginView
 from system.scientist.view.main import ScientistView
-from system.scientist.menu import MenuConfigController, MenuProblemController, MenuDatabaseController, MenuEvalController, MenuExportController
+from system.scientist.menu import MenuConfigController, MenuProblemController, MenuEvalController, MenuExportController
 from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController
 from system.scientist.viz import VizSpaceController, VizStatsController, VizDatabaseController
 
@@ -101,8 +101,8 @@ class ScientistController:
         self.problem_cfg = None
         self.timestamp = None
 
-        self.agent = Agent(self.database, self.table_name)
-        self.scheduler = Scheduler(self.agent)
+        self.agent = OptimizeAgent(self.database, self.table_name)
+        self.scheduler = OptimizeScheduler(self.agent)
 
         self.true_pfront = None
 
@@ -131,10 +131,6 @@ class ScientistController:
 
         self.controller['menu_problem'] = MenuProblemController(self)
         self.view.menu_problem.entryconfig(0, command=self.controller['menu_problem'].manage_problem)
-
-        self.controller['menu_database'] = MenuDatabaseController(self)
-        self.view.menu_database.entryconfig(0, command=self.controller['menu_database'].enter_design, state=tk.DISABLED)
-        self.view.menu_database.entryconfig(1, command=self.controller['menu_database'].enter_performance, state=tk.DISABLED)
 
         self.controller['menu_eval'] = MenuEvalController(self)
         self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_eval, state=tk.DISABLED)
@@ -205,9 +201,9 @@ class ScientistController:
                 return False
 
             # check if config is compatible with history data (problem dimension)
-            table_exist = self.database.check_inited_table_exist(self.table_name)
+            table_exist = self.agent.check_table_exist()
             if table_exist:
-                column_names = self.database.get_column_names(self.table_name)
+                column_names = self.agent.get_column_names()
                 data_n_var = len([name for name in column_names if name.startswith('x')])
                 data_n_obj = len([name for name in column_names if name.startswith('f') and '_' not in name])
                 problem_cfg = problem.get_config()
@@ -241,15 +237,13 @@ class ScientistController:
             for i in range(3):
                 self.view.menu_export.entryconfig(i, state=tk.NORMAL)
             for i in range(2):
-                self.view.menu_database.entryconfig(i, state=tk.NORMAL)
-            for i in range(2):
                 self.view.menu_eval.entryconfig(i, state=tk.NORMAL)
 
             # activate widgets
             entry_mode = self.controller['panel_control'].view.widget['mode']
             entry_mode.enable()
             if not self.agent.can_eval:
-                entry_mode.widget['Auto'].configure(state=tk.DISABLED)
+                entry_mode.widget['Auto'].disable()
 
             entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
             entry_batch_size.enable()
@@ -298,7 +292,7 @@ class ScientistController:
                 self.controller['panel_control'].enable_auto()
 
         # log display
-        log_list = self.scheduler.read_log()
+        log_list = self.scheduler.logger.read()
         self.controller['panel_log'].log(log_list)
 
         # check if database has changed

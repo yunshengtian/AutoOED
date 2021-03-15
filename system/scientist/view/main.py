@@ -15,13 +15,8 @@ class ScientistView:
         '''
         # GUI root initialization
         self.root = root
+        self.root.geometry(f'{WIDTH}x{HEIGHT}')
         grid_configure(self.root, 2, 0, row_weights=[1, 1, 20]) # configure for resolution change
-        screen_width = self.root.winfo_screenwidth()
-        max_width = GEOMETRY_MAX_WIDTH
-        width = GEOMETRY_WIDTH_RATIO * screen_width
-        if width > max_width: width = max_width
-        height = GEOMETRY_HEIGHT_RATIO * width
-        self.root.geometry(f'{int(width)}x{int(height)}')
 
         self._init_menu()
         self._init_viz()
@@ -44,11 +39,6 @@ class ScientistView:
         self.menu_problem = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Problem', menu=self.menu_problem)
         self.menu_problem.add_command(label='Manage')
-
-        self.menu_database = tk.Menu(master=self.menu, tearoff=0)
-        self.menu.add_cascade(label='Database', menu=self.menu_database)
-        self.menu_database.add_command(label='Enter design')
-        self.menu_database.add_command(label='Enter performance')
 
         self.menu_eval = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Evaluation', menu=self.menu_eval)

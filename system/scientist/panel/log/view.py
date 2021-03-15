@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import scrolledtext
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 
@@ -15,7 +14,7 @@ class PanelLogView:
         grid_configure(frame_log, 0, 0)
 
         # log display
-        self.widget['log'] = scrolledtext.ScrolledText(master=frame_log, width=10, height=10, state=tk.DISABLED)
-        self.widget['log'].grid(row=0, column=0, sticky='NSEW', padx=5, pady=5)
+        self.widget['log'] = create_widget('text', master=frame_log, row=0, column=0)
+        self.widget['log'].disable()
 
         self.widget['clear'] = create_widget('button', master=frame_log, row=1, column=0, text='Clear')

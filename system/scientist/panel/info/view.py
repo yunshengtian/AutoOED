@@ -1,4 +1,4 @@
-from system.gui.widgets_modular import ProblemInfoWidget
+from system.gui.modules import ProblemInfo
 
 
 class PanelInfoView:
@@ -8,4 +8,4 @@ class PanelInfoView:
 
         self.widget = {}
 
-        self.widget['problem_info'] = ProblemInfoWidget(master=self.root_view.root, row=0, column=1)
+        self.widget['problem_info'] = ProblemInfo(master=self.root_view.root, row=0, column=1)

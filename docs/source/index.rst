@@ -11,8 +11,10 @@ Welcome to AutoOED's documentation!
    :caption: About
 
    content/about/introduction
-   content/about/prerequisites
+   content/about/background
+   content/about/platform-features
    content/about/platform-design
+   content/about/supported-algorithms
 
 
 .. toctree::
@@ -27,27 +29,29 @@ Welcome to AutoOED's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Manual
+   :caption: User Manual - Personal
 
-   content/user-manual/build-problem
-   content/user-manual/build-experiment
-   content/user-manual/run-optimization
-   content/user-manual/statistics
-   content/user-manual/database
-   content/user-manual/distributed
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Optimization Algorithms
-
-   content/algorithms/moo
-   content/algorithms/mobo
+   content/manual-personal/overview
+   content/manual-personal/software-entry
+   content/manual-personal/build-problem
+   content/manual-personal/eval-program
+   content/manual-personal/build-experiment
+   content/manual-personal/run-optimization
+   content/manual-personal/statistics
+   content/manual-personal/database
+   content/manual-personal/export-data
 
 
 .. toctree::
    :maxdepth: 2
-   :caption: API Reference
+   :caption: User Manual - Team
+
+   content/manual-team/overview
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference (Under Construction)
 
    content/api/algorithms
    content/api/surrogate

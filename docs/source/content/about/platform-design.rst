@@ -17,7 +17,7 @@ AutoOED has personal version and team version to support different experiment sc
 Personal Version
 ----------------
 
-The personal version of AutoOED has all the `supported features <introduction.html#supported-features>`_ except distributed collaboration. 
+The personal version of AutoOED has all the `supported features <platform-features.html>`_ except distributed collaboration. 
 This version is cleaner and easier to work with, especially when the optimization and evaluation can be done on a single computer.
 For data storage, this version uses SQLite, which is a built-in local database management system that comes with python.
 
@@ -26,6 +26,6 @@ Team Version
 ------------
 
 The team version enables distributed collaboration around the globe by leveraging a centralized MySQL database that can be connected through internet. 
-Using this version, the scientist can focus on controlling the optimization and data analysis, while the workers can evaluate in a distributed fashion and synchronize the 
+Using this version, the scientist can focus on controlling the optimization and data analysis, while the technicians can evaluate in a distributed fashion and synchronize the 
 evaluated results with other members in the team in real-time, through our provided simple and intuitive user interface. 
-This version provides different software for different roles of a team (server, scientist and worker) with proper privilege control implemented.
+This version provides different software for different roles of a team (manager, scientist and technician) with proper privilege control implemented.

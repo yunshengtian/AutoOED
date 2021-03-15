@@ -51,12 +51,12 @@ def predict(config, X_init, Y_init, X_next):
     return Y_expected, Y_uncertainty
 
 
-def evaluate(config, x_next):
+def evaluate(name, x_next):
     '''
     Evaluate performance of x_next
     '''
     # build problem
-    problem = build_problem(config['problem']['name'])
+    problem = build_problem(name)
 
     # evaluate x_next with real problem
     y_next = np.array(problem.evaluate_objective(x_next))

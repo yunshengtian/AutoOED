@@ -1,0 +1,27 @@
+# example configuration file
+
+problem:
+  name: ZDT1
+  ref_point: [1.0, 6.0] # reference point for hypervolume calculation (optional)
+algorithm:
+  name: tsemo
+  n_process: 1 # number of parallel processes used in algorithm (optional)
+  # specific algorithm settings below (optional)
+  surrogate:
+    name: ts
+    n_spectral_pts: 100
+    nu: 5
+    mean_sample: false
+  acquisition:
+    name: identity
+  solver:
+    name: nsga2
+    pop_size: 100
+    n_gen: 200
+    pop_init_method: nds
+  selection:
+    name: hvi
+experiment:
+  n_random_sample: 20 # number of random initial samples
+  init_sample_path: null # path to provided initial samples
+  n_worker: 5 # max number of evaluation workers (default: batch_size)

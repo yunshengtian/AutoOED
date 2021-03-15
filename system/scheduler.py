@@ -2,10 +2,132 @@ from multiprocessing import Process, Queue
 from problem.common import build_problem, get_initial_samples, get_problem_config
 
 
-class Scheduler:
+class Logger:
+    '''
+    '''
+    def __init__(self):
+        self.logs = []
 
+    def add(self, log):
+        '''
+        Add log
+        '''
+        self.logs.append(log)
+
+    def read(self, clear=True):
+        '''
+        Read and clear logs
+        '''
+        logs = self.logs.copy()
+        if clear:
+            self.logs = []
+        return logs
+
+
+class EvaluateScheduler:
+    '''
+    Scheduler for evaluation
+    '''
     def __init__(self, agent):
         self.agent = agent
+        self.logger = Logger()
+
+        self.eval_workers_run = []
+        self.eval_workers_wait = []
+
+        self.n_worker = 0
+
+    def evaluate(self, eval_func, rowids, n_worker):
+        '''
+        '''
+        if not (self.agent.can_eval or eval_func is not None): return
+        self.n_worker = n_worker
+        for rowid in rowids:
+            worker = Process(target=self.agent.evaluate, args=(rowid, eval_func))
+            self.eval_workers_manual_wait.append([worker, rowid])
+
+    def is_evaluating(self):
+        '''
+        '''
+        return self.eval_workers_run != [] or self.eval_workers_wait != []
+
+    def _refresh_evaluate(self):
+        '''
+        '''
+        completed_workers = []
+
+        # check if eval workers finished
+        for worker_info in self.eval_workers_run:
+            eval_worker, rowid = worker_info
+            if not eval_worker.is_alive():
+                self.logger.add(f'evaluation for row {rowid} finished')
+                completed_workers.append(worker_info)
+
+        for worker_info in completed_workers:
+            self.eval_workers_run.remove(worker_info)
+        
+        # launch waiting eval workers
+        while len(self.eval_workers_run) < self.n_worker and self.eval_workers_wait != []:
+            worker, rowid = self.eval_workers_wait.pop(0)
+            worker.start()
+            self.logger.add(f'evaluation for row {rowid} started')
+            self.eval_workers_run.append([worker, rowid])
+
+        eval_finished = len(completed_workers) > 0 and self.eval_workers_run == []
+        return eval_finished
+
+    def refresh(self):
+        '''
+        '''
+        eval_finished = self._refresh_evaluate()
+
+    def stop_evaluate(self, rowid=None):
+        '''
+        Stop the running evaluation worker(s)
+        Input:
+            rowid: the id of row to be stopped (if None then stop all workers)
+        '''
+        stop_all = rowid is None
+        worker_run_stopped = None
+        worker_wait_stopped = None
+
+        # stop running workers
+        for worker_info in self.eval_workers_run:
+            worker, rowid_ = worker_info
+            if (stop_all or rowid_ == rowid) and worker.is_alive():
+                worker.terminate()
+                self.logger.add(f'evaluation for row {rowid_} stopped')
+                if not stop_all:
+                    worker_run_stopped = worker_info
+                    break
+        
+        # stop waiting workers
+        for worker_info in self.eval_workers_wait:
+            worker, rowid_ = worker_info
+            if not stop_all and rowid_ == rowid:
+                worker_wait_stopped = worker_info
+                break
+        
+        if stop_all:
+            self.eval_workers_run = []
+            self.eval_workers_wait = []
+        else:
+            if worker_run_stopped is not None:
+                self.eval_workers_run.remove(worker_run_stopped)
+            if worker_wait_stopped is not None:
+                self.eval_workers_wait.remove(worker_wait_stopped)
+
+    def quit(self):
+        self.stop_evaluate()
+
+
+class OptimizeScheduler:
+    '''
+    Scheduler for evaluation and optimization
+    '''
+    def __init__(self, agent):
+        self.agent = agent
+        self.logger = Logger()
 
         self.opt_worker = None
         self.opt_queue = Queue()
@@ -14,7 +136,6 @@ class Scheduler:
         self.eval_workers_manual_wait = []
         self.eval_workers_auto_run = []
         self.eval_workers_auto_wait = []
-        self.logs = []
 
         self.initializing = False
 
@@ -27,7 +148,11 @@ class Scheduler:
         '''
         self.config = config.copy()
         self.agent.set_config(self.config)
+        self._initialize()
 
+    def _initialize(self):
+        '''
+        '''
         if not self.agent.check_table_exist() and not self.initializing: # check if initializing
             self.initializing = True
 
@@ -43,9 +168,9 @@ class Scheduler:
         '''
         if not self.agent.check_initialized():
             raise Exception('initialization has not finished')
-        assert self.opt_worker is None, 'optimization worker is running'
-        self._add_log(f'optimization worker started')
-        self.opt_worker = Process(target=self.agent.optimize, args=(self.config, self.opt_queue))
+        assert self.opt_worker is None, 'optimization is running'
+        self.logger.add(f'optimization started')
+        self.opt_worker = Process(target=self.agent.optimize, args=(self.opt_queue,))
         self.opt_worker.start()
 
     def optimize_manual(self):
@@ -66,8 +191,8 @@ class Scheduler:
     def predict(self, rowids):
         '''
         '''
-        self._add_log(f'prediction worker for row {",".join([str(r) for r in rowids])} started')
-        worker = Process(target=self.agent.predict, args=(self.config, rowids))
+        self.logger.add(f'prediction for row {",".join([str(r) for r in rowids])} started')
+        worker = Process(target=self.agent.predict, args=(rowids,))
         worker.start()
         self.pred_workers.append([worker, rowids])
 
@@ -76,7 +201,7 @@ class Scheduler:
         '''
         if not self.agent.can_eval: return
         for rowid in rowids:
-            worker = Process(target=self.agent.evaluate, args=(self.config, rowid))
+            worker = Process(target=self.agent.evaluate, args=(rowid,))
             self.eval_workers_manual_wait.append([worker, rowid])
 
     def evaluate_auto(self, rowids):
@@ -84,7 +209,7 @@ class Scheduler:
         '''
         if not self.agent.can_eval: return
         for rowid in rowids:
-            worker = Process(target=self.agent.evaluate, args=(self.config, rowid))
+            worker = Process(target=self.agent.evaluate, args=(rowid,))
             self.eval_workers_auto_wait.append([worker, rowid])
 
     def is_optimizing(self):
@@ -129,7 +254,7 @@ class Scheduler:
             pass
 
         if rowids is not None:
-            self._add_log(f'optimization worker for row {",".join([str(r) for r in rowids])} finished')
+            self.logger.add(f'optimization for row {",".join([str(r) for r in rowids])} finished')
             if self.opt_worker.is_alive():
                 self.opt_worker.terminate()
             self.opt_worker = None
@@ -144,7 +269,7 @@ class Scheduler:
         for worker_info in self.pred_workers:
             pred_worker, rowids = worker_info
             if not pred_worker.is_alive():
-                self._add_log(f'prediction worker for row {",".join([str(r) for r in rowids])} finished')
+                self.logger.add(f'prediction for row {",".join([str(r) for r in rowids])} finished')
                 completed_workers.append(worker_info)
 
         for worker_info in completed_workers:
@@ -162,7 +287,7 @@ class Scheduler:
         for worker_info in self.eval_workers_manual_run:
             eval_worker, rowid = worker_info
             if not eval_worker.is_alive():
-                self._add_log(f'evaluation worker for row {rowid} finished')
+                self.logger.add(f'evaluation for row {rowid} finished')
                 completed_workers_manual.append(worker_info)
 
         for worker_info in completed_workers_manual:
@@ -172,7 +297,7 @@ class Scheduler:
         for worker_info in self.eval_workers_auto_run:
             eval_worker, rowid = worker_info
             if not eval_worker.is_alive():
-                self._add_log(f'evaluation worker for row {rowid} finished')
+                self.logger.add(f'evaluation for row {rowid} finished')
                 completed_workers_auto.append(worker_info)
 
         for worker_info in completed_workers_auto:
@@ -182,14 +307,14 @@ class Scheduler:
         while len(self.eval_workers_manual_run) + len(self.eval_workers_auto_run) < self.config['experiment']['n_worker'] and self.eval_workers_manual_wait != []:
             worker, rowid = self.eval_workers_manual_wait.pop(0)
             worker.start()
-            self._add_log(f'evaluation worker for row {rowid} started')
+            self.logger.add(f'evaluation for row {rowid} started')
             self.eval_workers_manual_run.append([worker, rowid])
 
         # launch waiting auto eval workers
         while len(self.eval_workers_manual_run) + len(self.eval_workers_auto_run) < self.config['experiment']['n_worker'] and self.eval_workers_auto_wait != []:
             worker, rowid = self.eval_workers_auto_wait.pop(0)
             worker.start()
-            self._add_log(f'evaluation worker for row {rowid} started')
+            self.logger.add(f'evaluation for row {rowid} started')
             self.eval_workers_auto_run.append([worker, rowid])
 
         eval_manual_finished = len(completed_workers_manual) > 0 and self.eval_workers_manual_run == []
@@ -219,21 +344,7 @@ class Scheduler:
             if self.auto_scheduling:
                 self._optimize()
             else:
-                self._add_log('stopping criterion met')
-        
-    def _add_log(self, log):
-        '''
-        Add log
-        '''
-        self.logs.append(log)
-
-    def read_log(self):
-        '''
-        Read and clear logs
-        '''
-        logs = self.logs.copy()
-        self.logs = []
-        return logs
+                self.logger.add('stopping criterion met')
 
     def stop_optimize(self):
         '''
@@ -246,7 +357,7 @@ class Scheduler:
         if self.opt_worker.is_alive():
             self.opt_worker.terminate()
 
-        self._add_log(f'optimization worker stopped')
+        self.logger.add(f'optimization stopped')
         self.opt_worker = None
 
     def stop_predict(self):
@@ -257,7 +368,7 @@ class Scheduler:
             worker, rowids = worker_info
             if worker.is_alive():
                 worker.terminate()
-                self._add_log(f'prediction worker for row {",".join(rowids)} stopped')
+                self.logger.add(f'prediction for row {",".join(rowids)} stopped')
 
         self.pred_workers = []
 
@@ -276,7 +387,7 @@ class Scheduler:
             worker, rowid_ = worker_info
             if (stop_all or rowid_ == rowid) and worker.is_alive():
                 worker.terminate()
-                self._add_log(f'evaluation worker for row {rowid_} stopped')
+                self.logger.add(f'evaluation for row {rowid_} stopped')
                 if not stop_all:
                     worker_run_stopped = worker_info
                     break
@@ -314,7 +425,7 @@ class Scheduler:
             worker, rowid_ = worker_info
             if (stop_all or rowid_ == rowid) and worker.is_alive():
                 worker.terminate()
-                self._add_log(f'evaluation worker for row {rowid_} stopped')
+                self.logger.add(f'evaluation for row {rowid_} stopped')
                 if not stop_all:
                     worker_run_stopped = worker_info
                     break

@@ -49,13 +49,13 @@ class PanelControlView:
             self.widget[key].disable()
 
         # optimization command
-        self.widget['optimize_manual'] = Button(master=frame_manual, text="Optimize", state=tk.DISABLED)
-        self.widget['optimize_manual'].grid(row=0, column=0, padx=5, pady=10, sticky='NSEW')
-        self.widget['optimize_auto'] = Button(master=frame_auto, text="Optimize", state=tk.DISABLED)
-        self.widget['optimize_auto'].grid(row=1, column=0, padx=5, pady=10, sticky='NSEW')
+        self.widget['optimize_manual'] = create_widget('button', master=frame_manual, row=0, column=0, text='Optimize')
+        self.widget['optimize_manual'].disable()
+        self.widget['optimize_auto'] = create_widget('button', master=frame_auto, row=1, column=0, text='Optimize')
+        self.widget['optimize_auto'].disable()
 
         # stop optimization command
-        self.widget['stop_manual'] = Button(master=frame_manual, text='Stop', state=tk.DISABLED)
-        self.widget['stop_manual'].grid(row=0, column=1, padx=5, pady=10, sticky='NSEW')
-        self.widget['stop_auto'] = Button(master=frame_auto, text='Stop', state=tk.DISABLED)
-        self.widget['stop_auto'].grid(row=1, column=1, padx=5, pady=10, sticky='NSEW')
+        self.widget['stop_manual'] = create_widget('button', master=frame_manual, row=0, column=1, text='Stop')
+        self.widget['stop_manual'].disable()
+        self.widget['stop_auto'] = create_widget('button', master=frame_auto, row=1, column=1, text='Stop')
+        self.widget['stop_auto'].disable()

@@ -6,7 +6,7 @@ class Excel(tk.Frame):
     '''
     Excel-like table in tkinter gui, with column-based structure
     '''
-    def __init__(self, master, rows, columns, width, title=None, dtype=None, default=None, required=None, valid_check=None):
+    def __init__(self, master, rows, columns, width, title=None, dtype=None, default=None, required=None, required_mark=None, valid_check=None):
         '''
         Input:
             rows: number of rows
@@ -25,13 +25,13 @@ class Excel(tk.Frame):
         self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
         self.title = title
 
-        self.config(default=default, required=required, valid_check=valid_check)
+        self.config(default=default, required=required, required_mark=required_mark, valid_check=valid_check)
 
         # make titles
         if self.title is not None:
             for column in range(self.n_column):
                 column_name = self.title[column]
-                if self.required[column]:
+                if self.required[column] and self.required_mark:
                     column_name += ' (*)'
                 self._make_entry(0, column + 1, self.width, column_name, False) 
 
@@ -47,7 +47,7 @@ class Excel(tk.Frame):
             assert len(dtype) == self.n_column
             self.dtype = dtype
 
-    def config(self, default=None, required=None, valid_check=None):
+    def config(self, default=None, required=None, required_mark=None, valid_check=None):
         # set default values
         if default is None:
             self.default = [None] * self.n_column
@@ -64,6 +64,12 @@ class Excel(tk.Frame):
             else:
                 assert len(required) == self.n_column
                 self.required = required
+            
+        # set required mark flags
+        if required_mark is None:
+            self.required_mark = True
+        elif required_mark == False:
+            self.required_mark = False
 
         # set validity check functions
         if valid_check is None:

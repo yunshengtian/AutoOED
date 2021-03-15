@@ -13,7 +13,7 @@ tailoring the code, serving as a testbed for machine learning researchers to eas
 and evaluate their own multi-objective Bayesian optimization algorithms. An intuitive
 graphical user interface (GUI) is provided to visualize and guide the experiments for users
 with little or no experience with coding, machine learning, or optimization. Furthermore,
-a distributed system is integrated to enable parallelized experimental evaluations by independent workers in remote locations.
+a distributed system is integrated to enable parallelized experimental evaluations by independent technicians in remote locations.
 
 
 Applications
@@ -39,9 +39,10 @@ The speed of optimization is mainly determined by which algorithm you choose, an
 But most of our optimization algorithms run very fast, and should be on the magnitude of seconds with hundreds of samples for each iteration.
 And the speed could be further boosted if you have a powerful CPU or enable parallelization in AutoOED.
 
+However, there are some requirements for your optimization problem that you should pay attention to:
 
-Supported Features
-''''''''''''''''''
+- AutoOED only supports problems with 2 or 3 objectives at the moment, but we are working on supporting higher dimensional performance space.
+- The problem constraints should depend only on design variables. AutoOED does not support constraints on objectives.
 
 
 Citation
@@ -50,6 +51,14 @@ Citation
 
 Contributing
 ''''''''''''
+
+
+Contact
+'''''''
+
+If you experience any issues during installing or using the software or have any feature suggestions,
+please feel free to reach out to us either by creating issues on `GitHub <https://github.com/yunshengtian/AutoOED>`_
+or directly sending emails to yunsheng@mit.edu.
 
 
 Acknowledgments

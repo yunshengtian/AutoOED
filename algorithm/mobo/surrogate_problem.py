@@ -41,7 +41,7 @@ class SurrogateProblem(Problem):
         
         # evaluate constraints by real problem
         x_ori = self.normalization.undo(x)
-        out['G'] = self.real_problem.evaluate_constraint(x_ori)
+        out['G'] = np.array([self.real_problem.evaluate_constraint(x_) for x_ in x_ori])
 
     def evaluate(self, X, *args, return_values_of="auto", return_as_dictionary=False, **kwargs):
         """

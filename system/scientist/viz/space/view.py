@@ -3,10 +3,12 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from system.gui.utils.radar import radar_factory
+from system.params import FIGURE_DPI
 
 import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.utils.figure import embed_figure
+from system.gui.widgets.factory import create_widget
 
 
 class VizSpaceView:
@@ -57,7 +59,7 @@ class VizSpaceView:
         self.var_lb, self.var_ub = np.array(var_lb), np.array(var_ub)
 
         # figure placeholder in GUI
-        self.fig = plt.figure(figsize=(10, 5))
+        self.fig = plt.figure(dpi=FIGURE_DPI)
         self.gs = GridSpec(1, 2, figure=self.fig, width_ratios=[3, 2])
 
         # connect matplotlib figure with tkinter GUI
@@ -106,8 +108,7 @@ class VizSpaceView:
             self.ax2.set_ylim(0, 1.04)
 
         # configure slider widget
-        frame_slider = tk.Frame(master=self.root_view.frame_plot)
-        frame_slider.grid(row=2, column=0, padx=5, pady=0, sticky='EW')
+        frame_slider = create_widget('frame', master=self.root_view.frame_plot, row=2, column=0, pady=0)
         grid_configure(frame_slider, [0], [1])
         
         label_iter = tk.Label(master=frame_slider, text='Iteration:')

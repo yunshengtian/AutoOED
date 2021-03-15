@@ -216,6 +216,12 @@ class PersonalDatabase:
         '''
         with SafeLock(self.lock):
             assert not self.check_table_exist(name, block=False), f'Table {name} exists'
+
+            # in case not removed completely
+            self.execute(f'delete from _problem_info where name="{name}"')
+            self.execute(f'delete from _config where name="{name}"')
+            self.execute(f'delete from _empty_table where name="{name}"')
+
             self.execute(f'insert into _empty_table values ("{name}")')
             self.commit()
 
@@ -498,7 +504,7 @@ class PersonalDatabase:
         column_names = [name[0] for name in column_names]
         return column_names
 
-    def get_checksum(self):
+    def get_checksum(self, table=None):
         '''
         '''
         return self.checksum.value

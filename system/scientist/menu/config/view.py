@@ -30,7 +30,7 @@ class MenuConfigView:
         self.widget['problem_name'] = create_widget('labeled_combobox', 
             master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
         self.widget['set_ref_point'] = create_widget('button',
-            master=frame_problem, row=1, column=0, text='Set reference point', sticky=None)
+            master=frame_problem, row=1, column=0, text='Set Reference Point', sticky=None)
         self.widget['set_ref_point'].disable()
 
         # algorithm subsection
