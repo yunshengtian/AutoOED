@@ -2,7 +2,7 @@
 Overview
 --------
 
-In this section, we provide a detailed user manual that covers how you should use AutoOED for
+In this section, we provide a detailed user manual that covers how you should use AutoOED (personal version) for
 setting up, running, and checking status of your optimization problems. 
 Here is the overview for the content in these subsections, and please follow the order of these steps:
 

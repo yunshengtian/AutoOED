@@ -47,6 +47,9 @@ Welcome to AutoOED's documentation!
    :caption: User Manual - Team
 
    content/manual-team/overview
+   content/manual-team/manager
+   content/manual-team/scientist
+   content/manual-team/technician
 
 
 .. toctree::
