@@ -25,9 +25,19 @@ def constrained_optimization(obj_func, initial_theta, bounds):
 
 class GaussianProcess(SurrogateModel):
     '''
-    Gaussian process
+    Gaussian process.
     '''
     def __init__(self, problem_cfg, nu, **kwargs):
+        '''
+        Initialize a Gaussian process.
+
+        Parameters
+        ----------
+        problem_cfg: dict
+            Problem configurations.
+        nu: int
+            The parameter nu controlling the type of the Matern kernel. Choices are 1, 3, 5 and -1.
+        '''
         super().__init__(problem_cfg)
         
         self.nu = nu

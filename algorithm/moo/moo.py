@@ -6,19 +6,25 @@ from pymoo.model.individual import Individual
 from pymoo.model.population import Population
 
 '''
-Main algorithm framework for Multi-Objective Optimization
+Main algorithm framework for Multi-Objective Optimization.
 '''
 
 class MOO:
     '''
-    Base class of algorithm framework, inherit this class with specific algorithm classes specified as 'algo'
+    Base class of MOO algorithm framework.
     '''
     algo = None
 
     def __init__(self, problem, algo_cfg):
         '''
-        Input:
-            problem: the original / real optimization problem
+        Initialize a MOO algorithm.
+
+        Parameters
+        ----------
+        problem: problem.Problem
+            The original / real optimization problem.
+        algo_cfg: dict
+            Algorithm configurations.
         '''
         self.real_problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
@@ -27,7 +33,21 @@ class MOO:
 
     def solve(self, X_init, Y_init):
         '''
-        Solve the real multi-objective problem from initial data (X_init, Y_init)
+        Solve the real multi-objective problem from initial data.
+
+        Parameters
+        ----------
+        X_init: np.array
+            Initial design variables.
+        Y_init: np.array
+            Initial performance values.
+
+        Returns
+        -------
+        X_next: np.array
+            Proposed design samples to evaluate next.
+        Y_prediction: tuple
+            (None, None) because there is no prediction in MOO algorithms.
         '''
         # forward transformation
         X_init = self.transformation.do(X_init)
@@ -57,11 +77,21 @@ class MOO:
         return X_next, (None, None)
 
     def _solve(self, pop):
+        '''
+        Solve for the offsprings given the parent population.
+
+        Parameters
+        ----------
+        pop: pymoo.model.population.Population
+            The parent population.
+        
+        Returns
+        -------
+        pymoo.model.population.Population
+            The offspring population.
+        '''
         raise NotImplementedError
 
     def predict(self, X_init, Y_init, X_next):
-        '''
-        Predict the performance of X_next based on initial data (X_init, Y_init), not supported for moo algorithms
-        '''
         return None, None
 

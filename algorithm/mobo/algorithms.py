@@ -1,15 +1,15 @@
 from algorithm.mobo.mobo import MOBO
 
 '''
-High-level algorithm specifications by providing spec
+High-level algorithm specifications by providing spec.
 '''
 
 
 class DGEMO(MOBO):
     '''
-    DGEMO
+    DGEMO [Luković et al. 2020].
     '''
-    config = {
+    spec = {
         'surrogate': 'gp',
         'acquisition': 'identity',
         'solver': 'discovery',
@@ -19,7 +19,7 @@ class DGEMO(MOBO):
 
 class TSEMO(MOBO):
     '''
-    TSEMO
+    TSEMO [Bradford et al. 2018].
     '''
     spec = {
         'surrogate': 'ts',
@@ -31,7 +31,7 @@ class TSEMO(MOBO):
 
 class USEMO_EI(MOBO):
     '''
-    USeMO, using EI as acquisition
+    USeMO [Belakaria and Deshwal 2020], using EI as acquisition.
     '''
     spec = {
         'surrogate': 'gp',
@@ -43,7 +43,7 @@ class USEMO_EI(MOBO):
 
 class MOEAD_EGO(MOBO):
     '''
-    MOEA/D-EGO
+    MOEA/D-EGO [Zhang et al. 2009].
     '''
     spec = {
         'surrogate': 'gp',
@@ -55,7 +55,7 @@ class MOEAD_EGO(MOBO):
 
 class ParEGO(MOBO):
     '''
-    ParEGO
+    ParEGO [Knowles et al. 2006].
     '''
     spec = {
         'surrogate': 'gp',
@@ -72,7 +72,7 @@ Define new algorithms here
 
 class Custom(MOBO):
     '''
-    Totally rely on user arguments to specify each component
+    Fully customized algorithms which totally rely on user arguments to specify each component.
     '''
     spec = None
 

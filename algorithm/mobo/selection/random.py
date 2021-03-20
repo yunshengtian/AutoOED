@@ -4,7 +4,7 @@ from .base import Selection
 
 class Random(Selection):
     '''
-    Random selection
+    Random selection.
     '''
     def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront):
         X = solution['x']

@@ -5,7 +5,7 @@ from pymoo.algorithms.moead import MOEAD
 
 class MOEADSolver(Solver):
     '''
-    Solver based on MOEA/D
+    Solver based on MOEA/D.
     '''
     def __init__(self, *args, **kwargs):
         pop_size, n_obj = kwargs['pop_size'], kwargs['n_obj']

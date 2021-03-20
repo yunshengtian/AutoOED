@@ -10,7 +10,7 @@ from pymoo.model.problem import Problem
 
 class MOEAD(MOO):
     '''
-    MOEA/D
+    MOEA/D.
     '''
     def _solve(self, pop):
         # generate direction vectors by random sampling

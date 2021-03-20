@@ -6,7 +6,12 @@ from .base import Acquisition
 
 class PI(Acquisition):
     '''
-    Probability of Improvement
+    Probability of Improvement.
+
+    Attributes
+    ----------
+    requires_std: bool, default=True
+        Whether requires std output from surrogate model.
     '''
     requires_std = True
 

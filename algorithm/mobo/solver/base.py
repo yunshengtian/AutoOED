@@ -8,15 +8,26 @@ from algorithm.external import lhs
 
 class Solver:
     '''
-    Multi-objective solver
+    Multi-objective solver.
     '''
     def __init__(self, n_gen, pop_init_method, batch_size, algo, seed=None, **kwargs):
         '''
-        Input:
-            n_gen: number of generations to solve
-            pop_init_method: method to initialize population
-            algo: class of multi-objective algorithm to use
-            kwargs: other keyword arguments for algorithm to initialize
+        Initialize a solver.
+
+        Parameters
+        ----------
+        n_gen: int
+            Number of generations to solve.
+        pop_init_method: str
+            Method to initialize population.
+        batch_size: int
+            Batch size, i.e. population size.
+        algo: pymoo.model.algorithm.Algorithm
+            Class of multi-objective algorithm to use.
+        seed: int, default=None
+            Random seed.
+        kwargs: dict
+            Other keyword arguments for algorithm to initialize.
         '''
         self.n_gen = n_gen
         self.pop_init_method = pop_init_method
@@ -28,7 +39,24 @@ class Solver:
 
     def solve(self, problem, X, Y):
         '''
-        Solve the multi-objective problem
+        Solve the multi-objective problem.
+
+        Parameters
+        ----------
+        problem: mobo.surrogate_problem.SurrogateProblem
+            The surrogate problem to be solved.
+        X: np.array
+            Current design variables.
+        Y: np.array
+            Current performance values.
+
+        Returns
+        -------
+        solution: dict
+            A dictionary containing information of the solution.\n
+            - solution['x']: Proposed design samples.
+            - solution['y']: Performance of proposed design samples.
+            - solution['algo']: The algoritm of the solver, containing some history information of the solving process.
         '''
         # initialize population
         sampling = self._get_sampling(X, Y)
@@ -53,7 +81,19 @@ class Solver:
 
     def _get_sampling(self, X, Y):
         '''
-        Initialize population from data
+        Initialize population from data.
+
+        Parameters
+        ----------
+        X: np.array
+            Design variables.
+        Y: np.array
+            Performance values.
+
+        Returns
+        -------
+        sampling: np.array or pymoo.model.sampling.Sampling
+            Initial population or a sampling method for generating initial population.
         '''
         if self.pop_init_method == 'lhs':
             sampling = LatinHypercubeSampling()

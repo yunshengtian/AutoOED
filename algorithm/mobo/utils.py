@@ -5,7 +5,7 @@ from pymoo.factory import get_performance_indicator
 
 class Timer:
     '''
-    For time recording and message logging
+    For time recording and message logging.
     '''
     def __init__(self, stdout=True):
         self.t = time()
@@ -47,7 +47,7 @@ def find_pareto_front(Y, return_index=False):
 
 def calc_hypervolume(pfront, ref_point):
     '''
-    Calculate hypervolume of pfront based on ref_point
+    Calculate hypervolume of pfront based on ref_point.
     '''
     hv = get_performance_indicator('hv', ref_point=ref_point)
     return hv.calc(pfront)
@@ -55,13 +55,13 @@ def calc_hypervolume(pfront, ref_point):
 
 def safe_divide(x1, x2):
     '''
-    Divide x1 / x2, return 0 where x2 == 0
+    Divide x1 / x2, return 0 where x2 == 0.
     '''
     return np.divide(x1, x2, out=np.zeros(np.broadcast(x1, x2).shape), where=(x2 != 0))
 
 
 def expand(x, axis=-1):
     '''
-    Concise way of expand_dims
+    Concise way of expand_dims.
     '''
     return np.expand_dims(x, axis=axis)

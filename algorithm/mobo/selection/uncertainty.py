@@ -4,7 +4,7 @@ from .base import Selection
 
 class Uncertainty(Selection):
     '''
-    Uncertainty
+    Selection based on uncertainty.
     '''
     def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront):
 

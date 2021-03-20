@@ -9,20 +9,21 @@ from pymoo.model.problem import Problem
 
 class NSGA2(MOO):
     '''
-    NSGA-II
+    NSGA-II.
     '''
     def __init__(self, problem, algo_cfg):
         super().__init__(problem, algo_cfg)
-        self.algo = NSGA2_algo(pop_size=self.batch_size)
 
     def _solve(self, pop):
+        algo = NSGA2_algo(pop_size=self.batch_size)
+
         # filter out best samples so far
-        pop = self.algo.survival.do(self.real_problem, pop, self.batch_size, algorithm=self.algo)
+        pop = algo.survival.do(self.real_problem, pop, self.batch_size, algorithm=algo)
 
         # mate for offsprings (TODO: check) (NOTE: assume the while loop can stop)
         off = Population(0, individual=Individual())
         while len(off) < self.batch_size:
-            new_off = self.algo.mating.do(self.real_problem, pop, len(pop), algorithm=self.algo)
+            new_off = algo.mating.do(self.real_problem, pop, len(pop), algorithm=algo)
             new_X = new_off.get('X')
             if self.real_problem.n_constr > 0:
                 new_G = np.array([self.real_problem.evaluate_constraint(x) for x in new_X])

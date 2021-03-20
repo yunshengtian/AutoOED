@@ -5,21 +5,30 @@ from algorithm.mobo.factory import init_framework
 from algorithm.mobo.normalization import StandardNormalization
 
 '''
-Main algorithm framework for Multi-Objective Bayesian Optimization
+Main algorithm framework for Multi-Objective Bayesian Optimization.
 '''
 
 class MOBO:
     '''
-    Base class of algorithm framework, inherit this class with different specifications to create new algorithm classes
+    Base class of MOBO algorithm framework, inherit this class with different specifications to create new algorithm classes.
+
+    Attributes
+    ----------
+    spec: dict
+        Algorithm specifications, including 'surrogate', 'acquisition', 'solver' and 'selection'.
     '''
     spec = {}
 
     def __init__(self, problem, algo_cfg):
         '''
-        Input:
-            problem: the original / real optimization problem
-            ref_point: reference point for hypervolume calculation
-            algo_cfg: algorithm configurations
+        Initialize a MOBO algorithm.
+
+        Parameters
+        ----------
+        problem: problem.Problem
+            The original / real optimization problem.
+        algo_cfg: dict
+            Algorithm configurations.
         '''
         self.real_problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
@@ -42,7 +51,23 @@ class MOBO:
 
     def solve(self, X_init, Y_init):
         '''
-        Solve the real multi-objective problem from initial data (X_init, Y_init)
+        Solve the real multi-objective problem from initial data.
+
+        Parameters
+        ----------
+        X_init: np.array
+            Initial design variables.
+        Y_init: np.array
+            Initial performance values.
+
+        Returns
+        -------
+        X_next: np.array
+            Proposed design samples to evaluate next.
+        Y_prediction: tuple
+            Containing (Y_expected, Y_uncertainty).\n
+            - **Y_expected** (*np.array*): Mean of predicted performance.
+            - **Y_uncertainty** (*np.array*): Standard deviation of predicted performance.
         '''
         # forward transformation
         X_init = self.transformation.do(X_init)
@@ -92,7 +117,21 @@ class MOBO:
 
     def predict(self, X_init, Y_init, X_next):
         '''
-        Predict the performance of X_next based on initial data (X_init, Y_init)
+        Predict the performance of X_next based on initial data.
+
+        Parameters
+        ----------
+        X_init: np.array
+            Initial design variables.
+        Y_init: np.array
+            Initial performance values.
+
+        Returns
+        -------
+        Y_expected: np.array
+            Mean of predicted performance.
+        Y_uncertainty: np.array
+            Standard deviation of predicted performance.
         '''
         # forward transformation
         X_init = self.transformation.do(X_init)

@@ -5,7 +5,12 @@ from .base import Acquisition
 
 class UCB(Acquisition):
     '''
-    Upper Confidence Bound
+    Upper Confidence Bound.
+
+    Attributes
+    ----------
+    requires_std: bool, default=True
+        Whether requires std output from surrogate model.
     '''
     requires_std = True
 

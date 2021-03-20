@@ -564,7 +564,7 @@ class ParetoDiscovery(Algorithm):
 
 class ParetoDiscoverySolver(Solver):
     '''
-    Solver based on ParetoDiscovery
+    Solver based on ParetoDiscovery [Schulz et al. 2018].
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, algo=ParetoDiscovery, **kwargs)

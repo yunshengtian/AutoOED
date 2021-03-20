@@ -1,5 +1,5 @@
 '''
-Factory for importing different components of the MOBO framework by name
+Factory for importing different components of the MOBO framework by name.
 '''
 
 def get_surrogate_model(name):
@@ -63,7 +63,7 @@ def get_selection(name):
 
 def init_framework(spec, config):
     '''
-    Initialize each component of the MOBO framework from spec provided by algorithm and config provided by user
+    Initialize each component of the MOBO framework from spec provided by algorithm and config provided by user.
     '''
     init_func = {
         'surrogate': get_surrogate_model,

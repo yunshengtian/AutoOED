@@ -3,7 +3,7 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 '''
-Data normalizations for fitting surrogate model
+Data normalizations for fitting surrogate model.
 '''
 
 
@@ -25,7 +25,7 @@ class Scaler(ABC):
 
 class BoundedScaler(Scaler):
     '''
-    Scale data to [0, 1] according to bounds
+    Scale data to [0, 1] according to bounds.
     '''
     def __init__(self, bounds):
         self.bounds = bounds

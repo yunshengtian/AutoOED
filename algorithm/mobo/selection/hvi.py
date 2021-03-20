@@ -5,7 +5,7 @@ from .base import Selection
 
 class HVI(Selection):
     '''
-    Hypervolume Improvement
+    Selection based on Hypervolume improvement.
     '''
     def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront):
 

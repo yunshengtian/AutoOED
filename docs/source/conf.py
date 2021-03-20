@@ -31,10 +31,18 @@ author = 'Yunsheng Tian, Mina Konaković Luković, Timothy Erps, Michael Foshey,
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
     'recommonmark',
 ]
+
+autodoc_default_options = {
+    'members': True,
+    'special-members': '__init__',
+    'private-members': True,
+    'show-inheritance': True,
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

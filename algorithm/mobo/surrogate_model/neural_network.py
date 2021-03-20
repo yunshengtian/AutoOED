@@ -8,15 +8,22 @@ from algorithm.mobo.surrogate_model.base import SurrogateModel
 
 class MLP(nn.Module):
     '''
-    Multi-layer perceptron
+    Multi-layer perceptron.
     '''
     def __init__(self, n_in, n_out, hidden_sizes, activation):
         '''
-        Input:
-            n_in: input dimension
-            n_out: output dimension
-            hidden_sizes: list of sizes of hidden layers
-            activation: type of activation function, [relu, tanh] are supported
+        Initialize a MLP neural network.
+
+        Parameters
+        ----------
+        n_in: int
+            Input dimension.
+        n_out: int
+            Output dimension.
+        hidden_sizes: list
+            List of sizes of hidden layers.
+        activation: str
+            Type of activation function, [relu, tanh] are supported.
         '''
         super().__init__()
         
@@ -48,8 +55,22 @@ class MLP(nn.Module):
 
 def jacobian(outputs, inputs, create_graph=False):
     '''
-    Compute the jacobian of `outputs` with respect to `inputs`
-    NOTE: here the `outputs` and `inputs` are batched data, meaning that there's no correlation between individuals in a batch
+    Compute the jacobian of `outputs` with respect to `inputs`.
+    NOTE: here the `outputs` and `inputs` are batched data, meaning that there's no correlation between individuals in a batch.
+
+    Parameters
+    ----------
+    outputs: torch.tensor
+        Outputs of neural networks.
+    inputs: torch.tensor
+        Inputs of neural networks.
+    create_graph: bool, default=False
+        Whether to create the computation graph.
+
+    Returns
+    -------
+    torch.tensor
+        Jacobian of outputs w.r.t. inputs.
     '''
     batch_size, output_shape, input_shape = outputs.shape[0], outputs.shape[1:], inputs.shape[1:]
     jacs = []
@@ -62,7 +83,19 @@ def jacobian(outputs, inputs, create_graph=False):
 
 def hessian(outputs, inputs):
     '''
-    Compute the hessian of `outputs` with respect to `inputs`
+    Compute the hessian of `outputs` with respect to `inputs`.
+
+    Parameters
+    ----------
+    outputs: torch.tensor
+        Outputs of neural networks.
+    inputs: torch.tensor
+        Inputs of neural networks.
+
+    Returns
+    -------
+    torch.tensor
+        Hessian of outputs w.r.t. inputs.
     '''
     grad_inputs = jacobian(outputs, inputs, create_graph=True)
     return jacobian(grad_inputs, inputs)
@@ -73,6 +106,24 @@ class NeuralNetwork(SurrogateModel):
     Simple neural network
     '''
     def __init__(self, problem_cfg, hidden_sizes=(50, 50, 50), activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
+        '''
+        Initialize a neural network as surrogate model.
+
+        Parameters
+        ----------
+        problem_cfg: dict
+            Problem configurations.
+        hidden_sizes: tuple, default=(50, 50, 50)
+            Sizes of hidden layers of the neural network.
+        activation: str, default='tanh'
+            Type of activation function.
+        lr: float, default=1e-3
+            Learning rate.
+        weight_decay: float, default=1e-4
+            Weight decay.
+        n_epoch: int, default=100
+            Number of training epochs.
+        '''
         super().__init__(problem_cfg)
 
         self.net = [MLP(n_in=n_var, n_out=1, hidden_sizes=hidden_sizes, activation=activation) for _ in range(n_obj)]

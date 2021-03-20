@@ -3,7 +3,12 @@ from .base import Selection
 
 class DGEMOSelect(Selection):
     '''
-    Selection method for DGEMO algorithm
+    Selection method for DGEMO algorithm.
+
+    Attributes
+    ----------
+    has_family: bool, default=True
+        Whether the selection method returns family information.
     '''
     has_family = True
 

@@ -13,13 +13,22 @@ class BufferBase(ABC):
     '''
     def __init__(self, cell_num, cell_size=None, origin=None, origin_constant=1e-2, delta_b=0.2, label_cost=0):
         '''
-        Input:
-            cell_num: number of discretized cells
-            cell_size: max sample number within each cell, None means no limit
-            origin: the origin point (minimum utopia)
-            origin_constant: when the origin point is surpassed by new inserted samples, adjust the origin point and substract this constant
-            delta_b: normalization constaint for calculating unary energy in sparse approximation (NOTE: in the paper they also use this to determine appending to buffer or rejection)
-            label_cost: for reducing number of unique labels in sparse approximation
+        Initialize a performance buffer.
+
+        Parameters
+        ----------
+        cell_num: int
+            Number of discretized cells.
+        cell_size: int, default=None
+            Max sample number within each cell, None means no limit.
+        origin: np.array
+            The origin point (minimum utopia).
+        origin_constant: float, default=1e-2
+            When the origin point is surpassed by new inserted samples, adjust the origin point and substract this constant.
+        delta_b: float, default=0.2
+            Normalization constaint for calculating unary energy in sparse approximation (NOTE: in the paper they also use this to determine appending to buffer or rejection).
+        label_cost: float, default=0
+            For reducing number of unique labels in sparse approximation.
         '''
         self.cell_num = cell_num
         self.cell_size = cell_size if cell_size is not None and cell_size > 0 else None
@@ -44,16 +53,31 @@ class BufferBase(ABC):
     def _find_cell_id(self, F):
         '''
         Find corresponding cell indices given normalized performance.
-        Input:
-            F: a batch of normalized performance
-        Output:
-            cell_ids: a batch of cell indices
+        
+        Parameters
+        ----------
+        F: np.array
+            A batch of normalized performance.
+
+        Returns
+        -------
+        cell_ids: np.array
+            A batch of cell indices.
         '''
         pass
 
     def insert(self, X, Y, patch_ids):
         '''
-        Insert samples (X, Y) into buffer, which come from manifolds (patches) indexed by 'patch_ids'
+        Insert samples into the buffer along with manifold (patch) indices.
+
+        Parameters
+        ----------
+        X: np.array
+            Design variables to be inserted.
+        Y: np.array
+            Performance values to be inserted.
+        patch_ids: np.array
+            Patch indices.
         '''
         # normalize performance
         X, Y = np.array(X), np.array(Y)
@@ -76,29 +100,19 @@ class BufferBase(ABC):
         for cell_id in np.unique(cell_ids):
             self._update_cell(cell_id)
 
-    def sample_old(self, n):
-        '''
-        Sample n samples in current buffer with best performance. (Deprecated)
-        '''
-        # TODO: check if it's proper to repeatedly sample the best one without considering others
-        selected_cell_ids = []
-        nonempty_cell_ids = [i for i in range(self.cell_num) if len(self.buffer_dist[i]) > 0]
-        n_nonempty_cells = len(nonempty_cell_ids) # number of non-empty cells
-
-        # while n >= n_nonempty_cells, we select all non-empty cells
-        selected_cell_ids.extend((n // n_nonempty_cells) * nonempty_cell_ids)
-        # when n < n_nonempty_cells, we select non-empty cells randomly
-        selected_cell_ids.extend(list(np.random.choice(nonempty_cell_ids, size=n % n_nonempty_cells, replace=False)))
-
-        # get the best solution in each cell
-        selected_cells = np.array(self.buffer_x)[np.array(selected_cell_ids)]
-        selected_samples = [cell[0] for cell in selected_cells]
-
-        return np.array(selected_samples)
-
     def sample(self, n):
         '''
-        Sample n samples in current buffer with best performance. (Active)
+        Sample n samples in current buffer with best performance.
+
+        Parameters
+        ----------
+        n: int
+            Number of samples.
+
+        Returns
+        -------
+        np.array
+            Selected samples.
         '''
         nonempty_cell_ids = [i for i in range(self.cell_num) if len(self.buffer_dist[i]) > 0]
 
@@ -127,7 +141,12 @@ class BufferBase(ABC):
 
     def move_origin(self, y_min):
         '''
-        Move the origin point when y_min surpasses it, redistribute current buffer storage accordingly
+        Move the origin point when y_min surpasses it, redistribute current buffer storage accordingly.
+
+        Parameters
+        ----------
+        y_min: np.array
+            The minimum point computed based on the performance values.
         '''
         if (y_min >= self.origin).all() and not (y_min == self.origin).any(): return
 
@@ -144,7 +163,12 @@ class BufferBase(ABC):
 
     def _update_cell(self, cell_id):
         '''
-        Sort particular cell according to distance to origin, and only keep self.cell_size samples in the cell
+        Sort particular cell according to distance to origin, and only keep self.cell_size samples in the cell.
+
+        Parameters
+        ----------
+        cell_id: int
+            Index of the cell.
         '''
         if len(self.buffer_dist[cell_id]) == 0: return
 
@@ -163,20 +187,31 @@ class BufferBase(ABC):
         '''
         Get the edge information of connectivity graph of buffer cells for graph-cut.
         Used for sparse_approximation(), see section 6.4.
-        Input:
-            valid_cells: non-empty cells that can be formulated as vertices in the graph
-        Output:
-            edges: edge array of the input vertices, where an edge is represented by two vertices, shape = (n_edges, 2)
+        
+        Parameters
+        ----------
+        valid_cells: np.array
+            Non-empty cells that can be formulated as vertices in the graph.
+
+        Returns
+        -------
+        edges: np.array
+            Edge array of the input vertices, where an edge is represented by two vertices, shape = (n_edges, 2).
         '''
         pass
 
     def sparse_approximation(self):
         '''
         Use a few manifolds to sparsely approximate the pareto front by graph-cut, see section 6.4.
-        Output:
-            labels: the optimized labels (manifold index) for each non-empty cell (the cells also contain the corresponding labeled sample), shape = (n_label,)
-            approx_x: the labeled design samples, shape = (n_label, n_var)
-            approx_y: the labeled performance values, shape = (n_label, n_obj)
+
+        Returns
+        -------
+            labels: np.array
+                The optimized labels (manifold index) for each non-empty cell (the cells also contain the corresponding labeled sample), shape = (n_label,).
+            approx_x: np.array
+                The labeled design samples, shape = (n_label, n_var).
+            approx_y: np.array
+                The labeled performance values, shape = (n_label, n_obj).
         '''
         # update patch ids, remove non-existing ids previously removed from buffer
         mapping = {}
@@ -251,6 +286,13 @@ class BufferBase(ABC):
     def flattened(self):
         '''
         Return flattened x and y arrays from all the cells.
+
+        Returns
+        -------
+        flattened_x: np.array
+            Flattened array of the design samples.
+        flattened_y: np.array
+            Flattened array of the performance values.
         '''
         flattened_x, flattened_y = [], []
         for cell_x, cell_y in zip(self.buffer_x, self.buffer_y):

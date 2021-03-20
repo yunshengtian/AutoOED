@@ -9,7 +9,7 @@ from multiprocessing import Process, Queue
 
 def optimization(problem, x, weights, queue):
     '''
-    Parallel worker for single-objective CMA-ES optimization
+    Parallel worker for single-objective CMA-ES optimization.
     '''
     evaluator = ScalarizedEvaluator(decomposition=Tchebicheff(), weights=weights)
     res = minimize(problem, CMAES(x), evaluator=evaluator)
@@ -18,7 +18,7 @@ def optimization(problem, x, weights, queue):
 
 class ParEGOSolver(Solver):
     '''
-    Solver based on ParEGO
+    Solver based on ParEGO.
     '''
     def __init__(self, *args, **kwargs):
         self.pop_size = kwargs['pop_size']
@@ -27,7 +27,23 @@ class ParEGOSolver(Solver):
 
     def solve(self, problem, X, Y):
         '''
-        Solve the multi-objective problem by multiple scalarized single-objective solvers
+        Solve the multi-objective problem by multiple scalarized single-objective solvers.
+
+        Parameters
+        ----------
+        problem: mobo.surrogate_problem.SurrogateProblem
+            The surrogate problem to be solved.
+        X: np.array
+            Current design variables.
+        Y: np.array
+            Current performance values.
+
+        Returns
+        -------
+        solution: dict
+            A dictionary containing information of the solution.\n
+            - solution['x']: Proposed design samples.
+            - solution['y']: Performance of proposed design samples.
         '''
         # initialize population
         sampling = self._get_sampling(X, Y)

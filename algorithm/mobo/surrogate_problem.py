@@ -4,18 +4,25 @@ from pymoo.model.problem import Problem
 from pymoo.model.problem import at_least2d
 
 '''
-Surrogate problem that mimics the real problem based on surrogate model
+Surrogate problem that mimics the real problem based on surrogate model.
 '''
 
 class SurrogateProblem(Problem):
 
     def __init__(self, real_problem, surrogate_model, acquisition, normalization):
         '''
-        Input:
-            real_problem: the original optimization problem which this surrogate is approximating
-            surrogate_model: fitted surrogate model
-            acquisition: the acquisition function to evaluate the fitness of samples
-            normalization: data normalization for surrogate model fitting
+        Initialize the surrogate problem.
+
+        Parameters
+        ----------
+        real_problem: problem.Problem
+            The original optimization problem which this surrogate is approximating.
+        surrogate_model: mobo.surrogate_model.base.SurrogateModel
+            Fitted surrogate model.
+        acquisition: mobo.acquisition.base.Acquisition
+            The acquisition function to evaluate the fitness of samples.
+        normalization: mobo.normalization.Normalization
+            Data normalization for surrogate model fitting.
         '''
         self.real_problem = real_problem
         self.surrogate_model = surrogate_model
@@ -26,6 +33,20 @@ class SurrogateProblem(Problem):
         super().__init__(n_var=real_problem.n_var, n_obj=real_problem.n_obj, n_constr=real_problem.n_constr, xl=xl, xu=xu)
 
     def _evaluate(self, x, out, *args, calc_gradient=False, calc_hessian=False, **kwargs):
+        '''
+        The main evaluation computation.
+
+        Parameters
+        ----------
+        x: np.array
+            Input design variables.
+        out: dict
+            A dictionary serving as output, which should contain evaluation results, including performance, constraint values, and even derivatives of performance.
+        calc_gradient: bool, default=False
+            Whether to calculate the gradient of performance.
+        calc_hessian: bool, default=False
+            Whether to calculate the hessian of performance.
+        '''
         # evaluate value by surrogate model
         std = self.acquisition.requires_std
         val = self.surrogate_model.evaluate(x, std, calc_gradient, calc_hessian)
@@ -44,7 +65,7 @@ class SurrogateProblem(Problem):
         out['G'] = np.array([self.real_problem.evaluate_constraint(x_) for x_ in x_ori])
 
     def evaluate(self, X, *args, return_values_of="auto", return_as_dictionary=False, **kwargs):
-        """
+        '''
         Evaluate the given problem.
 
         The function values set as defined in the function.
@@ -53,29 +74,22 @@ class SurrogateProblem(Problem):
 
         Parameters
         ----------
-
         X : np.array
             A two dimensional matrix where each row is a point to evaluate and each column a variable.
-
-        return_as_dictionary : bool
+        return_as_dictionary : bool, default=False
             If this is true than only one object, a dictionary, is returned. This contains all the results
             that are defined by return_values_of. Otherwise, by default a tuple as defined is returned.
-
-        return_values_of : list of strings
+        return_values_of : list of strings, default='auto'
             You can provide a list of strings which defines the values that are returned. By default it is set to
             "auto" which means depending on the problem the function values or additional the constraint violation (if
-            the problem has constraints) are returned. Otherwise, you can provide a list of values to be returned.
-
+            the problem has constraints) are returned. Otherwise, you can provide a list of values to be returned.\n
             Allowed is ["F", "CV", "G", "dF", "dG", "dCV", "feasible"] where the d stands for
             derivative and h stands for hessian matrix.
 
-
         Returns
         -------
-
             A dictionary, if return_as_dictionary enabled, or a list of values as defined in return_values_of.
-
-        """
+        '''
         assert self.surrogate_model is not None, 'surrogate model must be set first before evaluation'
 
         # call the callback of the problem

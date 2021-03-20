@@ -5,7 +5,7 @@ from .base import Selection
 
 class MOEADSelect(Selection):
     '''
-    Selection method for MOEA/D-EGO algorithm
+    Selection method for MOEA/D-EGO algorithm.
     '''
     def select(self, solution, surrogate_model, normalization, curr_pset, curr_pfront): 
         X, G, algo = solution['x'], solution['y'], solution['algo']

@@ -2,7 +2,7 @@ import numpy as np
 from pymoo.model.evaluator import Evaluator
 
 '''
-Evaluate a scalar value of a multi-objective problem by scalarization (decomposition)
+Evaluate a scalar value of a multi-objective problem by scalarization (decomposition).
 '''
 
 class ScalarizedEvaluator(Evaluator):

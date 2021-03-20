@@ -5,17 +5,29 @@ from pymoo.factory import get_performance_indicator
 def propose_next_batch(curr_pfront, ref_point, pred_pfront, pred_pset, batch_size, labels):
     '''
     Propose next batch of design variables to evaluate by maximizing hypervolume contribution.
-    Greedely add samples with maximum hypervolume from each family.
-    Input:
-        curr_pfront: current pareto front of evaluated design samples
-        pred_pfront: predicted pareto front from sampled objective functions
-        pred_pset: predicted pareto set from sampled objective functions
-        batch_size: batch size of design samples to be proposed
-        labels: family labels for pred_pset
-    Output:
-        X_next: next batch of design variables to evaluate
-        Y_next: expected output of next batch of design variables to evaluate
-        family_lbls: family labels of proposed batch samples
+    Greedily add samples with maximum hypervolume from each family.
+
+    Parameters
+    ----------
+    curr_pfront: np.array
+        Current pareto front of evaluated design samples.
+    pred_pfront: np.array
+        Predicted pareto front from sampled objective functions.
+    pred_pset: np.array
+        Predicted pareto set from sampled objective functions.
+    batch_size: int
+        Batch size of design samples to be proposed.
+    labels: np.array
+        Family labels for pred_pset.
+
+    Returns
+    -------
+    X_next: np.array
+        Next batch of design variables to evaluate.
+    Y_next: np.array
+        Expected output of next batch of design variables to evaluate.
+    family_lbls_next: np.array
+        Family labels of proposed batch samples.
     '''
     #assert len(pred_pset) >= batch_size, "predicted pareto set is smaller than proposed batch size!"
 
@@ -67,14 +79,23 @@ def propose_next_batch(curr_pfront, ref_point, pred_pfront, pred_pset, batch_siz
 
 def propose_next_batch_without_label(curr_pfront, ref_point, pred_pfront, pred_pset, batch_size):
     '''
-    Propose next batch of design variables to evaluate by maximizing hypervolume contribution
-    Input:
-        curr_pfront: current pareto front of evaluated design samples
-        pred_pfront: predicted pareto front from sampled objective functions
-        pred_pset: predicted pareto set from sampled objective functions
-        batch_size: batch size of design samples to be proposed
-    Output:
-        X_next: next batch of design variables to evaluate
+    Propose next batch of design variables to evaluate by maximizing hypervolume contribution.
+
+    Parameters
+    ----------
+    curr_pfront: np.array
+        Current pareto front of evaluated design samples.
+    pred_pfront: np.array
+        Predicted pareto front from sampled objective functions.
+    pred_pset: np.array
+        Predicted pareto set from sampled objective functions.
+    batch_size: int
+        Batch size of design samples to be proposed.
+
+    Returns
+    -------
+    X_next: np.array
+        Next batch of design variables to evaluate.
     '''
     #assert len(pred_pset) >= batch_size, "predicted pareto set is smaller than proposed batch size!
 
@@ -130,6 +151,18 @@ def generate_weights_batch(n_dim, delta_weight):
     '''
     Generate n dimensional uniformly distributed weights using depth first search.
     e.g. generate_weights_batch(2, 0.5) returns [[0.0, 1.0], [0.5, 0.5], [1.0, 0.0]]
+
+    Parameters
+    ----------
+    n_dim: int
+        Dimension of the performance space.
+    delta_weight: float
+        Delta of the weight during generation.
+
+    Returns
+    -------
+    weights_batch: np.array
+        Batch of weights generated.
     '''
     weights_batch = []
     generate_weights_batch_dfs(0, n_dim, 0.0, 1.0, delta_weight, [], weights_batch)
@@ -139,11 +172,18 @@ def generate_weights_batch(n_dim, delta_weight):
 def get_sample_num_from_families(n_sample, family_sizes):
     '''
     Choose certain number of samples from all families, as uniformly as possible.
-    Input:
-        n_sample: total number of samples to be chosen
-        family_sizes: array containing size of each family, shape = (n_family,)
-    Output:
-        sample_nums: number of samples we choose from each samily, shape = (n_family,)
+
+    Parameters
+    ----------
+    n_sample: int
+        Total number of samples to be chosen.
+    family_sizes: np.array
+        Array containing size of each family, shape = (n_family,).
+
+    Returns
+    -------
+    sample_nums: np.array
+        Number of samples we choose from each samily, shape = (n_family,).
     '''
     assert np.sum(family_sizes) >= n_sample
 

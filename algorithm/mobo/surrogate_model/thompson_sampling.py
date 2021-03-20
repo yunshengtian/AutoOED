@@ -9,9 +9,23 @@ from algorithm.mobo.surrogate_model.gaussian_process import GaussianProcess
 
 class ThompsonSampling(GaussianProcess):
     '''
-    Sampled functions from Gaussian process using Thompson Sampling
+    Sampled functions from Gaussian process using Thompson Sampling.
     '''
     def __init__(self, problem_cfg, nu, n_spectral_pts, mean_sample, **kwargs):
+        '''
+        Initialize a surrogate model from Thompson sampling.
+
+        Parameters
+        ----------
+        problem_cfg: dict
+            Problem configurations.
+        nu: int
+            The parameter nu controlling the type of the Matern kernel. Choices are 1, 3, 5 and -1.
+        n_spectral_pts: int
+            The number of points used in spectral sampling.
+        mean_sample: bool
+            Whether to just sample the mean function.
+        '''
         super().__init__(problem_cfg, nu)
 
         self.M = n_spectral_pts
