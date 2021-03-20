@@ -37,7 +37,7 @@ class Solver:
         algo = self.algo_type(sampling=sampling, **self.algo_kwargs)
 
         # optimization
-        res = minimize(problem, algo, n_gen=self.n_gen, seed=self.seed)
+        res = minimize(problem, algo, ('n_gen', self.n_gen), seed=self.seed)
 
         # construct solution
         self.solution = {'x': res.pop.get('X'), 'y': res.pop.get('F'), 'algo': res.algorithm}

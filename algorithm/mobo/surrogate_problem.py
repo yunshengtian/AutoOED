@@ -35,9 +35,9 @@ class SurrogateProblem(Problem):
         
         # multiply a +1/-1 factor for converting maximization to minimization
         factor = 2 * (np.array(self.real_problem.obj_type) == 'min') - 1
-        for key in ['F', 'dF', 'hF']:
-            if out[key] is not None:
-                out[key] *= factor
+        if out['F'] is not None: out['F'] *= factor
+        if out['dF'] is not None: out['dF'] *= factor.reshape(1, -1, 1)
+        if out['hF'] is not None: out['hF'] *= factor.reshape(1, -1, 1, 1)
         
         # evaluate constraints by real problem
         x_ori = self.normalization.undo(x)

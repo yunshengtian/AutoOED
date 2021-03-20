@@ -6,7 +6,6 @@ from pymoo.model.duplicate import DefaultDuplicateElimination
 from pymoo.model.individual import Individual
 from pymoo.model.initialization import Initialization
 from multiprocessing import Process, Queue, cpu_count
-import sys
 
 from .buffer import get_buffer
 from .utils import propose_next_batch, propose_next_batch_without_label, get_sample_num_from_families
@@ -333,14 +332,14 @@ class ParetoDiscovery(Algorithm):
                 repair=None,
                 individual=Individual(),
                 n_cell=None,
-                cell_size=None,
+                cell_size=10,
                 buffer_origin=None,
                 buffer_origin_constant=1e-2,
                 delta_b=0.2,
-                label_cost=0,
+                label_cost=10,
                 delta_p=10,
                 delta_s=0.3,
-                n_grid_sample=1000,
+                n_grid_sample=100,
                 n_process=cpu_count(),
                 **kwargs
                 ):
@@ -410,7 +409,7 @@ class ParetoDiscovery(Algorithm):
 
         # initialize buffer
         self.buffer = get_buffer(self.problem.n_obj, **self.buffer_args)
-        self.buffer.origin = self.problem.normalization.do(y=self.buffer.origin)
+        self.buffer.origin = self.problem.normalization.do(y=self.buffer.origin.reshape(1,-1))[0]
         patch_ids = np.full(self.pop_size, self.patch_id) # NOTE: patch_ids here might not make sense
         self.patch_id += 1
         self.buffer.insert(pop_x, pop_f, patch_ids)
@@ -427,8 +426,8 @@ class ParetoDiscovery(Algorithm):
 
         self.pop = pop
 
-        sys.stdout.write('ParetoDiscovery optimizing: generation %i' % self.n_gen)
-        sys.stdout.flush()
+        # sys.stdout.write('ParetoDiscovery optimizing: generation %i' % self.n_gen)
+        # sys.stdout.flush()
 
     def _next(self):
         '''
@@ -444,8 +443,8 @@ class ParetoDiscovery(Algorithm):
         where F is problem evaluation, X is design constraints
         '''
         # update optimization progress
-        sys.stdout.write('\b' * len(str(self.n_gen - 1)) + str(self.n_gen))
-        sys.stdout.flush()
+        # sys.stdout.write('\b' * len(str(self.n_gen - 1)) + str(self.n_gen))
+        # sys.stdout.flush()
 
         # stochastic sampling by adding local perturbance
         xs = self._stochastic_sampling()
@@ -560,7 +559,7 @@ class ParetoDiscovery(Algorithm):
         self.pop = self.pop.new('X', pop_x, 'F', pop_y)
         # get sparse front approximation
         self.fam_lbls, self.approx_set, self.approx_front = self.buffer.sparse_approximation()
-        print()
+        # print()
 
 
 class ParetoDiscoverySolver(Solver):

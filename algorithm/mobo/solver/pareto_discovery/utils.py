@@ -26,10 +26,10 @@ def propose_next_batch(curr_pfront, ref_point, pred_pfront, pred_pset, batch_siz
     next_batch_indices = []
     family_lbls_next = []
     num_families = len(np.unique(labels))
-    print('Number of families is: '+str(num_families))
+    # print('Number of families is: '+str(num_families))
 
     if len(pred_pset) < batch_size:
-        print('Predicted pareto set is smaller than proposed batch size and has '+ str(len(pred_pset)) +' points.')
+        # print('Predicted pareto set is smaller than proposed batch size and has '+ str(len(pred_pset)) +' points.')
         next_batch_indices = [0] * (batch_size - len(pred_pset))
         batch_size = len(pred_pset)
 
@@ -84,7 +84,7 @@ def propose_next_batch_without_label(curr_pfront, ref_point, pred_pfront, pred_p
     next_batch_indices = []
 
     if len(pred_pset) < batch_size:
-        print('Predicted pareto set is smaller than proposed batch size and has '+ str(len(pred_pset)) +' points.')
+        # print('Predicted pareto set is smaller than proposed batch size and has '+ str(len(pred_pset)) +' points.')
         next_batch_indices = [0] * (batch_size - len(pred_pset))
         batch_size = len(pred_pset)
 

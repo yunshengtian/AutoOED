@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from problem.common import get_problem_config, check_problem_exist
 from problem.config import transform_config
 from algorithm.utils import check_algorithm_exist
+from multiprocessing import cpu_count
 
 
 def load_config(path):
@@ -166,7 +167,7 @@ def complete_config(config, check=False):
 
     # algorithm
     if 'n_process' not in algo_cfg or algo_cfg['n_process'] is None:
-        algo_cfg['n_process'] = 1
+        algo_cfg['n_process'] = cpu_count()
     
     if 'surrogate' not in algo_cfg or algo_cfg['surrogate'] is None:
         algo_cfg['surrogate'] = {
@@ -182,12 +183,20 @@ def complete_config(config, check=False):
         }
 
     if 'solver' not in algo_cfg or algo_cfg['solver'] is None:
-        algo_cfg['solver'] = {
-            'name': 'nsga2',
-            'pop_size': 100,
-            'n_gen': 200,
-            'pop_init_method': 'nds',
-        }
+        if algo_cfg['name'] == 'dgemo':
+            algo_cfg['solver'] = {
+                'name': 'discovery',
+                'pop_size': 100,
+                'n_gen': 10,
+                'pop_init_method': 'nds',
+            }
+        else:
+            algo_cfg['solver'] = {
+                'name': 'nsga2',
+                'pop_size': 100,
+                'n_gen': 200,
+                'pop_init_method': 'nds',
+            }
 
     if 'selection' not in algo_cfg or algo_cfg['selection'] is None:
         algo_cfg['selection'] = {

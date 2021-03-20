@@ -73,7 +73,7 @@ class MenuConfigController:
             self.view.widget['set_advanced'].disable()
         else:
             self.view.widget['problem_name'].disable()
-            algo_class = self.view.widget['algo_name'].get()
+            algo_class = get_algorithm_class(self.view.widget['algo_name'].get())
             if algo_class != 'MOBO':
                 self.view.widget['set_advanced'].disable()
 
