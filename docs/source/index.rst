@@ -24,7 +24,7 @@ Welcome to AutoOED's documentation!
    content/getting-started/installation
    content/getting-started/basic-usage
    content/getting-started/example-simulation
-   content/getting-started/example-fabricated
+   content/getting-started/example-physical
 
 
 .. toctree::

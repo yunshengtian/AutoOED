@@ -9,6 +9,8 @@ constraints for some design samples proposed by the optimization algorithm.
 In this section, we introduce how should these programs be written (in Python/C/C++/MATLAB) in order to be compatible with AutoOED.
 And the format is slightly different for performance evaluation and constraint evaluation.
 
+Note that as a prerequisite for MATLAB programs to work, please follow the additional but necessary `instructions <../getting-started/installation.html#matlab-extension>`_.
+
 
 Performance Evaluation
 ----------------------

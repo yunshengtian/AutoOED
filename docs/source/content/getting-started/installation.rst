@@ -74,3 +74,18 @@ Installing from Source Code
 ---------------------------
 
 Clone the github repository at https://github.com/yunshengtian/AutoOED, then follow the instructions in README to install.
+
+
+MATLAB Extension
+----------------
+
+To use MATLAB evaluation programs in AutoOED, you need to install AutoOED from source code, and of course, have MATLAB pre-installed on your computer. 
+Then, find the root folder of MATLAB. If you have trouble finding it, just start MATLAB and type matlabroot in the command window. Copy the path returned by matlabroot.
+
+Next, you need to copy the folder:
+
+- *matlabroot\extern\engines\python\dist\matlab* (for Windows)
+- *matlabroot/extern/engines/python/dist/matlab* (for MacOS and Linux)
+
+and paste it (the *matlab* folder) directly in the root directory of AutoOED.
+By doing so, AutoOED is able to recognize MATLAB on your computer and automatically call MATLAB programs.
