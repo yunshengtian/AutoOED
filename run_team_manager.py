@@ -1,11 +1,9 @@
-import os
-import warnings
-warnings.filterwarnings('ignore')
-
+from utils import set_environment
 from system.manager import ManagerController
 
 
 def main():
+    set_environment()
     ManagerController().run()
 
 

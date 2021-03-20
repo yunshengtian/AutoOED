@@ -1,12 +1,9 @@
-import os
-import warnings
-warnings.filterwarnings('ignore')
-
+from utils import set_environment
 from system.scientist.controller.personal import ScientistController
 
 
 def main():
-    os.environ['OMP_NUM_THREADS'] = '1'
+    set_environment()
     ScientistController().run()
 
 

@@ -1,11 +1,9 @@
-import os
-import warnings
-warnings.filterwarnings('ignore')
-
+from utils import set_environment
 from system.technician import TechnicianController
 
 
 def main():
+    set_environment()
     TechnicianController().run()
 
 
