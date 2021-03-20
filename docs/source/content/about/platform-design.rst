@@ -9,7 +9,7 @@ AutoOED is designed in a hierarchical and modular way. Overall the platform cons
 * **Agent**: a task scheduler that runs and monitors the optimization and evaluation tasks given by users or optimization algorithms, also interacts with the underlying database.
 * **Database**: the bottom layer that stores all the history data. We use SQLite for the personal version and MySQL for the team version.
 
-Though most of the layers are specifically designed for AutoOED, the algorithm layer is actually highly modular and easy to be extended with custom algorithms. See `this <../algorithms/mobo.html>`_ for more details.
+Though most of the layers are specifically designed for AutoOED, the algorithm layer is actually highly modular and easy to be extended with custom algorithms. See our API reference for more details.
 
 AutoOED has personal version and team version to support different experiment scenarios.
 
