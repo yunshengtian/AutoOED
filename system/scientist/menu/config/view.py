@@ -1,5 +1,6 @@
 import os
 import tkinter as tk
+from multiprocessing import cpu_count
 from problem.common import get_problem_list
 from algorithm.utils import get_algorithm_list
 from system.gui.utils.grid import grid_configure
@@ -39,7 +40,7 @@ class MenuConfigView:
         self.widget['algo_name'] = create_widget('labeled_combobox', 
             master=frame_algorithm, row=0, column=0, text=config_map['algorithm']['name'], values=get_algorithm_list(), required=True)
         self.widget['n_process'] = create_widget('labeled_entry', 
-            master=frame_algorithm, row=1, column=0, text=config_map['algorithm']['n_process'], class_type='int', default=1,
+            master=frame_algorithm, row=1, column=0, text=config_map['algorithm']['n_process'], class_type='int', default=cpu_count(),
             valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
         self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', sticky=None)
         
