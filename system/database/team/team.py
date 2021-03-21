@@ -73,6 +73,8 @@ class TeamDatabase:
                 if not self._check_function_exist(name):
                     self.execute(query)
 
+            self.execute('set global log_bin_trust_function_creators = 1')
+
     '''
     connection
     '''
@@ -655,7 +657,7 @@ class TeamDatabase:
     def get_column_names(self, table):
         '''
         '''
-        query = f"select column_name from information_schema.columns where table_name = '{table}'"
+        query = f"select column_name from information_schema.columns where table_name = '{table}' order by ordinal_position"
         self.execute(query)
         column_names = [res[0] for res in self.cursor if res[0] != 'rowid']
         return column_names

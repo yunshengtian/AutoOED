@@ -156,7 +156,7 @@ class TechnicianController:
         '''
         '''
         self.eval_program = program_path
-        self.view.widget['auto_eval'].enable()
+        self.view.widget['auto_evaluate'].enable()
 
     def load_eval_program(self):
         return self.eval_program

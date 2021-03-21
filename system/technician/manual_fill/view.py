@@ -8,7 +8,7 @@ class ManualFillView:
     def __init__(self, root_view, n_obj):
         self.root_view = root_view
 
-        self.window = create_widget('toplevel', master=self.root_view.root, title='Fill Entries')
+        self.window = create_widget('toplevel', master=self.root_view.root, title='Enter Performance')
 
         self.widget = {}
 

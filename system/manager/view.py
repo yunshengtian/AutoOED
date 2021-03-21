@@ -38,11 +38,11 @@ class ManagerInitView:
         self.widget['ip'] = create_widget('label', master=frame_info, row=0, column=1, text='IP Address:')
         self.widget['refresh'] = create_widget('button', master=frame_info, row=0, column=2, text='Refresh')
 
-        frame_db = create_widget('labeled_frame', master=frame_init, row=1, column=0, text='Database')
-        grid_configure(frame_db, 0, 2)
-        self.widget['create_task'] = create_widget('button', master=frame_db, row=0, column=0, text='Create Task')
-        self.widget['load_task'] = create_widget('button', master=frame_db, row=0, column=1, text='Load Task')
-        self.widget['remove_task'] = create_widget('button', master=frame_db, row=0, column=2, text='Remove Task')
+        frame_task = create_widget('labeled_frame', master=frame_init, row=1, column=0, text='Task')
+        grid_configure(frame_task, 0, 2)
+        self.widget['create_task'] = create_widget('button', master=frame_task, row=0, column=0, text='Create Task')
+        self.widget['load_task'] = create_widget('button', master=frame_task, row=0, column=1, text='Load Task')
+        self.widget['remove_task'] = create_widget('button', master=frame_task, row=0, column=2, text='Remove Task')
 
         frame_access = create_widget('labeled_frame', master=frame_init, row=2, column=0, text='Access')
         grid_configure(frame_access, 0, 1)

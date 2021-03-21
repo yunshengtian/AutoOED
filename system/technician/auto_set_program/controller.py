@@ -12,29 +12,29 @@ class AutoSetProgramController:
 
         self.view = AutoSetProgramView(self.root_view)
 
-        self.view.widget['browse_obj_func'].configure(command=self.set_objective_script)
+        self.view.widget['browse_obj_func'].configure(command=self.set_objective_program)
         self.view.widget['disp_obj_func'].config(
-            valid_check=self.eval_script_valid_check, 
+            valid_check=self.eval_program_valid_check, 
             error_msg="performance evaluation program doesn't exist or file format is invalid",
         )
 
         self.view.widget['disp_obj_func'].config(required=True)
 
-        p_path = self.root_controller.load_eval_script()
+        p_path = self.root_controller.load_eval_program()
         if p_path is not None:
             self.view.widget['disp_obj_func'].set(p_path)
 
-        self.view.widget['save'].config(command=self.save_script)
+        self.view.widget['save'].config(command=self.save_program)
         self.view.widget['cancel'].config(command=self.view.window.destroy)
 
-    def eval_script_valid_check(self, path):
+    def eval_program_valid_check(self, path):
         '''
         '''
         if path is None:
             return False
 
-        problem_info = self.root_controller.problem_info
-        n_var, n_obj = problem_info['n_var'], problem_info['n_obj']
+        problem_cfg = self.root_controller.agent.problem_cfg
+        n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
 
         try:
             import_obj_func(path, n_var, n_obj)
@@ -42,24 +42,26 @@ class AutoSetProgramController:
             return False
         return True
 
-    def set_objective_script(self):
+    def set_objective_program(self):
         '''
-        Set path of performance evaluation script
+        Set path of performance evaluation program
         '''
         filename = tk.filedialog.askopenfilename(parent=self.view.window)
         if not isinstance(filename, str) or filename == '': return
         self.view.widget['disp_obj_func'].set(filename)
 
-    def save_script(self):
+    def save_program(self):
         '''
         '''
+        path = self.view.widget['disp_obj_func'].get()
         try:
             path = self.view.widget['disp_obj_func'].get()
         except:
             error_msg = self.view.widget['disp_obj_func'].get_error_msg()
             messagebox.showinfo('Error', error_msg, parent=self.view.window)
+            return
 
-        self.root_controller.set_eval_script(script_path=path)
+        self.root_controller.set_eval_program(program_path=path)
         
-        messagebox.showinfo('Success', 'Evaluation script set', parent=self.view.window)
+        messagebox.showinfo('Success', 'Evaluation program set', parent=self.view.window)
         self.view.window.destroy()
