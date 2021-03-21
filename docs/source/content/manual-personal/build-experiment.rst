@@ -42,8 +42,8 @@ Initialization
 Then, since the optimization rely on a set of initial samples (more than 1), you need to provide either: 
 a number of initial samples that AutoOED will randomly generate for you, or the path to the file storing existing initial samples.
 
-For initialization with random samples, make sure the ``Random`` choice is selected and you have to input the number of random initial
-samples you want. For initialization with provided existing samples, the ``Provided`` choice has to be selected and you have to specify
+For initialization with random samples, make sure the ``Random`` choice is selected and you need to input the number of random initial
+samples you want. For initialization with provided existing samples, the ``Provided`` choice has to be selected and you need to specify
 the file location of existing samples by clicking the ``Browse`` buttons. For example:
 
 .. figure:: ../../_static/manual-personal/build-experiment/initialize_provided.png

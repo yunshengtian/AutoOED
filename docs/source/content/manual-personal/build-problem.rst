@@ -108,7 +108,7 @@ After this, the platform is able to automatically call the evaluation program wh
 For details on how to write a valid performance evaluation program, see `this page <eval-program.html#performance-evaluation-program>`_.
 
 Otherwise, AutoOED could also work without a written program for performance evaluation, just instead of automatically calling the program, 
-the platform will expose the unevaluated design variables directly to you and you will have to do the evaluation manually, and later input the evaluation results back to AutoOED for further optimization.
+the platform will expose the unevaluated design variables directly to you and you will need to do the evaluation manually, and later input the evaluation results back to AutoOED for further optimization.
 
 Then, click ``Next`` to move forward.
 

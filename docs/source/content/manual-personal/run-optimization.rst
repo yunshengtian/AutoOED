@@ -33,8 +33,8 @@ Manual mode runs optimization only for a single iteration.
 In each iteration, the user need to first set the proper batch size, then click the ``Optimize`` button to start the algorithm, as shown in the figure above.
 
 Then after the algorithm proposes a batch of samples to evaluate, if the performance evaluation program is provided, AutoOED will automatically calls the program 
-and do the evaluation for these samples. Otherwise, you have to manually evaluate the performance of these samples, and put the evaluated result back to AutoOED.
-To do this, you have to click the ``Database`` tab at the top to navigate to the **Database** panel:
+and do the evaluation for these samples. Otherwise, you need to manually evaluate the performance of these samples, and put the evaluated result back to AutoOED.
+To do this, you need to click the ``Database`` tab at the top to navigate to the **Database** panel:
 
 .. figure:: ../../_static/manual-personal/run-optimization/database.png
    :width: 700 px
@@ -45,7 +45,7 @@ whose status will appear as "unevaluated" in the database table. After you click
 .. figure:: ../../_static/manual-personal/run-optimization/enter_performance.png
    :width: 400 px
 
-First, you have to specify how many samples you are entering performance for at the top entry, then click ``Update`` to update the below Excel-like table
+First, you need to specify how many samples you are entering performance for at the top entry, then click ``Update`` to update the below Excel-like table
 with the corresponding number of rows. Then, you need to input the row number of the samples (by looking at the database table) and their performance values.
 Finally, click ``Save`` to save the performance values you have entered into the database, and you will see the performance gets updated in the database table.
 

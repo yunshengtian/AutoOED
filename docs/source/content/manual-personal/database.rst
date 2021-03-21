@@ -51,7 +51,7 @@ When you click the ``Enter Performance`` button, this window will pop up:
    :width: 400 px
 
 Here, you can manually enter the performance for existing design samples into the database.
-First, you have to specify how many samples you are entering performance for at the top entry, then click ``Update`` to update the below Excel-like table
+First, you need to specify how many samples you are entering performance for at the top entry, then click ``Update`` to update the below Excel-like table
 with the corresponding number of rows. Then, you need to input the row number of the samples (by looking at the database table) and their performance values.
 Finally, click ``Save`` to save the performance values you have entered into the database, and you will see the performance gets updated in the database table.
 

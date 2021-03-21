@@ -74,5 +74,5 @@ After the task is created or loaded, the software will enter its main interface:
    :width: 700 px
 
 Currently this interface is not showing any optimization status becaus we don't have the problem initialized yet, 
-You will have to navigate to `Building Problem <build-problem.html>`_ and `Building Experiment <build-experiment.html>`_
+You will need to navigate to `Building Problem <build-problem.html>`_ and `Building Experiment <build-experiment.html>`_
 later on for being able to run the real optimization.
