@@ -392,10 +392,12 @@ class EvaluateAgent(LoadAgent):
         if len(order) == 0: return np.array([])
         valid_idx = order >= 0
         if valid_idx.sum() == 0: return np.array([])
-        order, hypervolume = np.argsort(order[valid_idx]), hypervolume[valid_idx]
+        order, hypervolume = order[valid_idx], hypervolume[valid_idx]
+        true_order = np.zeros_like(order, dtype=int)
+        true_order[np.argsort(order)] = np.arange(len(order), dtype=int)
 
         ordered_hypervolume = np.zeros_like(hypervolume)
-        ordered_hypervolume[order] = hypervolume
+        ordered_hypervolume[true_order] = hypervolume
         return ordered_hypervolume
 
     def load_model_error(self):
