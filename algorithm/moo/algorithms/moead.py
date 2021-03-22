@@ -44,13 +44,17 @@ class MOEAD(MOO):
         for i in np.random.permutation(self.batch_size):
             N = algo.neighbors[i, :]
 
-            if np.random.random() < algo.prob_neighbor_mating:
-                parents = N[np.random.permutation(algo.n_neighbors)][:crossover.n_parents]
-            else:
-                parents = np.random.permutation(algo.pop_size)[:crossover.n_parents]
+            if self.batch_size > 1:
+                if np.random.random() < algo.prob_neighbor_mating:
+                    parents = N[np.random.permutation(algo.n_neighbors)][:crossover.n_parents]
+                else:
+                    parents = np.random.permutation(algo.pop_size)[:crossover.n_parents]
 
-            # do recombination and create an offspring
-            off = crossover.do(self.real_problem, opt_pop, parents[None, :])
+                # do recombination and create an offspring
+                off = crossover.do(self.real_problem, opt_pop, parents[None, :])
+            else:
+                off = opt_pop[N].copy()
+                
             off = mutation.do(self.real_problem, off)
             off = off[np.random.randint(0, len(off))]
 
