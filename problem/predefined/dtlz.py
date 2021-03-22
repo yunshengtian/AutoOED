@@ -121,7 +121,7 @@ class DTLZ5(DTLZ):
         g = self.g2(x_m)
 
         theta = 1 / (2 * (1 + g)) * (1 + 2 * g * x_)
-        theta = np.concatenate([x[0], theta[1:]])
+        theta = np.concatenate([x[:1], theta[1:]])
 
         return self.obj_func(theta, g)
 
@@ -139,7 +139,7 @@ class DTLZ6(DTLZ):
         g = np.sum(np.power(x_m, 0.1))
 
         theta = 1 / (2 * (1 + g)) * (1 + 2 * g * x_)
-        theta = np.concatenate([x[0], theta[1:]])
+        theta = np.concatenate([x[:1], theta[1:]])
 
         return self.obj_func(theta, g)
 
