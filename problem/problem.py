@@ -52,7 +52,7 @@ class Problem(PymooProblem):
                 if self.config['n_constr'] > 0:
                     raise Exception('no constraint function is provided')
                 else:
-                    self.evaluate_constraint = lambda x: None
+                    self.evaluate_constraint = no_constraint_evaluation
         else:
             self.evaluate_constraint = import_constr_func(self.config['constr_func'], self.config['n_var'], self.config['n_constr'])
 
@@ -123,3 +123,6 @@ class Problem(PymooProblem):
         s += "# n_constr: %s\n" % self.n_constr
         return s
 
+
+def no_constraint_evaluation(x):
+    return None
