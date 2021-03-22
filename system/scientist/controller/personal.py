@@ -12,7 +12,7 @@ from problem.problem import Problem
 import tkinter as tk
 from tkinter import messagebox
 from system.params import *
-from system.database import PersonalDatabase
+from system.database.personal import PersonalDatabase
 from system.agent import OptimizeAgent
 from system.scheduler import OptimizeScheduler
 
