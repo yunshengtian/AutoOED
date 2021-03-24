@@ -12,7 +12,7 @@ from .utils import propose_next_batch, propose_next_batch_without_label, get_sam
 from ..base import Solver
 
 
-def _local_optimization(x, y, f, eval_func, bounds, delta_s):
+def _local_optimization(x, y, f, eval_func, bounds, constr_func, delta_s):
     '''
     Local optimization of generated stochastic samples by minimizing distance to the target, see section 6.2.3.
     Input:
@@ -21,6 +21,7 @@ def _local_optimization(x, y, f, eval_func, bounds, delta_s):
         f: relative performance to the buffer origin, shape = (n_obj,)
         eval_func: problem's evaluation function
         bounds: problem's lower and upper bounds, shape = (2, n_var)
+        constr_func: problem's constraint evaluation function
         delta_s: scaling factor for choosing reference point in local optimization, see section 6.2.3
     Output:
         x_opt: locally optimized sample x
@@ -36,6 +37,11 @@ def _local_optimization(x, y, f, eval_func, bounds, delta_s):
         fx = eval_func(x, return_values_of=['F'])
         return np.linalg.norm(fx - z)
 
+    # constraint function
+    if constr_func is not None:
+        def fun_constr(x):
+            return -constr_func(x)
+
     # jacobian of the objective
     dy = eval_func(x, return_values_of=['dF'])
     if dy is None:
@@ -45,8 +51,11 @@ def _local_optimization(x, y, f, eval_func, bounds, delta_s):
             fx, dfx = eval_func(x, return_values_of=['F', 'dF'])
             return ((fx - z) / np.linalg.norm(fx - z)) @ dfx
     
-    # do optimization using LBFGS
-    res = minimize(fun, x, method='L-BFGS-B', jac=jac, bounds=np.array(bounds).T)
+    # do optimization
+    if constr_func is None:
+        res = minimize(fun, x, method='L-BFGS-B', jac=jac, bounds=np.array(bounds).T)
+    else:
+        res = minimize(fun, x, method='SLSQP', jac=jac, bounds=np.array(bounds).T, constraints=({'type': 'ineq', 'fun': fun_constr},))
     x_opt = res.x
     return x_opt
 
@@ -217,13 +226,14 @@ def _get_optimization_directions(x_opt, eval_func, bounds):
     return directions
 
 
-def _first_order_approximation(x_opt, directions, bounds, n_grid_sample):
+def _first_order_approximation(x_opt, directions, bounds, constr_func, n_grid_sample):
     '''
     Exploring new samples from local manifold (first order approximation of pareto front).
     Input:
         x_opt: locally optimized design sample, shape = (n_var,)
         directions: local exploration directions for alpha, beta and x (design sample)
         bounds: problem's lower and upper bounds, shape = (2, n_var)
+        constr_func: problem's constraint evaluation function
         n_grid_sample: number of samples on local manifold (grid), see section 6.3.1
     Output:
         x_samples: new valid samples from local manifold (grid)
@@ -267,7 +277,9 @@ def _first_order_approximation(x_opt, directions, bounds, n_grid_sample):
         curr_dx_samples = np.sum(np.expand_dims(d_x, axis=0) * np.random.random((n_grid_sample, 1, n_obj - 1)), axis=-1)
         curr_x_samples = np.expand_dims(x_opt, axis=0) + curr_dx_samples
         # check validity of samples
-        valid_idx = np.where(np.logical_and((curr_x_samples <= upper_bound).all(axis=1), (curr_x_samples >= lower_bound).all(axis=1)))[0]
+        flags = np.logical_and((curr_x_samples <= upper_bound).all(axis=1), (curr_x_samples >= lower_bound).all(axis=1))
+        flags = np.logical_and(flags, constr_func(curr_x_samples) <= 0)
+        valid_idx = np.where(flags)[0]
         x_samples = np.vstack([x_samples, curr_x_samples[valid_idx]])
         loop_count += 1
         if loop_count > 10:
@@ -276,7 +288,7 @@ def _first_order_approximation(x_opt, directions, bounds, n_grid_sample):
     return x_samples
 
 
-def _pareto_discover(xs, eval_func, bounds, delta_s, origin, origin_constant, n_grid_sample, queue):
+def _pareto_discover(xs, eval_func, bounds, constr_func, delta_s, origin, origin_constant, n_grid_sample, queue):
     '''
     Local optimization and first-order approximation.
     (We move these functions out from the ParetoDiscovery class for parallelization)
@@ -284,6 +296,7 @@ def _pareto_discover(xs, eval_func, bounds, delta_s, origin, origin_constant, n_
         xs: a batch of samples x, shape = (batch_size, n_var)
         eval_func: problem's evaluation function
         bounds: problem's lower and upper bounds, shape = (2, n_var)
+        constr_func: problem's constraint evaluation function
         delta_s: scaling factor for choosing reference point in local optimization, see section 6.2.3
         origin: origin of performance buffer
         origin_constant: when evaluted value surpasses the buffer origin, adjust the origin accordingly and subtract this constant
@@ -307,13 +320,13 @@ def _pareto_discover(xs, eval_func, bounds, delta_s, origin, origin_constant, n_
     for i, (x, y, f) in enumerate(zip(xs, ys, fs)):
 
         # local optimization by optimizing eq(4)
-        x_opt = _local_optimization(x, y, f, eval_func, bounds, delta_s)
+        x_opt = _local_optimization(x, y, f, eval_func, bounds, constr_func, delta_s)
 
         # get directions to expand in local manifold
         directions = _get_optimization_directions(x_opt, eval_func, bounds)
 
         # get new valid samples from local manifold
-        x_samples = _first_order_approximation(x_opt, directions, bounds, n_grid_sample)
+        x_samples = _first_order_approximation(x_opt, directions, bounds, constr_func, n_grid_sample)
         x_samples_all.append(x_samples)
         patch_ids.extend([i] * len(x_samples))
 
@@ -405,6 +418,16 @@ class ParetoDiscovery(Algorithm):
         # create the initial population
         pop = self.initialization.do(self.problem, self.pop_size, algorithm=self)
         pop_x = pop.get('X').copy()
+        pop = pop[self.problem.evaluate_constraint(pop_x) <= 0]
+
+        while len(pop) < self.pop_size:
+            new_pop = self.initialization.do(self.problem, self.pop_size, algorithm=self)
+            new_pop_x = new_pop.get('X').copy()
+            new_pop = new_pop[self.problem.evaluate_constraint(new_pop_x) <= 0]
+            pop = pop.merge(new_pop)
+        
+        pop = pop[:self.pop_size]
+        pop_x = pop.get('X').copy()
         pop_f = self.problem.evaluate(pop_x, return_values_of=['F'])
 
         # initialize buffer
@@ -457,7 +480,7 @@ class ParetoDiscovery(Algorithm):
         for x in x_batch:
             if len(x) > 0:
                 p = Process(target=_pareto_discover, 
-                    args=(x, self.problem.evaluate, [self.problem.xl, self.problem.xu], self.delta_s, 
+                    args=(x, self.problem.evaluate, [self.problem.xl, self.problem.xu], self.problem.evaluate_constraint, self.delta_s, 
                         self.buffer.origin, self.buffer.origin_constant, self.n_grid_sample, queue))
                 p.start()
                 process_count += 1
@@ -494,17 +517,29 @@ class ParetoDiscovery(Algorithm):
         '''
         xs = self.pop.get('X').copy()
 
-        # generate stochastic direction
-        d = np.random.random(xs.shape)
-        d /= np.expand_dims(np.linalg.norm(d, axis=1), axis=1)
+        # sampling loop
+        num_target = xs.shape[0]
+        xs_final = np.zeros((0, xs.shape[1]), xs.dtype)
 
-        # generate random scaling factor
-        delta = np.random.random() * self.delta_p
+        while xs_final.shape[0] < num_target:
+            # generate stochastic direction
+            d = np.random.random(xs.shape)
+            d /= np.expand_dims(np.linalg.norm(d, axis=1), axis=1)
 
-        # generate new stochastic samples
-        xs = xs + 1.0 / (2 ** delta) * d # NOTE: is this scaling form reasonable? maybe better use relative scaling?
-        xs = np.clip(xs, self.problem.xl, self.problem.xu)
-        return xs
+            # generate random scaling factor
+            delta = np.random.random() * self.delta_p
+
+            # generate new stochastic samples
+            xs_perturb = xs + 1.0 / (2 ** delta) * d # NOTE: is this scaling form reasonable? maybe better use relative scaling?
+            xs_perturb = np.clip(xs_perturb, self.problem.xl, self.problem.xu)
+
+            # check constraint values
+            constr = self.problem.evaluate_constraint(xs_perturb)
+            flag = constr <= 0
+            if np.any(flag):
+                xs_final = np.vstack((xs_final, xs_perturb[flag]))
+
+        return xs_final[:num_target]
 
     def propose_next_batch(self, curr_pfront, ref_point, batch_size, normalization):
         '''

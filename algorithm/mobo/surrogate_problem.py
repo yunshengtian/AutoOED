@@ -178,6 +178,31 @@ class SurrogateProblem(Problem):
             else:
                 return tuple([out[val] for val in return_values_of])
 
+    def evaluate_constraint(self, X):
+        '''
+        A separate constraint evaluation function.
+
+        Parameters
+        ----------
+        X: np.array
+            Design variables.
+
+        Returns
+        -------
+        G: np.array
+            Constraint violations (<=0 means satisfying constraints, >0 means violating constraints).
+        '''
+        if X.ndim == 1:
+            return self.real_problem.evaluate_constraint(X)
+        elif X.ndim == 2:
+            G = np.array([self.real_problem.evaluate_constraint(x) for x in X])
+            if None in G:
+                return None
+            else:
+                return G
+        else:
+            raise NotImplementedError
+
     def __str__(self):
         return '========== Problem Definition ==========\n' + super().__str__()
 
