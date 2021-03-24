@@ -278,7 +278,8 @@ def _first_order_approximation(x_opt, directions, bounds, constr_func, n_grid_sa
         curr_x_samples = np.expand_dims(x_opt, axis=0) + curr_dx_samples
         # check validity of samples
         flags = np.logical_and((curr_x_samples <= upper_bound).all(axis=1), (curr_x_samples >= lower_bound).all(axis=1))
-        flags = np.logical_and(flags, constr_func(curr_x_samples) <= 0)
+        if constr_func is not None:
+            flags = np.logical_and(flags, constr_func(curr_x_samples) <= 0)
         valid_idx = np.where(flags)[0]
         x_samples = np.vstack([x_samples, curr_x_samples[valid_idx]])
         loop_count += 1
@@ -414,20 +415,28 @@ class ParetoDiscovery(Algorithm):
         self.n_process = n_process
         self.patch_id = 0
 
+        self.constr_func = None
+
     def _initialize(self):
         # create the initial population
         pop = self.initialization.do(self.problem, self.pop_size, algorithm=self)
         pop_x = pop.get('X').copy()
-        pop = pop[self.problem.evaluate_constraint(pop_x) <= 0]
 
-        while len(pop) < self.pop_size:
-            new_pop = self.initialization.do(self.problem, self.pop_size, algorithm=self)
-            new_pop_x = new_pop.get('X').copy()
-            new_pop = new_pop[self.problem.evaluate_constraint(new_pop_x) <= 0]
-            pop = pop.merge(new_pop)
+        # check if problem has constraints other than bounds
+        pop_constr = self.problem.evaluate_constraint(pop_x)
+        if pop_constr is not None:
+            self.constr_func = self.problem.evaluate_constraint
+            pop = pop[pop_constr <= 0]
+
+            while len(pop) < self.pop_size:
+                new_pop = self.initialization.do(self.problem, self.pop_size, algorithm=self)
+                new_pop_x = new_pop.get('X').copy()
+                new_pop = new_pop[self.problem.evaluate_constraint(new_pop_x) <= 0]
+                pop = pop.merge(new_pop)
         
-        pop = pop[:self.pop_size]
-        pop_x = pop.get('X').copy()
+            pop = pop[:self.pop_size]
+            pop_x = pop.get('X').copy()
+
         pop_f = self.problem.evaluate(pop_x, return_values_of=['F'])
 
         # initialize buffer
@@ -480,7 +489,7 @@ class ParetoDiscovery(Algorithm):
         for x in x_batch:
             if len(x) > 0:
                 p = Process(target=_pareto_discover, 
-                    args=(x, self.problem.evaluate, [self.problem.xl, self.problem.xu], self.problem.evaluate_constraint, self.delta_s, 
+                    args=(x, self.problem.evaluate, [self.problem.xl, self.problem.xu], self.constr_func, self.delta_s, 
                         self.buffer.origin, self.buffer.origin_constant, self.n_grid_sample, queue))
                 p.start()
                 process_count += 1
@@ -533,11 +542,14 @@ class ParetoDiscovery(Algorithm):
             xs_perturb = xs + 1.0 / (2 ** delta) * d # NOTE: is this scaling form reasonable? maybe better use relative scaling?
             xs_perturb = np.clip(xs_perturb, self.problem.xl, self.problem.xu)
 
-            # check constraint values
-            constr = self.problem.evaluate_constraint(xs_perturb)
-            flag = constr <= 0
-            if np.any(flag):
-                xs_final = np.vstack((xs_final, xs_perturb[flag]))
+            if self.constr_func is None:
+                xs_final = xs_perturb
+            else:
+                # check constraint values
+                constr = self.constr_func(xs_perturb)
+                flag = constr <= 0
+                if np.any(flag):
+                    xs_final = np.vstack((xs_final, xs_perturb[flag]))
 
         return xs_final[:num_target]
 
