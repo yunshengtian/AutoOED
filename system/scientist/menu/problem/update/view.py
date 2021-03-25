@@ -460,7 +460,7 @@ class UpdateProblemView:
         self.widget['constraint']['browse_constr_func'], self.widget['constraint']['disp_constr_func'] = create_widget('labeled_button_entry',
             master=self.frame['constraint'], row=1, column=0, label_text='Path to constraint function', button_text='Browse', width=30)
 
-        def _set_constr_func(self):
+        def _set_constr_func():
             '''
             '''
             filename = tk.filedialog.askopenfilename(parent=self.window)

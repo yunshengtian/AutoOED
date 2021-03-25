@@ -78,21 +78,21 @@ def import_obj_func(path, n_var, n_obj):
         try:
             sys.path.insert(0, os.path.dirname(path))
             eval_func = import_python_func(path=path, module_name='obj_func', func_name='evaluate_objective')
-        except:
-            raise Exception('failed to import objective evaluation function from python file')
+        except Exception as e:
+            raise Exception(f'failed to import objective evaluation function from python file ({e})')
     elif ftype == 'c' or ftype == 'cpp':
         try:
             eval_func = import_c_func(path=path, lib_name='obj_func', func_name='evaluate_objective',
                 n_in=n_var, n_out=n_obj)
-        except:
-            raise Exception('failed to import objective evaluation function from c/cpp file')
+        except Exception as e:
+            raise Exception(f'failed to import objective evaluation function from c/cpp file ({e})')
     elif ftype == 'm':
         try:
             eval_func = import_matlab_func(path=path, n_out=n_obj)
-        except:
-            raise Exception('failed to import objective evaluation function from matlab file')
+        except Exception as e:
+            raise Exception(f'failed to import objective evaluation function from matlab file ({e})')
     else:
-        raise Exception('only python and c/cpp files are supported')
+        raise Exception('only python, c/cpp and matlab files are supported')
     return eval_func
 
 
@@ -105,19 +105,19 @@ def import_constr_func(path, n_var, n_constr):
         try:
             sys.path.insert(0, os.path.dirname(path))
             eval_func = import_python_func(path=path, module_name='constr_func', func_name='evaluate_constraint')
-        except:
-            raise Exception('failed to import constraint evaluation function from python file')  
+        except Exception as e:
+            raise Exception(f'failed to import constraint evaluation function from python file ({e})')  
     elif ftype == 'c' or ftype == 'cpp':
         try:
             eval_func = import_c_func(path=path, lib_name='constr_func', func_name='evaluate_constraint',
                 n_in=n_var, n_out=n_constr)
-        except:
-            raise Exception('failed to import constraint evaluation function from c/cpp file')
+        except Exception as e:
+            raise Exception(f'failed to import constraint evaluation function from c/cpp file ({e})')
     elif ftype == 'm':
         try:
             eval_func = import_matlab_func(path=path, n_out=n_constr)
-        except:
-            raise Exception('failed to import objective evaluation function from matlab file')
+        except Exception as e:
+            raise Exception(f'failed to import objective evaluation function from matlab file ({e})')
     else:
-        raise Exception('only python and c/cpp files are supported')
+        raise Exception('only python, c/cpp and matlab files are supported')
     return eval_func
