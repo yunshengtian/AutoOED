@@ -119,7 +119,7 @@ class BufferBase(ABC):
         # when n is less than number of non-empty cells, randomly pick the 1st samples in cells
         if n <= len(nonempty_cell_ids):
             selected_cell_ids = np.random.choice(nonempty_cell_ids, size=n, replace=False)
-            selected_samples = [cell[0] for cell in np.array(self.buffer_x)[selected_cell_ids]]
+            selected_samples = [cell[0] for cell in np.array(self.buffer_x, dtype=object)[selected_cell_ids]]
         
         # when n is greater, pick samples in cells round by round (1st, 2nd, ...)
         else:
@@ -134,7 +134,7 @@ class BufferBase(ABC):
                     selected_samples = np.vstack([selected_samples, np.array(selected_samples)[random_indices]])
                     break
                 
-                curr_selected_samples = [cell[k] for cell in np.array(self.buffer_x)[nonempty_cell_ids]]
+                curr_selected_samples = [cell[k] for cell in np.array(self.buffer_x, dtype=object)[nonempty_cell_ids]]
                 selected_samples.extend(np.random.permutation(curr_selected_samples))
             selected_samples = np.array(selected_samples[:n])
         return selected_samples
