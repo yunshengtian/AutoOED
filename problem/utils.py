@@ -18,14 +18,6 @@ def import_c_func(path, lib_name, func_name, n_in, n_out, dtype='float'):
     '''
     Import c/cpp function from path
     '''
-    # decide compiler
-    if path.endswith('c'):
-        compiler = 'gcc'
-    elif path.endswith('cpp'):
-        compiler = 'g++'
-    else:
-        raise NotImplementedError
-
     # type conversion
     if dtype == 'float':
         c_type = ctypes.c_float
@@ -39,8 +31,22 @@ def import_c_func(path, lib_name, func_name, n_in, n_out, dtype='float'):
     else:
         raise NotImplementedError
 
-    lib_path = os.path.join(os.path.dirname(path), lib_name + '.so')
-    os.system(f'{compiler} -shared -o {lib_path} {path}')
+    if path.endswith('so'):
+        lib_path = path
+    else:
+        # decide compiler
+        if path.endswith('c'):
+            compiler = 'gcc'
+        elif path.endswith('cpp'):
+            compiler = 'g++'
+        else:
+            raise NotImplementedError
+        # compile
+        lib_path = os.path.join(os.path.dirname(path), lib_name + '.so')
+        os.system(f'{compiler} -shared -o {lib_path} {path}')
+        if not os.path.exists(lib_path):
+            raise Exception('Failed to compile the library, make sure you have gcc or g++ installed on your computer')
+
     c_lib = ctypes.CDLL(lib_path)
     getattr(c_lib, func_name).argtypes = (np.ctypeslib.ndpointer(dtype=c_type, shape=(n_in,)),)
     getattr(c_lib, func_name).restype = np.ctypeslib.ndpointer(dtype=c_type, shape=(n_out,))
@@ -80,7 +86,7 @@ def import_obj_func(path, n_var, n_obj):
             eval_func = import_python_func(path=path, module_name='obj_func', func_name='evaluate_objective')
         except Exception as e:
             raise Exception(f'failed to import objective evaluation function from python file ({e})')
-    elif ftype == 'c' or ftype == 'cpp':
+    elif ftype in ['c', 'cpp', 'so']:
         try:
             eval_func = import_c_func(path=path, lib_name='obj_func', func_name='evaluate_objective',
                 n_in=n_var, n_out=n_obj)
@@ -107,7 +113,7 @@ def import_constr_func(path, n_var, n_constr):
             eval_func = import_python_func(path=path, module_name='constr_func', func_name='evaluate_constraint')
         except Exception as e:
             raise Exception(f'failed to import constraint evaluation function from python file ({e})')  
-    elif ftype == 'c' or ftype == 'cpp':
+    elif ftype in ['c', 'cpp', 'so']:
         try:
             eval_func = import_c_func(path=path, lib_name='constr_func', func_name='evaluate_constraint',
                 n_in=n_var, n_out=n_constr)
