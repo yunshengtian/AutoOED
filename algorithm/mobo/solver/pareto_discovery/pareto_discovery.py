@@ -5,7 +5,7 @@ from pymoo.model.algorithm import Algorithm
 from pymoo.model.duplicate import DefaultDuplicateElimination
 from pymoo.model.individual import Individual
 from pymoo.model.initialization import Initialization
-from multiprocessing import Process, Queue, cpu_count
+from multiprocess import Process, Queue, cpu_count
 
 from .buffer import get_buffer
 from .utils import propose_next_batch, propose_next_batch_without_label, get_sample_num_from_families
@@ -481,7 +481,7 @@ class ParetoDiscovery(Algorithm):
         # stochastic sampling by adding local perturbance
         xs = self._stochastic_sampling()
 
-        # parallelize core pareto discovery process by multiprocessing, see _pareto_discover()
+        # parallelize core pareto discovery process by multiprocess, see _pareto_discover()
         # including select_direction, local_optimization, first_order_approximation in above algorithm illustration
         x_batch = np.array_split(xs, self.n_process)
         queue = Queue()

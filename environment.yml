@@ -16,10 +16,12 @@ dependencies:
     - cma==3.0.3
     - cycler==0.10.0
     - cython==0.29.20
+    - dill==0.3.3
     - future==0.18.2
     - joblib==0.16.0
     - kiwisolver==1.2.0
     - matplotlib==3.2.2
+    - multiprocess==0.70.11.1
     - mysql-connector-python==8.0.22
     - numpy==1.20.0
     - pandas==1.0.5

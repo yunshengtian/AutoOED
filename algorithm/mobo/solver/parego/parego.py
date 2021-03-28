@@ -4,7 +4,7 @@ from pymoo.optimize import minimize
 from pymoo.algorithms.so_cmaes import CMAES
 from pymoo.decomposition.tchebicheff import Tchebicheff
 from .utils import ScalarizedEvaluator
-from multiprocessing import Process, Queue
+from multiprocess import Process, Queue
 
 
 def optimization(problem, x, weights, queue):
