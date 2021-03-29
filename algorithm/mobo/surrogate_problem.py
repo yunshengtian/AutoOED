@@ -180,7 +180,7 @@ class SurrogateProblem(Problem):
 
     def evaluate_constraint(self, X):
         '''
-        A separate constraint evaluation function.
+        A constraint evaluation function for normalized design variables, which is needed in the solver.
 
         Parameters
         ----------
@@ -192,6 +192,8 @@ class SurrogateProblem(Problem):
         G: np.array
             Constraint violations (<=0 means satisfying constraints, >0 means violating constraints).
         '''
+        X = self.normalization.undo(x=X)
+
         if X.ndim == 1:
             return self.real_problem.evaluate_constraint(X)
         elif X.ndim == 2:
