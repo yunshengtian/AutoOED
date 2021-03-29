@@ -278,9 +278,10 @@ def _first_order_approximation(x_opt, directions, bounds, constr_func, n_grid_sa
         curr_x_samples = np.expand_dims(x_opt, axis=0) + curr_dx_samples
         # check validity of samples
         flags = np.logical_and((curr_x_samples <= upper_bound).all(axis=1), (curr_x_samples >= lower_bound).all(axis=1))
-        if constr_func is not None:
-            flags = np.logical_and(flags, constr_func(curr_x_samples) <= 0)
         valid_idx = np.where(flags)[0]
+        if constr_func is not None and len(valid_idx) > 0:
+            flags[valid_idx] = np.logical_and(flags[valid_idx], constr_func(curr_x_samples[valid_idx]) <= 0)
+            valid_idx = np.where(flags)[0]
         x_samples = np.vstack([x_samples, curr_x_samples[valid_idx]])
         loop_count += 1
         if loop_count > 10:
