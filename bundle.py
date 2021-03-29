@@ -51,6 +51,9 @@ build_dir = os.path.join(base_dir, 'build')
 dist_dir = os.path.join(base_dir, 'dist')
 spec_dir = os.path.join(base_dir, 'spec')
 
+for work_dir in [base_dir, build_dir, dist_dir, spec_dir]:
+    os.makedirs(work_dir, exist_ok=True)
+
 for work_dir in [build_dir, dist_dir]:
     if type(name) == list:
         for curr_name in name:
