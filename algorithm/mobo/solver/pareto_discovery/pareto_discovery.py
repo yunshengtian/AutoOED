@@ -40,7 +40,10 @@ def _local_optimization(x, y, f, eval_func, bounds, constr_func, delta_s):
     # constraint function
     if constr_func is not None:
         def fun_constr(x):
-            return -constr_func(x)
+            if (x >= bounds[0]).all() and (x <= bounds[1]).all():
+                return -constr_func(x)
+            else:
+                return -1
 
     # jacobian of the objective
     dy = eval_func(x, return_values_of=['dF'])
