@@ -26,12 +26,47 @@ def save_config(config, path):
         raise Exception('not a valid config dictionary')
 
 
+def is_int(var):
+    return isinstance(var, (int, np.integer))
+
+def is_float(var):
+    return isinstance(var, (float, np.floating))
+
+def is_numeric(var):
+    return is_int(var) or is_float(var)
+
+def is_str(var):
+    return type(var) == str
+
+def is_iterable(var):
+    return isinstance(var, Iterable) and type(var) != str
+
+def is_dict(var):
+    return isinstance(var, dict)
+
+
+def convert(var):
+    if is_numeric(var):
+        if isinstance(var, np.generic):
+            return var.item()
+    elif is_iterable(var):
+        return np.array(var).tolist()
+    return var
+
+def convert_config(config):
+    for key, val in config.items():
+        if type(val) == dict:
+            convert_config(config[key])
+        else:
+            config[key] = convert(config[key])
+
+
 def check_config(config):
     '''
-    Check validity of the config
+    Check validity of the config, and convert numpy to native python
     '''
     # format
-    assert isinstance(config, dict), 'config is not a dictionary'
+    assert is_dict(config), 'config is not a dictionary'
 
     # key
     for key in config:
@@ -42,38 +77,38 @@ def check_config(config):
 
     # name
     assert 'name' in config, 'problem name is not specified'
-    assert type(config['name']) == str, 'problem name must be a string'
+    assert is_str(config['name']), 'problem name must be a string'
 
     # type
     assert 'type' in config, 'problem type is not specified'
-    assert type(config['type']) == str, 'problem type must be a string'
+    assert is_str(config['type']), 'problem type must be a string'
     assert config['type'] in ['continuous', 'integer', 'binary', 'categorical', 'mixed'], 'invalid problem type'
     
     # var
     if config['type'] in ['continuous', 'integer', 'binary']:
         assert 'n_var' in config, 'number of variables is not provided'
-        assert type(config['n_var']) == int and config['n_var'] > 0, 'number of variables must be a positive integer'
+        assert is_int(config['n_var']) and config['n_var'] > 0, 'number of variables must be a positive integer'
         n_var = config['n_var']
 
     if config['type'] in ['continuous', 'integer']:
         assert 'var_lb' in config, 'lower bound is not provided'
         assert 'var_ub' in config, 'upper bound is not provided'
 
-        assert type(config['var_lb']) in [int, float] or (isinstance(config['var_lb'], Iterable) and type(config['var_lb']) != str), 'invalid type of lower bound'
-        assert type(config['var_ub']) in [int, float] or (isinstance(config['var_ub'], Iterable) and type(config['var_ub']) != str), 'invalid type of upper bound'
+        assert is_numeric(config['var_lb']) or is_iterable(config['var_lb']), 'invalid type of lower bound'
+        assert is_numeric(config['var_ub']) or is_iterable(config['var_ub']), 'invalid type of upper bound'
 
-        if isinstance(config['var_lb'], Iterable):
+        if is_iterable(config['var_lb']):
             assert len(config['var_lb']) == config['n_var'], 'number of lower bounds mismatches number of variables'
             for lb in config['var_lb']:
-                assert type(lb) in [int, float], 'invalid type of lower bound'
+                assert is_numeric(lb), 'invalid type of lower bound'
             lb_list = list(config['var_lb'])
         else:
             lb_list = [config['var_lb']] * config['n_var']
 
-        if isinstance(config['var_ub'], Iterable):
+        if is_iterable(config['var_ub']):
             assert len(config['var_ub']) == config['n_var'], 'number of upper bounds mismatches number of variables'
             for ub in config['var_ub']:
-                assert type(ub) in [int, float], 'invalid type of upper bound'
+                assert is_numeric(ub), 'invalid type of upper bound'
             ub_list = list(config['var_ub'])
         else:
             ub_list = [config['var_ub']] * config['n_var']
@@ -86,34 +121,34 @@ def check_config(config):
 
     elif config['type'] == 'categorical':
         if 'var' in config:
-            assert isinstance(config['var'], dict), 'variable properties are not specified as a dictionary'
+            assert is_dict(config['var']), 'variable properties are not specified as a dictionary'
             assert len(config['var']) > 0, 'the dictionary of variable properties is empty'
             n_var = len(config['var'])
 
             for var_name, var_choices in config['var'].items():
-                assert type(var_name) == str, 'invalid type of variable name'
-                assert isinstance(var_choices, Iterable) and type(var_choices) != str, 'invalid type of variable choices'
+                assert is_str(var_name), 'invalid type of variable name'
+                assert is_iterable(var_choices), 'invalid type of variable choices'
                 assert len(var_choices) == len(np.unique(var_choices)), 'duplicates in variable choices'
 
         else:
             assert 'n_var' in config, 'number of variables is not provided'
-            assert type(config['n_var']) == int and config['n_var'] > 0, 'number of variables must be a positive integer'
+            assert is_int(config['n_var']) and config['n_var'] > 0, 'number of variables must be a positive integer'
             assert 'var_choices' in config, 'variable choices are not provided'
-            assert isinstance(config['var_choices'], Iterable) and type(config['var_choices']) != str, 'invalid type of variable choices'
+            assert is_iterable(var_choices), 'invalid type of variable choices'
             assert len(config['var_choices']) == len(np.unique(config['var_choices'])), 'duplicates in variable choices'
             n_var = config['n_var']
 
     elif config['type'] == 'mixed':
         assert 'var' in config, 'variable properties are not provided'
-        assert isinstance(config['var'], dict), 'variable properties are not specified as a dictionary'
+        assert is_dict(config['var']), 'variable properties are not specified as a dictionary'
         assert len(config['var']) > 0, 'the dictionary of variable properties is empty'
         n_var = len(config['var'])
 
         for var_name, var_info in config['var'].items():
-            assert type(var_name) == str, 'invalid type of variable name'
-            assert isinstance(var_info, dict), 'variable properties are not specified as a dictionary'
+            assert is_str(var_name), 'invalid type of variable name'
+            assert is_dict(var_info), 'variable properties are not specified as a dictionary'
             assert 'type' in var_info, f'type of variable {var_name} is not provided'
-            assert type(var_info['type']) == str, f'type of variable {var_name} is not a string'
+            assert is_str(var_info['type']), f'type of variable {var_name} is not a string'
             assert var_info['type'] in ['continuous', 'integer', 'binary', 'categorical'], f'invalid type of variable {var_name}'
 
             # key
@@ -134,8 +169,8 @@ def check_config(config):
 
             # value
             if var_info['type'] == 'continuous':
-                assert type(var_info['lb']) in [int, float], f'invalid lower bound of variable {var_name}'
-                assert type(var_info['ub']) in [int, float], f'invalid upper bound of variable {var_name}'
+                assert is_numeric(var_info['lb']), f'invalid lower bound of variable {var_name}'
+                assert is_numeric(var_info['ub']), f'invalid upper bound of variable {var_name}'
                 assert var_info['lb'] < var_info['ub'], f'lower bound is no less than upper bound of variable {var_name}'
 
             elif var_info['type'] == 'integer':
@@ -147,55 +182,58 @@ def check_config(config):
                 pass
 
             elif var_info['type'] == 'categorical':
-                assert isinstance(var_info['choices'], Iterable) and type(var_info['choices']) != str, f'invalid choices of variable {var_name}'
+                assert is_iterable(var_info['choices']), f'invalid choices of variable {var_name}'
                 assert len(var_info['choices']) == len(np.unique(var_info['choices'])), f'duplicates in the choices of variable {var_name}'
     
     if 'var_name' in config and config['var_name'] is not None:
-        assert isinstance(config['var_name'], Iterable) and type(config['var_name']) != str, 'invalid variable names'
+        assert is_iterable(config['var_name']), 'invalid variable names'
         assert len(config['var_name']) == n_var, 'number of variable names mismatches number of variables'
         assert len(config['var_name']) == len(np.unique(config['var_name'])), 'duplicates in variable names'
         for var_name in config['var_name']:
-            assert type(var_name) == str, f'name of variable {var_name} is not a string'
+            assert is_str(var_name), f'name of variable {var_name} is not a string'
 
     # obj
     assert 'n_obj' in config, 'number of objectives is not specified'
-    assert type(config['n_obj']) == int and config['n_obj'] > 1, 'number of variables must be an integer greater than 1'
+    assert is_int(config['n_obj']) and config['n_obj'] > 1, 'number of variables must be an integer greater than 1'
     n_obj = config['n_obj']
 
     if 'obj_name' in config and config['obj_name'] is not None:
-        assert isinstance(config['obj_name'], Iterable) and type(config['obj_name']) != str, 'invalid objective names'
+        assert is_iterable(config['obj_name']), 'invalid objective names'
         assert len(config['obj_name']) == n_obj, 'number of objective names mismatches number of objectives'
         assert len(config['obj_name']) == len(np.unique(config['obj_name'])), 'duplicates in objective names'
         for obj_name in config['obj_name']:
-            assert type(obj_name) == str, f'name of objective {obj_name} is not a string'
+            assert is_str(obj_name), f'name of objective {obj_name} is not a string'
 
     if 'obj_type' in config and config['obj_type'] is not None:
-        if type(config['obj_type']) == str:
+        if is_str(config['obj_type']):
             assert config['obj_type'] in ['min', 'max'], 'invalid objective type'
         else:
-            assert isinstance(config['obj_type'], Iterable), 'invalid type of objective type'
+            assert is_iterable(config['obj_type']), 'invalid type of objective type'
             assert len(config['obj_type']) == n_obj, 'number of objective types mismatches number of objectives'
             for obj_type in config['obj_type']:
                 assert obj_type in ['min', 'max'], 'invalid objective type'
 
     if 'obj_func' in config and config['obj_func'] is not None:
-        assert type(config['obj_func']) == str, 'invalid type of objective function'
+        assert is_str(config['obj_func']), 'invalid type of objective function'
         # TODO: check if objective function is importable
 
     if 'ref_point' in config and config['ref_point'] is not None:
-        assert isinstance(config['ref_point'], Iterable) and type(config['ref_point']) != str, 'invalid type of reference point'
+        assert is_iterable(config['ref_point']), 'invalid type of reference point'
         assert len(config['ref_point']) == n_obj, 'dimension of reference point mismatches number of objectives'
         for ref_point in config['ref_point']:
-            assert ref_point is None or type(ref_point) in [int, float], 'invalid type of reference point'
+            assert ref_point is None or is_numeric(ref_point), 'invalid type of reference point'
 
     # constr
     if 'n_constr' in config and config['n_constr'] is not None:
-        assert type(config['n_constr']) == int and config['n_constr'] >= 0, 'number of constraints must be a non-negative integer'
+        assert is_int(config['n_constr']) and config['n_constr'] >= 0, 'number of constraints must be a non-negative integer'
 
     if 'constr_func' in config and config['constr_func'] is not None:
-        assert type(config['constr_func']) == str, 'invalid type of constraint function'
+        assert is_str(config['constr_func']), 'invalid type of constraint function'
         # TODO: check if constraint function is importable
 
+    # convert numpy to native python
+    convert_config(config)
+    
 
 def transform_config(config, check=False):
     '''
@@ -216,12 +254,12 @@ def transform_config(config, check=False):
     if config['type'] == 'continuous' or config['type'] == 'integer':
         new_config['n_var'] = config['n_var']
 
-        if isinstance(config['var_lb'], Iterable):
+        if is_iterable(config['var_lb']):
             new_config['xl'] = list(config['var_lb'])
         else:
             new_config['xl'] = config['var_lb']
 
-        if isinstance(config['var_ub'], Iterable):
+        if is_iterable(config['var_ub']):
             new_config['xu'] = list(config['var_ub'])
         else:
             new_config['xu'] = config['var_ub']
