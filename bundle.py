@@ -16,6 +16,11 @@ def main():
         choices=['all', 'personal', 'team', 'team_manager', 'team_scientist', 'team_technician'],
         default='all',
     )
+    parser.add_argument(
+        '--zip',
+        default=False,
+        action='store_true',
+    )
     args = parser.parse_args()
 
 
@@ -109,10 +114,14 @@ def main():
         processes.append(Process(target=os.system, args=(cmd,)))
 
     [p.start() for p in processes]
-    try:
-        [p.join() for p in processes]
-    except KeyboardInterrupt:
-        return
+    [p.join() for p in processes]
+
+    if args.zip:
+        if type(name) == list:
+            for curr_name in name:
+                shutil.make_archive(os.path.join(base_dir, curr_name), 'zip', os.path.join(dist_dir, curr_name))
+        else:
+            shutil.make_archive(os.path.join(base_dir, name), 'zip', os.path.join(dist_dir, name))
 
 
 if __name__ == '__main__':
