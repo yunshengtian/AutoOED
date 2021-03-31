@@ -3,28 +3,29 @@ Installation
 ------------
 
 AutoOED can be installed either directly from the links to the executable files, or from source code.
+Source code is the most up-to-date version, while executable files are relatively stable.
 
 
-Executable File (Outdated)
---------------------------
+Executable File
+---------------
 
 Personal Version
 ''''''''''''''''
 
 Follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
 
-.. _Windows (82 MB): https://drive.google.com/file/d/1UvOP_X6wPPAiCaYAtkRVwzxRzQfOhWcF/view?usp=sharing
-.. _MacOS (190 MB): https://drive.google.com/file/d/1zmR47kgkCWAxl7JsNoQydPrFyGq4i1Wa/view?usp=sharing
-.. _Linux (98 MB): https://drive.google.com/file/d/1eZnNn603-hjmVZXkwOua0po8jprFlAub/view?usp=sharing
+.. _Windows: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED.zip
+.. _MacOS: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED.zip
+.. _Linux: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED.zip
 
 +--------------------+--------------------------+
 | Installation Link  | Executable File Location |
 +====================+==========================+
-| `Windows (82 MB)`_ | AutoOED\\AutoOED.exe     |
+| `Windows`_         | AutoOED\\AutoOED.exe     |
 +--------------------+--------------------------+
-| `MacOS (190 MB)`_  | AutoOED.app              |
+| `MacOS`_           | AutoOED.app              |
 +--------------------+--------------------------+
-| `Linux (98 MB)`_   | AutoOED/AutoOED          |
+| `Linux`_           | AutoOED/AutoOED          |
 +--------------------+--------------------------+
 
 
@@ -37,36 +38,36 @@ Before installing AutoOED, `MySQL <https://www.mysql.com/>`_ database management
 
 After installing MySQL, follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
 
-.. _Windows Manager (0 MB): TODO
-.. _Windows Scientist (0 MB): TODO
-.. _Windows Technician (0 MB): TODO
-.. _MacOS Manager (0 MB): TODO
-.. _MacOS Scientist (0 MB): TODO
-.. _MacOS Technician (0 MB): TODO
-.. _Linux Manager (0 MB): TODO
-.. _Linux Scientist (0 MB): TODO
-.. _Linux Technician (0 MB): TODO
+.. _Windows Manager: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Manager.zip
+.. _Windows Scientist: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Scientist.zip
+.. _Windows Technician: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Technician.zip
+.. _MacOS Manager: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Manager.zip
+.. _MacOS Scientist: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Scientist.zip
+.. _MacOS Technician: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Technician.zip
+.. _Linux Manager: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Manager.zip
+.. _Linux Scientist: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Scientist.zip
+.. _Linux Technician: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Technician.zip
 
 +-----------------------------+--------------------------------+
 | Installation Link           | Executable File Location       |
 +=============================+================================+
-| `Windows Manager (0 MB)`_   | AutoOED\\AutoOED_Manager.exe   |
+| `Windows Manager`_          | AutoOED\\AutoOED_Manager.exe   |
 +-----------------------------+--------------------------------+
-| `Windows Scientist (0 MB)`_ | AutoOED\\AutoOED_Scientist.exe |
+| `Windows Scientist`_        | AutoOED\\AutoOED_Scientist.exe |
 +-----------------------------+--------------------------------+
-| `Windows Technician (0 MB)`_| AutoOED\\AutoOED_Technician.exe|
+| `Windows Technician`_       | AutoOED\\AutoOED_Technician.exe|
 +-----------------------------+--------------------------------+
-| `MacOS Manager (0 MB)`_     | AutoOED_Manager.app            |
+| `MacOS Manager`_            | AutoOED_Manager.app            |
 +-----------------------------+--------------------------------+
-| `MacOS Scientist (0 MB)`_   | AutoOED_Scientist.app          |
+| `MacOS Scientist`_          | AutoOED_Scientist.app          |
 +-----------------------------+--------------------------------+
-| `MacOS Technician (0 MB)`_  | AutoOED_Technician.app         |
+| `MacOS Technician`_         | AutoOED_Technician.app         |
 +-----------------------------+--------------------------------+
-| `Linux Manager (0 MB)`_     | AutoOED/AutoOED_Manager        |
+| `Linux Manager`_            | AutoOED/AutoOED_Manager        |
 +-----------------------------+--------------------------------+
-| `Linux Scientist (0 MB)`_   | AutoOED/AutoOED_Scientist      |
+| `Linux Scientist`_          | AutoOED/AutoOED_Scientist      |
 +-----------------------------+--------------------------------+
-| `Linux Technician (0 MB)`_  | AutoOED/AutoOED_Technician     |
+| `Linux Technician`_         | AutoOED/AutoOED_Technician     |
 +-----------------------------+--------------------------------+
 
 
