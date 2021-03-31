@@ -1,4 +1,4 @@
-import os, shutil
+import os, platform, shutil
 from multiprocessing import Process, freeze_support
 from argparse import ArgumentParser
 
@@ -18,6 +18,11 @@ def main():
     )
     parser.add_argument(
         '--zip',
+        default=False,
+        action='store_true',
+    )
+    parser.add_argument(
+        '--serial',
         default=False,
         action='store_true',
     )
@@ -109,19 +114,28 @@ def main():
     Bundle operations
     '''
 
-    processes = []
-    for cmd in all_cmds:
-        processes.append(Process(target=os.system, args=(cmd,)))
+    if args.serial:
+        for cmd in all_cmds:
+            print('debug', cmd)
+            os.system(cmd + ' > log.txt')
+    else:
+        processes = []
+        for cmd in all_cmds:
+            processes.append(Process(target=os.system, args=(cmd,)))
 
-    [p.start() for p in processes]
-    [p.join() for p in processes]
+        [p.start() for p in processes]
+        [p.join() for p in processes]
+
+    system = platform.system()
 
     if args.zip:
         if type(name) == list:
             for curr_name in name:
-                shutil.make_archive(os.path.join(base_dir, curr_name), 'zip', os.path.join(dist_dir, curr_name))
+                zip_dir = curr_name + '.app' if system == 'Darwin' else curr_name
+                shutil.make_archive(os.path.join(base_dir, curr_name), 'zip', root_dir=dist_dir, base_dir=zip_dir)
         else:
-            shutil.make_archive(os.path.join(base_dir, name), 'zip', os.path.join(dist_dir, name))
+            zip_dir = name + '.app' if system == 'Darwin' else name
+            shutil.make_archive(os.path.join(base_dir, name), 'zip', root_dir=dist_dir, base_dir=zip_dir)
 
 
 if __name__ == '__main__':
