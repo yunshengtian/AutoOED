@@ -20,7 +20,7 @@ AutoOED can be installed either directly from the links to the executable files,
 
 ### Executable files
 
-Please see the instructions for directly installing executable files in our documentation: (**TODO**).
+Please see the instructions for directly installing executable files in our documentation.
 
 ### Source code
 
@@ -69,9 +69,7 @@ For more detailed usage and information of AutoOED, please checkout our document
 
 ## Citation
 
-If you find our work helpful to your research, please consider citing our paper:
-
-(**TODO**)
+If you find our work helpful to your research, please consider citing our paper (to be appeared).
 
 ## Contributing
 
@@ -79,4 +77,4 @@ We highly welcome all kinds of contributions, including but not limited to bug f
 
 ## Contact
 
-If you experience any issues during installing or using the software or have any feature suggestions, please feel free to reach out to us either by creating issues on GitHub or sending emails to autooed-help@csail.mit.edu.
+If you experience any issues during installing or using the software, or if you want to contribute to AutoOED, please feel free to reach out to us either by creating issues on GitHub or sending emails to autooed-help@csail.mit.edu.
