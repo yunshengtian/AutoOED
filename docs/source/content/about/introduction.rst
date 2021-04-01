@@ -27,8 +27,6 @@ AutoOED aims at improving the sample efficiency of optimization problems, i.e., 
 by applying state-of-the-art machine learning approaches. 
 So AutoOED is most powerful when the performance evaluation of your problem is expensive (for example, in terms of time or money).
 
-Currently, AutoOED is specialized for multi-objective optimization and we are planning to add single-objective support in the future.
-
 
 Requirements
 ''''''''''''

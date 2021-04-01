@@ -25,7 +25,8 @@ For data storage, this version uses SQLite, which is a built-in local database m
 Team Version
 ------------
 
-The team version enables distributed collaboration around the globe by leveraging a centralized MySQL database that can be connected through internet. 
-Using this version, the scientist can focus on controlling the optimization and data analysis, while the technicians can evaluate in a distributed fashion and synchronize the 
-evaluated results with other members in the team in real-time, through our provided simple and intuitive user interface. 
-This version provides different software for different roles of a team (manager, scientist and technician) with proper privilege control implemented.
+The team version enables distributed collaboration around the globe by leveraging a centralized MySQL database that can be connected through the Internet. 
+Using this version, the scientist can focus on controlling the optimization and data analysis, 
+while the technicians can evaluate in a distributed fashion and synchronize the evaluated results with other members of the team in real-time, 
+through our provided simple and intuitive user interface. 
+This version provides different software for different roles of a team (manager, scientist, and technician) with proper privilege control implemented.
