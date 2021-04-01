@@ -1,4 +1,5 @@
-# <img width="500" height="180" src="docs/source/_static/logo.png">
+<img width="400" src="docs/source/_static/logo.png">
+<hr>
 
 ![Platform](https://img.shields.io/badge/platform-windows|macos|linux-lightgrey) [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) 
 
