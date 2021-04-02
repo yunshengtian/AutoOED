@@ -1,28 +1,31 @@
 <img width="400" src="docs/source/_static/logo.png">
 
-![Platform](https://img.shields.io/badge/platform-windows|macos|linux-lightgrey) [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) 
+![Platform](https://img.shields.io/badge/platform-windows|macos|linux-lightgrey) [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/) [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) 
 
-**[Paper]() | [Website]() | [Documentation]() | [Contact](mailto:autooed-help@csail.mit.edu)**
+**[Paper (coming soon)]() | [Website (coming soon)]() | [Documentation]() | [Contact](mailto:autooed-help@csail.mit.edu)**
 
 AutoOED is an optimal experiment design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. AutoOED is developed by [Yunsheng Tian](https://www.yunshengtian.com/), [Mina Konaković Luković](http://people.csail.mit.edu/mina/), [Timothy Erps](https://www.linkedin.com/in/timothy-erps-15622a49/), [Michael Foshey](https://www.linkedin.com/in/michael-foshey/) and [Wojciech Matusik](https://cdfg.mit.edu/wojciech) from [Computational Design & Fabrication Group](https://cdfg.mit.edu/) at [MIT Computer Science and Artificial Intelligence Laboratory](https://www.csail.mit.edu/).
 
 ## Overview
 
-AutoOED is a powerful and easy-to-use tool for design parameter optimization with multiple objectives, which can be used for any kind of experiment settings (chemistry, material, physics, engineering, computer science…), and is generalizable to any performance evaluation mechanism (through computer programs or real experiments).
+AutoOED is a powerful and easy-to-use tool written in Python for design parameter optimization with multiple objectives, which can be used for any kind of experiment settings (chemistry, material, physics, engineering, computer science…). AutoOED aims at improving the sample efficiency of optimization problems, i.e., using less number of samples to achieve the best performance, by applying state-of-the-art machine learning approaches, which is most powerful when the performance evaluation of your problem is expensive (for example, in terms of time or money). 
 
-AutoOED aims at improving the sample efficiency of optimization problems, i.e., using less number of samples to achieve the best performance, by applying state-of-the-art machine learning approaches. So AutoOED is most powerful when the performance evaluation of your problem is expensive (for example, in terms of time or money).
+One of the most important features of AutoOED is an intuitive graphical user interface (GUI), which is provided to visualize and guide the experiments for users with little or no experience with coding, machine learning, or optimization. Furthermore, a distributed system is integrated to enable parallelized experimental evaluations either by multiple processes on a single computer or by independent technicians in remote locations.
+
+<p>
+   	<img width="49%" src="docs/source/_static/manual-personal/run-optimization/auto_control.png">
+    <img width="49%" src="docs/source/_static/manual-personal/database/database.png">
+</p>
 
 ## Installation
 
-AutoOED can be installed either directly from the links to the executable files, or from source code. Source code is the most up-to-date version, while executable files are relatively stable. Our software generally works across all Windows/MacOS/Linux operating systems.
+AutoOED can be installed either directly from the links to the executable files, or from source code. Source code is the most up-to-date version, while executable files are relatively stable. AutoOED generally works across all Windows/MacOS/Linux operating systems.
 
 ### Executable files
 
 Please see the instructions for directly installing executable files in our documentation.
 
 ### Source code
-
-We recommend to install with Python 3.7+.
 
 Install by conda with pip:
 
@@ -39,7 +42,7 @@ pip install -r requirements.txt
 pip install pymoo==0.4.1 pygco==0.0.16
 ```
 
-*Note: If you cannot properly run the programs after installation, please check if the version of these packages match our specifications.*
+*Note: We recommend to install with Python 3.7, because we have not tested on other versions. If you cannot properly run the programs after installation, please check if the version of these packages match our specifications.*
 
 ## Getting Started
 
@@ -67,11 +70,13 @@ For more detailed usage and information of AutoOED, please checkout our document
 
 ## Citation
 
-If you find our work helpful to your research, please consider citing our paper (to be appeared).
+If you find our work helpful to your research, please consider citing our paper (coming soon).
 
 ## Contributing
 
 We highly welcome all kinds of contributions, including but not limited to bug fixes, new feature suggestions, more intuitive error messages, and so on.
+
+Especially, [the algorithmic part](https://github.com/yunshengtian/AutoOED/tree/master/algorithm/mobo) of our code repository is written in a clean and modular way, facilitating extensions and tailoring the code, serving as a testbed for machine learning researchers to easily develop and evaluate their own multi-objective Bayesian optimization algorithms. We are looking forward to supporting more powerful optimization algorithms on our platform.
 
 ## Contact
 
