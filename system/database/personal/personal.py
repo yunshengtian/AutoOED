@@ -214,6 +214,7 @@ class PersonalDatabase:
     def create_table(self, name):
         '''
         '''
+        name = name.lower()
         with SafeLock(self.lock):
             assert not self.check_table_exist(name, block=False), f'Table {name} exists'
 

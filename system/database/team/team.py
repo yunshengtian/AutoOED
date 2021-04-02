@@ -372,6 +372,7 @@ class TeamDatabase:
     def create_table(self, name):
         '''
         '''
+        name = name.lower()
         if self.check_table_exist(name):
             raise Exception(f'Table {name} exists')
         self.insert_data(table='_empty_table', column=None, data=[name])
