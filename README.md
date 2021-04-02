@@ -4,7 +4,7 @@
 
 **AutoOED: Automated Optimal Experiment Design Platform**
 
-**[Paper (coming soon)]() | [Website (coming soon)]() | [Documentation]() | [Contact](mailto:autooed-help@csail.mit.edu)**
+**[Paper (coming soon)]() | [Website (coming soon)]() | [Documentation (coming soon)]() | [Contact](mailto:autooed-help@csail.mit.edu)**
 
 AutoOED is an optimal experiment design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. AutoOED is developed by [Yunsheng Tian](https://www.yunshengtian.com/), [Mina Konaković Luković](http://people.csail.mit.edu/mina/), [Timothy Erps](https://www.linkedin.com/in/timothy-erps-15622a49/), [Michael Foshey](https://www.linkedin.com/in/michael-foshey/) and [Wojciech Matusik](https://cdfg.mit.edu/wojciech) from [Computational Design & Fabrication Group](https://cdfg.mit.edu/) at [MIT Computer Science and Artificial Intelligence Laboratory](https://www.csail.mit.edu/).
 
@@ -21,11 +21,11 @@ One of the most important features of AutoOED is an intuitive graphical user int
 
 ## Installation
 
-AutoOED can be installed either directly from the links to the executable files, or from source code. Source code is the most up-to-date version, while executable files are relatively stable. AutoOED generally works across all Windows/MacOS/Linux operating systems.
+AutoOED can be installed either directly from the links to the executable files, or from source code. Source code is the most up-to-date version, while executable files are relatively stable. AutoOED generally works across all Windows/MacOS/Linux operating systems.  After installation, there are some extra steps to take if you want to link your own evaluation programs to AutoOED for fully automatic experimentation.
 
 ### Executable files
 
-Please see the instructions for directly installing executable files in our documentation.
+Please see the instructions for directly installing executable files in our documentation (coming soon).
 
 ### Source code
 
@@ -46,11 +46,15 @@ pip install pymoo==0.4.1 pygco==0.0.16
 
 *Note: We recommend to install with Python 3.7, because we have not tested on other versions. If you cannot properly run the programs after installation, please check if the version of these packages match our specifications.*
 
+### Extra steps for custom evaluation programs
+
+There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our documentation (coming soon) for more details.
+
 ## Getting Started
 
 After installing from source code, please run the following commands to start AutoOED for different versions respectively.
 
-### Personal Version
+### Personal version
 
 The personal version of AutoOED has all the supported features except distributed collaboration. This version is cleaner and easier to work with, especially when the optimization and evaluation can be done on a single computer.
 
@@ -58,9 +62,9 @@ The personal version of AutoOED has all the supported features except distribute
 python run_personal.py
 ```
 
-### Team Version
+### Team version
 
-The team version enables distributed collaboration around the globe by leveraging a centralized MySQL database that can be connected through the Internet. Using this version, the scientist can focus on controlling the optimization and data analysis, while the technicians can evaluate in a distributed fashion and synchronize the evaluated results with other members of the team in real-time, through our provided simple and intuitive user interface. This version provides different software for different roles of a team (manager, scientist, and technician) with proper privilege control implemented. Below are the scripts for different roles respectively:
+The team version enables distributed collaboration around the globe by leveraging a centralized MySQL database that can be connected through the Internet. Using this version, the scientist can focus on controlling the optimization and data analysis, while the technicians can evaluate in a distributed fashion and synchronize the evaluated results with other members of the team in real-time, through our provided simple and intuitive user interface. This version provides different software for different roles of a team (manager, scientist, and technician) with proper privilege control implemented. Below are the scripts for different roles respectively, but **before running these scripts, please make sure that you have [MySQL](https://www.mysql.com/) database management system pre-installed on your computer**.
 
 ```bash
 python run_team_manager.py
@@ -68,7 +72,7 @@ python run_team_scientist.py
 python run_team_technician.py
 ```
 
-For more detailed usage and information of AutoOED, please checkout our documentation.
+For more detailed usage and information of AutoOED, please checkout our documentation (coming soon).
 
 ## Citation
 
