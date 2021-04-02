@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from problem.common import get_problem_config
 from system.params import *
-from system.database import TeamDatabase
+from system.database.team import TeamDatabase
 from system.agent import EvaluateAgent
 from system.scheduler import EvaluateScheduler
 from .view import TechnicianLoginView, TechnicianView
