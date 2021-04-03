@@ -35,8 +35,8 @@ class ManagerController:
 
         self.active_scientist_user = None
         self.active_scientist_host = None
-        self.active_worker_user_list = []
-        self.active_worker_host_list = []
+        self.active_technician_user_list = []
+        self.active_technician_host_list = []
 
     def bind_command_login(self):
         '''
@@ -172,7 +172,7 @@ class ManagerController:
         '''
         '''
         self.refresh_scientist()
-        self.refresh_worker()
+        self.refresh_technician()
         self.refresh_table()
         self.root.after(self.refresh_rate, self.refresh)
 
@@ -230,20 +230,20 @@ class ManagerController:
         self.view.widget['sci_user'].config(text='Username: ' + user_label)
         self.view.widget['sci_ip'].config(text='IP Address: ' + host_label)
 
-    def refresh_worker(self):
+    def refresh_technician(self):
         '''
         '''
-        user_list, host_list = self.database.get_active_user_list(return_host=True, role='Worker')
-        if user_list == self.active_worker_user_list and host_list == self.active_worker_host_list: return
+        user_list, host_list = self.database.get_active_user_list(return_host=True, role='Technician')
+        if user_list == self.active_technician_user_list and host_list == self.active_technician_host_list: return
 
-        self.active_worker_user_list = user_list
-        self.active_worker_host_list = host_list
+        self.active_technician_user_list = user_list
+        self.active_technician_host_list = host_list
 
         # TODO: optimize efficiency
-        for i in self.view.widget['worker_disp'].get_children():
-            self.view.widget['worker_disp'].delete(i)
+        for i in self.view.widget['tech_disp'].get_children():
+            self.view.widget['tech_disp'].delete(i)
         for user, host in zip(user_list, host_list):
-            self.view.widget['worker_disp'].insert('', 'end', text=user, values=(host, '', ''))
+            self.view.widget['tech_disp'].insert('', 'end', text=user, values=(host, '', ''))
 
     def refresh_table(self):
         '''

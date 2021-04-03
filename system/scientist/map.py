@@ -96,10 +96,3 @@ for cfg_type, val_map in algo_value_map.items():
     algo_value_inv_map[cfg_type] = {}
     for key, value_map in val_map.items():
         algo_value_inv_map[cfg_type][key] = {v: k for k, v in value_map.items()}
-
-worker_map = {
-    'id': 'ID',
-    'name': 'Name',
-    'address': 'IP address',
-    'description': 'Description',
-}
