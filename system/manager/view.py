@@ -32,10 +32,13 @@ class ManagerInitView:
 
         self.widget = {}
 
-        frame_info = create_widget('labeled_frame', master=frame_init, row=0, column=0, columnspan=2, text='Info')
-        grid_configure(frame_info, 0, 1)
-        self.widget['user'] = create_widget('label', master=frame_info, row=0, column=0, text='Username:')
-        self.widget['ip'] = create_widget('label', master=frame_info, row=0, column=1, text='IP Address:')
+        frame_info = create_widget('labeled_frame', master=frame_init, row=0, column=0, text='Info')
+        frame_info_disp = create_widget('frame', master=frame_info, row=0, column=0)
+        grid_configure(frame_info, 0, 0)
+        grid_configure(frame_info_disp, 1, 1)
+        self.widget['user'] = create_widget('label', master=frame_info_disp, row=0, column=0, columnspan=2, text='Username:', pady=PADY / 2)
+        self.widget['public_ip'] = create_widget('label', master=frame_info_disp, row=1, column=0, text='Public IP:', pady=PADY / 2)
+        self.widget['internal_ip'] = create_widget('label', master=frame_info_disp, row=1, column=1, text='Internal IP:', pady=PADY / 2)
 
         frame_task = create_widget('labeled_frame', master=frame_init, row=1, column=0, text='Task')
         grid_configure(frame_task, 0, 2)
@@ -78,13 +81,16 @@ class ManagerView:
 
         self.widget['problem_info'] = ProblemInfo(master=frame_conn, row=0, column=0)
 
-        frame_manager = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Manager Info')
-        self.widget['manager_user'] = create_widget('label', master=frame_manager, row=0, column=0, text='Username:')
-        self.widget['manager_ip'] = create_widget('label', master=frame_manager, row=0, column=1, text='IP Address:')
+        frame_man = create_widget('labeled_frame', master=frame_conn, row=1, column=0, text='Manager Info')
+        frame_man_disp = create_widget('frame', master=frame_man, row=0, column=0, padx=0)
+        self.widget['man_user'] = create_widget('label', master=frame_man_disp, row=0, column=0, columnspan=2, text='Username:', pady=PADY / 2)
+        self.widget['man_public_ip'] = create_widget('label', master=frame_man_disp, row=1, column=0, text='Public IP:', pady=PADY / 2)
+        self.widget['man_internal_ip'] = create_widget('label', master=frame_man_disp, row=1, column=1, text='Internal IP:', pady=PADY / 2)
 
         frame_sci = create_widget('labeled_frame', master=frame_conn, row=2, column=0, text='Scientist Info')
-        self.widget['sci_user'] = create_widget('label', master=frame_sci, row=0, column=0, text='Username: unknown')
-        self.widget['sci_ip'] = create_widget('label', master=frame_sci, row=0, column=1, text='IP Address: unknown')
+        frame_sci_disp = create_widget('frame', master=frame_sci, row=0, column=0, padx=0)
+        self.widget['sci_user'] = create_widget('label', master=frame_sci_disp, row=0, column=0, text='Username: unknown', pady=PADY / 2)
+        self.widget['sci_host'] = create_widget('label', master=frame_sci_disp, row=0, column=1, text='Host: unknown', pady=PADY / 2)
 
         frame_tech = create_widget('labeled_frame', master=frame_conn, row=3, column=0, text='Technician Info')
         grid_configure(frame_tech, 0, 0)
@@ -94,7 +100,7 @@ class ManagerView:
         self.widget['tech_disp'].column('#0', width=100, minwidth=150, stretch=tk.YES)
         self.widget['tech_disp'].column('#1', width=100, minwidth=150, stretch=tk.YES)
         self.widget['tech_disp'].heading('#0', text='Username', anchor=tk.W)
-        self.widget['tech_disp'].heading('#1', text='IP Address', anchor=tk.W)
+        self.widget['tech_disp'].heading('#1', text='Host', anchor=tk.W)
         self.widget['tech_disp'].grid(row=0, column=0, sticky='NSEW')
         horscrlbar = ttk.Scrollbar(frame_disp, orient='horizontal', command=self.widget['tech_disp'].xview)
         horscrlbar.grid(row=1, column=0, sticky='SEW')

@@ -5,6 +5,7 @@ from problem.common import get_problem_config
 from system.params import *
 from system.database.team import TeamDatabase
 from system.agent import LoadAgent
+from system.utils.network import get_public_ip, get_internal_ip
 from system.manager.view import ManagerLoginView, ManagerInitView, ManagerView
 from system.manager.task import CreateTaskController, LoadTaskController, RemoveTaskController
 from system.manager.access import ManageAdminController, ManageUserController 
@@ -74,14 +75,11 @@ class ManagerController:
     def refresh_info_init(self):
         '''
         '''
-        try:
-            user, ip = self.database.get_current_user(return_host=True)
-        except Exception as e:
-            messagebox.showinfo('Error', e, parent=self.root_init)
-            user = self.database.get_current_user()
-            ip = 'unknown'
+        user = self.database.get_current_user()
+        public_ip, internal_ip = get_public_ip(), get_internal_ip()
         self.view_init.widget['user'].config(text='Username: ' + user)
-        self.view_init.widget['ip'].config(text='IP Address: ' + ip)
+        self.view_init.widget['public_ip'].config(text='Public IP: ' + public_ip)
+        self.view_init.widget['internal_ip'].config(text='Internal IP: ' + internal_ip)
 
     def create_task(self):
         '''
@@ -111,14 +109,11 @@ class ManagerController:
     def refresh_info(self):
         '''
         '''
-        try:
-            user, ip = self.database.get_current_user(return_host=True)
-        except Exception as e:
-            messagebox.showinfo('Error', e, parent=self.root_init)
-            user = self.database.get_current_user()
-            ip = 'unknown'
-        self.view.widget['manager_user'].config(text='Username: ' + user)
-        self.view.widget['manager_ip'].config(text='IP Address: ' + ip)
+        user = self.database.get_current_user()
+        public_ip, internal_ip = get_public_ip(), get_internal_ip()
+        self.view.widget['man_user'].config(text='Username: ' + user)
+        self.view.widget['man_public_ip'].config(text='Public IP: ' + public_ip)
+        self.view.widget['man_internal_ip'].config(text='Internal IP: ' + internal_ip)
 
     def after_login(self):
         '''
@@ -221,7 +216,7 @@ class ManagerController:
         if user_label is None: user_label = 'unknown'
         if host_label is None: host_label = 'unknown'
         self.view.widget['sci_user'].config(text='Username: ' + user_label)
-        self.view.widget['sci_ip'].config(text='IP Address: ' + host_label)
+        self.view.widget['sci_host'].config(text='Host: ' + host_label)
 
     def refresh_technician(self):
         '''

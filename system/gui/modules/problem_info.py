@@ -15,7 +15,7 @@ class ProblemInfo:
         }
         self.widget = {}
         frame_info = create_widget('labeled_frame', master=master, row=row, column=column, text='Problem Info')
-        frame_display = create_widget('frame', master=frame_info, row=0, column=0)
+        frame_display = create_widget('frame', master=frame_info, row=0, column=0, padx=0)
         for row, key in enumerate(self.desc.keys()):
             self.widget[key] = create_widget('label', master=frame_display, row=row, column=0, pady=PADY / 2, text=f'{self.desc[key]}:')
 

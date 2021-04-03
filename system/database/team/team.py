@@ -1,7 +1,5 @@
 import os
 import mysql.connector
-import requests
-import ipaddress
 import numpy as np
 import yaml
 from collections.abc import Iterable
@@ -211,11 +209,6 @@ class TeamDatabase:
         if not return_host:
             return user
         host = self.login_info['host']
-        if host == 'localhost' or ipaddress.ip_address(host).is_private:
-            try:
-                host = requests.get('https://checkip.amazonaws.com').text.strip()
-            except:
-                raise Exception('Cannot identify public IP address, please check internet connection')
         return user, host
 
     @root
