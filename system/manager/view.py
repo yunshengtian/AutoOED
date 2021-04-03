@@ -33,7 +33,7 @@ class ManagerInitView:
         self.widget = {}
 
         frame_info = create_widget('labeled_frame', master=frame_init, row=0, column=0, text='Info')
-        frame_info_disp = create_widget('frame', master=frame_info, row=0, column=0)
+        frame_info_disp = create_widget('frame', master=frame_info, row=0, column=0, padx=0)
         grid_configure(frame_info, 0, 0)
         grid_configure(frame_info_disp, 1, 1)
         self.widget['user'] = create_widget('label', master=frame_info_disp, row=0, column=0, columnspan=2, text='Username:', pady=PADY / 2)
