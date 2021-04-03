@@ -59,8 +59,6 @@ class ManagerController:
     def bind_command_init(self):
         '''
         '''
-        self.refresh_info_init()
-        self.view_init.widget['refresh'].configure(command=self.refresh_info_init)
         self.view_init.widget['create_task'].configure(command=self.create_task)
         self.view_init.widget['load_task'].configure(command=self.load_task)
         self.view_init.widget['remove_task'].configure(command=self.remove_task)
@@ -110,12 +108,6 @@ class ManagerController:
         '''
         ManageUserController(self)
 
-    def bind_command(self):
-        '''
-        '''
-        self.refresh_info()
-        self.view.widget['manager_refresh'].configure(command=self.refresh_info)
-
     def refresh_info(self):
         '''
         '''
@@ -139,6 +131,7 @@ class ManagerController:
         self.root_init.protocol('WM_DELETE_WINDOW', self._quit_init)
         self.root_init.resizable(False, False)
         self.view_init = ManagerInitView(self.root_init)
+        self.refresh_info_init()
         self.bind_command_init()
 
         tk.mainloop()
@@ -155,7 +148,7 @@ class ManagerController:
         self.root.title(f'{TITLE} - Manager')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
         self.view = ManagerView(self.root)
-        self.bind_command()
+        self.refresh_info()
 
         self.agent = LoadAgent(self.database, self.table_name)
         self.agent.refresh()
@@ -243,7 +236,7 @@ class ManagerController:
         for i in self.view.widget['tech_disp'].get_children():
             self.view.widget['tech_disp'].delete(i)
         for user, host in zip(user_list, host_list):
-            self.view.widget['tech_disp'].insert('', 'end', text=user, values=(host, '', ''))
+            self.view.widget['tech_disp'].insert('', 'end', text=user, values=(host,))
 
     def refresh_table(self):
         '''
