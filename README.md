@@ -29,19 +29,17 @@ Please see the [instructions](https://autooed.readthedocs.io/en/latest/content/g
 
 ### Source code
 
-Install by conda with pip:
+Install by conda:
 
 ```
 conda env create -f environment.yml
 conda activate autooed
-pip install pymoo==0.4.1 pygco==0.0.16
 ```
 
-Or install purely by pip:
+Or install by pip:
 
 ```
 pip install -r requirements.txt
-pip install pymoo==0.4.1 pygco==0.0.16
 ```
 
 *Note: We recommend to install with Python 3.7, because we have not tested on other versions. If you cannot properly run the programs after installation, please check if the version of these packages match our specifications.*
