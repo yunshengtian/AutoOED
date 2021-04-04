@@ -46,9 +46,19 @@ However, there are some requirements for your optimization problem that you shou
 Citation
 ''''''''
 
+If you find our work helpful to your research, please consider citing our paper (coming soon).
+
 
 Contributing
 ''''''''''''
+
+We highly welcome all kinds of contributions, including but not limited to bug fixes, new feature suggestions, more intuitive error messages, and so on.
+
+Especially, `the algorithmic part <https://github.com/yunshengtian/AutoOED/tree/master/algorithm/mobo>`_ 
+of our code repository is written in a clean and modular way, 
+facilitating extensions and tailoring the code, serving as a testbed for machine learning researchers to 
+easily develop and evaluate their own multi-objective Bayesian optimization algorithms. 
+We are looking forward to supporting more powerful optimization algorithms on our platform.
 
 
 Contact
