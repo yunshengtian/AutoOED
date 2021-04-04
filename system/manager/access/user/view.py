@@ -13,7 +13,7 @@ class ManageUserView:
 
         self.widget = {}
 
-        # problem section
+        # user section
         frame_user = create_widget('frame', master=self.window, row=0, column=0)
         frame_list = create_widget('labeled_frame', master=frame_user, row=0, column=0, text='User List')
         frame_list_display = create_widget('frame', master=frame_list, row=0, column=0)

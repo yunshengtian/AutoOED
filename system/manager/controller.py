@@ -8,7 +8,7 @@ from system.agent import LoadAgent
 from system.utils.network import get_public_ip, get_internal_ip
 from system.manager.view import ManagerLoginView, ManagerInitView, ManagerView
 from system.manager.task import CreateTaskController, LoadTaskController, RemoveTaskController
-from system.manager.access import ManageAdminController, ManageUserController 
+from system.manager.access import ManageUserController 
 
 
 class ManagerController:
@@ -63,13 +63,11 @@ class ManagerController:
         self.view_init.widget['create_task'].configure(command=self.create_task)
         self.view_init.widget['load_task'].configure(command=self.load_task)
         self.view_init.widget['remove_task'].configure(command=self.remove_task)
-        self.view_init.widget['manage_admin'].configure(command=self.manage_admin)
         self.view_init.widget['manage_user'].configure(command=self.manage_user)
 
         if self.database.get_current_user() != 'root':
             self.view_init.widget['create_task'].disable()
             self.view_init.widget['remove_task'].disable()
-            self.view_init.widget['manage_admin'].disable()
             self.view_init.widget['manage_user'].disable()
 
     def refresh_info_init(self):
@@ -95,11 +93,6 @@ class ManagerController:
         '''
         '''
         RemoveTaskController(self)
-
-    def manage_admin(self):
-        '''
-        '''
-        ManageAdminController(self)
 
     def manage_user(self):
         '''

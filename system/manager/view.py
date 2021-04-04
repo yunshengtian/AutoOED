@@ -16,7 +16,7 @@ class ManagerLoginView:
 
         self.widget = {}
         self.widget['user'] = create_widget('labeled_entry', master=frame_login, row=1, column=0, width=20,
-            text='Username', class_type='string', required=True, required_mark=False)
+            text='Username', class_type='string', required=True, required_mark=False, default='root')
         self.widget['passwd'] = create_widget('labeled_entry', master=frame_login, row=2, column=0, width=20,
             text='Password', class_type='string', required=False)
         self.widget['login'] = create_widget('button', master=frame_login, row=3, column=0, text='Log in')
@@ -47,9 +47,8 @@ class ManagerInitView:
         self.widget['remove_task'] = create_widget('button', master=frame_task, row=0, column=2, text='Remove Task')
 
         frame_access = create_widget('labeled_frame', master=frame_init, row=2, column=0, text='Access')
-        grid_configure(frame_access, 0, 1)
-        self.widget['manage_admin'] = create_widget('button', master=frame_access, row=0, column=0, text='Manage Admin Access')
-        self.widget['manage_user'] = create_widget('button', master=frame_access, row=0, column=1, text='Manage User Access')
+        grid_configure(frame_access, 0, 0)
+        self.widget['manage_user'] = create_widget('button', master=frame_access, row=0, column=0, text='Manage User Access')
 
 
 class ManagerView:
