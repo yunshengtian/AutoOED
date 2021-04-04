@@ -13,5 +13,3 @@ scipy==1.4.1
 tkintertable==1.3.2
 mysql-connector-python==8.0.22
 requests==2.23.0
-pymoo==0.4.1
-pygco==0.0.16
