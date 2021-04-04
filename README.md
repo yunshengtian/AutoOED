@@ -34,14 +34,14 @@ Install by conda with pip:
 ```
 conda env create -f environment.yml
 conda activate autooed
-pip install pymoo==0.4.1 pygco==0.0.16
+pip install -r requirements_extra.txt
 ```
 
 Or install purely by pip:
 
 ```
 pip install -r requirements.txt
-pip install pymoo==0.4.1 pygco==0.0.16
+pip install -r requirements_extra.txt
 ```
 
 *Note: We recommend to install with Python 3.7, because we have not tested on other versions. If you cannot properly run the programs after installation, please check if the version of these packages match our specifications.*
