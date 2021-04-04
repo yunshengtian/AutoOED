@@ -73,6 +73,16 @@ After clicking ``Remove Task``, this window will pop up:
 You need to input the name of the task you want to remove. Then, click ``Remove`` to remove that task.
 
 
+Task Interface
+''''''''''''''
+
+After creating or loading a task, the task interface will appear, which displays the whole database,
+problem information, and user information of the active scientist and technicians. For example:
+
+.. figure:: ../../_static/manual-team/manager/task.png
+   :width: 700 px
+
+
 Managing User Access
 --------------------
 
