@@ -4,7 +4,7 @@
 
 **AutoOED: Automated Optimal Experiment Design Platform**
 
-**[Paper (coming soon)]() | [Website (coming soon)]() | [Documentation (coming soon)]() | [Contact](mailto:autooed-help@csail.mit.edu)**
+**[Paper (coming soon)]() | [Website (coming soon)]() | [Documentation](https://autooed.readthedocs.io) | [Contact](mailto:autooed-help@csail.mit.edu)**
 
 AutoOED is an optimal experiment design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. AutoOED is developed by [Yunsheng Tian](https://www.yunshengtian.com/), [Mina Konaković Luković](http://people.csail.mit.edu/mina/), [Timothy Erps](https://www.linkedin.com/in/timothy-erps-15622a49/), [Michael Foshey](https://www.linkedin.com/in/michael-foshey/) and [Wojciech Matusik](https://cdfg.mit.edu/wojciech) from [Computational Design & Fabrication Group](https://cdfg.mit.edu/) at [MIT Computer Science and Artificial Intelligence Laboratory](https://www.csail.mit.edu/).
 
@@ -25,7 +25,7 @@ AutoOED can be installed either directly from the links to the executable files,
 
 ### Executable files
 
-Please see the instructions for directly installing executable files in our documentation (coming soon).
+Please see the [instructions](https://autooed.readthedocs.io/en/latest/content/getting-started/installation.html) in our documentation for directly installing executable files.
 
 ### Source code
 
@@ -48,7 +48,7 @@ pip install pymoo==0.4.1 pygco==0.0.16
 
 ### Extra steps for custom evaluation programs
 
-There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our documentation (coming soon) for more details.
+There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our [documentation](https://autooed.readthedocs.io) for more details.
 
 ## Getting Started
 
@@ -72,7 +72,7 @@ python run_team_scientist.py
 python run_team_technician.py
 ```
 
-For more detailed usage and information of AutoOED, please checkout our documentation (coming soon).
+For more detailed usage and information of AutoOED, please checkout our [documentation](https://autooed.readthedocs.io).
 
 ## Citation
 
