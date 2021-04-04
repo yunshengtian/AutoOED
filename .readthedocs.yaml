@@ -18,8 +18,4 @@ python:
    version: 3.7
    install:
    - requirements: docs/requirements.txt
-   - method: pip
-      path: .
-      extra_requirements:
-        - pymoo==0.4.1
-        - pygco==0.0.16
+   - requirements: docs/requirements_extra.txt
