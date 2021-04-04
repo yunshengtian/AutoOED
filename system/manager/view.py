@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
-from system.gui.modules import ProblemInfo, AdjustableTable
+from system.gui.modules import ProblemInfo, AdjustableTable, HelpMenu
 from system.params import *
 
 
@@ -26,6 +26,10 @@ class ManagerInitView:
 
     def __init__(self, root):
         self.root = root
+
+        self.menu = tk.Menu(master=self.root, relief='raised')
+        self.root.config(menu=self.menu)
+        self.menu_help = HelpMenu(self.menu)
 
         frame_init = create_widget('frame', master=self.root, row=0, column=0)
         grid_configure(frame_init, 1, 0)
@@ -60,7 +64,12 @@ class ManagerView:
         self._init_viz()
 
     def _init_menu(self):
-        pass
+        '''
+        Menu initialization
+        '''
+        self.menu = tk.Menu(master=self.root, relief='raised')
+        self.root.config(menu=self.menu)
+        self.menu_help = HelpMenu(self.menu)
 
     def _init_viz(self):
         '''

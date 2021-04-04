@@ -1,7 +1,7 @@
 import tkinter as tk
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
-from system.gui.modules import ProblemInfo, AdjustableTable
+from system.gui.modules import ProblemInfo, AdjustableTable, HelpMenu
 from system.params import *
 
 
@@ -34,7 +34,12 @@ class TechnicianView:
         self._init_viz()
 
     def _init_menu(self):
-        pass
+        '''
+        Menu initialization
+        '''
+        self.menu = tk.Menu(master=self.root, relief='raised')
+        self.root.config(menu=self.menu)
+        self.menu_help = HelpMenu(self.menu)
 
     def _init_viz(self):
         '''

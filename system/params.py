@@ -1,7 +1,9 @@
 import tkinter as tk
 
-# window title
+# basic info
 TITLE = 'AutoOED'
+VERSION = '0.0.1'
+COPYRIGHT = '© Copyright 2021, MIT Computational Design & Fabrication Group.'
 
 # refresh rate
 REFRESH_RATE = 100 # ms

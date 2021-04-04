@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import ttk
+from system.gui.modules import HelpMenu
 from system.gui.widgets.image import ImageFrame
 from system.gui.utils.grid import grid_configure
 from system.utils.path import get_root_dir
@@ -50,6 +51,8 @@ class ScientistView:
         self.menu_export.add_command(label='Database')
         self.menu_export.add_command(label='Statistics')
         self.menu_export.add_command(label='Figures')
+
+        self.menu_help = HelpMenu(self.menu)
         
     def _init_viz(self):
         '''
