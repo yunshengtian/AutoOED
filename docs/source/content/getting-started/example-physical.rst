@@ -74,13 +74,39 @@ that are supposed to be minimized (f1 means the error in the intended rotation, 
    :width: 300 px
 
 And we have linked a performance evaluation program (objective function) for this problem, 
-which is written in Python.
+which basically evaluates the error between the rotated angle and our target angle (90 degrees in this case)
+as the first objective, and the power usage as the second objective.
+The evaluation program is written in Python and shown as below.
+More details of the imported ``motorExperiment`` package can be found 
+`here <http://people.csail.mit.edu/yunsheng/autooed/docs/physical_example_code.zip>`_.
 
-As the last step, we specify the information of the constraints. In this case, the problem has one constraint
-and we link the corresponding constraint evaluation program which is also written in Python.
+.. code-block:: python
+
+   # objective_func.py
+   from motorExperiment import testObject
+
+   def evaluate_objective(x):
+       motorTime, motorPwm, stopTime, stopPwm = x
+       a = testObject()
+       angle = a.runTest(motorTime,motorPwm,stopTime,stopPwm)
+       a.disconnect()
+       return (angle - 90) ** 2, motorTime * motorPwm + stopTime * stopPwm
+
+As the last step, we specify the information of the constraints.
 
 .. figure:: ../../_static/getting-started/example-physical/build-problem/create_constraint.png
    :width: 250 px
+
+In this case, the problem has one constraint which basically ensures that the rotated angle does not exceed 360 degrees.
+We link the corresponding constraint evaluation program which is also written in Python and shows as below.
+
+.. code-block:: python
+
+   # constraint_func.py
+   def evaluate_constraint(x):
+      motorTime, motorPwm, stopTime, stopPwm = x
+      # using fit data to make sure we don't rotate more than once.
+      return motorTime - 3324 * motorPwm**-0.815
 
 Finally, we click ``Finish`` and the problem list gets updated:
 
