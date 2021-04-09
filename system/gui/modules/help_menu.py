@@ -36,4 +36,4 @@ class HelpMenu:
 
     def show_contact(self):
 
-        webbrowser.open('mailto:autooed-help@csail.mit.edu')
+        webbrowser.open('mailto:autooed@csail.mit.edu')
