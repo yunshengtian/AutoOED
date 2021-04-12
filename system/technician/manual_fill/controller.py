@@ -58,7 +58,7 @@ class ManualFillController:
             tk.messagebox.showinfo('Locked', f'Rows {locked_rows} are locked, cannot proceed')
             return
 
-        n_obj = self.root_controller.problem_info['n_obj']
+        n_obj = self.root_controller.agent.problem_cfg['n_obj']
         table = self.root_controller.view.widget['db_table']
 
         # check for overwriting
