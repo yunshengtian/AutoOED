@@ -51,6 +51,8 @@ class TeamDatabase:
         # initialize reserved utilities
         if user == 'root':
 
+            self.execute('set global log_bin_trust_function_creators = 1')
+
             # reserved tables
             table_post_processes = get_table_post_processes()
             for name, desc in table_descriptions.items():
@@ -70,8 +72,6 @@ class TeamDatabase:
             for name, query in function_queries.items():
                 if not self._check_function_exist(name):
                     self.execute(query)
-
-            self.execute('set global log_bin_trust_function_creators = 1')
 
     '''
     connection
