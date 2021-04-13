@@ -31,6 +31,8 @@ Please see the [instructions](https://autooed.readthedocs.io/en/latest/content/g
 
 ### Source code
 
+#### Step 1: General (Required)
+
 Install by conda with pip:
 
 ```
@@ -48,7 +50,20 @@ pip install -r requirements_extra.txt
 
 *Note: We recommend to install with Python 3.7, because we have not tested on other versions. If you cannot properly run the programs after installation, please check if the version of these packages match our specifications.*
 
-### Extra steps for custom evaluation programs
+#### Step 2: Team Version using Windows (Optional)
+
+If you plan to use team version of the software on windows, please run the following commands to replace the mysql connector package, otherwise the optimization will throw some error:
+
+```
+pip uninstall mysql-connector-python
+pip install mysql-connector==2.2.9
+```
+
+And if you are using MySQL >= 8.0, you also need to change the authentication method to Legacy Authentication Method in MySQL installer.
+
+<img width="600" src="docs/source/_static/mysql_auth.png">
+
+#### Step 3: Custom Evaluation Programs (Optional)
 
 There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our [documentation](https://autooed.readthedocs.io) for more details.
 
