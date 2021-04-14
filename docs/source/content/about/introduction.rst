@@ -46,7 +46,7 @@ However, there are some requirements for your optimization problem that you shou
 Citation
 ''''''''
 
-If you find our work helpful to your research, please consider citing our paper (coming soon).
+If you find our work helpful to your research, please consider citing our [paper](https://arxiv.org/abs/2104.05959).
 
 
 Contributing

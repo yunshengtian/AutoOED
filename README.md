@@ -4,7 +4,7 @@
 
 **AutoOED: Automated Optimal Experiment Design Platform**
 
-**[Paper](http://people.csail.mit.edu/yunsheng/autooed/paper.pdf) | [Website](https://autooed.org) | [Documentation](https://autooed.readthedocs.io) | [Contact](mailto:autooed@csail.mit.edu)**
+**[Paper](https://arxiv.org/abs/2104.05959) | [Website](https://autooed.org) | [Documentation](https://autooed.readthedocs.io) | [Contact](mailto:autooed@csail.mit.edu)**
 
 AutoOED is an optimal experiment design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. 
 
@@ -93,7 +93,7 @@ For more detailed usage and information of AutoOED, please checkout our [documen
 
 ## Citation
 
-If you find our work helpful to your research, please consider citing our paper (coming soon).
+If you find our work helpful to your research, please consider citing our [paper](https://arxiv.org/abs/2104.05959).
 
 ## Contributing
 
