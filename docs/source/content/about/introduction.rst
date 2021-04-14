@@ -46,7 +46,18 @@ However, there are some requirements for your optimization problem that you shou
 Citation
 ''''''''
 
-If you find our work helpful to your research, please consider citing our [paper](https://arxiv.org/abs/2104.05959).
+If you find our work helpful to your research, please consider citing our `paper <https://arxiv.org/abs/2104.05959>`_.
+
+.. code-block:: bib
+
+    @misc{tian2021autooed,
+        title={AutoOED: Automated Optimal Experiment Design Platform},
+        author={Yunsheng Tian and Mina Konaković Luković and Timothy Erps and Michael Foshey and Wojciech Matusik},
+        year={2021},
+        eprint={2104.05959},
+        archivePrefix={arXiv},
+        primaryClass={cs.AI}
+    }
 
 
 Contributing
