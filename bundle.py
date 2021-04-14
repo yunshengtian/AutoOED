@@ -116,8 +116,7 @@ def main():
 
     if args.serial:
         for cmd in all_cmds:
-            print('debug', cmd)
-            os.system(cmd + ' > log.txt')
+            os.system(cmd)
     else:
         processes = []
         for cmd in all_cmds:
@@ -131,11 +130,15 @@ def main():
     if args.zip:
         if type(name) == list:
             for curr_name in name:
-                zip_dir = curr_name + '.app' if system == 'Darwin' else curr_name
-                shutil.make_archive(os.path.join(base_dir, curr_name), 'zip', root_dir=dist_dir, base_dir=zip_dir)
+                if system == 'Darwin':
+                    os.system(f"cd {dist_dir} && zip -r {os.path.join('..', curr_name)}.zip ./{curr_name}.app")
+                else:
+                    shutil.make_archive(os.path.join(base_dir, curr_name), 'zip', root_dir=dist_dir, base_dir=curr_name)
         else:
-            zip_dir = name + '.app' if system == 'Darwin' else name
-            shutil.make_archive(os.path.join(base_dir, name), 'zip', root_dir=dist_dir, base_dir=zip_dir)
+            if system == 'Darwin':
+                os.system(f"cd {dist_dir} && zip -r {os.path.join('..', name)}.zip ./{name}.app")
+            else:
+                shutil.make_archive(os.path.join(base_dir, name), 'zip', root_dir=dist_dir, base_dir=name)
 
 
 if __name__ == '__main__':
