@@ -238,7 +238,7 @@ class ScientistController:
             entry_mode = self.controller['panel_control'].view.widget['mode']
             entry_mode.enable()
             if not self.agent.can_eval:
-                entry_mode.widget['Auto'].disable()
+                entry_mode.widget['Auto'].config(state=tk.DISABLED)
 
             entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
             entry_batch_size.enable()
