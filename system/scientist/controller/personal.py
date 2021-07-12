@@ -18,7 +18,7 @@ from system.scheduler import OptimizeScheduler
 
 from system.scientist.view.init import ScientistInitView
 from system.scientist.view.main import ScientistView
-from system.scientist.task import CreateTaskController, LoadTaskController, RemoveTaskController
+from system.scientist.experiment import CreateExperimentController, LoadExperimentController, RemoveExperimentController
 from system.scientist.menu import MenuConfigController, MenuProblemController, MenuEvalController, MenuExportController
 from system.scientist.panel import PanelInfoController, PanelControlController, PanelLogController
 from system.scientist.viz import VizSpaceController, VizStatsController, VizDatabaseController
@@ -44,24 +44,24 @@ class ScientistController:
     def bind_command_init(self):
         '''
         '''
-        self.view_init.widget['create_task'].configure(command=self.create_task)
-        self.view_init.widget['load_task'].configure(command=self.load_task)
-        self.view_init.widget['remove_task'].configure(command=self.remove_task)
+        self.view_init.widget['create_experiment'].configure(command=self.create_experiment)
+        self.view_init.widget['load_experiment'].configure(command=self.load_experiment)
+        self.view_init.widget['remove_experiment'].configure(command=self.remove_experiment)
 
-    def create_task(self):
+    def create_experiment(self):
         '''
         '''
-        CreateTaskController(self)
+        CreateExperimentController(self)
                 
-    def load_task(self):
+    def load_experiment(self):
         '''
         '''
-        LoadTaskController(self)
+        LoadExperimentController(self)
 
-    def remove_task(self):
+    def remove_experiment(self):
         '''
         '''
-        RemoveTaskController(self)
+        RemoveExperimentController(self)
 
     def _quit_init(self, force=True):
         '''

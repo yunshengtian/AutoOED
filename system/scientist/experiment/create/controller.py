@@ -1,8 +1,8 @@
 import tkinter as tk
-from .view import RemoveTaskView
+from .view import CreateExperimentView
 
 
-class RemoveTaskController:
+class CreateExperimentController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -10,23 +10,23 @@ class RemoveTaskController:
 
         self.database = self.root_controller.database
 
-        self.view = RemoveTaskView(self.root_view)
+        self.view = CreateExperimentView(self.root_view)
 
-        self.view.widget['task_name'].widget.config(values=self.database.get_table_list())
-        self.view.widget['remove'].configure(command=self.remove_task)
+        self.view.widget['create'].configure(command=self.create_experiment)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
-    def remove_task(self):
+    def create_experiment(self):
         try:
-            name = self.view.widget['task_name'].get()
+            name = self.view.widget['experiment_name'].get()
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return
 
         try:
-            self.database.remove_table(name)
+            self.database.create_table(name)
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return
         
         self.view.window.destroy()
+        self.root_controller.after_init(name)

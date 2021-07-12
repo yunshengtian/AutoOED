@@ -48,7 +48,7 @@ class TechnicianController:
             ip = self.view_login.widget['ip'].get()
             user = self.view_login.widget['user'].get()
             passwd = self.view_login.widget['passwd'].get()
-            task = self.view_login.widget['task'].get()
+            experiment = self.view_login.widget['experiment'].get()
         except Exception as e:
             messagebox.showinfo('Error', e, parent=self.root_login)
             return
@@ -59,12 +59,12 @@ class TechnicianController:
             messagebox.showinfo('Error', 'Invalid login info: ' + str(e), parent=self.root_login)
             return
 
-        valid_login = self.database.login_verify(name=user, role='Technician', access=task)
+        valid_login = self.database.login_verify(name=user, role='Technician', access=experiment)
         if not valid_login:
-            messagebox.showinfo('Error', f'Invalid access to task {task}', parent=self.root_login)
+            messagebox.showinfo('Error', f'Invalid access to experiment {experiment}', parent=self.root_login)
             return
 
-        self.after_login(table_name=task)
+        self.after_login(table_name=experiment)
 
     def bind_command(self):
         '''

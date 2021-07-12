@@ -44,11 +44,11 @@ class ManagerInitView:
         self.widget['public_ip'] = create_widget('label', master=frame_info_disp, row=1, column=0, text='Public IP:', pady=PADY / 2)
         self.widget['internal_ip'] = create_widget('label', master=frame_info_disp, row=1, column=1, text='Internal IP:', pady=PADY / 2)
 
-        frame_task = create_widget('labeled_frame', master=frame_init, row=1, column=0, text='Task')
-        grid_configure(frame_task, 0, 2)
-        self.widget['create_task'] = create_widget('button', master=frame_task, row=0, column=0, text='Create Task')
-        self.widget['load_task'] = create_widget('button', master=frame_task, row=0, column=1, text='Load Task')
-        self.widget['remove_task'] = create_widget('button', master=frame_task, row=0, column=2, text='Remove Task')
+        frame_experiment = create_widget('labeled_frame', master=frame_init, row=1, column=0, text='Experiment')
+        grid_configure(frame_experiment, 0, 2)
+        self.widget['create_experiment'] = create_widget('button', master=frame_experiment, row=0, column=0, text='Create Experiment')
+        self.widget['load_experiment'] = create_widget('button', master=frame_experiment, row=0, column=1, text='Load Experiment')
+        self.widget['remove_experiment'] = create_widget('button', master=frame_experiment, row=0, column=2, text='Remove Experiment')
 
         frame_access = create_widget('labeled_frame', master=frame_init, row=2, column=0, text='Access')
         grid_configure(frame_access, 0, 0)

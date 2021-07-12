@@ -7,7 +7,7 @@ from system.database.team import TeamDatabase
 from system.agent import LoadAgent
 from system.utils.network import get_public_ip, get_internal_ip
 from system.manager.view import ManagerLoginView, ManagerInitView, ManagerView
-from system.manager.task import CreateTaskController, LoadTaskController, RemoveTaskController
+from system.manager.experiment import CreateExperimentController, LoadExperimentController, RemoveExperimentController
 from system.manager.access import ManageUserController 
 
 
@@ -60,14 +60,14 @@ class ManagerController:
     def bind_command_init(self):
         '''
         '''
-        self.view_init.widget['create_task'].configure(command=self.create_task)
-        self.view_init.widget['load_task'].configure(command=self.load_task)
-        self.view_init.widget['remove_task'].configure(command=self.remove_task)
+        self.view_init.widget['create_experiment'].configure(command=self.create_experiment)
+        self.view_init.widget['load_experiment'].configure(command=self.load_experiment)
+        self.view_init.widget['remove_experiment'].configure(command=self.remove_experiment)
         self.view_init.widget['manage_user'].configure(command=self.manage_user)
 
         if self.database.get_current_user() != 'root':
-            self.view_init.widget['create_task'].disable()
-            self.view_init.widget['remove_task'].disable()
+            self.view_init.widget['create_experiment'].disable()
+            self.view_init.widget['remove_experiment'].disable()
             self.view_init.widget['manage_user'].disable()
 
     def refresh_info_init(self):
@@ -79,20 +79,20 @@ class ManagerController:
         self.view_init.widget['public_ip'].config(text='Public IP: ' + public_ip)
         self.view_init.widget['internal_ip'].config(text='Internal IP: ' + internal_ip)
 
-    def create_task(self):
+    def create_experiment(self):
         '''
         '''
-        CreateTaskController(self)
+        CreateExperimentController(self)
                 
-    def load_task(self):
+    def load_experiment(self):
         '''
         '''
-        LoadTaskController(self)
+        LoadExperimentController(self)
 
-    def remove_task(self):
+    def remove_experiment(self):
         '''
         '''
-        RemoveTaskController(self)
+        RemoveExperimentController(self)
 
     def manage_user(self):
         '''

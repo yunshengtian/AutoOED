@@ -39,7 +39,7 @@ class ManageUserView:
         self.widget['role'] = create_widget('labeled_combobox',
             master=frame_info_display, row=2, column=0, text='Role', values=['Scientist', 'Technician'], width=15, required=True)
         self.widget['access'] = create_widget('labeled_combobox',
-            master=frame_info_display, row=3, column=0, text='Task access', width=15, required=True)
+            master=frame_info_display, row=3, column=0, text='Experiment access', width=15, required=True)
 
         self.widget['save'] = create_widget('button', master=frame_info_action, row=0, column=0, text='Save')
         self.widget['cancel'] = create_widget('button', master=frame_info_action, row=0, column=1, text='Cancel')
