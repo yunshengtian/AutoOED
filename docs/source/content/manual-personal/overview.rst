@@ -6,7 +6,7 @@ In this section, we provide a detailed user manual that covers how you should us
 setting up, running, and checking status of your optimization problems. 
 Here is the overview for the content in these subsections, and please follow the order of these steps:
 
-To start the software and create/load/remove the optimization task, please refer to `Software Entry <software-entry.html>`_.
+To start the software and create/load/remove experiments, please refer to `Software Entry <software-entry.html>`_.
 
 After the software is started, to build an optimization problem and let AutoOED recognizes it, you need to go through steps in `Building Problem <build-problem.html>`_. 
 

@@ -27,59 +27,59 @@ where you need to input username and password of the MySQL database to proceed.
 Main Interface
 --------------
 
-After login, the main interface appears, where you can manage tasks and access. 
+After login, the main interface appears, where you can manage experiments and access. 
 
 .. figure:: ../../_static/manual-team/manager/main.png
    :width: 500 px
 
 
-Managing Tasks
---------------
+Managing Experiments
+--------------------
 
-As a manager, you are the only role in the team that has the privilege of creating and removing tasks.
-Also, you can load tasks to check the current optimization status.
+As a manager, you are the only role in the team that has the privilege of creating and removing experiments.
+Also, you can load experiments to check the current optimization status.
 
 
-Creating Tasks
-''''''''''''''
+Creating Experiments
+''''''''''''''''''''
 
-After clicking ``Create Task``, this window will pop up:
+After clicking ``Create Experiment``, this window will pop up:
 
 .. figure:: ../../_static/manual-team/manager/create.png
    :width: 350 px
 
-You need to input a name for your new task, which cannot be the same as existing tasks. Then, click ``Create`` to create the task.
+You need to input a name for your new experiment, which cannot be the same as existing experiments. Then, click ``Create`` to create the experiment.
 
 
-Loading Tasks
-'''''''''''''
+Loading Experiments
+'''''''''''''''''''
 
-After clicking ``Load Task``, this window will pop up:
+After clicking ``Load Experiment``, this window will pop up:
 
 .. figure:: ../../_static/manual-team/manager/load.png
    :width: 350 px
 
-You need to input the name of your existing task. Then, click ``Load`` to load that task.
+You need to input the name of your existing experiments. Then, click ``Load`` to load that experiment.
 
 
-Removing Tasks
-''''''''''''''
+Removing Experiments
+''''''''''''''''''''
 
-After clicking ``Remove Task``, this window will pop up:
+After clicking ``Remove Experiment``, this window will pop up:
 
 .. figure:: ../../_static/manual-team/manager/remove.png
    :width: 350 px
 
-You need to input the name of the task you want to remove. Then, click ``Remove`` to remove that task.
+You need to input the name of the experiments you want to remove. Then, click ``Remove`` to remove that experiment.
 
 
-Task Interface
-''''''''''''''
+Experiment Interface
+''''''''''''''''''''
 
-After creating or loading a task, the task interface will appear, which displays the whole database,
+After creating or loading a experiment, the experiment interface will appear, which displays the whole database,
 problem information, and user information of the active scientist and technicians. For example:
 
-.. figure:: ../../_static/manual-team/manager/task.png
+.. figure:: ../../_static/manual-team/manager/experiment.png
    :width: 700 px
 
 
@@ -91,13 +91,13 @@ You can manage user access by clicking ``Manage User Access`` and entering this 
 .. figure:: ../../_static/manual-team/manager/user_access.png
    :width: 500 px
 
-Initially, only you will have the access to all the tasks, 
+Initially, only you will have the access to all the experiments, 
 but you cannot do any optimization or evaluation because these are the jobs of scientists and technicians. 
 In order to let them in, you need to create users for them in this interface by clicking ``Create`` and entering 
 corresponding information. 
 
-When you are specifying the task access for users, the options include the access for the current tasks, 
-empty for no access at all and \* for all tasks' access.
+When you are specifying the experiment access for users, the options include the access for the current experiments, 
+empty for no access at all and \* for all experiments' access.
 
 After the user is created, that user can login to AutoOED using the username and the password you specified through 
 Scientist or Technican application.

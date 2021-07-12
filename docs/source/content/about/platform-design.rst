@@ -6,7 +6,7 @@ AutoOED is designed in a hierarchical and modular way. Overall the platform cons
 
 * **GUI**: the top layer that interacts directly with users, which is implemented by Tkinter and according to Model-View-Controller (MVC) architecture.
 * **Optimization Algorithm**: the optimization algorithms running behind the screen, which is the core of AutoOED.
-* **Scheduler**: a task scheduler that runs and monitors the optimization and evaluation tasks given by users or optimization algorithms, also interacts with the underlying database.
+* **Scheduler**: the scheduler that runs and monitors the optimization and evaluation, also interacts with the underlying database.
 * **Database**: the bottom layer that stores all the history data. We use SQLite for the personal version and MySQL for the team version.
 
 Though most of the layers are specifically designed for AutoOED, the algorithm layer is actually highly modular and easy to be extended with custom algorithms. See our API reference for more details.

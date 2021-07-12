@@ -21,13 +21,13 @@ The software will start with this window:
 .. figure:: ../../_static/manual-personal/software-entry/initial.png
    :width: 400 px
 
-Next, click ``Create Task``.
+Next, click ``Create Experiment``.
 
 .. figure:: ../../_static/manual-personal/software-entry/create.png
    :width: 300 px
 
-You need to input a name for your new task, which cannot be the same as existing tasks. 
-Then, click ``Create`` to create the task, and AutoOED will enter the main interface:
+You need to input a name for your new experiment, which cannot be the same as existing experiments. 
+Then, click ``Create`` to create the experiment, and AutoOED will enter the main interface:
 
 .. figure:: ../../_static/manual-personal/software-entry/main.png
    :width: 700 px

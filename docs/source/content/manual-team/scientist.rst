@@ -22,7 +22,7 @@ The software will start with this login window:
    :width: 400 px
 
 where you need to input the server IP (manager's IP), username and password of the MySQL database, 
-also the specific task that manager has created for you to proceed.
+also the specific experiment that manager has created for you to proceed.
 
 After login, the interface will be exactly the same as the personal version of AutoOED.
 You can refer to the `user manual for personal version <../manual-personal/overview.html>`_ for more details.

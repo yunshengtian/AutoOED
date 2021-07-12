@@ -21,7 +21,7 @@ The software will start with this login window:
    :width: 400 px
 
 where you need to input the server IP (manager's IP), username and password of the MySQL database, 
-also the specific task that manager has created for you to proceed.
+also the specific experiment that manager has created for you to proceed.
 
 
 Main Interface

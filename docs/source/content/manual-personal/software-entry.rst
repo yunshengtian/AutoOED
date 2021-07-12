@@ -2,7 +2,7 @@
 Software Entry
 --------------
 
-Welcome to the personal version of AutoOED! This section introduces how to start the software and create tasks for optimization.
+Welcome to the personal version of AutoOED! This section introduces how to start the software and create experiments for optimization.
 
 
 Starting the Software
@@ -21,54 +21,54 @@ The software will start with this window:
    :width: 400 px
 
 
-Managing Tasks
---------------
+Managing Experiments
+--------------------
 
-Since users will probably use AutoOED for multiple optimization tasks and maybe for different problems,
-AutoOED supports task management through the three buttons shown in the screenshot above:
+Since users will probably use AutoOED for multiple optimization experiments and maybe for different problems,
+AutoOED supports experiment management through the three buttons shown in the screenshot above:
 
-- ``Create Task`` for creating new optimization tasks.
-- ``Load Task`` for loading existing tasks that were created before.
-- ``Remove Task`` for removing existing tasks that are not useful anymore.
+- ``Create Experiment`` for creating new optimization experiments.
+- ``Load Experiment`` for loading existing experiments that were created before.
+- ``Remove Experiment`` for removing existing experiments that are not useful anymore.
 
 
-Creating Tasks
-''''''''''''''
+Creating Experiments
+''''''''''''''''''''
 
-After clicking ``Create Task``, this window will pop up:
+After clicking ``Create Experiment``, this window will pop up:
 
 .. figure:: ../../_static/manual-personal/software-entry/create.png
    :width: 300 px
 
-You need to input a name for your new task, which cannot be the same as existing tasks. Then, click ``Create`` to create the task.
+You need to input a name for your new experiment, which cannot be the same as existing experiments. Then, click ``Create`` to create the experiment.
 
 
-Loading Tasks
-'''''''''''''
+Loading Experiments
+'''''''''''''''''''
 
-After clicking ``Load Task``, this window will pop up:
+After clicking ``Load Experiment``, this window will pop up:
 
 .. figure:: ../../_static/manual-personal/software-entry/load.png
    :width: 300 px
 
-You need to input the name of your existing task. Then, click ``Load`` to load that task.
+You need to input the name of your existing experiment. Then, click ``Load`` to load that experiment.
 
 
-Removing Tasks
-''''''''''''''
+Removing Experiments
+''''''''''''''''''''
 
-After clicking ``Remove Task``, this window will pop up:
+After clicking ``Remove Experiment``, this window will pop up:
 
 .. figure:: ../../_static/manual-personal/software-entry/remove.png
    :width: 300 px
 
-You need to input the name of the task you want to remove. Then, click ``Remove`` to remove that task.
+You need to input the name of the experiment you want to remove. Then, click ``Remove`` to remove that experiment.
 
 
 Main Interface
 --------------
 
-After the task is created or loaded, the software will enter its main interface:
+After the experiment is created or loaded, the software will enter its main interface:
 
 .. figure:: ../../_static/manual-personal/software-entry/main.png
    :width: 700 px
