@@ -5,16 +5,22 @@ class StopCriterion:
 
     def __init__(self, agent, *args, **kwargs):
         self.agent = agent
+        self.started = False
 
     def start(self):
         '''
         '''
-        pass
+        self.started = True
 
     def check(self):
         '''
         '''
         return False
+
+    def load(self):
+        '''
+        '''
+        return None
 
 
 class TimeStopCriterion(StopCriterion):
@@ -25,10 +31,18 @@ class TimeStopCriterion(StopCriterion):
         self.max_time = max_time
 
     def start(self):
+        super().start()
         self.start_time = time()
 
     def check(self):
+        if not self.started:
+            return False
         return (time() - self.start_time) >= self.max_time
+
+    def load(self):
+        if not self.started:
+            return self.max_time
+        return self.max_time - (time() - self.start_time)
 
 
 class NIterStopCriterion(StopCriterion):
@@ -39,11 +53,19 @@ class NIterStopCriterion(StopCriterion):
         self.max_iter = max_iter
 
     def start(self):
+        super().start()
         self.n_iter = 0
 
     def check(self):
+        if not self.started:
+            return False
         self.n_iter += 1
         return self.n_iter >= self.max_iter
+
+    def load(self):
+        if not self.started:
+            return self.max_iter
+        return self.max_iter - self.n_iter
 
 
 class NSampleStopCriterion(StopCriterion):
@@ -53,8 +75,13 @@ class NSampleStopCriterion(StopCriterion):
         self.max_sample = max_sample
 
     def check(self):
+        if not self.started:
+            return False
         n_sample = self.agent.get_n_valid_sample()
         return n_sample >= self.max_sample
+
+    def load(self):
+        return self.max_sample
 
 
 class HVStopCriterion(StopCriterion):
@@ -64,9 +91,14 @@ class HVStopCriterion(StopCriterion):
         self.max_hv = max_hv
 
     def check(self):
+        if not self.started:
+            return False
         hv = self.agent.get_max_hv()
         if hv is None: return False
         return hv >= self.max_hv
+
+    def load(self):
+        return self.max_hv
 
 
 class HVConvStopCriterion(StopCriterion):
@@ -78,10 +110,13 @@ class HVConvStopCriterion(StopCriterion):
         self.max_iter = max_iter
 
     def start(self):
+        super().start()
         self.last_hv = None
         self.n_iter = 0
 
     def check(self):
+        if not self.started:
+            return False
         hv = self.agent.get_max_hv()
         if hv is None: return False
         if hv == self.last_hv:
@@ -91,6 +126,9 @@ class HVConvStopCriterion(StopCriterion):
             self.last_hv = hv
             self.n_iter = 0
             return False
+
+    def load(self):
+        return self.max_iter
 
 
 def get_stop_criterion(name):
@@ -104,3 +142,15 @@ def get_stop_criterion(name):
         'hv_conv': HVConvStopCriterion,
     }
     return stop_criterion[name]
+
+def get_name(stop_criterion):
+    '''
+    '''
+    name = {
+        TimeStopCriterion: 'time',
+        NIterStopCriterion: 'n_iter',
+        NSampleStopCriterion: 'n_sample',
+        HVStopCriterion: 'hv',
+        HVConvStopCriterion: 'hv_conv',
+    }
+    return name[stop_criterion]

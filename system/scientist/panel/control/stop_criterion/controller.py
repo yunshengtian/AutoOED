@@ -1,6 +1,6 @@
 import tkinter as tk
 from .view import StopCriterionView
-from system.stop_criterion import get_stop_criterion
+from system.stop_criterion import get_stop_criterion, get_name
 
 
 class StopCriterionController:
@@ -14,6 +14,8 @@ class StopCriterionController:
 
         self.view.widget['save'].configure(command=self.save_stop_criterion)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
+
+        self.load_stop_criterion()
 
     def save_stop_criterion(self):
         '''
@@ -34,3 +36,14 @@ class StopCriterionController:
                 self.root_controller.stop_criterion.append(stop_criterion)
 
         self.view.window.destroy()
+
+    def load_stop_criterion(self):
+        '''
+        Load stopping criterion
+        '''
+        for stop_criterion in self.root_controller.stop_criterion:
+            if not stop_criterion.check():
+                key = get_name(type(stop_criterion))
+                self.view.widget['var'][key].set(1)
+                self.view.widget['entry'][key].enable()
+                self.view.widget['entry'][key].set(stop_criterion.load())
