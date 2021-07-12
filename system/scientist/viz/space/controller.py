@@ -208,7 +208,7 @@ class VizSpaceController:
         if reset_scaler:
             # reset the max iteration of scaler
             self.view.scale_iter.configure(to=max_iter)
-            if self.view.curr_iter.get() == self.max_iter:
+            if self.view.curr_iter.get() >= self.max_iter:
                 self.max_iter = max_iter
                 self.view.curr_iter.set(max_iter)
             else:
