@@ -14,9 +14,9 @@ Personal Version
 
 Follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
 
-.. _Windows: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED.zip
-.. _MacOS: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED.zip
-.. _Linux: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED.zip
+.. _Windows: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED.zip
+.. _MacOS: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED.zip
+.. _Linux: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED.zip
 
 +--------------------+--------------------------+
 | Installation Link  | Executable File Location |
@@ -38,15 +38,15 @@ Before installing AutoOED, `MySQL <https://www.mysql.com/>`_ database management
 
 After installing MySQL, follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
 
-.. _Windows Manager: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Manager.zip
-.. _Windows Scientist: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Scientist.zip
-.. _Windows Technician: http://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Technician.zip
-.. _MacOS Manager: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Manager.zip
-.. _MacOS Scientist: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Scientist.zip
-.. _MacOS Technician: http://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Technician.zip
-.. _Linux Manager: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Manager.zip
-.. _Linux Scientist: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Scientist.zip
-.. _Linux Technician: http://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Technician.zip
+.. _Windows Manager: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Manager.zip
+.. _Windows Scientist: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Scientist.zip
+.. _Windows Technician: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Technician.zip
+.. _MacOS Manager: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Manager.zip
+.. _MacOS Scientist: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Scientist.zip
+.. _MacOS Technician: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Technician.zip
+.. _Linux Manager: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Manager.zip
+.. _Linux Scientist: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Scientist.zip
+.. _Linux Technician: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Technician.zip
 
 +-----------------------------+--------------------------------+
 | Installation Link           | Executable File Location       |
