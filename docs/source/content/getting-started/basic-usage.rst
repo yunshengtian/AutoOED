@@ -62,7 +62,8 @@ that are supposed to be minimized.
    :width: 500 px
 
 And we have linked a performance evaluation program (objective function) for this problem, 
-which is a simple python script like this, defined by the original ZDT1 problem:
+which is a simple python script like this, defined by the original ZDT1 problem 
+(you can find this script at examples/evaluation_program/zdt1_obj_func.py):
 
 .. code-block:: python
 

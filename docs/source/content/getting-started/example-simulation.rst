@@ -155,6 +155,8 @@ This is the end of this tutorial, and we suggest you go through the user manual 
 Code of Evaluation Program
 --------------------------
 
+The code is also available at examples/evaluation_program/simulation.m.
+
 .. code-block:: matlab
 
     % simulation.m
