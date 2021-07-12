@@ -37,9 +37,10 @@ class StopCriterionView:
         self.widget['var']['n_iter'] = tk.IntVar()
         cb_n_iter = tk.Checkbutton(master=frame_n_iter, variable=self.widget['var']['n_iter'], highlightthickness=0, bd=0)
         cb_n_iter.grid(row=0, column=0, sticky='W')
-        tk.Label(master=frame_n_iter, text=self.name_options['n_iter'] + ': stop when number of iterations reaches').grid(row=0, column=1, sticky='W')
+        tk.Label(master=frame_n_iter, text=self.name_options['n_iter'] + ': stop after').grid(row=0, column=1, sticky='W')
         self.widget['entry']['n_iter'] = create_widget('entry', master=frame_n_iter, row=0, column=2, class_type='int', 
             required=True, valid_check=lambda x: x > 0, error_msg='number of iterations must be positive', pady=0)
+        tk.Label(master=frame_n_iter, text='iterations').grid(row=0, column=3, sticky='W')
         cb_n_iter.configure(command=lambda: check(self.widget['var']['n_iter'], self.widget['entry']['n_iter']))
 
         frame_n_sample = create_widget('frame', master=frame_options, row=2, column=0)
