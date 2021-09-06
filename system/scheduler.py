@@ -146,22 +146,23 @@ class OptimizeScheduler:
     def set_config(self, config):
         '''
         '''
-        self.config = config.copy()
-        self.agent.set_config(self.config)
-        self._initialize()
-
-    def _initialize(self):
-        '''
-        '''
         if not self.agent.check_table_exist() and not self.initializing: # check if initializing
+
+            problem = build_problem(config['problem']['name'])
+            n_random_sample, init_sample_path = config['experiment']['n_random_sample'], config['experiment']['init_sample_path']
+            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, n_random_sample, init_sample_path)
+
             self.initializing = True
 
-            problem = build_problem(self.config['problem']['name'])
-            n_random_sample, init_sample_path = self.config['experiment']['n_random_sample'], self.config['experiment']['init_sample_path']
-            X_init_evaluated, X_init_unevaluated, Y_init_evaluated = get_initial_samples(problem, n_random_sample, init_sample_path)
+            self.config = config.copy()
+            self.agent.set_config(self.config)
+
             rowids_unevaluated = self.agent.initialize(X_init_evaluated, X_init_unevaluated, Y_init_evaluated)
             if rowids_unevaluated is not None:
                 self.evaluate_manual(rowids_unevaluated)
+        else:
+            self.config = config.copy()
+            self.agent.set_config(self.config)
 
     def _optimize(self):
         '''

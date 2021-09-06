@@ -105,7 +105,7 @@ Then, find the root folder of MATLAB. If you have trouble finding it, just start
 
 Next, you need to navigate to the folder:
 
-- *matlabroot\extern\engines\python* (for Windows)
+- *matlabroot\\extern\\engines\\python* (for Windows)
 - *matlabroot/extern/engines/python* (for MacOS and Linux)
 
 and execute `python setup.py install`. By doing so, MATLAB python extension is installed and AutoOED is able to automatically call MATLAB programs.

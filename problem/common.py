@@ -257,12 +257,18 @@ def generate_random_initial_samples(problem, n_sample):
     '''
     X_feasible = np.zeros((0, problem.n_var))
 
-    # NOTE: when it's really hard to get feasible samples, the program hangs here
-    while len(X_feasible) < n_sample:
+    max_iter = 1000
+    iter_count = 0
+
+    while len(X_feasible) < n_sample and iter_count < max_iter:
         X = lhs(problem.n_var, n_sample) # TODO: support other types of initialization
         X = problem.xl + X * (problem.xu - problem.xl)
         feasible = problem.evaluate_feasible(X) # NOTE: assume constraint evaluation is fast
         X_feasible = np.vstack([X_feasible, X[feasible]])
+        iter_count += 1
+
+    if iter_count >= max_iter and len(X_feasible) < n_sample:
+        raise Exception(f'hard to generate valid samples, {len(X_feasible)}/{n_sample} generated')
 
     X = X_feasible[:n_sample]
     return problem.transformation.undo(X)

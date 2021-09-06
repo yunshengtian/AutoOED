@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from experiment.config import complete_config
-from problem.common import build_problem, get_initial_samples
+from problem.common import build_problem
 from problem.problem import Problem
 
 import tkinter as tk
@@ -200,16 +200,24 @@ class ScientistController:
                 tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
                 return False
 
+            problem_cfg = problem.get_config()
+
             # check if config is compatible with history data (problem dimension)
             table_exist = self.agent.check_table_exist()
             if table_exist:
                 column_names = self.agent.get_column_names()
                 data_n_var = len([name for name in column_names if name.startswith('x')])
                 data_n_obj = len([name for name in column_names if name.startswith('f') and '_' not in name])
-                problem_cfg = problem.get_config()
                 if problem_cfg['n_var'] != data_n_var or problem_cfg['n_obj'] != data_n_obj:
                     tk.messagebox.showinfo('Error', 'Problem dimension mismatch between configuration and history data', parent=window)
                     return False
+
+            # configure scheduler
+            try:
+                self.scheduler.set_config(config)
+            except Exception as e:
+                tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
+                return False
 
             # update config
             self.config = config
@@ -219,9 +227,8 @@ class ScientistController:
             # remove tutorial image
             self.view.image_tutorial.destroy()
 
-            # configure
+            # set problem info
             self.controller['panel_info'].set_info(self.problem_cfg)
-            self.scheduler.set_config(self.config)
 
             # initialize visualization widgets
             self._init_visualization()

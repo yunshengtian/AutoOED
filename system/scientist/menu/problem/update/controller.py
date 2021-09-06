@@ -243,6 +243,10 @@ class UpdateProblemController:
         constr_func, success = self.view._try_get_val(self.view.widget['constraint']['disp_constr_func'], 'Path to constraint function')
         if not success: return
 
+        if n_constr > 0 and constr_func is None:
+            messagebox.showinfo('Error', 'Constraint function must be provided', parent=self.view.window)
+            return
+
         self.config['n_constr'] = n_constr
         self.config['constr_func'] = constr_func
 
