@@ -5,28 +5,28 @@ Multi-Objective Solvers
 Base Class
 ----------
 
-.. autoclass:: algorithm.mobo.solver.base.Solver
+.. autoclass:: autooed.mobo.solver.base.Solver
 
 
 NSGA-II
 -------
 
-.. autoclass:: algorithm.mobo.solver.nsga2.NSGA2Solver
+.. autoclass:: autooed.mobo.solver.nsga2.NSGA2Solver
 
 
 MOEA/D
 ------
 
-.. autoclass:: algorithm.mobo.solver.moead.MOEADSolver
+.. autoclass:: autooed.mobo.solver.moead.MOEADSolver
 
 
 ParEGO Solver
 -------------
 
-.. autoclass:: algorithm.mobo.solver.parego.parego.ParEGOSolver
+.. autoclass:: autooed.mobo.solver.parego.parego.ParEGOSolver
 
 
 DGEMO Solver
 ------------
 
-.. autoclass:: algorithm.mobo.solver.pareto_discovery.pareto_discovery.ParetoDiscoverySolver
+.. autoclass:: autooed.mobo.solver.pareto_discovery.pareto_discovery.ParetoDiscoverySolver

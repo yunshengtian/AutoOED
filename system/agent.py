@@ -2,7 +2,7 @@ import os
 import numpy as np
 from multiprocessing import Lock
 
-from problem.common import build_problem
+from autooed.problem.common import build_problem
 from system.utils.core import optimize, predict, evaluate
 from system.utils.performance import check_pareto, calc_hypervolume, calc_pred_error
 

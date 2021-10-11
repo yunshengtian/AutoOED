@@ -1,8 +1,8 @@
 import os
 import tkinter as tk
 from multiprocessing import cpu_count
-from problem.common import get_problem_list
-from algorithm.utils import get_algorithm_list
+from autooed.problem.common import get_problem_list
+from autooed import get_algorithm_list
 from system.gui.utils.grid import grid_configure
 from system.gui.widgets.factory import create_widget
 from system.scientist.map import config_map

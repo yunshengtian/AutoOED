@@ -1,4 +1,4 @@
-from problem.common import load_yaml_problem, save_yaml_problem, remove_yaml_problem
+from autooed.problem.common import load_yaml_problem, save_yaml_problem, remove_yaml_problem
 
 
 class MenuProblemModel:

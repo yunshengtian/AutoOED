@@ -5,28 +5,28 @@ Acquisition Functions
 Base Class
 ----------
 
-.. autoclass:: algorithm.mobo.acquisition.base.Acquisition
+.. autoclass:: autooed.mobo.acquisition.base.Acquisition
 
 
 Identity Function
 -----------------
 
-.. autoclass:: algorithm.mobo.acquisition.identity.IdentityFunc
+.. autoclass:: autooed.mobo.acquisition.identity.IdentityFunc
 
 
 Probability of Improvement
 --------------------------
 
-.. autoclass:: algorithm.mobo.acquisition.pi.PI
+.. autoclass:: autooed.mobo.acquisition.pi.PI
 
 
 Expected Improvement
 --------------------
 
-.. autoclass:: algorithm.mobo.acquisition.ei.EI
+.. autoclass:: autooed.mobo.acquisition.ei.EI
 
 
 Upper Confidence Bound
 ----------------------
 
-.. autoclass:: algorithm.mobo.acquisition.ucb.UCB
+.. autoclass:: autooed.mobo.acquisition.ucb.UCB

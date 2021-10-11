@@ -1,8 +1,8 @@
 import os
 import tkinter as tk
 from experiment.config import load_config
-from problem.common import get_problem_config
-from algorithm.utils import get_algorithm_class
+from autooed.problem.common import get_problem_config
+from autooed import get_algorithm_class
 from system.gui.widgets.factory import show_widget_error
 from system.scientist.map import config_map
 from .view import MenuConfigView

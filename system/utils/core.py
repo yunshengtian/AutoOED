@@ -1,7 +1,7 @@
 import numpy as np
 from time import time
-from problem.common import build_problem
-from algorithm.utils import get_algorithm
+from autooed.problem.common import build_problem
+from autooed import get_algorithm
 
 
 def build_optimizer(config):

@@ -1,5 +1,5 @@
 import tkinter as tk
-from problem.common import get_problem_list, get_yaml_problem_list
+from autooed.problem.common import get_problem_list, get_yaml_problem_list
 from problem.config import complete_config
 
 from .view import MenuProblemView

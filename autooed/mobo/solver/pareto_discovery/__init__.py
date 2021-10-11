@@ -1,0 +1,1 @@
+from autooed.mobo.solver.pareto_discovery.pareto_discovery import ParetoDiscovery

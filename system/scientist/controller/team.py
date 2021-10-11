@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from experiment.config import complete_config
-from problem.common import build_problem
+from autooed.problem.common import build_problem
 from problem.problem import Problem
 
 import tkinter as tk

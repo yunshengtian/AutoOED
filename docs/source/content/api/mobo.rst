@@ -5,40 +5,40 @@ MOBO Algorithms
 Base Class
 ----------
 
-.. autoclass:: algorithm.mobo.mobo.MOBO
+.. autoclass:: autooed.mobo.mobo.MOBO
 
 
 DGEMO
 -----
 
-.. autoclass:: algorithm.mobo.algorithms.DGEMO
+.. autoclass:: autooed.mobo.algorithms.DGEMO
 
 
 TSEMO
 -----
 
-.. autoclass:: algorithm.mobo.algorithms.TSEMO
+.. autoclass:: autooed.mobo.algorithms.TSEMO
 
 
 USeMO-EI
 --------
 
-.. autoclass:: algorithm.mobo.algorithms.USEMO_EI
+.. autoclass:: autooed.mobo.algorithms.USEMO_EI
 
 
 MOEA/D-EGO
 ----------
 
-.. autoclass:: algorithm.mobo.algorithms.MOEAD_EGO
+.. autoclass:: autooed.mobo.algorithms.MOEAD_EGO
 
 
 ParEGO
 ------
 
-.. autoclass:: algorithm.mobo.algorithms.ParEGO
+.. autoclass:: autooed.mobo.algorithms.ParEGO
 
 
 Custom Algorithm Class
 ----------------------
 
-.. autoclass:: algorithm.mobo.algorithms.Custom
+.. autoclass:: autooed.mobo.algorithms.Custom

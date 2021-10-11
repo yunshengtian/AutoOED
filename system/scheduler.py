@@ -1,5 +1,5 @@
 from multiprocessing import Process, Queue
-from problem.common import build_problem, get_initial_samples, get_problem_config
+from autooed.problem.common import build_problem, get_initial_samples, get_problem_config
 
 
 class Logger:
