@@ -6,7 +6,7 @@ import numpy as np
 from pymoo.algorithms.nsga2 import NSGA2 as NSGA2Algo
 from pymoo.optimize import minimize
 
-from autooed.utils.lhs import lhs
+from autooed.utils.sampling import lhs
 from autooed.mobo.solver.base import Solver
 
 

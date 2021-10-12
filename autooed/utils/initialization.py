@@ -1,6 +1,10 @@
+'''
+Tools for generating initial samples.
+'''
+
 import numpy as np
 
-from autooed.utils.lhs import lhs
+from autooed.utils.sampling import lhs
 
 
 def generate_random_initial_samples(problem, n_sample):

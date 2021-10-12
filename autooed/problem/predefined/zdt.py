@@ -5,7 +5,7 @@ ZDT problem suite.
 import numpy as np
 from pymoo.util.normalization import normalize
 
-from autooed.problem import Problem
+from autooed.problem.problem import Problem
 
 
 class ZDT(Problem):

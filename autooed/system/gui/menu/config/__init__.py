@@ -1,0 +1,1 @@
+from autooed.system.gui.menu.config.config import MenuConfigController

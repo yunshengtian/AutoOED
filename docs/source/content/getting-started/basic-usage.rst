@@ -14,22 +14,22 @@ Otherwise, if you installed the software through source code, please run
 
 .. code-block::
 
-   python run_personal.py
+   python run_gui.py
 
 The software will start with this window:
 
-.. figure:: ../../_static/manual-personal/software-entry/initial.png
+.. figure:: ../../_static/manual/software-entry/initial.png
    :width: 400 px
 
 Next, click ``Create Experiment``.
 
-.. figure:: ../../_static/manual-personal/software-entry/create.png
+.. figure:: ../../_static/manual/software-entry/create.png
    :width: 300 px
 
 You need to input a name for your new experiment, which cannot be the same as existing experiments. 
 Then, click ``Create`` to create the experiment, and AutoOED will enter the main interface:
 
-.. figure:: ../../_static/manual-personal/software-entry/main.png
+.. figure:: ../../_static/manual/software-entry/main.png
    :width: 700 px
 
 
@@ -93,7 +93,7 @@ Step 3: Building Experiment
 
 Now let us get back to the main interface. After building the problem, now we are building an experiment to optimize that problem.
 
-.. figure:: ../../_static/manual-personal/software-entry/main.png
+.. figure:: ../../_static/manual/software-entry/main.png
    :width: 700 px
 
 Click ``Config->Create`` from the menu, then this window will show:

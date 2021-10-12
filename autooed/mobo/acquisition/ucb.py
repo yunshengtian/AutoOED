@@ -4,7 +4,7 @@ Upper Confidence Bound acquisition function.
 
 import numpy as np
 
-from autooed.mobo.utils import expand
+from autooed.utils.operand import expand
 from autooed.mobo.acquisition.base import Acquisition
 
 

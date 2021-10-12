@@ -17,15 +17,6 @@ A highly modularized code base and built-in visualization enable easy extensions
 The platform can serve as a testbed for machine learning researchers to easily develop and evaluate their own MOBO algorithms.
 
 
-Distributed Usage
------------------
-
-Besides the standard single-user version, to facilitate the platform’s use for a single design process by several users, 
-we provide a distributed team version based on a centralized database. The database shares the optimization status to different roles 
-in the experiment team (managers, scientists, technicians) and provides them with different tools for controlling and contributing to 
-the experimental design process.
-
-
 Automation of Experiment Design
 -------------------------------
 

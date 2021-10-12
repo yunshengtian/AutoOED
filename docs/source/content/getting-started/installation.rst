@@ -9,9 +9,6 @@ Source code is the most up-to-date version, while executable files are relativel
 Executable File
 ---------------
 
-Personal Version
-''''''''''''''''
-
 Follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
 
 .. _Windows: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED.zip
@@ -27,48 +24,6 @@ Follow the links below to install a zip file, unzip it and find the executable f
 +--------------------+--------------------------+
 | `Linux`_           | AutoOED/AutoOED          |
 +--------------------+--------------------------+
-
-
-Team Version
-''''''''''''
-
-There are three executable files for different roles of the team: AutoOED_Manager, AutoOED_Scientist and AutoOED_Technician.
-
-Before installing AutoOED, `MySQL <https://www.mysql.com/>`_ database management system needs to be installed on computers that will use AutoOED.
-
-After installing MySQL, follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
-
-.. _Windows Manager: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Manager.zip
-.. _Windows Scientist: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Scientist.zip
-.. _Windows Technician: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED_Technician.zip
-.. _MacOS Manager: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Manager.zip
-.. _MacOS Scientist: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Scientist.zip
-.. _MacOS Technician: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED_Technician.zip
-.. _Linux Manager: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Manager.zip
-.. _Linux Scientist: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Scientist.zip
-.. _Linux Technician: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED_Technician.zip
-
-+-----------------------------+--------------------------------+
-| Installation Link           | Executable File Location       |
-+=============================+================================+
-| `Windows Manager`_          | AutoOED\\AutoOED_Manager.exe   |
-+-----------------------------+--------------------------------+
-| `Windows Scientist`_        | AutoOED\\AutoOED_Scientist.exe |
-+-----------------------------+--------------------------------+
-| `Windows Technician`_       | AutoOED\\AutoOED_Technician.exe|
-+-----------------------------+--------------------------------+
-| `MacOS Manager`_            | AutoOED_Manager.app            |
-+-----------------------------+--------------------------------+
-| `MacOS Scientist`_          | AutoOED_Scientist.app          |
-+-----------------------------+--------------------------------+
-| `MacOS Technician`_         | AutoOED_Technician.app         |
-+-----------------------------+--------------------------------+
-| `Linux Manager`_            | AutoOED/AutoOED_Manager        |
-+-----------------------------+--------------------------------+
-| `Linux Scientist`_          | AutoOED/AutoOED_Scientist      |
-+-----------------------------+--------------------------------+
-| `Linux Technician`_         | AutoOED/AutoOED_Technician     |
-+-----------------------------+--------------------------------+
 
 
 Source Code

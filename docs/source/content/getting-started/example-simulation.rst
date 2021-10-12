@@ -82,7 +82,7 @@ Step 2: Building Experiment
 
 Now let us get back to the main interface. After building the problem, now we are building an experiment to optimize that problem.
 
-.. figure:: ../../_static/manual-personal/software-entry/main.png
+.. figure:: ../../_static/manual/software-entry/main.png
    :width: 700 px
 
 Click ``Config->Create`` from the menu, then this window will show:

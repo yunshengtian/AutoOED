@@ -1,0 +1,1 @@
+from autooed.system.gui.panel.control.control import PanelControlController

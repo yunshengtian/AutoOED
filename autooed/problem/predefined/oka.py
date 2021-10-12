@@ -3,7 +3,7 @@ OKA problem suite.
 '''
 
 import numpy as np
-from autooed.problem import Problem
+from autooed.problem.problem import Problem
 
 
 class OKA1(Problem):

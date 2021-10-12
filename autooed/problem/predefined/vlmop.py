@@ -4,7 +4,7 @@ VLMOP problem suite.
 
 import numpy as np
 
-from autooed.problem import Problem
+from autooed.problem.problem import Problem
 
 
 class VLMOP2(Problem):

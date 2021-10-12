@@ -4,7 +4,7 @@ from scipy.spatial import Delaunay
 from copy import deepcopy
 from pygco import cut_from_graph
 
-from .utils import generate_weights_batch
+from autooed.mobo.solver.pareto_discovery.utils import generate_weights_batch
 
 
 class BufferBase(ABC):

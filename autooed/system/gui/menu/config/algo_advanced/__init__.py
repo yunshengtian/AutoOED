@@ -1,0 +1,1 @@
+from autooed.system.gui.menu.config.algo_advanced.algo_advanced import AlgoAdvancedController

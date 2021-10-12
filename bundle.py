@@ -1,5 +1,4 @@
 import os, platform, shutil
-from multiprocessing import Process, freeze_support
 from argparse import ArgumentParser
 
 
@@ -10,12 +9,6 @@ def main():
     '''
 
     parser = ArgumentParser()
-    parser.add_argument(
-        '--type', 
-        type=str, 
-        choices=['all', 'personal', 'team', 'team_manager', 'team_scientist', 'team_technician'],
-        default='all',
-    )
     parser.add_argument(
         '--zip',
         default=False,
@@ -30,28 +23,10 @@ def main():
 
 
     '''
-    Software names and scripts for different bundle types
+    Software names and scripts
     '''
 
-    names = {
-        'personal': 'AutoOED',
-        'team_manager': 'AutoOED_Manager',
-        'team_scientist': 'AutoOED_Scientist',
-        'team_technician': 'AutoOED_Technician',
-    }
-    names['team'] = [names['team_manager'], names['team_scientist'], names['team_technician']]
-    names['all'] = [names['personal']] + names['team']
-
-    scripts = {
-        'personal': 'run_personal.py',
-        'team_manager': 'run_team_manager.py',
-        'team_scientist': 'run_team_scientist.py',
-        'team_technician': 'run_team_technician.py',
-    }
-    scripts['team'] = [scripts['team_manager'], scripts['team_scientist'], scripts['team_technician']]
-    scripts['all'] = [scripts['personal']] + scripts['team']
-
-    name, script = names[args.type], scripts[args.type]
+    name, script = 'AutoOED', 'run.py'
 
 
     '''
@@ -88,11 +63,11 @@ def main():
 
     base_cmd = f'''
         pyinstaller --windowed --onedir \
-        --add-data "../../problem/custom{sep}problem/custom" \
-        --add-data "../../problem/data{sep}problem/data" \
-        --add-data "../../problem/predefined{sep}problem/predefined" \
+        --add-data "../../autooed/problem/custom{sep}autooed/problem/custom" \
+        --add-data "../../autooed/problem/data{sep}autooed/problem/data" \
+        --add-data "../../autooed/problem/predefined{sep}autooed/problem/predefined" \
         --add-data "../../examples{sep}examples" \
-        --add-data "../../system/static{sep}system/static" \
+        --add-data "../../static{sep}static" \
         --hidden-import "PIL._tkinter_finder" \
         --hidden-import "pymoo.cython.non_dominated_sorting" \
         --hidden-import "sklearn.neighbors._typedefs" \
@@ -104,43 +79,21 @@ def main():
         --specpath {spec_dir} \
         '''
 
-    if type(name) == list:
-        all_cmds = [base_cmd + f'-y -n {curr_name} {curr_script}' for curr_name, curr_script in zip(name, script)]
-    else:
-        all_cmds = [base_cmd + f'-y -n {name} {script}']
+    cmd = base_cmd + f'-y -n {name} {script}'
 
 
     '''
     Bundle operations
     '''
 
-    if args.serial:
-        for cmd in all_cmds:
-            os.system(cmd)
-    else:
-        processes = []
-        for cmd in all_cmds:
-            processes.append(Process(target=os.system, args=(cmd,)))
-
-        [p.start() for p in processes]
-        [p.join() for p in processes]
-
-    system = platform.system()
+    os.system(cmd)
 
     if args.zip:
-        if type(name) == list:
-            for curr_name in name:
-                if system == 'Darwin':
-                    os.system(f"cd {dist_dir} && zip -r {os.path.join('..', curr_name)}.zip ./{curr_name}.app")
-                else:
-                    shutil.make_archive(os.path.join(base_dir, curr_name), 'zip', root_dir=dist_dir, base_dir=curr_name)
+        if platform.system() == 'Darwin':
+            os.system(f"cd {dist_dir} && zip -r {os.path.join('..', name)}.zip ./{name}.app")
         else:
-            if system == 'Darwin':
-                os.system(f"cd {dist_dir} && zip -r {os.path.join('..', name)}.zip ./{name}.app")
-            else:
-                shutil.make_archive(os.path.join(base_dir, name), 'zip', root_dir=dist_dir, base_dir=name)
+            shutil.make_archive(os.path.join(base_dir, name), 'zip', root_dir=dist_dir, base_dir=name)
 
 
 if __name__ == '__main__':
-    freeze_support()
     main()

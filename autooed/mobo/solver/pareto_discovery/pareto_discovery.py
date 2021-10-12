@@ -12,8 +12,8 @@ from pymoo.model.initialization import Initialization
 from pymoo.optimize import minimize as minimize_ea
 from multiprocess import Process, Queue, cpu_count
 
-from autooed.utils.lhs import lhs
-from autooed.mobo.utils import find_pareto_front
+from autooed.utils.sampling import lhs
+from autooed.utils.pareto import find_pareto_front
 from autooed.mobo.solver.base import Solver
 from autooed.mobo.solver.pareto_discovery.buffer import get_buffer
 from autooed.mobo.solver.pareto_discovery.utils import propose_next_batch, propose_next_batch_without_label, get_sample_num_from_families

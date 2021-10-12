@@ -5,7 +5,7 @@ Multi-objective solver for finding the Pareto front of the surrogate problem.
 from abc import ABC, abstractmethod
 import numpy as np
 
-from autooed.utils.lhs import lhs
+from autooed.utils.sampling import lhs
 from autooed.mobo.surrogate_problem import SurrogateProblem
 
 

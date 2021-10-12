@@ -29,27 +29,17 @@ Welcome to AutoOED's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Manual - Personal
+   :caption: User Manual
 
-   content/manual-personal/overview
-   content/manual-personal/software-entry
-   content/manual-personal/build-problem
-   content/manual-personal/eval-program
-   content/manual-personal/build-experiment
-   content/manual-personal/run-optimization
-   content/manual-personal/statistics
-   content/manual-personal/database
-   content/manual-personal/export-data
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: User Manual - Team
-
-   content/manual-team/overview
-   content/manual-team/manager
-   content/manual-team/scientist
-   content/manual-team/technician
+   content/manual/overview
+   content/manual/software-entry
+   content/manual/build-problem
+   content/manual/eval-program
+   content/manual/build-experiment
+   content/manual/run-optimization
+   content/manual/statistics
+   content/manual/database
+   content/manual/export-data
 
 
 .. toctree::
@@ -61,7 +51,6 @@ Welcome to AutoOED's documentation!
    content/api/acquisition
    content/api/solver
    content/api/selection
-   content/api/moo
 
 
 .. toctree::

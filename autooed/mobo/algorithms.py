@@ -104,6 +104,13 @@ def get_algorithm_list():
     return list(algos.keys())
 
 
+def check_algorithm_exist(name):
+    '''
+    Check if algorithm exists
+    '''
+    return name in get_algorithm_list()
+
+
 def build_algorithm(name, problem, module_cfg):
     '''
     Build algorithm instance.

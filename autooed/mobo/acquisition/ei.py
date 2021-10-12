@@ -5,7 +5,7 @@ Expected Improvement acquisition function.
 import numpy as np
 from scipy.stats import norm
 
-from autooed.mobo.utils import safe_divide, expand
+from autooed.utils.operand import safe_divide, expand
 from autooed.mobo.acquisition.base import Acquisition
 
 

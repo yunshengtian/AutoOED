@@ -6,7 +6,7 @@ import numpy as np
 from pymoo.factory import get_reference_directions
 from pymoo.problems.util import load_pareto_front_from_file
 
-from autooed.problem import Problem
+from autooed.problem.problem import Problem
 
 
 class DTLZ(Problem):

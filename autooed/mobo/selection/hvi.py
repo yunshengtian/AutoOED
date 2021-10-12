@@ -5,7 +5,7 @@ Hypervolume improvement selection.
 import numpy as np
 from pymoo.factory import get_performance_indicator
 
-from autooed.mobo.utils import find_pareto_front
+from autooed.utils.pareto import find_pareto_front
 from autooed.mobo.selection.base import Selection
 
 

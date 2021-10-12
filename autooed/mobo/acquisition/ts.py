@@ -7,7 +7,7 @@ from numpy import linalg as LA
 from scipy.stats.distributions import chi2
 from scipy.stats import norm
 
-from autooed.utils.lhs import lhs
+from autooed.utils.sampling import lhs
 from autooed.mobo.acquisition.base import Acquisition
 from autooed.mobo.surrogate_model import GaussianProcess
 

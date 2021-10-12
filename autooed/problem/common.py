@@ -4,7 +4,7 @@ import glob
 import numpy as np
 from pymoo.factory import get_from_list
 
-from autooed.problem import Problem
+from autooed.problem.problem import Problem
 from autooed.problem.config import load_config, save_config, complete_config
 
 
@@ -38,7 +38,7 @@ def find_predefined_python_problems():
     # build problem dict
     problems = {}
     for module in modules:
-        for key, val in importlib.import_module(f'problem.{module}').__dict__.items():
+        for key, val in importlib.import_module(f'autooed.problem.{module}').__dict__.items():
             if not key.startswith('_') and val in get_subclasses(Problem):
                 problems[key] = val
     return problems
@@ -60,7 +60,7 @@ def find_custom_python_problems():
     # build problem dict
     problems = {}
     for module in modules:
-        for key, val in importlib.import_module(f'problem.{module}').__dict__.items():
+        for key, val in importlib.import_module(f'autooed.problem.{module}').__dict__.items():
             if not key.startswith('_') and val in get_subclasses(Problem):
                 problems[key] = val
     return problems

@@ -8,8 +8,8 @@ from pymoo.algorithms.moead import MOEAD as MOEADAlgo
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from pymoo.optimize import minimize
 
-from autooed.utils.lhs import lhs
-from autooed.mobo.utils import find_pareto_front
+from autooed.utils.sampling import lhs
+from autooed.utils.pareto import find_pareto_front
 from autooed.mobo.solver.base import Solver
 
 

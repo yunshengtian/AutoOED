@@ -5,7 +5,7 @@ Surrogate model that predicts the objective values of given design variables.
 from abc import ABC, abstractmethod
 import numpy as np
 
-from autooed.mobo.normalization import StandardNormalization
+from autooed.utils.normalization import StandardNormalization
 
 
 class SurrogateModel(ABC):

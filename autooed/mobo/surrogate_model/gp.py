@@ -14,7 +14,7 @@ from scipy.spatial.distance import pdist, cdist, squareform
 from scipy.special import kv, gamma
 
 from autooed.mobo.surrogate_model.base import SurrogateModel
-from autooed.mobo.utils import safe_divide
+from autooed.utils.operand import safe_divide
 
 
 class Matern(MaternKernel):

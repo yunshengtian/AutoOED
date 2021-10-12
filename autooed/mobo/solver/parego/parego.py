@@ -7,7 +7,7 @@ from pymoo.optimize import minimize
 from pymoo.algorithms.so_cmaes import CMAES
 from multiprocess import Process, Queue, cpu_count
 
-from autooed.utils.lhs import lhs
+from autooed.utils.sampling import lhs
 from autooed.mobo.solver.base import Solver
 from autooed.mobo.solver.parego.evaluator import ScalarizedEvaluator
 from autooed.mobo.solver.parego.decomposition import augmented_tchebicheff, AugmentedTchebicheff

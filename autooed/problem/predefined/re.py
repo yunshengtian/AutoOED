@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 import os
 import numpy as np
 
-from autooed.problem import Problem
+from autooed.problem.problem import Problem
 
 
 class RE(Problem, ABC):
