@@ -3,7 +3,7 @@ import numpy as np
 from multiprocessing import Lock
 
 from autooed.problem import build_problem
-from autooed.core import optimize, predict, evaluate
+from autooed.core import optimize, predict, optimize_predict, evaluate
 from autooed.utils.pareto import check_pareto, calc_hypervolume, calc_pred_error
 
 
@@ -519,7 +519,7 @@ class OptimizeAgent(EvaluateAgent):
 
         # optimize for best X_next
         config = self.get_config()
-        X_next, (Y_expected, Y_uncertainty) = optimize(config, X, Y)
+        X_next, (Y_expected, Y_uncertainty) = optimize_predict(config, X, Y)
 
         # insert optimization and prediction result to database
         if Y_expected is not None and Y_uncertainty is not None:

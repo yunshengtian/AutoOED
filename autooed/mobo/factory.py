@@ -38,6 +38,20 @@ def get_acquisition(name):
         raise Exception(f'Undefined acquisition function {name}')
 
 
+def get_async_acquisition(name):
+
+    async_acquisition_map = {
+        'lp': LocalPenalization,
+        'llp': LocalLipschitzPenalization,
+        'hlp': HardLocalPenalization,
+    }
+
+    if name in async_acquisition_map:
+        return async_acquisition_map[name]
+    else:
+        raise Exception(f'Undefined asynchronous acquisition function {name}')
+
+
 def get_solver(name):
 
     solver_map = {
@@ -84,6 +98,15 @@ def init_acquisition(name, params, surrogate_model):
     acquisition_cls = get_acquisition(name)
     acquisition = acquisition_cls(surrogate_model, **params)
     return acquisition
+
+
+def init_async_acquisition(name, acquisition):
+    '''
+    Initialize asynchronous acquisition function.
+    '''
+    async_acquisition_cls = get_async_acquisition(name)
+    async_acquisition = async_acquisition_cls(acquisition)
+    return async_acquisition
 
 
 def init_solver(name, params, problem, acquisition):
