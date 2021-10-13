@@ -11,10 +11,16 @@ Base Class
 Gaussian Process
 ----------------
 
-.. autoclass:: autooed.mobo.surrogate_model.gaussian_process.GaussianProcess
+.. autoclass:: autooed.mobo.surrogate_model.gp.GaussianProcess
 
 
-Thompson Sampling
------------------
+Neural Network
+--------------
 
-.. autoclass:: autooed.mobo.surrogate_model.thompson_sampling.ThompsonSampling
+.. autoclass:: autooed.mobo.surrogate_model.nn.NeuralNetwork
+
+
+Bayesian Neural Network
+-----------------------
+
+.. autoclass:: autooed.mobo.surrogate_model.nn.BayesianNeuralNetwork

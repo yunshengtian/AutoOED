@@ -2,10 +2,10 @@
 Background
 ''''''''''
 
-Optimal Experiment Design
--------------------------
+Optimal Experimental Design
+---------------------------
 
-Optimal Experiment Design encompasses the concepts of proposing and analyzing various data samples with the goal of providing the most useful information with the least amount of expense. 
+Optimal Experimental Design encompasses the concepts of proposing and analyzing various data samples with the goal of providing the most useful information with the least amount of expense. 
 To accomplish this, a focus is placed on finding data samples which cannot be improved without a tradeoff to at least one other performance criteria, these points are considered Pareto-optimal. 
 These Pareto-optimal samples are found by applying global optimization methodolgies which try to minimize across a given dataset using various mathematical methods. 
 

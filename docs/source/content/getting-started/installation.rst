@@ -2,34 +2,8 @@
 Installation
 ------------
 
-AutoOED can be installed either directly from the links to the executable files, or from source code.
-Source code is the most up-to-date version, while executable files are relatively stable.
-
-
-Executable File
----------------
-
-Follow the links below to install a zip file, unzip it and find the executable file at the corresponding location.
-
-.. _Windows: https://people.csail.mit.edu/yunsheng/autooed/windows/AutoOED.zip
-.. _MacOS: https://people.csail.mit.edu/yunsheng/autooed/macos/AutoOED.zip
-.. _Linux: https://people.csail.mit.edu/yunsheng/autooed/linux/AutoOED.zip
-
-+--------------------+--------------------------+
-| Installation Link  | Executable File Location |
-+====================+==========================+
-| `Windows`_         | AutoOED\\AutoOED.exe     |
-+--------------------+--------------------------+
-| `MacOS`_           | AutoOED.app              |
-+--------------------+--------------------------+
-| `Linux`_           | AutoOED/AutoOED          |
-+--------------------+--------------------------+
-
-
-Source Code
------------
-
-Clone the github repository at https://github.com/yunshengtian/AutoOED, then follow the instructions in README to install.
+AutoOED can be installed either directly from the links to the executable files, or from the source code.
+For source code installation, please follow the instructions in README.
 
 
 Extra Steps for Custom Evaluation Programs

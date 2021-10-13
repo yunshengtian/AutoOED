@@ -17,10 +17,10 @@ A highly modularized code base and built-in visualization enable easy extensions
 The platform can serve as a testbed for machine learning researchers to easily develop and evaluate their own MOBO algorithms.
 
 
-Automation of Experiment Design
--------------------------------
+Automation of Experimental Design
+---------------------------------
 
-The platform is designed to enable straightforward integration into an automatic experiment design optimization pipeline. 
+The platform is designed to enable straightforward integration into an automatic experimental design optimization pipeline. 
 The pipeline may include both physical experiments (see `this example <../getting-started/example-physical.html>`_) 
 and an expensive simulation setup (see `this example <../getting-started/example-simulation.html>`_). The user can provide an evaluation program (written in Python/C/C++/MATLAB) 
 and link it to our platform. The evaluation program needs to either collect the values from physical experiments or perform 

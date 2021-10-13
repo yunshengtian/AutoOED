@@ -2,7 +2,7 @@
 Introduction
 ------------
 
-AutoOED is an Optimal Experiment Design platform powered with automated
+AutoOED is an Optimal Experimental Design platform powered with automated
 machine learning to accelerate the discovery of optimal solutions. The platform solves
 multi-objective optimization problems and automatically guides the design of experiments
 to be evaluated. 
@@ -40,23 +40,6 @@ However, there are some requirements for your optimization problem that you shou
 
 - AutoOED only supports problems with 2 or 3 objectives at the moment, but we are working on supporting higher dimensional performance space.
 - The problem constraints should depend only on design variables. AutoOED does not support constraints on objectives.
-
-
-Citation
-''''''''
-
-If you find our work helpful to your research, please consider citing our `paper <https://arxiv.org/abs/2104.05959>`_.
-
-.. code-block:: bib
-
-    @misc{tian2021autooed,
-        title={AutoOED: Automated Optimal Experiment Design Platform},
-        author={Yunsheng Tian and Mina Konaković Luković and Timothy Erps and Michael Foshey and Wojciech Matusik},
-        year={2021},
-        eprint={2104.05959},
-        archivePrefix={arXiv},
-        primaryClass={cs.AI}
-    }
 
 
 Contributing

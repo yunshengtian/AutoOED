@@ -11,22 +11,22 @@ Base Class
 NSGA-II
 -------
 
-.. autoclass:: autooed.mobo.solver.nsga2.NSGA2Solver
+.. autoclass:: autooed.mobo.solver.nsga2.NSGA2
 
 
 MOEA/D
 ------
 
-.. autoclass:: autooed.mobo.solver.moead.MOEADSolver
+.. autoclass:: autooed.mobo.solver.moead.MOEAD
 
 
-ParEGO Solver
--------------
+ParEGO
+------
 
-.. autoclass:: autooed.mobo.solver.parego.parego.ParEGOSolver
+.. autoclass:: autooed.mobo.solver.parego.parego.ParEGO
 
 
-DGEMO Solver
-------------
+ParetoFrontDiscovery
+--------------------
 
-.. autoclass:: autooed.mobo.solver.pareto_discovery.pareto_discovery.ParetoDiscoverySolver
+.. autoclass:: autooed.mobo.solver.pareto_discovery.pareto_discovery.ParetoDiscovery

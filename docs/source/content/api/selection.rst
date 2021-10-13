@@ -8,16 +8,16 @@ Base Class
 .. autoclass:: autooed.mobo.selection.base.Selection
 
 
+Direct Selection
+----------------
+
+.. autoclass:: autooed.mobo.selection.direct.Direct
+
+
 Hypervolume Improvement
 -----------------------
 
-.. autoclass:: autooed.mobo.selection.hvi.HVI
-
-
-Uncertainty
------------
-
-.. autoclass:: autooed.mobo.selection.uncertainty.Uncertainty
+.. autoclass:: autooed.mobo.selection.hvi.HypervolumeImprovement
 
 
 Random Selection
@@ -26,13 +26,7 @@ Random Selection
 .. autoclass:: autooed.mobo.selection.random.Random
 
 
-MOEA/D-EGO Selection
---------------------
+Uncertainty
+-----------
 
-.. autoclass:: autooed.mobo.selection.moead_select.MOEADSelect
-
-
-DGEMO Selection
-----------------
-
-.. autoclass:: autooed.mobo.selection.dgemo_select.DGEMOSelect
+.. autoclass:: autooed.mobo.selection.uncertainty.Uncertainty

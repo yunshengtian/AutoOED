@@ -20,8 +20,6 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = 'AutoOED'
-copyright = '2021, MIT Computational Design & Fabrication Group'
-author = 'Yunsheng Tian, Mina Konaković Luković, Timothy Erps, Michael Foshey, Wojciech Matusik'
 
 
 # -- General configuration ---------------------------------------------------

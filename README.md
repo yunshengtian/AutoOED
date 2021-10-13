@@ -2,13 +2,13 @@
 
 ![Platform](https://img.shields.io/badge/platform-windows|macos|linux-lightgrey) [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/) [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) 
 
-**AutoOED: Automated Optimal Experiment Design Platform**
+**AutoOED: Automated Optimal Experimental Design Platform**
 
-**[Paper](https://arxiv.org/abs/2104.05959) | [Website](https://autooed.org) | [Documentation](https://autooed.readthedocs.io) | [Contact](mailto:autooed@csail.mit.edu)**
+**[Paper (under review)] | [Documentation](https://autooed.readthedocs.io/en/upgrade/) | [Contact](mailto:autooed@csail.mit.edu)**
 
-AutoOED is an optimal experiment design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. 
+AutoOED is an optimal experimental design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. 
 
-AutoOED is developed by [Yunsheng Tian](https://www.yunshengtian.com/), [Mina Konaković Luković](http://people.csail.mit.edu/mina/), [Timothy Erps](https://www.linkedin.com/in/timothy-erps-15622a49/), [Michael Foshey](https://www.linkedin.com/in/michael-foshey/) and [Wojciech Matusik](https://cdfg.mit.edu/wojciech) from [Computational Design & Fabrication Group](https://cdfg.mit.edu/) at [MIT Computer Science and Artificial Intelligence Laboratory](https://www.csail.mit.edu/). See our motivation behind this project in this article covered by MIT CSAIL Alliances Newsletter: *[New MIT CSAIL Open-Source Project Automates Experimental Design Optimization](https://cap.csail.mit.edu/new-mit-csail-open-source-project-automates-experimental-design-optimization-0)*.
+AutoOED is developed by [Computational Design & Fabrication Group](https://cdfg.mit.edu/) at [MIT Computer Science and Artificial Intelligence Laboratory](https://www.csail.mit.edu/). See our motivation behind this project in this article covered by MIT CSAIL Alliances Newsletter: *[New MIT CSAIL Open-Source Project Automates Experimental Design Optimization](https://cap.csail.mit.edu/new-mit-csail-open-source-project-automates-experimental-design-optimization-0)*.
 
 ## Overview
 
@@ -52,7 +52,7 @@ pip install -r requirements_extra.txt
 
 #### Step 2: Custom Evaluation Programs (Optional)
 
-There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our [documentation](https://autooed.readthedocs.io) for more details.
+There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our [documentation](https://autooed.readthedocs.io/en/upgrade/) for more details.
 
 ## Getting Started
 
@@ -62,28 +62,14 @@ After installing from source code, please run the following command to start Aut
 python run_gui.py
 ```
 
-For more detailed usage and information of AutoOED, please checkout our [documentation](https://autooed.readthedocs.io).
+For more detailed usage and information of AutoOED, please checkout our [documentation](https://autooed.readthedocs.io/en/upgrade/).
 
-## Citation
-
-If you find our work helpful to your research, please consider citing our [paper](https://arxiv.org/abs/2104.05959).
-
-```
-@misc{tian2021autooed,
-    title={AutoOED: Automated Optimal Experiment Design Platform},
-    author={Yunsheng Tian and Mina Konaković Luković and Timothy Erps and Michael Foshey and Wojciech Matusik},
-    year={2021},
-    eprint={2104.05959},
-    archivePrefix={arXiv},
-    primaryClass={cs.AI}
-}
-```
 
 ## Contributing
 
 We highly welcome all kinds of contributions, including but not limited to bug fixes, new feature suggestions, more intuitive error messages, and so on.
 
-Especially, [the algorithmic part](https://github.com/yunshengtian/AutoOED/tree/master/autooed/mobo) of our code repository is written in a clean and modular way, facilitating extensions and tailoring the code, serving as a testbed for machine learning researchers to easily develop and evaluate their own multi-objective Bayesian optimization algorithms. We are looking forward to supporting more powerful optimization algorithms on our platform.
+Especially, [the algorithmic part](https://github.com/yunshengtian/AutoOED/tree/upgrade/autooed/mobo) of our code repository is written in a clean and modular way, facilitating extensions and tailoring the code, serving as a testbed for machine learning researchers to easily develop and evaluate their own multi-objective Bayesian optimization algorithms. We are looking forward to supporting more powerful optimization algorithms on our platform.
 
 ## Contact
 

@@ -2,9 +2,7 @@
 Supported Algorithms
 --------------------
 
-Here are the list of optimization algorithms that AutoOED currently supports, 
-including the most sample-efficient multi-objective Bayesian optimization algorithms
-and some classical multi-objective optimization algorithms.
+Here are the list of optimization algorithms that AutoOED currently supports including the most sample-efficient multi-objective Bayesian optimization algorithms.
 
 
 Multi-Objective Bayesian Optimization
@@ -39,26 +37,6 @@ DGEMO, TSEMO, USeMO, MOEA/D-EGO, ParEGO.
 |                 | approximation for expensive multiobjective             |                   |
 |                 |                                                        |                   |
 |                 | optimization problems                                  |                   |
-+-----------------+--------------------------------------------------------+-------------------+
-
-
-Multi-Objective Optimization
-----------------------------
-
-AutoOED supports several classical multi-objective optimization algorithms including NSGA-II and MOEA/D,
-which are not as sample-efficient as multi-objective Bayesian optimization algorithms but run relatively faster. 
-These algorithms also serve as an important module in multi-objective Bayesian optimization pipeline.
-
-+-----------------+--------------------------------------------------------+-------------------+
-| Algorithm       | Publication Name                                       | Publication Venue |
-+=================+========================================================+===================+
-| MOEA/D [6]_     | Moea/d: A multiobjective evolutionary algorithm        | TVEC 2007         |
-|                 |                                                        |                   |
-|                 | based on decomposition                                 |                   |
-+-----------------+--------------------------------------------------------+-------------------+
-| NSGA-II [7]_    | A fast and elitist multiobjective genetic algorithm:   | TVEC 2002         |
-|                 |                                                        |                   |
-|                 | Nsga-ii                                                |                   |
 +-----------------+--------------------------------------------------------+-------------------+
 
 

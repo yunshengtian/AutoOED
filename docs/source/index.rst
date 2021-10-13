@@ -53,13 +53,6 @@ Welcome to AutoOED's documentation!
    content/api/selection
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Changelog
-
-   content/changelog
-
-
 .. Indices and tables
 .. ==================
 
