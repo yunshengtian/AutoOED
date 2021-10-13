@@ -17,7 +17,6 @@ from autooed.system.database import Database
 from autooed.system.agent import OptimizeAgent
 from autooed.system.scheduler import OptimizeScheduler
 
-from autooed.system.gui.widgets.grouped import HelpMenu
 from autooed.system.gui.widgets.image import ImageFrame
 from autooed.system.gui.widgets.factory import create_widget
 from autooed.system.gui.widgets.utils.grid import grid_configure
@@ -86,8 +85,6 @@ class GUIView:
         self.menu_export.add_command(label='Database')
         self.menu_export.add_command(label='Statistics')
         self.menu_export.add_command(label='Figures')
-
-        self.menu_help = HelpMenu(self.menu)
         
     def _init_viz(self):
         '''

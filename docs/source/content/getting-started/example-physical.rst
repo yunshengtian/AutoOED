@@ -77,8 +77,7 @@ And we have linked a performance evaluation program (objective function) for thi
 which basically evaluates the error between the rotated angle and our target angle (90 degrees in this case)
 as the first objective, and the power usage as the second objective.
 The evaluation program is written in Python and shown as below.
-More details of the imported ``motorExperiment`` package can be found 
-`here <http://people.csail.mit.edu/yunsheng/autooed/docs/physical_example_code.zip>`_.
+More details of the imported ``motorExperiment`` package will be uploaded soon.
 
 .. code-block:: python
 
