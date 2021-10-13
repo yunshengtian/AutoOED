@@ -4,7 +4,7 @@
 
 **AutoOED: Automated Optimal Experimental Design Platform**
 
-**[Paper (under review)] | [Documentation](https://autooed.readthedocs.io/en/upgrade/) | [Contact](mailto:autooed@csail.mit.edu)**
+**[Paper (under review)] | [Documentation](https://autooed.readthedocs.io/) | [Contact](mailto:autooed@csail.mit.edu)**
 
 AutoOED is an optimal experimental design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. 
 
@@ -52,7 +52,7 @@ pip install -r requirements_extra.txt
 
 #### Step 2: Custom Evaluation Programs (Optional)
 
-There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our [documentation](https://autooed.readthedocs.io/en/upgrade/) for more details.
+There is some more work to do if you want to link your own evaluation programs to AutoOED to achieve fully automated experimentation, please see our [documentation](https://autooed.readthedocs.io/) for more details.
 
 ## Getting Started
 

@@ -23,4 +23,4 @@ Neural Network
 Bayesian Neural Network
 -----------------------
 
-.. autoclass:: autooed.mobo.surrogate_model.nn.BayesianNeuralNetwork
+.. autoclass:: autooed.mobo.surrogate_model.bnn.BayesianNeuralNetwork
