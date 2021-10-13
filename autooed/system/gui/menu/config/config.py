@@ -123,6 +123,7 @@ class MenuConfigController:
         self.root_view = self.root_controller.view
 
         self.problem_cfg = {} # problem config
+        self.exp_cfg = {} # experiment config (for reference point)
         self.algo_cfg = {} # advanced algorithm config
 
         self.first_time = True
@@ -307,7 +308,7 @@ class MenuConfigController:
                     show_widget_error(master=self.view.window, widget=widget, name=config_map[cfg_type][cfg_name])
                     return
 
-        config['problem']['ref_point'] = self.problem_cfg['ref_point']
+        config['experiment'].update(self.exp_cfg)
         config['algorithm'].update(self.algo_cfg)
 
         success = self.set_config(config, self.view.window)

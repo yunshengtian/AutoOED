@@ -224,8 +224,6 @@ class EvaluateAgent(LoadAgent):
         '''
         '''
         super().refresh()
-        if self.problem_cfg is not None:
-            self._set_ref_point(self.problem_cfg['ref_point'])
         if not self.initialized:
             self.initialized = self.check_initialized()
 
@@ -315,7 +313,7 @@ class EvaluateAgent(LoadAgent):
 
         # update config
         config = self.get_config()
-        config['problem']['ref_point'] = self.ref_point
+        config['experiment']['ref_point'] = self.ref_point
         self.db.update_config(self.table_name, config)
 
     def _set_ref_point(self, ref_point):

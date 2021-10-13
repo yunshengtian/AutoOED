@@ -4,6 +4,7 @@ config_map = {
         'init_sample_path': 'Path of provided initial samples',
         'n_worker': 'Number of evaluation workers',
         'batch_size': 'Batch size',
+        'ref_point': 'Reference point',
     },
     'problem': {
         'name': 'Problem name',
@@ -17,7 +18,6 @@ config_map = {
         'var_ub': 'Upper bound',
         'var_name': 'Names',
         'obj_name': 'Names',
-        'ref_point': 'Reference point',
     },
     'algorithm': {
         'name': 'Algorithm name',

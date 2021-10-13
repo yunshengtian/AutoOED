@@ -29,7 +29,7 @@ def _set_random_seed(config):
     Set random seed based on time.
     '''
     # set random seed
-    seed = int(time() * 100)
+    seed = int(time() * 100) % 10000
     random.seed(seed)
     np.random.seed(seed)
 
@@ -49,7 +49,8 @@ def optimize(config, X, Y, random=True):
     optimizer = _build_optimizer(config)
 
     # solve for best X_next
-    X_next = optimizer.optimize(X, Y, config['batch_size'])
+    batch_size = config['experiment']['batch_size']
+    X_next = optimizer.optimize(X, Y, batch_size)
 
     return X_next
 
@@ -78,7 +79,8 @@ def optimize_predict(config, X, Y, random=True):
     optimizer = _build_optimizer(config)
 
     # solve for best X_next
-    X_next = optimizer.optimize(X, Y, config['batch_size'])
+    batch_size = config['experiment']['batch_size']
+    X_next = optimizer.optimize(X, Y, batch_size)
 
     # predict performance of X_next
     Y_next_mean, Y_next_std = optimizer.predict(X, Y, X_next)

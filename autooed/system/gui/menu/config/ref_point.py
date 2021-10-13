@@ -33,7 +33,7 @@ class RefPointController:
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.problem_cfg = self.root_controller.problem_cfg
+        self.exp_cfg = self.root_controller.exp_cfg
 
         self.view = RefPointView(self.root_view, self.problem_cfg)
 
@@ -43,8 +43,8 @@ class RefPointController:
         self.load_ref_point()
 
     def load_ref_point(self):
-        if 'ref_point' in self.problem_cfg:
-            self.view.widget['excel'].set_column(1, self.problem_cfg['ref_point'])
+        if 'ref_point' in self.exp_cfg:
+            self.view.widget['excel'].set_column(1, self.exp_cfg['ref_point'])
 
     def save_ref_point(self):
         try:
@@ -58,5 +58,5 @@ class RefPointController:
                 tk.messagebox.showinfo('Error', 'Please specify a complete reference point', parent=self.view.window)
                 return
 
-        self.problem_cfg['ref_point'] = ref_point
+        self.exp_cfg['ref_point'] = ref_point
         self.view.window.destroy()

@@ -425,8 +425,8 @@ class UpdateProblemView:
             n_obj, success = self._try_get_val(self.widget['performance']['disp_n_obj'], 'Number of objectives')
             if not success: return
 
-            self.widget['performance']['excel'] = Excel(master=frame_excel, rows=n_obj, columns=3, width=15,
-                title=['Name', 'Type', 'Reference'], dtype=[str, str, float], required=[True, True, False], valid_check=[None, lambda x: x in ['min', 'max'], None])
+            self.widget['performance']['excel'] = Excel(master=frame_excel, rows=n_obj, columns=2, width=15,
+                title=['Name', 'Type'], dtype=[str, str], required=[True, True], valid_check=[None, lambda x: x in ['min', 'max']])
             self.widget['performance']['excel'].grid(row=0, column=0)
             self.widget['performance']['excel'].set_column(0, [f'f{i}' for i in range(1, n_obj + 1)])
             self.widget['performance']['excel'].set_column(1, ['min'] * n_obj)
@@ -451,7 +451,6 @@ class UpdateProblemView:
 
         self.widget['performance']['excel'].set_column(0, config['obj_name'])
         self.widget['performance']['excel'].set_column(1, config['obj_type'])
-        self.widget['performance']['excel'].set_column(2, config['ref_point'])
 
         self.widget['performance']['disp_obj_func'].set(config['obj_func'])
 
@@ -678,19 +677,12 @@ class UpdateProblemController:
             messagebox.showinfo('Error', e, parent=self.view.window)
             return
 
-        try:
-            ref_point = self.view.widget['performance']['excel'].get_column(2)
-        except Exception as e:
-            messagebox.showinfo('Error', e, parent=self.view.window)
-            return
-
         obj_func, success = self.view._try_get_val(self.view.widget['performance']['disp_obj_func'], 'Path to objective function')
         if not success: return
 
         self.config['n_obj'] = n_obj
         self.config['obj_name'] = obj_name
         self.config['obj_type'] = obj_type
-        self.config['ref_point'] = ref_point
         self.config['obj_func'] = obj_func
 
         # reset button
