@@ -34,6 +34,7 @@ class RefPointController:
         self.root_view = self.root_controller.view
 
         self.exp_cfg = self.root_controller.exp_cfg
+        self.problem_cfg = self.root_controller.problem_cfg
 
         self.view = RefPointView(self.root_view, self.problem_cfg)
 

@@ -388,6 +388,9 @@ class GUIController:
                 self.controller['panel_control'].enable_manual()
             if self.agent.can_eval and not self.scheduler.is_evaluating_auto():
                 self.controller['panel_control'].enable_auto()
+                
+            if self.scheduler.agent.ref_point is None:
+                self.scheduler.agent._init_ref_point()
 
         # log display
         log_list = self.scheduler.logger.read()
