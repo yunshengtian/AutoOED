@@ -102,7 +102,7 @@ class BayesianNeuralNetwork(NeuralNetwork):
         Scalable Bayesian Optimization Using Deep Neural Networks
         Proc. of ICML'15
     '''
-    def __init__(self, problem, hidden_sizes=(50, 50, 50), activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
+    def __init__(self, problem, hidden_size=50, hidden_layers=3, activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
         '''
         Initialize a Bayesian neural network as surrogate model.
 
@@ -110,8 +110,10 @@ class BayesianNeuralNetwork(NeuralNetwork):
         ----------
         problem: autooed.problem.Problem
             The optimization problem.
-        hidden_sizes: tuple
-            Sizes of hidden layers of the neural network.
+        hidden_size: int
+            Size of the hidden layer of the neural network.
+        hidden_layers: int
+            Number of hidden layers of the neural network.
         activation: str
             Type of activation function.
         lr: float
@@ -121,7 +123,7 @@ class BayesianNeuralNetwork(NeuralNetwork):
         n_epoch: int
             Number of training epochs.
         '''
-        super().__init__(problem, hidden_sizes, activation, lr, weight_decay, n_epoch)
+        super().__init__(problem, hidden_size, hidden_layers, activation, lr, weight_decay, n_epoch)
 
         self.regressor = [BayesianRegression()] * self.n_obj
 

@@ -66,10 +66,10 @@ def create_entry(master, row, column, class_type, width=ENTRY_WIDTH, required=Fa
     return get_entry(class_type, entry, required=required, default=default, valid_check=valid_check, error_msg=error_msg)
 
 
-def create_checkbutton(master, row, column, text,
+def create_checkbutton(master, row, column, text, default=False, 
         rowspan=1, columnspan=1, padx=PADX, pady=PADY, sticky=None, return_label=False):
     frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
-    var = tk.IntVar()
+    var = tk.IntVar(value=int(default))
     checkbutton = tk.Checkbutton(master=frame, variable=var, highlightthickness=0, bd=0)
     checkbutton.grid(row=0, column=0)
     label = tk.Label(master=frame, text=text)

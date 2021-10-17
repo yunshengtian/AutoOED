@@ -8,9 +8,36 @@ from autooed.mobo import get_algorithm_list
 from autooed.system.experiment.config import load_config
 from autooed.system.gui.widgets.utils.grid import grid_configure
 from autooed.system.gui.widgets.factory import create_widget, show_widget_error
-from autooed.system.gui.map import config_map
 from autooed.system.gui.menu.config.ref_point import RefPointController
-from autooed.system.gui.menu.config.algo_advanced import AlgoAdvancedController
+from autooed.system.gui.menu.config.hyperparam import HyperparamController
+
+
+config_map = {
+    'experiment': {
+        'n_random_sample': 'Number of random initial samples',
+        'init_sample_path': 'Path of provided initial samples',
+        'n_worker': 'Number of evaluation workers',
+        'batch_size': 'Batch size',
+        'ref_point': 'Reference point',
+    },
+    'problem': {
+        'name': 'Problem name',
+        'n_var': 'Number of design variables',
+        'n_obj': 'Number of objectives',
+        'n_constr': 'Number of constraints',
+        'obj_func': 'Objective evaluation program',
+        'constr_func': 'Constraint evaluation program',
+        'obj_type': 'Objective type',
+        'var_lb': 'Lower bound',
+        'var_ub': 'Upper bound',
+        'var_name': 'Names',
+        'obj_name': 'Names',
+    },
+    'algorithm': {
+        'name': 'Algorithm name',
+        'n_process': 'Number of parallel processes to use',
+    },
+}
 
 
 class MenuConfigView:
@@ -240,7 +267,7 @@ class MenuConfigController:
         '''
         Set advanced settings of the algorithm
         '''
-        AlgoAdvancedController(self)
+        HyperparamController(self)
 
     def load_curr_config(self):
         '''

@@ -109,7 +109,7 @@ class NeuralNetwork(SurrogateModel):
     '''
     Simple neural network
     '''
-    def __init__(self, problem, hidden_sizes=(50, 50, 50), activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
+    def __init__(self, problem, hidden_size=50, hidden_layers=3, activation='tanh', lr=1e-3, weight_decay=1e-4, n_epoch=100, **kwargs):
         '''
         Initialize a neural network as surrogate model.
 
@@ -117,8 +117,10 @@ class NeuralNetwork(SurrogateModel):
         ----------
         problem: autooed.problem.Problem
             The optimization problem.
-        hidden_sizes: tuple
-            Sizes of hidden layers of the neural network.
+        hidden_size: int
+            Size of the hidden layer of the neural network.
+        hidden_layers: int
+            Number of hidden layers of the neural network.
         activation: str
             Type of activation function.
         lr: float
@@ -130,7 +132,7 @@ class NeuralNetwork(SurrogateModel):
         '''
         super().__init__(problem)
 
-        self.net = [MLP(n_in=self.n_var, n_out=1, hidden_sizes=hidden_sizes, activation=activation) for _ in range(self.n_obj)]
+        self.net = [MLP(n_in=self.n_var, n_out=1, hidden_sizes=(hidden_size,) * hidden_layers, activation=activation) for _ in range(self.n_obj)]
         self.criterion = nn.MSELoss()
         self.optimizer = [optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay) for net in self.net]
         self.n_epoch = n_epoch

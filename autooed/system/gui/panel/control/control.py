@@ -1,6 +1,5 @@
 import tkinter as tk
 
-from autooed.system.gui.map import config_map
 from autooed.system.gui.panel.control.stop_criterion import StopCriterionController
 from autooed.system.gui.widgets.button import Button
 from autooed.system.gui.widgets.factory import create_widget
@@ -20,7 +19,7 @@ class PanelControlView:
         self.widget['mode'] = create_widget('radiobutton',
             master=frame_control, row=0, column=0, text_list=['Manual', 'Auto'], default='Manual')
         self.widget['batch_size'] = create_widget('labeled_entry', 
-            master=frame_control, row=1, column=0, text=config_map['experiment']['batch_size'], class_type='int', required=True, required_mark=False)
+            master=frame_control, row=1, column=0, text='Batch size', class_type='int', required=True, required_mark=False)
         
         frame_manual = create_widget('frame', master=frame_control, row=2, column=0, padx=0, pady=0)
         frame_auto = create_widget('frame', master=frame_control, row=2, column=0, padx=0, pady=0)
@@ -113,7 +112,7 @@ class PanelControlController:
         except:
             error_msg = self.view.widget['batch_size'].get_error_msg()
             error_msg = '' if error_msg is None else ': ' + error_msg
-            tk.messagebox.showinfo('Error', 'Invalid value for "' + config_map['experiment']['batch_size'] + '"' + error_msg, parent=self.root_view.root)
+            tk.messagebox.showinfo('Error', 'Invalid batch size' + error_msg, parent=self.root_view.root)
             return
         self.set_config(config)
 
