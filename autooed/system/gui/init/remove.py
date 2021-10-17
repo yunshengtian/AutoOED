@@ -3,19 +3,19 @@ import tkinter as tk
 from autooed.system.gui.widgets.factory import create_widget
 
 
-class CreateExperimentView:
+class InitRemoveView:
 
     def __init__(self, root_view):
-        self.window = create_widget('toplevel', master=root_view.root, title='Create Experiment')
+        self.window = create_widget('toplevel', master=root_view.root, title='Remove Experiment')
 
         self.widget = {}
-        self.widget['experiment_name'] = create_widget('labeled_entry', master=self.window, row=0, column=0, columnspan=2, 
-            text='Experiment name', class_type='string', width=10, required=True)
-        self.widget['create'] = create_widget('button', master=self.window, row=1, column=0, text='Create')
+        self.widget['experiment_name'] = create_widget('labeled_combobox', master=self.window, row=0, column=0, columnspan=2, 
+            text='Experiment name', required=True)
+        self.widget['remove'] = create_widget('button', master=self.window, row=1, column=0, text='Remove')
         self.widget['cancel'] = create_widget('button', master=self.window, row=1, column=1, text='Cancel')
 
 
-class CreateExperimentController:
+class InitRemoveController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -23,12 +23,13 @@ class CreateExperimentController:
 
         self.database = self.root_controller.database
 
-        self.view = CreateExperimentView(self.root_view)
+        self.view = InitRemoveView(self.root_view)
 
-        self.view.widget['create'].configure(command=self.create_experiment)
+        self.view.widget['experiment_name'].widget.config(values=self.database.get_table_list())
+        self.view.widget['remove'].configure(command=self.remove_experiment)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
-    def create_experiment(self):
+    def remove_experiment(self):
         try:
             name = self.view.widget['experiment_name'].get()
         except Exception as e:
@@ -36,10 +37,9 @@ class CreateExperimentController:
             return
 
         try:
-            self.database.create_table(name)
+            self.database.remove_table(name)
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return
         
         self.view.window.destroy()
-        self.root_controller.after_init(name)

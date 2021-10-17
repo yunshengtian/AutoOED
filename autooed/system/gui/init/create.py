@@ -3,19 +3,19 @@ import tkinter as tk
 from autooed.system.gui.widgets.factory import create_widget
 
 
-class LoadExperimentView:
+class InitCreateView:
 
     def __init__(self, root_view):
-        self.window = create_widget('toplevel', master=root_view.root, title='Load Experiment')
+        self.window = create_widget('toplevel', master=root_view.root, title='Create Experiment')
 
         self.widget = {}
-        self.widget['experiment_name'] = create_widget('labeled_combobox', master=self.window, row=0, column=0, columnspan=2, 
-            text='Experiment name', required=True)
-        self.widget['load'] = create_widget('button', master=self.window, row=1, column=0, text='Load')
+        self.widget['experiment_name'] = create_widget('labeled_entry', master=self.window, row=0, column=0, columnspan=2, 
+            text='Experiment name', class_type='string', width=10, required=True)
+        self.widget['create'] = create_widget('button', master=self.window, row=1, column=0, text='Create')
         self.widget['cancel'] = create_widget('button', master=self.window, row=1, column=1, text='Cancel')
 
 
-class LoadExperimentController:
+class InitCreateController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -23,15 +23,20 @@ class LoadExperimentController:
 
         self.database = self.root_controller.database
 
-        self.view = LoadExperimentView(self.root_view)
+        self.view = InitCreateView(self.root_view)
 
-        self.view.widget['experiment_name'].widget.config(values=self.database.get_table_list())
-        self.view.widget['load'].configure(command=self.load_experiment)
+        self.view.widget['create'].configure(command=self.create_experiment)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
-    def load_experiment(self):
+    def create_experiment(self):
         try:
             name = self.view.widget['experiment_name'].get()
+        except Exception as e:
+            tk.messagebox.showinfo('Error', e, parent=self.view.window)
+            return
+
+        try:
+            self.database.create_table(name)
         except Exception as e:
             tk.messagebox.showinfo('Error', e, parent=self.view.window)
             return

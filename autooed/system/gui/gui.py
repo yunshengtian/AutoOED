@@ -21,7 +21,7 @@ from autooed.system.gui.widgets.image import ImageFrame
 from autooed.system.gui.widgets.factory import create_widget
 from autooed.system.gui.widgets.utils.grid import grid_configure
 
-from autooed.system.gui.experiment import CreateExperimentController, LoadExperimentController, RemoveExperimentController
+from autooed.system.gui.init import InitCreateController, InitLoadController, InitRemoveController
 from autooed.system.gui.menu import MenuConfigController, MenuProblemController, MenuEvalController, MenuExportController
 from autooed.system.gui.panel import PanelInfoController, PanelControlController, PanelLogController
 from autooed.system.gui.viz import VizSpaceController, VizStatsController, VizDatabaseController
@@ -154,17 +154,17 @@ class GUIController:
     def create_experiment(self):
         '''
         '''
-        CreateExperimentController(self)
+        InitCreateController(self)
                 
     def load_experiment(self):
         '''
         '''
-        LoadExperimentController(self)
+        InitLoadController(self)
 
     def remove_experiment(self):
         '''
         '''
-        RemoveExperimentController(self)
+        InitRemoveController(self)
 
     def _quit_init(self, force=True):
         '''
