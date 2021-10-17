@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from autooed.mobo.algorithms import get_algorithm
 from autooed.mobo.hyperparams import get_hp_name_by_class, get_hp_class_by_name, get_hp_class_names, get_hp_params
 from autooed.system.gui.widgets.utils.grid import grid_configure
 from autooed.system.gui.widgets.factory import create_widget, show_widget_error
@@ -154,25 +155,39 @@ class HyperparamController:
 
         self.view.widget['save'].configure(command=self.save_algo_config)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
-
-        # load current config values to entry if not first time setting config
-        curr_config = self.get_config()
-        if not self.root_view.first_time and self.root_view.cfg_widget['algorithm']['name'].get() == curr_config['algorithm']['name']:
-            self.load_algo_config()
+        
+        algo_selected = self.root_controller.algo_selected
+        if self.root_controller.first_time:
+            self.load_default_algo_config(algo_selected) # first time
+        elif algo_selected == self.get_config()['algorithm']['name']:
+            self.load_existing_algo_config() # non-first time, select same algo
+        else:
+            self.load_default_algo_config(algo_selected) # non-first time, select different algo
 
     def get_config(self):
         return self.root_controller.get_config()
 
-    def load_algo_config(self):
+    def load_default_algo_config(self, algo_name):
         '''
-        Load advanced settings of algorithm
+        Load default algorithm configuration.
         '''
-        if self.algo_cfg == {}:
-            curr_config = self.get_config()
-            self.algo_cfg.update(curr_config['algorithm'])
-            self.algo_cfg.pop('name')
-            self.algo_cfg.pop('n_process')
-            
+        spec = get_algorithm(algo_name).spec
+        for module_type, module_widgets in self.view.cfg_widget.items():
+            # set names
+            module_class = spec[module_type]
+            module_widgets['name'].set(get_hp_name_by_class(module_type, module_class))
+            module_widgets['name'].select()
+            # set params
+            for param_name, widget in module_widgets.items():
+                if param_name not in spec[module_type] or param_name == 'name': continue
+                widget.set(spec[module_type][param_name])
+                if hasattr(widget, 'select'):
+                    widget.select()
+
+    def load_existing_algo_config(self):
+        '''
+        Load existing algorithm configuration.
+        '''
         for module_type, module_widgets in self.view.cfg_widget.items():
             # set names
             module_class = self.algo_cfg[module_type]['name']
@@ -187,7 +202,7 @@ class HyperparamController:
 
     def save_algo_config(self):
         '''
-        Save advanced settings of algorithm
+        Save algorithm configuration.
         '''
         temp_cfg = {}
         for module_type, module_widgets in self.view.cfg_widget.items():

@@ -154,6 +154,7 @@ class MenuConfigController:
         self.algo_cfg = {} # advanced algorithm config
 
         self.first_time = True
+        self.algo_selected = None
 
         self.view = None
 
@@ -260,7 +261,7 @@ class MenuConfigController:
         '''
         Select algorithm
         '''
-        name = event.widget.get()
+        self.algo_selected = event.widget.get()
         self.view.widget['set_advanced'].enable()
 
     def set_algo_advanced(self):
@@ -280,6 +281,9 @@ class MenuConfigController:
                 widget.set(curr_config[cfg_type][cfg_name])
                 widget.select()
         self.problem_cfg.update(curr_config['problem'])
+        self.algo_cfg.update(curr_config['algorithm'])
+        self.algo_cfg.pop('name')
+        self.algo_cfg.pop('n_process') # TODO: check
         self.view.widget['set_advanced'].enable()
 
     def save_config(self):
