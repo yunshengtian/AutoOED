@@ -5,6 +5,7 @@ Main algorithm framework for Multi-Objective Bayesian Optimization.
 import numpy as np
 
 from autooed.mobo.factory import init_surrogate_model, init_acquisition, init_solver, init_selection
+from autooed.mobo.async_strategy.factory import init_async_strategy
 
 
 class MOBO:
@@ -51,11 +52,18 @@ class MOBO:
 
         # multi-objective solver for finding the pareto front
         self.solver = init_solver(self.spec['solver'], module_cfg['solver'],
-            self.problem, self.acquisition)
+            self.problem)
 
         # selection method for choosing new batch of samples to evaluate on real problem
         self.selection = init_selection(self.spec['selection'], module_cfg['selection'],
             self.surrogate_model)
+
+        # asynchronous optimization strategy
+        if 'async' in module_cfg:
+            self.async_strategy = init_async_strategy(module_cfg['async'],
+                self.surrogate_model, self.acquisition)
+        else:
+            self.async_strategy = None
 
     def optimize(self, X, Y, batch_size):
         '''
@@ -84,7 +92,24 @@ class MOBO:
         self.acquisition.fit(X, Y)
 
         # solve surrogate problem
-        X_candidate, Y_candidate = self.solver.solve(X, Y, batch_size)
+        X_candidate, Y_candidate = self.solver.solve(X, Y, batch_size, self.acquisition)
+
+        # next batch selection
+        X_next = self.selection.select(X_candidate, Y_candidate, X, Y, batch_size)
+
+        return X_next
+
+    def optimize_async(self, X, Y, X_busy, batch_size):
+        '''
+        '''
+        if self.async_strategy is None:
+            return self.optimize(X, Y, batch_size)
+
+        # fit surrogate models and acquisition functions based on the asynchronous strategy
+        X, Y, acquisition = self.async_strategy.fit(X, Y, X_busy, batch_size)
+
+        # solve surrogate problem
+        X_candidate, Y_candidate = self.solver.solve(X, Y, batch_size, acquisition)
 
         # next batch selection
         X_next = self.selection.select(X_candidate, Y_candidate, X, Y, batch_size)

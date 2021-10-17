@@ -13,17 +13,18 @@ class Solver(ABC):
     '''
     Base class of multi-objective solver.
     '''
-    def __init__(self, problem, acquisition, **kwargs):
+    def __init__(self, problem, **kwargs):
         '''
         Initialize a solver.
 
         Parameters
         ----------
         '''
-        self.problem = SurrogateProblem(problem, acquisition)
+        self.real_problem = problem # real problem
+        self.problem = None # surrogate problem
         self.transformation = problem.transformation
 
-    def solve(self, X, Y, batch_size):
+    def solve(self, X, Y, batch_size, acquisition):
         '''
         Solve the multi-objective problem and propose a batch of candidates.
 
@@ -41,6 +42,7 @@ class Solver(ABC):
         Y_candidate: np.array
             Objective values of proposed candidate designs.
         '''
+        self.problem = SurrogateProblem(self.real_problem, acquisition)
         X = self.transformation.do(X)
         X_candidate, Y_candidate = self._solve(X, Y, batch_size)
         X_candidate = self.transformation.undo(X_candidate)

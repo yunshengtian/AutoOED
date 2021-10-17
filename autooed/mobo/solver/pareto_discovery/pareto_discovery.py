@@ -619,8 +619,8 @@ class ParetoDiscovery(Solver):
     Solver based on ParetoDiscovery [Schulz et al. 2018].
     NOTE: only compatible with direct selection.
     '''
-    def __init__(self, problem, acquisition, n_gen=10, pop_size=100, n_process=cpu_count(), **kwargs): # TODO: check n_gen
-        super().__init__(problem, acquisition)
+    def __init__(self, problem, n_gen=10, pop_size=100, n_process=cpu_count(), **kwargs): # TODO: check n_gen
+        super().__init__(problem)
         self.n_gen = n_gen
         self.algo = ParetoDiscoveryAlgorithm(pop_size=pop_size, n_process=n_process)
 

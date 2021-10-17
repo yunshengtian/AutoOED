@@ -14,8 +14,8 @@ class NSGA2(Solver):
     '''
     Solver based on NSGA-II.
     '''
-    def __init__(self, problem, acquisition, n_gen=200, pop_size=200, **kwargs):
-        super().__init__(problem, acquisition)
+    def __init__(self, problem, n_gen=200, pop_size=200, **kwargs):
+        super().__init__(problem)
         self.n_gen = n_gen
         self.algo = NSGA2Algo(pop_size=pop_size)
 

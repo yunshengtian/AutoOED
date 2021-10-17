@@ -27,8 +27,8 @@ class ParEGO(Solver):
     Solver based on ParEGO.
     NOTE: only compatible with Direct selection.
     '''
-    def __init__(self, problem, acquisition, n_process=cpu_count(), **kwargs):
-        super().__init__(problem, acquisition)
+    def __init__(self, problem, n_process=cpu_count(), **kwargs):
+        super().__init__(problem)
         self.n_process = n_process
 
     def _solve(self, X, Y, batch_size):

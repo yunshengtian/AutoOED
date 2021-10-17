@@ -109,12 +109,12 @@ def init_async_acquisition(name, acquisition):
     return async_acquisition
 
 
-def init_solver(name, params, problem, acquisition):
+def init_solver(name, params, problem):
     '''
     Initialize multi-objective solver.
     '''
     solver_cls = get_solver(name)
-    solver = solver_cls(problem, acquisition, **params)
+    solver = solver_cls(problem, **params)
     return solver
 
 

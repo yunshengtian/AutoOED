@@ -92,11 +92,31 @@ selection_hyperparams = {
 }
 
 
+async_hyperparams = {
+    'none': {
+        '__name__': 'None',
+    },
+    'kb': {
+        '__name__': 'Kriging Believer',
+    },
+    'lp': {
+        '__name__': 'Local Penalizer',
+        'penalize_acq': dict(dtype=str, default='lp', choices=['lp', 'llp', 'hlp']),
+    },
+    'bp': {
+        '__name__': 'Believer Penalizer',
+        'factor': dict(dtype=float, default=0.2, constr=lambda x: x >= 0 and x <= 1),
+        'penalize_acq': dict(dtype=str, default='lp', choices=['lp', 'llp', 'hlp']),
+    },
+}
+
+
 hyperparams = {
     'surrogate': surrogate_hyperparams,
     'acquisition': acquisition_hyperparams,
     'solver': solver_hyperparams,
     'selection': selection_hyperparams,
+    'async': async_hyperparams,
 }
 
 

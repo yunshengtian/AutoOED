@@ -18,8 +18,8 @@ class MOEAD(Solver):
     Solver based on MOEA/D in MOEA/D-EGO.
     NOTE: only compatible with Direct selection.
     '''
-    def __init__(self, problem, acquisition, n_gen=100, pop_size=100, **kwargs):
-        super().__init__(problem, acquisition)
+    def __init__(self, problem, n_gen=100, pop_size=100, **kwargs):
+        super().__init__(problem)
         self.n_gen = n_gen
         self.pop_size = pop_size
 
