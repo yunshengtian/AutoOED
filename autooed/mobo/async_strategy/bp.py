@@ -19,7 +19,8 @@ class BelieverPenalizer(AsyncStrategy):
         self.surrogate_model.fit(X, Y)
 
         # determine KB and LP indices
-        Y_busy_mean, Y_busy_std = self.surrogate_model.predict(X_busy, std=True)
+        _, Y_busy_std = self.surrogate_model.predict(X_busy, std=True)
+        Y_busy_std = self.surrogate_model.normalization.scale(y=Y_busy_std)
         KB_prob = np.maximum(1 - self.factor * Y_busy_std, 0.0)
         KB_idx = (np.random.uniform(size=Y_busy.shape) < KB_prob).all(axis=1)
         LP_idx = ~KB_idx

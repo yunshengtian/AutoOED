@@ -72,6 +72,19 @@ class Normalization:
             return self.y_scaler.inverse_transform(y)
         else:
             raise Exception('Cannot unnormalize nothing')
+
+    def scale(self, x=None, y=None):
+        if not self.fitted:
+            raise Exception('Not fitted before scaling')
+
+        if x is not None and y is not None:
+            return x / self.x_scaler.scale_, y / self.y_scaler.scale_ 
+        elif x is not None:
+            return x / self.x_scaler.scale_
+        elif y is not None:
+            return y / self.y_scaler.scale_
+        else:
+            raise Exception('Cannot scale nothing')
     
     def rescale(self, x=None, y=None):
         if not self.fitted:
