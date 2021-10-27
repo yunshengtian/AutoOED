@@ -113,6 +113,14 @@ class LoadAgent:
         else:
             raise NotImplementedError
 
+    def _get_invalid_idx(self, data):
+        if len(data.shape) == 1:
+            return np.where((~(data)))[0]
+        elif len(data.shape) == 2:
+            return np.where((np.isnan(data)).any(axis=1))[0]
+        else:
+            raise NotImplementedError
+
     '''
     Main functions: data loading
     '''
@@ -513,11 +521,16 @@ class OptimizeAgent(EvaluateAgent):
         # read current data from database
         X, Y = self.load(['X', 'Y'])
         valid_idx = self._get_valid_idx(Y)
-        X, Y = X[valid_idx], Y[valid_idx]
+        if len(valid_idx) < len(Y):
+            X, Y = X[valid_idx], Y[valid_idx]
+            invalid_idx = self._get_invalid_idx(Y)
+            X_busy = X[invalid_idx]
+        else:
+            X_busy = None
 
         # optimize for best X_next
         config = self.get_config()
-        X_next, (Y_expected, Y_uncertainty) = optimize_predict(config, X, Y)
+        X_next, (Y_expected, Y_uncertainty) = optimize_predict(config, X, Y, X_busy)
 
         # insert optimization and prediction result to database
         if Y_expected is not None and Y_uncertainty is not None:

@@ -59,13 +59,13 @@ class MOBO:
             self.surrogate_model)
 
         # asynchronous optimization strategy
-        if 'async' in module_cfg:
+        if 'async' in module_cfg and module_cfg['async'] != None:
             self.async_strategy = init_async_strategy(module_cfg['async'],
                 self.surrogate_model, self.acquisition)
         else:
             self.async_strategy = None
 
-    def optimize(self, X, Y, batch_size):
+    def optimize(self, X, Y, X_busy, batch_size):
         '''
         Optimize for the next batch of samples given the initial data.
 
@@ -75,15 +75,24 @@ class MOBO:
             Initial design variables.
         Y: np.array
             Initial objective values.
+        X_busy: np.array
+            Design variables currently being evaluated.
+        batch_size: int
+            Batch size.
 
         Returns
         -------
         X_next: np.array
             Proposed design samples to evaluate next.
-        Y_next_mean: np.array
-            Mean of predicted objectives.
-        Y_next_std: np.array
-            Standard deviation of predicted objectives.
+        '''
+        if self.async_strategy is None or X_busy is None:
+            return self._optimize(X, Y, batch_size)
+        else:
+            return self._optimize_async(X, Y, X_busy, batch_size)
+
+    def _optimize(self, X, Y, batch_size):
+        '''
+        Synchronous optimization.
         '''
         # fit surrogate models
         self.surrogate_model.fit(X, Y)
@@ -99,12 +108,10 @@ class MOBO:
 
         return X_next
 
-    def optimize_async(self, X, Y, X_busy, batch_size):
+    def _optimize_async(self, X, Y, X_busy, batch_size):
         '''
+        Asynchronous optimization.
         '''
-        if self.async_strategy is None:
-            return self.optimize(X, Y, batch_size)
-
         # fit surrogate models and acquisition functions based on the asynchronous strategy
         X, Y, acquisition = self.async_strategy.fit(X, Y, X_busy, batch_size)
 
@@ -136,7 +143,7 @@ class MOBO:
         Y_next_std: np.array
             Standard deviation of predicted objectives.
         '''
-        if fit:
+        if fit or self.async_strategy is not None:
             # fit surrogate models
             self.surrogate_model.fit(X, Y)
 

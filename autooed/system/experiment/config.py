@@ -1,10 +1,12 @@
 import os
 import yaml
 from collections.abc import Iterable
+from multiprocessing import cpu_count
+
 from autooed.problem import get_problem_config, check_problem_exist
 from autooed.problem.config import transform_config
 from autooed.mobo import check_algorithm_exist
-from multiprocessing import cpu_count
+from autooed.mobo.hyperparams import get_hp_classes
 
 
 def load_config(path):
@@ -93,7 +95,7 @@ def check_config(config):
     algo_cfg = config['algorithm']
 
     for key in algo_cfg:
-        assert key in ['name', 'n_process', 'surrogate', 'acquisition', 'solver', 'selection'], f'invalid key {key} in algorithm config dictionary'
+        assert key in ['name', 'n_process', 'async', 'surrogate', 'acquisition', 'solver', 'selection'], f'invalid key {key} in algorithm config dictionary'
     
     assert 'name' in algo_cfg, 'algorithm name is not provided'
     assert type(algo_cfg['name']) == str, 'invalid type of algorithm name'
@@ -109,6 +111,10 @@ def check_config(config):
     if 'n_process' in algo_cfg and algo_cfg['n_process'] is not None:
         assert type(algo_cfg['n_process']) == int and algo_cfg['n_process'] > 0, 'number of parallel processes for optimization algorithm must be a positive integer'
     
+    if 'async' in algo_cfg and algo_cfg['async'] is not None:
+        assert 'name' in algo_cfg['async'], 'asynchronous strategy name is not provided'
+        assert algo_cfg['async']['name'] in get_hp_classes('async'), f'undefined asynchronous strategy {algo_cfg["async"]["name"]}'
+
     if 'surrogate' in algo_cfg and algo_cfg['surrogate'] is not None:
         assert isinstance(algo_cfg['surrogate'], dict), 'surrogate settings must be provided as a dictionary'
         assert 'name' in algo_cfg['surrogate'], 'surrogate name is not provided'
@@ -166,6 +172,9 @@ def complete_config(config, check=False):
     # algorithm
     if 'n_process' not in algo_cfg or algo_cfg['n_process'] is None:
         algo_cfg['n_process'] = cpu_count()
+
+    if 'async' not in algo_cfg:
+        algo_cfg['async'] = None
     
     if 'surrogate' not in algo_cfg or algo_cfg['surrogate'] is None:
         algo_cfg['surrogate'] = {

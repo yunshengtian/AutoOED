@@ -33,7 +33,7 @@ if __name__ == '__main__':
     while len(X) < args.n_total_sample:
 
         # propose design samples
-        X_next = algorithm.optimize(X, Y, args.batch_size)
+        X_next = algorithm.optimize(X, Y, None, args.batch_size)
 
         # evaluate proposed samples
         Y_next = np.array([problem.evaluate_objective(x) for x in X_next])

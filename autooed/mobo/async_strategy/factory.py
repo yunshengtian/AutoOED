@@ -21,6 +21,7 @@ def get_async_strategy(name):
 
 def init_async_strategy(params, surrogate_model, acquisition):
     assert 'name' in params, 'Name of asynchronous strategy is not specified'
+    if params['name'] == 'none': return None
     params = params.copy()
     async_strategy_cls = get_async_strategy(params['name'])
     params.pop('name')

@@ -4,6 +4,7 @@ from multiprocessing import cpu_count
 
 from autooed.problem import get_problem_config, get_problem_list
 from autooed.mobo import get_algorithm_list
+from autooed.mobo.hyperparams import get_hp_class_names, get_hp_class_by_name, get_hp_name_by_class
 
 from autooed.system.experiment.config import load_config
 from autooed.system.gui.widgets.utils.grid import grid_configure
@@ -36,6 +37,7 @@ config_map = {
     'algorithm': {
         'name': 'Algorithm name',
         'n_process': 'Number of parallel processes to use',
+        'async': 'Asynchronous strategy',
     },
 }
 
@@ -74,7 +76,10 @@ class MenuConfigView:
         self.widget['n_process'] = create_widget('labeled_entry', 
             master=frame_algorithm, row=1, column=0, text=config_map['algorithm']['n_process'], class_type='int', default=cpu_count(),
             valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
-        self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=2, column=0, text='Advanced Settings', sticky=None)
+        self.widget['async'] = create_widget('labeled_combobox',
+            master=frame_algorithm, row=2, column=0, text=config_map['algorithm']['async'], default='None',
+            values=get_hp_class_names('async'))
+        self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=3, column=0, text='Advanced Settings', sticky=None)
         
         # initialization subsection
         if self.first_time:
@@ -136,6 +141,7 @@ class MenuConfigView:
             'algorithm': {
                 'name': self.widget['algo_name'],
                 'n_process': self.widget['n_process'],
+                'async': self.widget['async'],
             },
             'experiment': {
                 'n_worker': self.widget['n_worker'],
@@ -278,7 +284,10 @@ class MenuConfigController:
         for cfg_type, val_map in self.view.cfg_widget.items():
             for cfg_name, widget in val_map.items():
                 widget.enable()
-                widget.set(curr_config[cfg_type][cfg_name])
+                if cfg_name == 'async':
+                    widget.set(get_hp_name_by_class('async', curr_config[cfg_type][cfg_name]['name'])) # TODO: support other hyperparams
+                else:
+                    widget.set(curr_config[cfg_type][cfg_name])
                 widget.select()
         self.problem_cfg.update(curr_config['problem'])
         self.algo_cfg.update(curr_config['algorithm'])
@@ -334,8 +343,12 @@ class MenuConfigController:
         for cfg_type, val_map in self.view.cfg_widget.items():
             for cfg_name, widget in val_map.items():
                 try:
-                    config[cfg_type][cfg_name] = widget.get()
-                except:
+                    if cfg_name == 'async':
+                        config[cfg_type][cfg_name] = {}
+                        config[cfg_type][cfg_name]['name'] = get_hp_class_by_name('async', widget.get())
+                    else:
+                        config[cfg_type][cfg_name] = widget.get()
+                except Exception as e:
                     show_widget_error(master=self.view.window, widget=widget, name=config_map[cfg_type][cfg_name])
                     return
 

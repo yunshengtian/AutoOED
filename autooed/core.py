@@ -38,7 +38,7 @@ def _set_random_seed(config):
     return config
 
 
-def optimize(config, X, Y, random=True):
+def optimize(config, X, Y, X_busy=None, random=True):
     '''
     Run MOBO optimization from X and Y to produce X_next
     '''
@@ -50,7 +50,7 @@ def optimize(config, X, Y, random=True):
 
     # solve for best X_next
     batch_size = config['experiment']['batch_size']
-    X_next = optimizer.optimize(X, Y, batch_size)
+    X_next = optimizer.optimize(X, Y, X_busy, batch_size)
 
     return X_next
 
@@ -68,7 +68,7 @@ def predict(config, X, Y, X_next):
     return Y_next_mean, Y_next_std
 
 
-def optimize_predict(config, X, Y, random=True):
+def optimize_predict(config, X, Y, X_busy=None, random=True):
     '''
     Optimize then predit.
     '''
@@ -80,7 +80,7 @@ def optimize_predict(config, X, Y, random=True):
 
     # solve for best X_next
     batch_size = config['experiment']['batch_size']
-    X_next = optimizer.optimize(X, Y, batch_size)
+    X_next = optimizer.optimize(X, Y, X_busy, batch_size)
 
     # predict performance of X_next
     Y_next_mean, Y_next_std = optimizer.predict(X, Y, X_next)
