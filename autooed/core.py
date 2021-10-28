@@ -1,3 +1,7 @@
+'''
+Core functions of optimization, prediction and evaluation, given problem and experiment configurations.
+'''
+
 import random
 import numpy as np
 from time import time
@@ -8,12 +12,17 @@ from autooed.mobo import get_algorithm
 
 def _build_optimizer(config):
     '''
-    Build optimizer based on problem and configurations.
+    Build optimizer based on the problem and experiment configurations.
 
     Parameters
     ----------
     config: dict
-        Experiment configuration
+        Experiment configuration dict.
+
+    Returns
+    -------
+    optimizer: autooed.mobo.mobo.MOBO
+        The built optimizer.
     '''
     prob_cfg, algo_cfg = config['problem'], config['algorithm']
 
@@ -27,6 +36,16 @@ def _build_optimizer(config):
 def _set_random_seed(config):
     '''
     Set random seed based on time.
+
+    Parameters
+    ----------
+    config: dict
+        Experiment configuration dict.
+
+    Returns
+    -------
+    config: dict
+        Experiment configuration dict with the updated random seed.
     '''
     # set random seed
     seed = int(time() * 100) % 10000
@@ -40,7 +59,25 @@ def _set_random_seed(config):
 
 def optimize(config, X, Y, X_busy=None, random=True):
     '''
-    Run MOBO optimization from X and Y to produce X_next
+    Optimize on existing designs and performance to propose next designs to evaluate.
+
+    Parameters
+    ----------
+    config: dict
+        Experiment configuration dict.
+    X: np.array
+        Given existing designs.
+    Y: np.array
+        Performance of the given designs.
+    X_busy: np.array
+        Designs under evaluation.
+    random: bool
+        Whether to set random seeds before optimization.
+
+    Returns
+    -------
+    X_next: np.array
+        The proposed designs to evaluate next.
     '''
     if random:
         config = _set_random_seed(config)
@@ -57,7 +94,25 @@ def optimize(config, X, Y, X_busy=None, random=True):
 
 def predict(config, X, Y, X_next):
     '''
-    Predict performance of X_next based on X_init and Y_init
+    Predict performance of certain designs based on existing designs and performance.
+
+    Parameters
+    ----------
+    config: dict
+        Experiment configuration dict.
+    X: np.array
+        Given existing designs.
+    Y: np.array
+        Performance of the given designs.
+    X_next: np.array
+        Designs to be predicted.
+
+    Returns
+    -------
+    Y_next_mean: np.array
+        Mean of the predicted performance.
+    Y_next_std: np.array
+        Standard deviation of the predicted performance.
     '''
     # build optimizer
     optimizer = _build_optimizer(config)
@@ -70,7 +125,27 @@ def predict(config, X, Y, X_next):
 
 def optimize_predict(config, X, Y, X_busy=None, random=True):
     '''
-    Optimize then predit.
+    Optimize on existing designs and performance to propose next designs to evaluate along with the predicted performance.
+
+    Parameters
+    ----------
+    config: dict
+        Experiment configuration dict.
+    X: np.array
+        Given existing designs.
+    Y: np.array
+        Performance of the given designs.
+    X_busy: np.array
+        Designs under evaluation.
+    random: bool
+        Whether to set random seeds before optimization.
+
+    Returns
+    -------
+    X_next: np.array
+        The proposed designs to evaluate next.
+    Y_next: tuple
+        Predicted performance of the proposed designs, in the format of (Y_next_mean, Y_next_std).
     '''
     if random:
         config = _set_random_seed(config)
@@ -90,7 +165,19 @@ def optimize_predict(config, X, Y, X_busy=None, random=True):
 
 def evaluate(name, x_next):
     '''
-    Evaluate performance of x_next
+    Evaluate performance of a given design.
+
+    Parameters
+    ----------
+    name: str
+        Name of the problem.
+    x_next: np.array
+        Design to be evaluated.
+
+    Returns
+    -------
+    y_next: np.array
+        Performance of the given design.
     '''
     # build problem
     problem = build_problem(name)

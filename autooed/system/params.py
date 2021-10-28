@@ -1,3 +1,7 @@
+'''
+Parameters of the GUI.
+'''
+
 import tkinter as tk
 
 # basic info

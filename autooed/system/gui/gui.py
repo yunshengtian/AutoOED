@@ -10,7 +10,7 @@ from tkinter import messagebox
 
 from autooed.problem import build_problem
 from autooed.utils.path import get_root_dir
-from autooed.system.experiment.config import complete_config
+from autooed.system.config import complete_config
 
 from autooed.system.params import *
 from autooed.system.database import Database

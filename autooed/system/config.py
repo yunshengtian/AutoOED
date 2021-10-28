@@ -1,3 +1,7 @@
+'''
+Experiment configuration related tools.
+'''
+
 import os
 import yaml
 from collections.abc import Iterable
@@ -9,9 +13,51 @@ from autooed.mobo import check_algorithm_exist
 from autooed.mobo.hyperparams import get_hp_classes
 
 
+'''
+Layout of the config dict and explanation of each key.
+'''
+config_map = {
+    'experiment': {
+        'n_random_sample': 'Number of random initial samples',
+        'init_sample_path': 'Path of provided initial samples',
+        'n_worker': 'Number of evaluation workers',
+        'batch_size': 'Batch size',
+        'ref_point': 'Reference point',
+    },
+    'problem': {
+        'name': 'Problem name',
+        'n_var': 'Number of design variables',
+        'n_obj': 'Number of objectives',
+        'n_constr': 'Number of constraints',
+        'obj_func': 'Objective evaluation program',
+        'constr_func': 'Constraint evaluation program',
+        'obj_type': 'Objective type',
+        'var_lb': 'Lower bound',
+        'var_ub': 'Upper bound',
+        'var_name': 'Names',
+        'obj_name': 'Names',
+    },
+    'algorithm': {
+        'name': 'Algorithm name',
+        'n_process': 'Number of parallel processes to use',
+        'async': 'Asynchronous strategy',
+    },
+}
+
+
 def load_config(path):
     '''
-    Load config from file
+    Load config from file.
+
+    Parameters
+    ----------
+    path: str
+        Path of the configuration file (in yaml format) to load.
+
+    Returns
+    -------
+    config: dict
+        Loaded config dict.
     '''
     try:
         with open(path, 'r') as f:
@@ -23,7 +69,12 @@ def load_config(path):
 
 def save_config(config, path):
     '''
-    Save config to file
+    Save config to file.
+
+    Parameters
+    ----------
+    path: str
+        Path to save the configuration file (in yaml format).
     '''
     try:
         with open(path, 'w') as f:
@@ -34,7 +85,12 @@ def save_config(config, path):
 
 def check_config(config):
     '''
-    Check validity of the config
+    Check validity of the config dict.
+
+    Parameters
+    ----------
+    config: dict
+        Experiment config dict.
     '''
     # format
     assert isinstance(config, dict), 'config is not a dictionary'
@@ -142,7 +198,19 @@ def check_config(config):
 
 def complete_config(config, check=False):
     '''
-    Fill default values of the config
+    Fill default values of the config.
+
+    Parameters
+    ----------
+    config: dict
+        Experiment config dict.
+    check: bool
+        Whether to check the validity of the config before filling default values.
+
+    Returns
+    -------
+    new_config: dict
+        Completed config dict with default values filled.
     '''
     if check:
         check_config(config)

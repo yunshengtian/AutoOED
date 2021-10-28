@@ -1,31 +1,56 @@
+'''
+Stopping criteria of the optimization.
+'''
+
 from time import time
 
 
 class StopCriterion:
-
+    '''
+    Base class of stopping criterion.
+    '''
     def __init__(self, agent, *args, **kwargs):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        '''
         self.agent = agent
         self.started = False
 
     def start(self):
         '''
+        Enable the criterion checking.
         '''
         self.started = True
 
     def check(self):
         '''
+        Check whether the criterion is reached.
         '''
         return False
 
     def load(self):
         '''
+        Load the progress of the criterion.
         '''
         return None
 
 
 class TimeStopCriterion(StopCriterion):
-
+    '''
+    Stopping criterion based on max time.
+    '''
     def __init__(self, agent, max_time):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        max_time: float
+            Maximum time (in seconds).
+        '''
         super().__init__(agent)
         self.start_time = None
         self.max_time = max_time
@@ -46,8 +71,18 @@ class TimeStopCriterion(StopCriterion):
 
 
 class NIterStopCriterion(StopCriterion):
-
+    '''
+    Stopping criterion based on max iteration.
+    '''
     def __init__(self, agent, max_iter):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        max_iter: int
+            Maximum iteration of optimization.
+        '''
         super().__init__(agent)
         self.n_iter = None
         self.max_iter = max_iter
@@ -69,8 +104,18 @@ class NIterStopCriterion(StopCriterion):
 
 
 class NSampleStopCriterion(StopCriterion):
-
+    '''
+    Stopping criterion based on max number of samples.
+    '''
     def __init__(self, agent, max_sample):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        max_sample: int
+            Maximum number of samples.
+        '''
         super().__init__(agent)
         self.max_sample = max_sample
 
@@ -85,8 +130,18 @@ class NSampleStopCriterion(StopCriterion):
 
 
 class HVStopCriterion(StopCriterion):
-
+    '''
+    Stopping criterion based on max hypervolume.
+    '''
     def __init__(self, agent, max_hv):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        max_hv: float
+            Maximum hypervolume.
+        '''
         super().__init__(agent)
         self.max_hv = max_hv
 
@@ -102,8 +157,19 @@ class HVStopCriterion(StopCriterion):
 
 
 class HVConvStopCriterion(StopCriterion):
-
+    '''
+    Stopping criterion based on hypervolume convergence.
+    '''
     def __init__(self, agent, max_iter):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        max_iter: int
+            Maximum iteration for measuring the hypervolume convergence. 
+            I.e., convergence happens if hypervolume stops to improve for max_iter iterations.
+        '''
         super().__init__(agent)
         self.last_hv = None
         self.n_iter = None
@@ -133,6 +199,7 @@ class HVConvStopCriterion(StopCriterion):
 
 def get_stop_criterion(name):
     '''
+    Get stopping criterion by name.
     '''
     stop_criterion = {
         'time': TimeStopCriterion,
@@ -145,6 +212,7 @@ def get_stop_criterion(name):
 
 def get_name(stop_criterion):
     '''
+    Get name of the stopping criterion.
     '''
     name = {
         TimeStopCriterion: 'time',

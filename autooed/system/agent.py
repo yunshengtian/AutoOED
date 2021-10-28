@@ -1,3 +1,7 @@
+'''
+Agents that talk to algorithms and database for data loading, evaluation and optimization.
+'''
+
 import os
 import numpy as np
 from multiprocessing import Lock
@@ -9,9 +13,17 @@ from autooed.utils.pareto import check_pareto, calc_hypervolume, calc_pred_error
 
 class LoadAgent:
     '''
-    Agent for data loading
+    Agent for data loading.
     '''
     def __init__(self, database, table_name):
+        '''
+        Parameters
+        ----------
+        database: autooed.system.database.Database
+            Database.
+        table_name: str
+            Name of the table (i.e. experiment name).
+        '''
         self.db = database
         self.table_name = table_name
 
@@ -28,24 +40,30 @@ class LoadAgent:
 
     def get_config(self):
         '''
+        Get the current config.
         '''
         return self.db.query_config(self.table_name)
 
     def refresh(self):
-
+        '''
+        Refresh the agent to load the up-to-date config.
+        '''
+        # load config
         config = self.get_config()
         if config is None: return
 
         if self.problem_cfg is None: # first time
 
+            # update agent's problem config
             problem_cfg = config['problem']
             problem = build_problem(problem_cfg['name']) 
             self.problem_cfg = problem.get_config()
             self.problem_cfg.update(problem_cfg)
 
+            # whether evaluation function is provided
             self.can_eval = hasattr(problem, 'evaluate_objective') or self.problem_cfg['obj_func'] is not None
 
-            # mapping from keys to database columns (e.g., X -> [x1, x2, ...])
+            # mapping from keys to database column names (e.g., X -> [x1, x2, ...])
             self.key_map = {
                 'status': 'status',
                 'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
@@ -56,6 +74,7 @@ class LoadAgent:
                 '_order': '_order', '_hypervolume': '_hypervolume',
             }
 
+            # mapping from problem domains to data types in database
             var_type_map = {
                 'continuous': float,
                 'integer': int,
@@ -64,7 +83,7 @@ class LoadAgent:
                 'mixed': object,
             }
 
-            # mapping from keys to data types
+            # mapping from keys to data types in database
             self.type_map = {
                 'status': str,
                 'X': var_type_map[self.problem_cfg['type']],
@@ -78,6 +97,8 @@ class LoadAgent:
             }
 
         elif config != self.problem_cfg: # update in the middle
+
+            # update agent's problem config
             self.problem_cfg.update(config['problem'])
 
     '''
@@ -86,7 +107,19 @@ class LoadAgent:
 
     def _map_key(self, key, flatten=False):
         '''
-        Get mapped keys from self.key_map
+        Get mapped column names from keys.
+
+        Parameters
+        ----------
+        key: object
+            A single key (str) or a list of keys (list) to be mapped.
+        flatten: bool
+            Whether to flatten the list of mapped column names if given a list of keys.
+
+        Returns
+        -------
+        object
+            A mapped column name (str) or a list of mapped column names (list) depending on the input.
         '''
         if isinstance(key, str):
             return self.key_map[key]
@@ -106,6 +139,19 @@ class LoadAgent:
             raise NotImplementedError
 
     def _get_valid_idx(self, data):
+        '''
+        Get valid indices of the given data (where data is not None).
+
+        Parameters
+        ----------
+        data: np.array
+            Input data.
+
+        Returns
+        -------
+        np.array
+            Valid indices of the input data (in the first dimension).
+        '''
         if len(data.shape) == 1:
             return np.where((~np.isnan(data)))[0]
         elif len(data.shape) == 2:
@@ -114,6 +160,19 @@ class LoadAgent:
             raise NotImplementedError
 
     def _get_invalid_idx(self, data):
+        '''
+        Get invalid indices of the given data (where data is None).
+
+        Parameters
+        ----------
+        data: np.array
+            Input data.
+
+        Returns
+        -------
+        np.array
+            Invalid indices of the input data (in the first dimension).
+        '''
         if len(data.shape) == 1:
             return np.where((~(data)))[0]
         elif len(data.shape) == 2:
@@ -127,6 +186,7 @@ class LoadAgent:
 
     def check_initialized(self):
         '''
+        Check if the database table is initialized with data.
         '''
         if self.check_table_exist():
             batch, order = self.load(['batch', '_order'])
@@ -138,12 +198,25 @@ class LoadAgent:
 
     def check_table_exist(self):
         '''
+        Check if the database table exists.
         '''
         return self.db.check_inited_table_exist(name=self.table_name)
 
     def load(self, keys, rowid=None):
         '''
-        Load data from database table
+        Load data from the database table.
+
+        Parameters
+        ----------
+        keys: list
+            Keys of the data to load.
+        rowid: int/list
+            Row number(s) of the data to load.
+
+        Returns
+        -------
+        np.array/list
+            Loaded data.
         '''
         data = self.db.select_data(table=self.table_name, column=self._map_key(keys, flatten=True), rowid=rowid)
 
@@ -180,7 +253,7 @@ class LoadAgent:
 
     def quit(self):
         '''
-        Quit database
+        Quit database.
         '''
         if self.db is not None:
             self.db.quit()
@@ -190,17 +263,29 @@ class LoadAgent:
     '''
 
     def get_n_init_sample(self):
+        '''
+        Get the number of initial samples.
+        '''
         batch = self.load('batch')
         return np.sum(batch == 0)
 
     def get_n_sample(self):
+        '''
+        Get the number of total samples.
+        '''
         return self.db.get_n_row(self.table_name)
 
     def get_n_valid_sample(self):
+        '''
+        Get the number of valid (i.e. evaluated) samples.
+        '''
         status = self.load('status')
         return np.sum(status == 'evaluated')
 
     def get_max_hv(self):
+        '''
+        Get the max hypervolume.
+        '''
         hypervolume = self.load('_hypervolume')
         if len(hypervolume) == 0: return None
         valid_idx = self._get_valid_idx(hypervolume)
@@ -208,6 +293,9 @@ class LoadAgent:
         return hypervolume[valid_idx].max()
 
     def get_column_names(self):
+        '''
+        Get the column names of the database table.
+        '''
         columns = self.db.get_column_names(self.table_name)
         columns = [col for col in columns if not col.startswith('_')]
         return columns
@@ -215,9 +303,17 @@ class LoadAgent:
 
 class EvaluateAgent(LoadAgent):
     '''
-    Agent for data loading and evaluation
+    Agent for data loading and evaluation.
     '''
     def __init__(self, database, table_name):
+        '''
+        Parameters
+        ----------
+        database: autooed.system.database.Database
+            Database.
+        table_name: str
+            Name of the table (i.e. experiment name).
+        '''
         super().__init__(database, table_name)
 
         self.ref_point = None
@@ -230,8 +326,11 @@ class EvaluateAgent(LoadAgent):
 
     def refresh(self):
         '''
+        Refresh the agent to load the up-to-date config.
         '''
         super().refresh()
+
+        # update the status of initialization
         if not self.initialized:
             self.initialized = self.check_initialized()
 
@@ -241,6 +340,14 @@ class EvaluateAgent(LoadAgent):
 
     def update_evaluation(self, Y, rowids):
         '''
+        Update evaluation results to the database.
+
+        Parameters
+        ----------
+        Y: np.array
+            Updated evaluated performance.
+        rowids: list
+            Row numbers of the evaluated performance.
         '''
         # update data (Y, status, _order)
         status = ['evaluated'] * len(rowids)
@@ -263,6 +370,7 @@ class EvaluateAgent(LoadAgent):
         pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
         self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
 
+        # update the status of initialization
         if not self.initialized:
             self.initialized = self.check_initialized()
             if self.initialized:
@@ -270,7 +378,14 @@ class EvaluateAgent(LoadAgent):
 
     def evaluate(self, rowid, eval_func=None):
         '''
-        Evaluation of design variables given the associated rowid in database
+        Evaluation of design variables given the associated rowid in database.
+
+        Parameters
+        ----------
+        rowid: int
+            Row number of data to evaluate.
+        eval_func: function
+            Provided evaluation function.
         '''
         if not self.can_eval: return
         self.db.connect(force=True)
@@ -295,6 +410,7 @@ class EvaluateAgent(LoadAgent):
 
     def _init_ref_point(self):
         '''
+        Initialize the reference point.
         '''
         if self.ref_point is not None and None not in self.ref_point: return
 
@@ -326,6 +442,7 @@ class EvaluateAgent(LoadAgent):
 
     def _set_ref_point(self, ref_point):
         '''
+        Set the reference point.
         '''
         if ref_point is None: return
         assert len(ref_point) == self.problem_cfg['n_obj']
@@ -337,6 +454,12 @@ class EvaluateAgent(LoadAgent):
 
     def _update_hypervolume(self, rowids):
         '''
+        Update hypervolume statistics to the database.
+
+        Parameters
+        ----------
+        rowids: list
+            Row numbers of hypervolume values to update.
         '''
         if self.ref_point is None: return
 
@@ -366,6 +489,7 @@ class EvaluateAgent(LoadAgent):
 
     def _reload_hypervolume(self):
         '''
+        Reload the hypervolume statistics.
         '''
         if self.ref_point is None: return
 
@@ -391,6 +515,7 @@ class EvaluateAgent(LoadAgent):
 
     def load_hypervolume(self):
         '''
+        Load the hypervolume statistics.
         '''
         with self.lock:
             order, hypervolume = self.load(['_order', '_hypervolume'])
@@ -408,6 +533,7 @@ class EvaluateAgent(LoadAgent):
 
     def load_model_error(self):
         '''
+        Load the prediction error of the surrogate model.
         '''
         order, Y, Y_expected = self.load(['_order', 'Y', 'Y_expected'])
         if len(order) == 0: return np.array([])
@@ -425,7 +551,7 @@ class EvaluateAgent(LoadAgent):
 
 class OptimizeAgent(EvaluateAgent):
     '''
-    Agent for data loading, evaluation, initialization, prediction and optimization
+    Agent for data loading, evaluation, initialization, prediction and optimization.
     '''
 
     '''
@@ -433,6 +559,7 @@ class OptimizeAgent(EvaluateAgent):
     '''
     def set_config(self, config):
         '''
+        Set the experiment config.
         '''
         self.db.update_config(self.table_name, config)
         self.refresh()
@@ -443,6 +570,19 @@ class OptimizeAgent(EvaluateAgent):
 
     def _insert(self, key_list, data_list):
         '''
+        Insert data to the database.
+
+        Parameters
+        ----------
+        key_list: list
+            List of keys of the data to insert.
+        data_list: list
+            List of data to insert.
+
+        Returns
+        -------
+        rowids: list
+            Row numbers of the inserted data.
         '''
         sample_len = len(data_list[0])
         for data in data_list:
@@ -463,16 +603,55 @@ class OptimizeAgent(EvaluateAgent):
 
     def insert_design(self, X):
         '''
+        Insert designs to the database.
+
+        Parameters
+        ----------
+        X: np.array
+            Designs to insert.
+
+        Returns
+        -------
+        list
+            Row numbers of the inserted data.
         '''
         return self._insert(key_list=['X'], data_list=[X])
 
     def insert_design_and_prediction(self, X, Y_expected, Y_uncertainty):
         '''
+        Insert designs and their predicted performance to the database.
+
+        Parameters
+        ----------
+        X: np.array
+            Designs to insert.
+        Y_expected: np.array
+            Mean of the predicted performance to insert.
+        Y_uncertainty: np.array
+            Standard deviation of the predicted performance to insert.
+
+        Returns
+        -------
+        list
+            Row numbers of the inserted data.
         '''
         return self._insert(key_list=['X', 'Y_expected', 'Y_uncertainty'], data_list=[X, Y_expected, Y_uncertainty])
 
     def insert_design_and_evaluation(self, X, Y):
         '''
+        Insert designs and their evaluated performance to the database.
+
+        Parameters
+        ----------
+        X: np.array
+            Designs to insert.
+        Y: np.array
+            Evaluated performance to insert.
+
+        Returns
+        -------
+        list
+            Row numbers of the inserted data.
         '''
         rowids = self.insert_design(X)
         self.update_evaluation(Y, rowids)
@@ -480,6 +659,16 @@ class OptimizeAgent(EvaluateAgent):
 
     def update_prediction(self, Y_expected, Y_uncertainty, rowids):
         '''
+        Update predicted performance to the database.
+
+        Parameters
+        ----------
+        Y_expected: np.array
+            Mean of the predicted performance to update.
+        Y_uncertainty: np.array
+            Standard deviation of the predicted performance to update.
+        rowids: list
+            Row numbers to update.
         '''
         # update data (Y_expected, Y_uncertainty)
         self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
@@ -487,7 +676,21 @@ class OptimizeAgent(EvaluateAgent):
 
     def initialize(self, X_evaluated, X_unevaluated, Y_evaluated):
         '''
-        Initialize database table with initial data X, Y
+        Initialize the database table with given design and performance.
+
+        Parameters
+        ----------
+        X_evaluated: np.array
+            Evaluated initial designs.
+        X_unevaluated: np.array
+            Unevaluated initial designs.
+        Y_evaluated: np.array
+            Evaluated initial performance.
+
+        Returns
+        -------
+        list
+            Row numbers of unevaluated designs.
         '''
         self.db.init_table(name=self.table_name, problem_cfg=self.problem_cfg)
 
@@ -516,7 +719,7 @@ class OptimizeAgent(EvaluateAgent):
 
     def optimize(self, queue=None):
         '''
-        Optimization of next batch of samples to evaluate, stored in 'rowids' rows in database
+        Optimize for a batch of designs to evaluate and store the designs in the database.
         '''
         # read current data from database
         X, Y = self.load(['X', 'Y'])
@@ -545,6 +748,12 @@ class OptimizeAgent(EvaluateAgent):
 
     def predict(self, rowids):
         '''
+        Predict the performance of certain designs and store the prediction in the database.
+
+        Parameters
+        ----------
+        rowids: list
+            Row numbers of the designs to predict.
         '''
         # read current data from database
         X, Y = self.load(['X', 'Y'])

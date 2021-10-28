@@ -1,3 +1,7 @@
+'''
+Schedulers for scheduling evaluation and optimization in a parallel scenario.
+'''
+
 from multiprocessing import Process, Queue
 
 from autooed.problem import build_problem, get_problem_config
@@ -6,19 +10,35 @@ from autooed.utils.initialization import get_initial_samples
 
 class Logger:
     '''
+    Logger that records the status change of evaluation and optimization.
     '''
     def __init__(self):
         self.logs = []
 
     def add(self, log):
         '''
-        Add log
+        Add log.
+
+        Parameters
+        ----------
+        log: str
+            Text to log.
         '''
         self.logs.append(log)
 
     def read(self, clear=True):
         '''
         Read and clear logs
+
+        Parameters
+        ----------
+        clear: bool
+            Whether to clear existing logs.
+
+        Returns
+        -------
+        logs: list
+            List of logs since last read.
         '''
         logs = self.logs.copy()
         if clear:
@@ -28,9 +48,15 @@ class Logger:
 
 class EvaluateScheduler:
     '''
-    Scheduler for evaluation
+    Scheduler for evaluation.
     '''
     def __init__(self, agent):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        '''
         self.agent = agent
         self.logger = Logger()
 
@@ -41,6 +67,16 @@ class EvaluateScheduler:
 
     def evaluate(self, eval_func, rowids, n_worker):
         '''
+        Evaluate certain rows of data.
+
+        Parameters
+        ----------
+        eval_func: function
+            Provided evaluation function.
+        rowids: list
+            Row numbers of data to evaluate.
+        n_worker: int
+            Number of evaluation workers that can evaluatein parallel.
         '''
         if not (self.agent.can_eval or eval_func is not None): return
         self.n_worker = n_worker
@@ -50,11 +86,18 @@ class EvaluateScheduler:
 
     def is_evaluating(self):
         '''
+        Check if any evaluation worker is running.
         '''
         return self.eval_workers_run != [] or self.eval_workers_wait != []
 
     def _refresh_evaluate(self):
         '''
+        Refresh evaluation status.
+
+        Returns
+        -------
+        bool
+            Whether ongoing evaluations have finished.
         '''
         completed_workers = []
 
@@ -80,14 +123,18 @@ class EvaluateScheduler:
 
     def refresh(self):
         '''
+        Refresh evaluation status.
         '''
         eval_finished = self._refresh_evaluate()
 
     def stop_evaluate(self, rowid=None):
         '''
-        Stop the running evaluation worker(s)
-        Input:
-            rowid: the id of row to be stopped (if None then stop all workers)
+        Stop the running evaluation worker(s).
+        
+        Parameters
+        ----------
+        rowid: int
+            Row number of the evaluation to stop (if None then stop all evaluations)
         '''
         stop_all = rowid is None
         worker_run_stopped = None
@@ -120,14 +167,23 @@ class EvaluateScheduler:
                 self.eval_workers_wait.remove(worker_wait_stopped)
 
     def quit(self):
+        '''
+        Quit the scheduler.
+        '''
         self.stop_evaluate()
 
 
 class OptimizeScheduler:
     '''
-    Scheduler for evaluation and optimization
+    Scheduler for evaluation and optimization.
     '''
     def __init__(self, agent):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        '''
         self.agent = agent
         self.logger = Logger()
 
@@ -147,6 +203,7 @@ class OptimizeScheduler:
 
     def set_config(self, config):
         '''
+        Set config, update agent's config and start initialization if available.
         '''
         if not self.agent.check_table_exist() and not self.initializing: # check if initializing
 
@@ -168,6 +225,7 @@ class OptimizeScheduler:
 
     def _optimize(self):
         '''
+        Launch an optimization worker.
         '''
         if not self.agent.check_initialized():
             raise Exception('initialization has not finished')
@@ -178,11 +236,18 @@ class OptimizeScheduler:
 
     def optimize_manual(self):
         '''
+        Optimize in manual mode.
         '''
         self._optimize()
 
     def optimize_auto(self, stop_criterion=[]):
         '''
+        Optimize in auto mode.
+        
+        Parameters
+        ----------
+        stop_criterion: list
+            List of stop criteria for optimization.
         '''
         assert self.agent.can_eval
         self.auto_scheduling = True
@@ -193,6 +258,12 @@ class OptimizeScheduler:
 
     def predict(self, rowids):
         '''
+        Predict the performance of given row numbers.
+
+        Parameters
+        ----------
+        rowids: list
+            Row numbers of the data to predict.
         '''
         self.logger.add(f'prediction for row {",".join([str(r) for r in rowids])} started')
         worker = Process(target=self.agent.predict, args=(rowids,))
@@ -201,6 +272,12 @@ class OptimizeScheduler:
 
     def evaluate_manual(self, rowids):
         '''
+        Evaluate the performance of given row numbers in manual mode.
+
+        Parameters
+        ----------
+        rowids: list
+            Row numbers of the data to evaluate.
         '''
         if not self.agent.can_eval: return
         for rowid in rowids:
@@ -209,6 +286,12 @@ class OptimizeScheduler:
 
     def evaluate_auto(self, rowids):
         '''
+        Evaluate the performance of given row numbers in auto mode.
+
+        Parameters
+        ----------
+        rowids: list
+            Row numbers of the data to evaluate.
         '''
         if not self.agent.can_eval: return
         for rowid in rowids:
@@ -217,36 +300,48 @@ class OptimizeScheduler:
 
     def is_optimizing(self):
         '''
+        Check if any optimization worker is running.
         '''
         return self.opt_worker is not None
 
     def is_predicting(self):
         '''
+        Check if any prediction worker is running.
         '''
         return self.pred_workers != []
 
     def is_evaluating_manual(self):
         '''
+        Check if any manual evaluation worker is running.
         '''
         return self.eval_workers_manual_run != [] or self.eval_workers_manual_wait != []
 
     def is_evaluating_auto(self):
         '''
+        Check if any auto evaluation worker is running.
         '''
         return self.eval_workers_auto_run != [] or self.eval_workers_auto_wait != []
 
     def is_evaluating(self):
         '''
+        Check if any evaluation worker is running.
         '''
         return self.is_evaluating_manual() or self.is_evaluating_auto()
 
     def is_working(self):
         '''
+        Check if any worker is running.
         '''
         return self.is_optimizing() or self.is_predicting() and self.is_evaluating()
 
     def _refresh_optimize(self):
         '''
+        Refresh optimization status.
+
+        Returns
+        -------
+        rowids: list
+            Row numbers of the data where ongoing optimizations have finished.
         '''
         if self.opt_worker is None: return
 
@@ -266,6 +361,12 @@ class OptimizeScheduler:
 
     def _refresh_predict(self):
         '''
+        Refresh prediction status.
+
+        Returns
+        -------
+        bool
+            Whether ongoing predictions have finished.
         '''
         completed_workers = []
 
@@ -283,6 +384,14 @@ class OptimizeScheduler:
 
     def _refresh_evaluate(self):
         '''
+        Refresh evaluation status.
+
+        Returns
+        -------
+        bool
+            Whether ongoing manual evaluations have finished.
+        bool
+            Whether ongoing auto evaluations have finished.
         '''
         completed_workers_manual, completed_workers_auto = [], []
 
@@ -326,6 +435,7 @@ class OptimizeScheduler:
 
     def refresh(self):
         '''
+        Refresh optimization, prediction and evaluation status.
         '''
         opt_rowids = self._refresh_optimize()
         opt_finished = opt_rowids is not None
@@ -351,7 +461,7 @@ class OptimizeScheduler:
 
     def stop_optimize(self):
         '''
-        Stop the running optimization worker
+        Stop the running optimization worker.
         '''
         self.auto_scheduling = False
 
@@ -365,7 +475,7 @@ class OptimizeScheduler:
 
     def stop_predict(self):
         '''
-        Stop the running prediction worker(s)
+        Stop the running prediction worker(s).
         '''
         for worker_info in self.pred_workers:
             worker, rowids = worker_info
@@ -377,9 +487,12 @@ class OptimizeScheduler:
 
     def stop_evaluate_manual(self, rowid=None):
         '''
-        Stop the running evaluation worker(s)
-        Input:
-            rowid: the id of row to be stopped (if None then stop all workers)
+        Stop the running manual evaluation worker(s).
+        
+        Parameters
+        ----------
+        rowid: list
+            Row numbers of the manual evaluations to be stopped (if None then stop all manual workers).
         '''
         stop_all = rowid is None
         worker_run_stopped = None
@@ -413,9 +526,12 @@ class OptimizeScheduler:
 
     def stop_evaluate_auto(self, rowid=None):
         '''
-        Stop the running evaluation worker(s)
-        Input:
-            rowid: the id of row to be stopped (if None then stop all workers)
+        Stop the running auto evaluation worker(s).
+        
+        Parameters
+        ----------
+        rowid: list
+            Row numbers of the auto evaluations to be stopped (if None then stop all auto workers).
         '''
         self.auto_scheduling = False
 
@@ -450,16 +566,27 @@ class OptimizeScheduler:
                 self.eval_workers_auto_wait.remove(worker_wait_stopped)
 
     def stop_evaluate(self, rowid=None):
+        '''
+        Stop the running evaluation worker(s).
+        
+        Parameters
+        ----------
+        rowid: list
+            Row numbers of the evaluations to be stopped (if None then stop all workers).
+        '''
         self.stop_evaluate_manual(rowid=rowid)
         self.stop_evaluate_auto(rowid=rowid)
 
     def stop_all(self):
         '''
-        Stop all workers
+        Stop all workers.
         '''
         self.stop_optimize()
         self.stop_predict()
         self.stop_evaluate()
 
     def quit(self):
+        '''
+        Quit the scheduler.
+        '''
         self.stop_all()

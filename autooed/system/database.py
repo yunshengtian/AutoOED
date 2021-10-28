@@ -1,3 +1,7 @@
+'''
+Database related tools.
+'''
+
 import os
 import sys
 import sqlite3
@@ -7,12 +11,42 @@ from multiprocessing import Lock, Process, Queue, Value
 from collections.abc import Iterable
 
 from autooed.utils.path import get_root_dir
-from autooed.system.database.table import get_table_descriptions
+
+
+'''
+Descriptions of the reserved database tables.
+'''
+table_descriptions = {
+
+    '_empty_table': '''
+        name varchar(50) not null primary key
+        ''',
+
+    '_problem_info': '''
+        name varchar(50) not null primary key,
+        problem_name varchar(50) not null
+        ''',
+
+    '_config': '''
+        name varchar(50) not null,
+        config text not null
+        ''',
+
+}
 
 
 def daemon_func(data_path, task_queue, result_queue):
     '''
-    Daemon process for serial database interaction
+    Daemon process for serial database interaction.
+
+    Parameters
+    ----------
+    data_path: str
+        Path of the database file.
+    task_queue: multiprocessing.Queue
+        Queue to put tasks in.
+    result_queue: multiprocessing.Queue
+        Queue to get results from.
     '''
     conn = sqlite3.connect(data_path)
     cur = conn.cursor()
@@ -59,8 +93,17 @@ def daemon_func(data_path, task_queue, result_queue):
 
 class SafeLock:
     '''
+    Safe database lock control for avoiding writing conflict.
     '''
     def __init__(self, lock, block=True):
+        '''
+        Parameters
+        ----------
+        lock: multiprocessing.Lock
+            The database lock.
+        block: bool
+            Whether to acquire lock in a blocked way.
+        '''
         self.lock = lock
         self.block = block
         self.locked = False
@@ -77,10 +120,9 @@ class SafeLock:
 
 class Database:
     '''
+    Database based on SQLite.
     '''
     def __init__(self):
-        '''
-        '''
         self.data_path = os.path.join(get_root_dir(), 'data.db')
 
         self.lock = Lock()
@@ -92,7 +134,6 @@ class Database:
         self.connect()
 
         # reserved tables
-        table_descriptions = get_table_descriptions()
         self.reserved_tables = list(table_descriptions.keys())
 
         # reserved tables
@@ -109,19 +150,20 @@ class Database:
 
     def connect(self, force=False):
         '''
+        Connect to database.
         '''
         if force: return # TODO
         Process(target=daemon_func, args=(self.data_path, self.task_queue, self.result_queue)).start()
 
     def commit(self):
         '''
-        Commit changes to database
+        Commit changes to database.
         '''
         self.task_queue.put('commit')
 
     def quit(self):
         '''
-        Quit database
+        Quit database.
         '''
         self.task_queue.put('quit')
 
@@ -131,6 +173,25 @@ class Database:
 
     def _execute(self, exe_type, query, data=None, fetchone=False, fetchall=False):
         '''
+        Execute a query by putting it in the task queue and fetch the results.
+
+        Parameters
+        ----------
+        exe_type: str
+            Whether to execute a single-row or multi-row query (execute or executemany).
+        query: str
+            The query command in SQL.
+        data: list
+            List of data associated with the query.
+        fetchone: bool
+            Whether to fetch one query result to return.
+        fetchall: bool
+            Whether to fetch all query results to return.
+
+        Returns
+        -------
+        list
+            A list of fetched results (if fetch).
         '''
         self.execute_lock.acquire()
         assert exe_type in ['execute', 'executemany']
@@ -155,11 +216,13 @@ class Database:
 
     def execute(self, *args, **kwargs):
         '''
+        Execute a single-row query by putting it in the task queue and fetch the results.
         '''
         return self._execute('execute', *args, **kwargs)
         
     def executemany(self, *args, **kwargs):
         '''
+        Execute a multi-row query by putting it in the task queue and fetch the results.
         '''
         return self._execute('executemany', *args, **kwargs)
 
@@ -169,6 +232,7 @@ class Database:
 
     def get_table_list(self):
         '''
+        Get the list of all database tables.
         '''
         with SafeLock(self.lock):
             inited_table_list = self.execute(f'select name from sqlite_master where type="table"', fetchall=True)
@@ -179,6 +243,14 @@ class Database:
 
     def check_table_exist(self, name, block=True):
         '''
+        Check if certain database table exist.
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to check.
+        block: bool
+            Whether to acquire lock in a blocked way.
         '''
         assert name not in self.reserved_tables, f'{name} is a reserved table'
         with SafeLock(self.lock, block=block):
@@ -191,6 +263,12 @@ class Database:
 
     def check_inited_table_exist(self, name):
         '''
+        Check if certain database table exists and is initialized with data.
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to check.
         '''
         assert name not in self.reserved_tables, f'{name} is a reserved table'
         inited_table_list = self.execute(f'select * from sqlite_master where type="table" and name="{name}"', fetchall=True)
@@ -198,6 +276,12 @@ class Database:
 
     def _check_reserved_table_exist(self, name):
         '''
+        Check if certain reserved database table exists.
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to check.
         '''
         assert name in self.reserved_tables, f'{name} is not a reserved table'
         table_list = self.execute(f'select * from sqlite_master where type="table" and name="{name}"', fetchall=True)
@@ -205,6 +289,14 @@ class Database:
 
     def load_table(self, name, column=None):
         '''
+        Load data from a database table.
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to load data from.
+        column: str/list
+            Column name(s) of the table to load data from.
         '''
         with SafeLock(self.lock):
             assert self.check_table_exist(name, block=False), f'Table {name} does not exist'
@@ -213,6 +305,12 @@ class Database:
     
     def create_table(self, name):
         '''
+        Create a database table (uninitialized).
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to create.
         '''
         name = name.lower()
         with SafeLock(self.lock):
@@ -228,6 +326,14 @@ class Database:
 
     def init_table(self, name, problem_cfg):
         '''
+        Initialize a database table.
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to initialize.
+        problem_cfg: dict
+            Problem configurations.
         '''
         problem_name = problem_cfg['name']
         n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
@@ -264,6 +370,12 @@ class Database:
 
     def remove_table(self, name):
         '''
+        Remove a database table.
+
+        Parameters
+        ----------
+        name: str
+            Name of the table to remove.
         '''
         assert name not in self.reserved_tables
         table_exist = True
@@ -287,6 +399,17 @@ class Database:
 
     def query_problem(self, name):
         '''
+        Query the problem name given the database table name.
+
+        Parameters
+        ----------
+        name: str
+            Name of the database table.
+        
+        Returns
+        -------
+        str
+            Problem name of the given database table (None if not found).
         '''
         result = self.execute(f'select problem_name from _problem_info where name="{name}"', fetchone=True)
         if result is None:
@@ -300,6 +423,14 @@ class Database:
 
     def update_config(self, name, config):
         '''
+        Update the experiment config of a database table.
+
+        Parameters
+        ----------
+        name: str
+            Name of the database table.
+        config: dict
+            Experiment configurations to upate.
         '''
         # convert all numpy array to list
         def convert_config(config):
@@ -319,6 +450,17 @@ class Database:
 
     def query_config(self, name):
         '''
+        Query the experiment config of a given database table.
+
+        Parameters
+        ----------
+        name: str
+            Name of the database table.
+
+        Returns
+        -------
+        dict
+            Queried experiment configurations (None if not found).
         '''
         config_str = self.execute(f'select config from _config where name="{name}" order by rowid desc limit 1', fetchone=True)
         if config_str is None:
@@ -333,6 +475,23 @@ class Database:
 
     def insert_data(self, table, column, data, transform=False):
         '''
+        Insert single-row data to the database.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table to insert.
+        column: str/list
+            Column name(s) of the table to insert.
+        data: list/np.ndarray
+            Data to insert.
+        transform: bool
+            Whether the data needs to be stacked for queries.
+
+        Returns
+        -------
+        int
+            Row number of the inserted data.
         '''
         if transform:
             data = self._transform_data(data)
@@ -357,6 +516,23 @@ class Database:
 
     def insert_multiple_data(self, table, column, data, transform=False):
         '''
+        Insert multi-row data to the database.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table to insert.
+        column: str/list
+            Column name(s) of the table to insert.
+        data: list/np.ndarray
+            Data to insert.
+        transform: bool
+            Whether the data needs to be stacked for queries.
+
+        Returns
+        -------
+        list
+            Row numbers of the inserted data.
         '''
         if transform:
             data = self._transform_multiple_data(data)
@@ -381,6 +557,17 @@ class Database:
 
     def _get_rowid_condition(self, rowid):
         '''
+        Get the condition part of a SQL query based on the specified row number(s).
+
+        Parameters
+        ----------
+        rowid: int/list
+            Row number(s) (if None then all rows).
+        
+        Returns
+        -------
+        str
+            The condition part of the query.
         '''
         if rowid is None:
             # update all rows
@@ -393,8 +580,22 @@ class Database:
             condition = f' where rowid = {int(rowid)}'
         return condition
 
-    def update_data(self, table, column, data, rowid=None, transform=False):
+    def update_data(self, table, column, data, rowid, transform=False):
         '''
+        Update single-row data of the database.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table to update.
+        column: str/list
+            Column name(s) of the table to update.
+        data: list/np.ndarray
+            Data to update.
+        rowid: int
+            Row number of the table to update.
+        transform: bool
+            Whether the data needs to be stacked for queries.
         '''
         if transform:
             data = self._transform_data(data)
@@ -407,6 +608,7 @@ class Database:
             # assert len(column) == len(data), 'length mismatch of keys and values'
             query = f"update {table} set {','.join([col + '=?' for col in column])}"
 
+        assert type(rowid) == int, 'row number is not an integer, use update_multiple_data instead for multiple row numbers'
         condition = self._get_rowid_condition(rowid)
         query += condition
 
@@ -417,6 +619,20 @@ class Database:
 
     def update_multiple_data(self, table, column, data, rowid=None, transform=False):
         '''
+        Update multi-row data of the database.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table to update.
+        column: str/list
+            Column name(s) of the table to update.
+        data: list/np.ndarray
+            Data to update.
+        rowid: list/np.ndarray
+            Row numbers of the table to update (if None then all rows).
+        transform: bool
+            Whether the data needs to be stacked for queries.
         '''
         if transform:
             data = self._transform_multiple_data(data)
@@ -443,6 +659,14 @@ class Database:
 
     def delete_data(self, table, rowid):
         '''
+        Delete data from the database.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table to delete from.
+        rowid: int/list
+            Row number(s) of the table to delete from (if None then all rows).
         '''
         condition = self._get_rowid_condition(rowid)
         query = f'delete from {table}' + condition
@@ -454,6 +678,17 @@ class Database:
     
     def _transform_data(self, data_list):
         '''
+        Horizontally stack data together for single-row database queries.
+
+        Parameters
+        ----------
+        data_list: list/np.ndarray
+            List of data to be stacked.
+        
+        Returns
+        -------
+        np.ndarray
+            Stacked data for database queries (in str format).
         '''
         new_data_list = []
         for data in data_list:
@@ -466,6 +701,17 @@ class Database:
 
     def _transform_multiple_data(self, data_list):
         '''
+        Horizontally stack data together for multi-row database queries.
+
+        Parameters
+        ----------
+        data_list: list/np.ndarray
+            List of data to be stacked.
+        
+        Returns
+        -------
+        np.ndarray
+            Stacked data for database queries (in str format).
         '''
         new_data_list = []
         for data in data_list:
@@ -478,6 +724,21 @@ class Database:
 
     def select_data(self, table, column, rowid=None):
         '''
+        Get data from database using select queries.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table to query.
+        column: str/list
+            Column name(s) of the table to query (if None then select all columns).
+        rowid: int/list
+            Row number(s) of the table to query (if None then select all rows).
+        
+        Returns
+        -------
+        list
+            Selected data based on input arguments.
         '''
         if column is None:
             query = f'select * from {table}'
@@ -493,12 +754,34 @@ class Database:
 
     def get_n_row(self, table):
         '''
+        Get the number of rows of a database table.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table.
+
+        Returns
+        -------
+        int
+            Number of rows in the given table.
         '''
         query = f'select count(*) from {table}'
         return self.execute(query, fetchone=True)[0]
 
     def get_column_names(self, table):
         '''
+        Get the column names of a database table.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table.
+
+        Returns
+        -------
+        list
+            Column names of the given table.
         '''
         query = f'select name from pragma_table_info("{table}")'
         column_names = self.execute(query, fetchall=True)
@@ -507,10 +790,27 @@ class Database:
 
     def get_checksum(self, table=None):
         '''
+        Get the checksum of a database table.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table.
+
+        Returns
+        -------
+        int
+            Checksum of the given table.
         '''
         return self.checksum.value
 
     def _update_checksum(self):
         '''
+        Update the checksum of a database table.
+
+        Parameters
+        ----------
+        table: str
+            Name of the database table.
         '''
         self.checksum.value += 1
