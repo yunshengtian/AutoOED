@@ -717,7 +717,7 @@ class OptimizeAgent(EvaluateAgent):
 
         return rowids_unevaluated
 
-    def optimize(self, queue=None):
+    def optimize(self, queue=None, batch_size=None):
         '''
         Optimize for a batch of designs to evaluate and store the designs in the database.
         '''
@@ -733,7 +733,7 @@ class OptimizeAgent(EvaluateAgent):
 
         # optimize for best X_next
         config = self.get_config()
-        X_next, (Y_expected, Y_uncertainty) = optimize_predict(config, X, Y, X_busy)
+        X_next, (Y_expected, Y_uncertainty) = optimize_predict(config, X, Y, X_busy, batch_size=batch_size)
 
         # insert optimization and prediction result to database
         if Y_expected is not None and Y_uncertainty is not None:

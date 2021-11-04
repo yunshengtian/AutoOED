@@ -2,6 +2,7 @@
 Schedulers for scheduling evaluation and optimization in a parallel scenario.
 '''
 
+import numpy as np
 from multiprocessing import Process, Queue
 
 from autooed.problem import build_problem, get_problem_config
@@ -82,7 +83,7 @@ class EvaluateScheduler:
         self.n_worker = n_worker
         for rowid in rowids:
             worker = Process(target=self.agent.evaluate, args=(rowid, eval_func))
-            self.eval_workers_manual_wait.append([worker, rowid])
+            self.eval_workers_wait.append([worker, rowid])
 
     def is_evaluating(self):
         '''
@@ -187,8 +188,9 @@ class OptimizeScheduler:
         self.agent = agent
         self.logger = Logger()
 
-        self.opt_worker = None
+        self.opt_workers = []
         self.opt_queue = Queue()
+        self.n_optimizing_sample = 0
         self.pred_workers = []
         self.eval_workers_manual_run = []
         self.eval_workers_manual_wait = []
@@ -223,16 +225,21 @@ class OptimizeScheduler:
             self.config = config.copy()
             self.agent.set_config(self.config)
 
-    def _optimize(self):
+    def _optimize(self, batch_size=None):
         '''
         Launch an optimization worker.
         '''
         if not self.agent.check_initialized():
             raise Exception('initialization has not finished')
-        assert self.opt_worker is None, 'optimization is running'
         self.logger.add(f'optimization started')
-        self.opt_worker = Process(target=self.agent.optimize, args=(self.opt_queue,))
-        self.opt_worker.start()
+        worker = Process(target=self.agent.optimize, args=(self.opt_queue, batch_size))
+        worker.start()
+        self.opt_workers.append(worker)
+        
+        if batch_size is None:
+            self.n_optimizing_sample += self.config['experiment']['batch_size']
+        else:
+            self.n_optimizing_sample += batch_size
 
     def optimize_manual(self):
         '''
@@ -249,7 +256,7 @@ class OptimizeScheduler:
         stop_criterion: list
             List of stop criteria for optimization.
         '''
-        assert self.agent.can_eval
+        assert self.agent.can_eval, 'evaluation function is not provided, cannot use auto mode'
         self.auto_scheduling = True
         self.stop_criterion = stop_criterion
         for criterion in self.stop_criterion:
@@ -302,7 +309,7 @@ class OptimizeScheduler:
         '''
         Check if any optimization worker is running.
         '''
-        return self.opt_worker is not None
+        return self.opt_workers != []
 
     def is_predicting(self):
         '''
@@ -343,21 +350,28 @@ class OptimizeScheduler:
         rowids: list
             Row numbers of the data where ongoing optimizations have finished.
         '''
-        if self.opt_worker is None: return
+        completed_workers = []
+        rowids_list = []
 
-        rowids = None
-        try:
-            rowids = self.opt_queue.get(block=False)
-        except:
-            pass
+        for worker in self.opt_workers:
+            if not worker.is_alive():
+                try:
+                    rowids = self.opt_queue.get(block=False)
+                except:
+                    raise Exception('optimization worker finished without returning rowids of the design to evaluate')
+                rowids_list.append(rowids)
+                self.logger.add(f'optimization for row {",".join([str(r) for r in rowids])} finished')
+                completed_workers.append(worker)
+                self.n_optimizing_sample -= len(rowids)
+                assert self.n_optimizing_sample >= 0, 'error in counting designs being optimized'
 
-        if rowids is not None:
-            self.logger.add(f'optimization for row {",".join([str(r) for r in rowids])} finished')
-            if self.opt_worker.is_alive():
-                self.opt_worker.terminate()
-            self.opt_worker = None
+        for worker in completed_workers:
+            self.opt_workers.remove(worker)
 
-        return rowids
+        if rowids_list != []:
+            rowids_list = np.concatenate(rowids_list).tolist()
+
+        return rowids_list
 
     def _refresh_predict(self):
         '''
@@ -379,7 +393,7 @@ class OptimizeScheduler:
         for worker_info in completed_workers:
             self.pred_workers.remove(worker_info)
 
-        pred_finished = len(completed_workers) > 0 and self.pred_workers == []
+        pred_finished = len(completed_workers) > 0
         return pred_finished
 
     def _refresh_evaluate(self):
@@ -429,8 +443,8 @@ class OptimizeScheduler:
             self.logger.add(f'evaluation for row {rowid} started')
             self.eval_workers_auto_run.append([worker, rowid])
 
-        eval_manual_finished = len(completed_workers_manual) > 0 and self.eval_workers_manual_run == []
-        eval_auto_finished = len(completed_workers_auto) > 0 and self.eval_workers_auto_run == []
+        eval_manual_finished = len(completed_workers_manual) > 0
+        eval_auto_finished = len(completed_workers_auto) > 0
         return eval_manual_finished, eval_auto_finished
 
     def refresh(self):
@@ -438,10 +452,9 @@ class OptimizeScheduler:
         Refresh optimization, prediction and evaluation status.
         '''
         opt_rowids = self._refresh_optimize()
-        opt_finished = opt_rowids is not None
+        opt_finished = opt_rowids != []
         pred_finished = self._refresh_predict()
         eval_manual_finished, eval_auto_finished = self._refresh_evaluate()
-        assert not (opt_finished and eval_auto_finished)
 
         if opt_finished:
             if self.auto_scheduling:
@@ -455,7 +468,12 @@ class OptimizeScheduler:
                 self.auto_scheduling = self.auto_scheduling and (not stop)
 
             if self.auto_scheduling:
-                self._optimize()
+                n_running_eval_workers = len(self.eval_workers_manual_run) + len(self.eval_workers_auto_run)
+                batch_size = self.config['experiment']['batch_size'] - n_running_eval_workers - self.n_optimizing_sample
+                if batch_size > 0:
+                    self._optimize(batch_size=batch_size)
+                else:
+                    raise Exception('number of running evaluation workers exceeds the maximum set')
             else:
                 self.logger.add('stopping criterion met')
 
@@ -465,13 +483,13 @@ class OptimizeScheduler:
         '''
         self.auto_scheduling = False
 
-        if self.opt_worker is None: return
+        for worker in self.opt_workers:
+            if worker.is_alive():
+                worker.terminate()
+                self.logger.add(f'optimization stopped')
 
-        if self.opt_worker.is_alive():
-            self.opt_worker.terminate()
-
-        self.logger.add(f'optimization stopped')
-        self.opt_worker = None
+        self.opt_workers = []
+        self.n_optimizing_sample = 0
 
     def stop_predict(self):
         '''
