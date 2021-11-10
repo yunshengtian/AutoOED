@@ -14,11 +14,6 @@ def main():
         default=False,
         action='store_true',
     )
-    parser.add_argument(
-        '--serial',
-        default=False,
-        action='store_true',
-    )
     args = parser.parse_args()
 
 
@@ -26,7 +21,7 @@ def main():
     Software names and scripts
     '''
 
-    name, script = 'AutoOED', 'run.py'
+    name, script = 'AutoOED_v1.0', 'run_gui.py'
 
 
     '''
@@ -64,7 +59,6 @@ def main():
     base_cmd = f'''
         pyinstaller --windowed --onedir \
         --add-data "../../autooed/problem/custom{sep}autooed/problem/custom" \
-        --add-data "../../autooed/problem/data{sep}autooed/problem/data" \
         --add-data "../../autooed/problem/predefined{sep}autooed/problem/predefined" \
         --add-data "../../examples{sep}examples" \
         --add-data "../../static{sep}static" \
