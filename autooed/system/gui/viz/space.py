@@ -124,7 +124,7 @@ class VizSpaceView:
         embed_figure(self.fig, self.root_view.frame_plot)
 
         # performance space figure
-        if self.n_obj == 2 or self.n_obj > 3:
+        if self.n_obj == 1 or self.n_obj == 2 or self.n_obj > 3:
             self.ax1 = self.fig.add_subplot(self.gs[0])
         elif self.n_obj == 3:
             self.ax1 = self.fig.add_subplot(self.gs[0], projection='3d')
@@ -132,7 +132,9 @@ class VizSpaceView:
             raise NotImplementedError
         
         self.ax1.set_title('Performance Space')
-        if self.n_obj == 2:
+        if self.n_obj == 1:
+            self.ax1.set_xlabel(self.obj_name[0])
+        elif self.n_obj == 2:
             self.ax1.set_xlabel(self.obj_name[0])
             self.ax1.set_ylabel(self.obj_name[1])
         elif self.n_obj == 3:
@@ -188,7 +190,7 @@ class VizSpaceView:
         '''
         '''
         fig = plt.figure()
-        if self.n_obj == 2 or self.n_obj > 3:
+        if self.n_obj == 1 or self.n_obj == 2 or self.n_obj > 3:
             ax = fig.add_subplot(111)
         elif self.n_obj == 3:
             ax = fig.add_subplot(111, projection='3d')
@@ -200,11 +202,15 @@ class VizSpaceView:
         else:
             ax.set_title(title)
 
-        if self.n_obj == 2 or self.n_obj == 3:
+        if self.n_obj == 1:
+            ax.set_xlabel(self.obj_name[0])
+        elif self.n_obj == 2:
             ax.set_xlabel(self.obj_name[0])
             ax.set_ylabel(self.obj_name[1])
-            if self.n_obj == 3:
-                ax.set_zlabel(self.obj_name[2])
+        elif self.n_obj == 3:
+            ax.set_xlabel(self.obj_name[0])
+            ax.set_ylabel(self.obj_name[1])
+            ax.set_zlabel(self.obj_name[2])
         elif self.n_obj > 3:
             ax.set_xticks(np.arange(self.n_obj, dtype=int))
             ax.set_xticklabels(self.obj_name)
@@ -214,10 +220,12 @@ class VizSpaceView:
         handles, labels = self.ax1.get_legend_handles_labels()
         for handle, label in zip(handles, labels):
             if label.startswith('New'): continue
-            if self.n_obj == 2 or self.n_obj == 3:
+            if self.n_obj == 1 or self.n_obj == 2 or self.n_obj == 3:
                 offsets = handle.get_offsets().data
                 if len(offsets) == 0: continue
-                if self.n_obj == 2:
+                if self.n_obj == 1:
+                    new_handle = ax.scatter(*np.array(offsets).T, label=label, marker='x')
+                elif self.n_obj == 2:
                     new_handle = ax.scatter(*np.array(offsets).T, label=label)
                 else:
                     new_handle = ax.scatter3D(*np.array(offsets).T, label=label)
@@ -321,12 +329,29 @@ class VizSpaceController:
         self.pfront_limit = None
         true_pfront = self.root_controller.true_pfront
         if true_pfront is not None:
-            self.pfront_limit = [np.min(true_pfront, axis=1), np.max(true_pfront, axis=1)]
+            if self.n_obj == 1:
+                self.pfront_limit = true_pfront
+            else:
+                self.pfront_limit = [np.min(true_pfront, axis=1), np.max(true_pfront, axis=1)]
 
         # initialize performance space
         plot_obj_list = []
         
-        if self.n_obj == 2 or self.n_obj == 3:
+        if self.n_obj == 1:
+
+            if true_pfront is not None:
+                plot_pfront = self.view.ax1.scatter(true_pfront, 0, marker='x', color='gray', label='Oracle')
+                plot_obj_list.append(plot_pfront)
+            self.plot_x = None
+            self.plot_y = self.view.ax1.scatter([], [], marker='x', color='blue', label='Evaluated')
+            self.plot_y_pareto = self.view.ax1.scatter([], [], marker='x', color='red', label='Optimum')
+            self.plot_y_new = self.view.ax1.scatter([], [], marker='x', color='m', label='New evaluated')
+            plot_obj_list.extend([self.plot_y, self.plot_y_pareto, self.plot_y_new])
+            self.plot_selected = None
+            self.plot_y_pred = None # unused
+            self.line_y_pred_list = None # usused
+        
+        elif self.n_obj == 2 or self.n_obj == 3:
 
             if true_pfront is not None:
                 plot_pfront = self.view.ax1.scatter(*true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
@@ -408,7 +433,7 @@ class VizSpaceController:
 
             # find nearest performance values with associated design values
             loc = [event.xdata, event.ydata]
-            if self.n_obj == 2 or self.n_obj == 3:
+            if self.n_obj == 1 or self.n_obj == 2 or self.n_obj == 3:
                 all_y = self.plot_y._offsets
                 if len(all_y) == 0: return
                 closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
@@ -424,7 +449,7 @@ class VizSpaceController:
             self.clear_design_space()
 
             # highlight selected point
-            if self.n_obj == 2 or self.n_obj == 3:
+            if self.n_obj == 1 or self.n_obj == 2 or self.n_obj == 3:
                 self.plot_selected = self.view.ax1.scatter(*closest_y, s=50, facecolors=(0, 0, 0, 0), edgecolors='g', linewidths=2)
             elif self.n_obj > 3:
                 self.plot_selected = self.view.ax1.plot(*closest_line.T, color='g', alpha=0.8)[0]
@@ -549,7 +574,10 @@ class VizSpaceController:
         
         # replot evaluated & pareto points
         self.plot_x = X
-        if self.n_obj == 2:
+        if self.n_obj == 1:
+            self.plot_y.set_offsets(np.hstack([Y, np.zeros_like(Y)]))
+            self.plot_y_pareto.set_offsets(np.hstack([Y[pareto], np.zeros_like(Y[pareto])]))
+        elif self.n_obj == 2:
             self.plot_y.set_offsets(Y)
             self.plot_y_pareto.set_offsets(Y[pareto])
         elif self.n_obj == 3:
@@ -562,7 +590,13 @@ class VizSpaceController:
             raise NotImplementedError
         
         # rescale plot according to Y and true_pfront
-        if self.n_obj == 2 or self.n_obj == 3:
+        if self.n_obj == 1:
+            x_min, x_max = np.min(Y), np.max(Y)
+            if self.pfront_limit is not None:
+                x_min, x_max = min(x_min, self.pfront_limit), max(x_max, self.pfront_limit)
+            x_offset = (x_max - x_min) / 20
+            self.view.ax1.set_xlim(x_min - x_offset, x_max + x_offset)
+        elif self.n_obj == 2 or self.n_obj == 3:
             x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
             y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
             if self.n_obj == 3: z_min, z_max = np.min(Y[:, 2]), np.max(Y[:, 2])
@@ -578,6 +612,8 @@ class VizSpaceController:
             if self.n_obj == 3: self.view.ax1.set_zlim(z_min - z_offset, z_max + z_offset)
         elif self.n_obj > 3:
             y_min, y_max = np.min(Y), np.max(Y)
+            if self.pfront_limit is not None:
+                y_min, y_max = min(y_min, np.min(self.pfront_limit)), max(y_max, np.max(self.pfront_limit))
             y_offset = (y_max - y_min) / 20
             x_min, x_max = 0, self.n_obj - 1
             x_offset = (x_max - x_min) / 20
@@ -596,7 +632,9 @@ class VizSpaceController:
 
         if max_iter > 0:
             last_batch = np.where(batch == max_iter)[0]
-            if self.n_obj == 2:
+            if self.n_obj == 1:
+                self.plot_y_new.set_offsets(np.hstack([Y[last_batch], np.zeros_like(Y[last_batch])]))
+            elif self.n_obj == 2:
                 self.plot_y_new.set_offsets(Y[last_batch])
                 self.plot_y_pred.set_offsets(Y_expected[last_batch])
             elif self.n_obj == 3:
@@ -613,7 +651,9 @@ class VizSpaceController:
                     self.line_y_pred_list.append(line)
         else:
             empty_y = np.empty((0, self.n_obj))
-            if self.n_obj == 2:
+            if self.n_obj == 1:
+                self.plot_y_new.set_offsets(np.empty((0, 2)))
+            elif self.n_obj == 2:
                 self.plot_y_new.set_offsets(empty_y)
                 self.plot_y_pred.set_offsets(empty_y)
             elif self.n_obj == 3:

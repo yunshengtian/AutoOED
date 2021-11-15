@@ -4,7 +4,7 @@ from autooed.problem import build_problem
 from autooed.mobo import build_algorithm
 from autooed.utils.seed import set_seed
 from autooed.utils.initialization import generate_random_initial_samples
-from autooed.utils.plot import plot_performance_space, plot_hypervolume
+from autooed.utils.plot import plot_performance_space, plot_performance_metric
 
 from arguments import get_args
 
@@ -46,4 +46,4 @@ if __name__ == '__main__':
 
     # plot
     plot_performance_space(Y)
-    plot_hypervolume(Y)
+    plot_performance_metric(Y, problem.obj_type)

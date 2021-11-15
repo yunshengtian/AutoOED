@@ -21,9 +21,14 @@ class VizStatsView:
 
         # hypervolume curve figure
         self.ax['hv'] = self.fig.add_subplot(grid[:, 0])
-        self.ax['hv'].set_title('Hypervolume')
-        self.ax['hv'].set_xlabel('Evaluations')
-        self.ax['hv'].set_ylabel('Hypervolume')
+        if self.n_obj == 1:
+            self.ax['hv'].set_title('Optimum')
+            self.ax['hv'].set_xlabel('Evaluations')
+            self.ax['hv'].set_ylabel('Optimum')
+        else:
+            self.ax['hv'].set_title('Hypervolume')
+            self.ax['hv'].set_xlabel('Evaluations')
+            self.ax['hv'].set_ylabel('Hypervolume')
         self.ax['hv'].xaxis.set_major_locator(MaxNLocator(integer=True))
         self.line['hv'] = self.ax['hv'].plot([], [])[0]
 
@@ -42,7 +47,10 @@ class VizStatsView:
             self.line['hv'].set_data(np.arange(len(hypervolume)), hypervolume)
             self.ax['hv'].relim()
             self.ax['hv'].autoscale_view()
-            self.ax['hv'].set_title('Hypervolume: %.4f' % hypervolume[-1])
+            if self.n_obj == 1:
+                self.ax['hv'].set_title('Optimum: %.4f' % hypervolume[-1])
+            else:
+                self.ax['hv'].set_title('Hypervolume: %.4f' % hypervolume[-1])
 
         # model prediction error
         if len(model_error) > 0:

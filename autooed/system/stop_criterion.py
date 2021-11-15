@@ -131,7 +131,7 @@ class NSampleStopCriterion(StopCriterion):
 
 class HVStopCriterion(StopCriterion):
     '''
-    Stopping criterion based on max hypervolume.
+    Stopping criterion based on max hypervolume (when n_obj > 1).
     '''
     def __init__(self, agent, max_hv):
         '''
@@ -143,6 +143,8 @@ class HVStopCriterion(StopCriterion):
             Maximum hypervolume.
         '''
         super().__init__(agent)
+        n_obj = agent.problem_cfg['n_obj']
+        assert n_obj > 1, 'Hypervolume stopping criterion only works for n_obj > 1'
         self.max_hv = max_hv
 
     def check(self):
@@ -158,7 +160,7 @@ class HVStopCriterion(StopCriterion):
 
 class HVConvStopCriterion(StopCriterion):
     '''
-    Stopping criterion based on hypervolume convergence.
+    Stopping criterion based on hypervolume convergence (when n_obj > 1).
     '''
     def __init__(self, agent, max_iter):
         '''
@@ -171,6 +173,8 @@ class HVConvStopCriterion(StopCriterion):
             I.e., convergence happens if hypervolume stops to improve for max_iter iterations.
         '''
         super().__init__(agent)
+        n_obj = agent.problem_cfg['n_obj']
+        assert n_obj > 1, 'Hypervolume convergence stopping criterion only works for n_obj > 1'
         self.last_hv = None
         self.n_iter = None
         self.max_iter = max_iter
@@ -197,6 +201,84 @@ class HVConvStopCriterion(StopCriterion):
         return self.max_iter
 
 
+class OptStopCriterion(StopCriterion):
+    '''
+    Stopping criterion based on optimum (when n_obj == 1).
+    '''
+    def __init__(self, agent, optimum):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        optimum: float
+            Optimum value.
+        '''
+        super().__init__(agent)
+        n_obj = agent.problem_cfg['n_obj']
+        assert n_obj == 1, 'Optimum stopping criterion only works for n_obj == 1'
+        self.obj_type = self.agent.problem_cfg['obj_type']
+        self.optimum = optimum
+
+    def check(self):
+        if not self.started:
+            return False
+        optimum = self.agent.get_optimum()
+        if optimum is None: return False
+        if self.obj_type == ['min']:
+            return optimum <= self.optimum
+        elif self.obj_type == ['max']:
+            return optimum >= self.optimum
+        else:
+            raise NotImplementedError
+
+    def load(self):
+        return self.optimum
+
+
+class OptConvStopCriterion(StopCriterion):
+    '''
+    Stopping criterion based on optimum convergence (when n_obj == 1).
+    '''
+    def __init__(self, agent, max_iter):
+        '''
+        Parameters
+        ----------
+        agent: autooed.system.agent.LoadAgent
+            Agent that talks to algorithms and database.
+        max_iter: int
+            Maximum iteration for measuring the optimum convergence. 
+            I.e., convergence happens if optimum stops to improve for max_iter iterations.
+        '''
+        super().__init__(agent)
+        n_obj = agent.problem_cfg['n_obj']
+        assert n_obj == 1, 'Optimum convergence stopping criterion only works for n_obj == 1'
+        self.last_optimum = None
+        self.n_iter = None
+        self.max_iter = max_iter
+
+    def start(self):
+        super().start()
+        self.last_optimum = None
+        self.n_iter = 0
+
+    def check(self):
+        if not self.started:
+            return False
+        optimum = self.agent.get_optimum()
+        if optimum is None: return False
+        if optimum == self.last_optimum:
+            self.n_iter += 1
+            return self.n_iter >= self.max_iter
+        else:
+            self.last_optimum = optimum
+            self.n_iter = 0
+            return False
+
+    def load(self):
+        return self.max_iter
+
+
 def get_stop_criterion(name):
     '''
     Get stopping criterion by name.
@@ -207,6 +289,8 @@ def get_stop_criterion(name):
         'n_sample': NSampleStopCriterion,
         'hv': HVStopCriterion,
         'hv_conv': HVConvStopCriterion,
+        'opt': OptStopCriterion,
+        'opt_conv': OptConvStopCriterion,
     }
     return stop_criterion[name]
 
@@ -220,5 +304,7 @@ def get_name(stop_criterion):
         NSampleStopCriterion: 'n_sample',
         HVStopCriterion: 'hv',
         HVConvStopCriterion: 'hv_conv',
+        OptStopCriterion: 'opt',
+        OptConvStopCriterion: 'opt_conv',
     }
     return name[stop_criterion]

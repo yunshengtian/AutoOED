@@ -55,10 +55,14 @@ def get_async_acquisition(name):
 def get_solver(name):
 
     solver_map = {
+        # multi-objective
         'nsga2': NSGA2,
         'moead': MOEAD,
         'parego': ParEGO,
         'discovery': ParetoDiscovery,
+        # single-objective
+        'ga': GA,
+        'cmaes': CMAES,
     }
 
     if name in solver_map:

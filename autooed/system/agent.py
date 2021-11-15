@@ -238,9 +238,14 @@ class LoadAgent:
                             result_list[res_idx].append([])
                         result_list[res_idx][-1].append(data[row][col])
 
-            dtype = [self.type_map[key] for key in keys]
-            for i in range(len(dtype)):
-                result_list[i] = np.array(result_list[i], dtype=dtype[i])
+            for i in range(len(keys)):
+                key = keys[i]
+                dtype = self.type_map[key]
+                mapped_key = mapped_keys[i]
+                result_list[i] = np.array(result_list[i], dtype=dtype)
+                if type(mapped_key) == list:
+                    if result_list[i].ndim == 1:
+                        result_list[i] = result_list[i].reshape(-1, 1)
             return result_list
 
         else:
@@ -249,6 +254,8 @@ class LoadAgent:
             if type(self._map_key(keys)) == str:
                 return result.squeeze()
             else:
+                if result.ndim == 1:
+                    result = result.reshape(-1, 1)
                 return result
 
     def quit(self):
@@ -282,10 +289,29 @@ class LoadAgent:
         status = self.load('status')
         return np.sum(status == 'evaluated')
 
+    def get_optimum(self):
+        '''
+        Get the optimum (when n_obj == 1).
+        '''
+        n_obj, obj_type = self.problem_cfg['n_obj'], self.problem_cfg['obj_type']
+        assert n_obj == 1, 'Optimum is only meaningful for n_obj == 1'
+        optimum = self.load('_hypervolume')
+        if len(optimum) == 0: return None
+        valid_idx = self._get_valid_idx(optimum)
+        if len(optimum) == 0: return None
+        if obj_type == ['min']:
+            return optimum[valid_idx].min()
+        elif obj_type == ['max']:
+            return optimum[valid_idx].max()
+        else:
+            raise NotImplementedError()
+
     def get_max_hv(self):
         '''
-        Get the max hypervolume.
+        Get the max hypervolume (when n_obj > 1).
         '''
+        n_obj = self.problem_cfg['n_obj']
+        assert n_obj > 1, 'Max hv is only meaningful for n_obj > 1'
         hypervolume = self.load('_hypervolume')
         if len(hypervolume) == 0: return None
         valid_idx = self._get_valid_idx(hypervolume)
@@ -412,6 +438,7 @@ class EvaluateAgent(LoadAgent):
         '''
         Initialize the reference point.
         '''
+        if self.problem_cfg['n_obj'] == 1: return
         if self.ref_point is not None and None not in self.ref_point: return
 
         # compute reference point based on current data
@@ -461,7 +488,9 @@ class EvaluateAgent(LoadAgent):
         rowids: list
             Row numbers of hypervolume values to update.
         '''
-        if self.ref_point is None: return
+        n_obj, obj_type = self.problem_cfg['n_obj'], self.problem_cfg['obj_type']
+
+        if n_obj > 1 and self.ref_point is None: return
 
         # load and check order (assume only called after some evaluations)
         all_order = self.load('_order')
@@ -482,7 +511,15 @@ class EvaluateAgent(LoadAgent):
                 Y = np.vstack([Y, np.atleast_2d(Y_all[rowid - 1])])
             else:
                 Y = np.atleast_2d(Y_all[rowid - 1])
-            hv = calc_hypervolume(Y, self.ref_point, self.problem_cfg['obj_type'])
+            if n_obj == 1:
+                if obj_type == ['min']:
+                    hv = np.min(Y)
+                elif obj_type == ['max']:
+                    hv = np.max(Y)
+                else:
+                    raise NotImplementedError
+            else:
+                hv = calc_hypervolume(Y, self.ref_point, obj_type)
             hv_list.append(hv)
 
         self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
@@ -491,7 +528,9 @@ class EvaluateAgent(LoadAgent):
         '''
         Reload the hypervolume statistics.
         '''
-        if self.ref_point is None: return
+        n_obj, obj_type = self.problem_cfg['n_obj'], self.problem_cfg['obj_type']
+
+        if n_obj > 1 and self.ref_point is None: return
 
         # load and check order
         all_order, Y = self.load(['_order', 'Y'])
@@ -508,7 +547,15 @@ class EvaluateAgent(LoadAgent):
             idx = int(np.where(all_order == i)[0][0])
             rowids.append(idx + 1)
             Y_curr = np.vstack([Y_curr, np.atleast_2d(Y[idx])])
-            hv = calc_hypervolume(Y_curr, self.ref_point, self.problem_cfg['obj_type'])
+            if n_obj == 1:
+                if obj_type == ['min']:
+                    hv = np.min(Y_curr)
+                elif obj_type == ['max']:
+                    hv = np.max(Y_curr)
+                else:
+                    raise NotImplementedError
+            else:
+                hv = calc_hypervolume(Y_curr, self.ref_point, obj_type)
             hv_list.append(hv)
 
         self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)

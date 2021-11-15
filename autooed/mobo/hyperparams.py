@@ -53,6 +53,7 @@ acquisition_hyperparams = {
 
 
 solver_hyperparams = {
+    # multi-objective
     'nsga2': {
         '__name__': 'NSGA-II',
         'n_gen': dict(dtype=int, default=200, constr=lambda x: x > 0),
@@ -72,6 +73,14 @@ solver_hyperparams = {
         'n_gen': dict(dtype=int, default=10, constr=lambda x: x > 0),
         'pop_size': dict(dtype=int, default=100, constr=lambda x: x > 0),
         'n_process': dict(dtype=int, default=cpu_count(), constr=lambda x: x > 0),
+    },
+    # single-objective
+    'ga': {
+        '__name__': 'Genetic Algorithm',
+        'pop_size': dict(dtype=int, default=200, constr=lambda x: x > 0),
+    },
+    'cmaes': {
+        '__name__': 'CMA-ES',
     },
 }
 

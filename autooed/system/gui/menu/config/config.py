@@ -210,7 +210,10 @@ class MenuConfigController:
         self.problem_cfg.clear()
         self.problem_cfg.update(config)
 
-        self.view.widget['set_ref_point'].enable()
+        if config['n_obj'] == 1:
+            self.view.widget['set_ref_point'].disable()
+        else:
+            self.view.widget['set_ref_point'].enable()
 
     def set_ref_point(self):
         '''

@@ -8,14 +8,18 @@ from autooed.system.gui.widgets.factory import create_widget
 
 class MenuExportStatsView:
 
-    def __init__(self, root_view):
+    def __init__(self, root_view, n_obj):
         self.root_view = root_view
 
         self.window = create_widget('toplevel', master=self.root_view.root_view.root, title='Export Statistics')
 
         self.widget = {}
-        self.widget['choice'] = create_widget('radiobutton',
-            master=self.window, row=0, column=0, text_list=['Hypervolume', 'Model Error'], default='Hypervolume')
+        if n_obj == 1:
+            self.widget['choice'] = create_widget('radiobutton',
+                master=self.window, row=0, column=0, text_list=['Optimum', 'Model Error'], default='Optimum')
+        else:
+            self.widget['choice'] = create_widget('radiobutton',
+                master=self.window, row=0, column=0, text_list=['Hypervolume', 'Model Error'], default='Hypervolume')
 
         frame_action = create_widget('frame', master=self.window, row=1, column=0, padx=0, pady=0, sticky=None)
         self.widget['export'] = create_widget('button', master=frame_action, row=0, column=0, text='Export')
@@ -29,8 +33,9 @@ class MenuExportStatsController:
         self.root_view = self.root_controller.view
 
         self.agent = self.root_controller.agent
-
-        self.view = MenuExportStatsView(self.root_view)
+        
+        n_obj = self.agent.problem_cfg['n_obj']
+        self.view = MenuExportStatsView(self.root_view, n_obj)
 
         self.view.widget['export'].configure(command=self.export)
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
@@ -40,7 +45,12 @@ class MenuExportStatsController:
         '''
         choice = self.view.widget['choice'].get()
 
-        if choice == 'Hypervolume':
+        if choice == 'Optimum':
+            data = self.agent.load_hypervolume()
+            x = np.arange(len(data))
+            df = pd.DataFrame({'Number of samples': x, 'Optimum': data})
+
+        elif choice == 'Hypervolume':
             data = self.agent.load_hypervolume()
             x = np.arange(len(data))
             df = pd.DataFrame({'Number of samples': x, 'Hypervolume': data})

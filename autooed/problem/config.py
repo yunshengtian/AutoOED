@@ -194,7 +194,7 @@ def check_config(config):
 
     # obj
     assert 'n_obj' in config, 'number of objectives is not specified'
-    assert is_int(config['n_obj']) and config['n_obj'] > 1, 'number of variables must be an integer greater than 1'
+    assert is_int(config['n_obj']) and config['n_obj'] > 0, 'number of objectives must be positive'
     n_obj = config['n_obj']
 
     if 'obj_name' in config and config['obj_name'] is not None:

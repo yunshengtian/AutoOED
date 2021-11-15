@@ -67,7 +67,7 @@ def get_solver_args(args=None):
 
     # general solver
     parser.add_argument('--solver', type=str, 
-        choices=['nsga2', 'moead', 'parego', 'discovery'], default='nsga2', 
+        choices=['nsga2', 'moead', 'parego', 'discovery', 'ga', 'cmaes'], default='nsga2', 
         help='type of the multiobjective solver')
     parser.add_argument('--n-process', type=int, default=cpu_count(),
         help='number of processes to be used for parallelization')
