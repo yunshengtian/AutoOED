@@ -139,7 +139,7 @@ class Database:
         # reserved tables
         for name, desc in table_descriptions.items():
             if not self._check_reserved_table_exist(name):
-                self.execute(f'create table {name} ({desc})')
+                self.execute(f'create table "{name}" ({desc})')
 
         # checksum
         self.checksum = Value('i', 0)
@@ -363,7 +363,7 @@ class Database:
         description += ['_order int default -1', '_hypervolume float']
         
         with SafeLock(self.lock):
-            self.execute(f'create table {name} ({",".join(description)})')
+            self.execute(f'create table "{name}" ({",".join(description)})')
             self.execute(f'delete from _empty_table where name="{name}"')
             self.execute(f'insert into _problem_info values ("{name}", "{problem_name}")')
             self.commit()
@@ -381,7 +381,7 @@ class Database:
         table_exist = True
         with SafeLock(self.lock):
             if self.check_inited_table_exist(name):
-                self.execute(f'drop table {name}')
+                self.execute(f'drop table "{name}"')
                 self.execute(f'delete from _problem_info where name="{name}"')
                 self.execute(f'delete from _config where name="{name}"')
                 self.commit()
@@ -498,12 +498,12 @@ class Database:
         if type(data) == np.ndarray:
             data = data.tolist()
         if column is None:
-            query = f"insert into {table} values ({','.join(['?'] * len(data))})"
+            query = f'insert into "{table}" values ({",".join(["?"] * len(data))})'
         elif type(column) == str:
-            query = f"insert into {table} values (?)"
+            query = f'insert into "{table}" values (?)'
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f"insert into {table} ({','.join(column)}) values ({','.join(['?'] * len(data))})"
+            query = f'insert into "{table}" ({",".join(column)}) values ({",".join(["?"] * len(data))})'
 
         with SafeLock(self.lock):
             self.execute(query, data)
@@ -539,12 +539,12 @@ class Database:
         if type(data) == np.ndarray:
             data = data.tolist()
         if column is None:
-            query = f"insert into {table} values ({','.join(['?'] * len(data[0]))})"
+            query = f'insert into "{table}" values ({",".join(["?"] * len(data[0]))})'
         elif type(column) == str:
-            query = f"insert into {table} values (?)"
+            query = f'insert into "{table}" values (?)'
         else:
             # assert len(column) == len(data[0]), 'length mismatch of keys and values'
-            query = f"insert into {table} ({','.join(column)}) values ({','.join(['?'] * len(data[0]))})"
+            query = f'insert into "{table}" ({",".join(column)}) values ({",".join(["?"] * len(data[0]))})'
 
         with SafeLock(self.lock):
             self.executemany(query, data)
@@ -603,10 +603,10 @@ class Database:
             data = data.tolist()
 
         if type(column) == str:
-            query = f"update {table} set {column}=?"
+            query = f'update "{table}" set {column}=?'
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f"update {table} set {','.join([col + '=?' for col in column])}"
+            query = f'update "{table}" set {",".join([col + "=?" for col in column])}'
 
         assert type(rowid) == int, 'row number is not an integer, use update_multiple_data instead for multiple row numbers'
         condition = self._get_rowid_condition(rowid)
@@ -640,10 +640,10 @@ class Database:
             data = data.tolist()
 
         if type(column) == str:
-            query = f"update {table} set {column}=?"
+            query = f'update "{table}" set {column}=?'
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f"update {table} set {','.join([col + '=?' for col in column])}"
+            query = f'update "{table}" set {",".join([col + "=?" for col in column])}'
 
         with SafeLock(self.lock):
             # updating different data for different rows is not supported by sqlite
@@ -669,7 +669,7 @@ class Database:
             Row number(s) of the table to delete from (if None then all rows).
         '''
         condition = self._get_rowid_condition(rowid)
-        query = f'delete from {table}' + condition
+        query = f'delete from "{table}"' + condition
 
         with SafeLock(self.lock):
             self.execute(query)
@@ -741,11 +741,11 @@ class Database:
             Selected data based on input arguments.
         '''
         if column is None:
-            query = f'select * from {table}'
+            query = f'select * from "{table}"'
         elif type(column) == str:
-            query = f"select {column} from {table}"
+            query = f'select {column} from "{table}"'
         else:
-            query = f"select {','.join(column)} from {table}"
+            query = f'select {",".join(column)} from "{table}"'
 
         condition = self._get_rowid_condition(rowid)
         query += condition
@@ -766,7 +766,7 @@ class Database:
         int
             Number of rows in the given table.
         '''
-        query = f'select count(*) from {table}'
+        query = f'select count(*) from "{table}"'
         return self.execute(query, fetchone=True)[0]
 
     def get_column_names(self, table):
