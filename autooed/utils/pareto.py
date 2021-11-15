@@ -80,14 +80,3 @@ def calc_pred_error(Y, Y_expected, average=False):
     if average:
         pred_error = np.sum(pred_error, axis=0) / len(Y)
     return pred_error
-
-
-def find_closest_point(y, Y, return_index=False):
-    '''
-    Find the closest point to y in array Y
-    '''
-    idx = np.argmin(np.linalg.norm(np.array(y) - Y, axis=1))
-    if return_index:
-        return Y[idx], idx
-    else:
-        return Y[idx]

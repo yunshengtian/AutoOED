@@ -1,16 +1,72 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 from matplotlib.gridspec import GridSpec
 from matplotlib.backend_bases import MouseButton
 from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
 
-from autooed.utils.pareto import find_closest_point, check_pareto
+from autooed.utils.pareto import check_pareto
 from autooed.system.gui.widgets.utils.radar import radar_factory
 from autooed.system.params import FIGURE_DPI
 from autooed.system.gui.widgets.utils.grid import grid_configure
 from autooed.system.gui.widgets.utils.figure import embed_figure
 from autooed.system.gui.widgets.factory import create_widget
+
+
+def find_closest_point(y, Y, return_index=False):
+    '''
+    Find the closest point to y in array Y
+    '''
+    idx = np.argmin(np.linalg.norm(np.array(y) - Y, axis=1))
+    if return_index:
+        return Y[idx], idx
+    else:
+        return Y[idx]
+
+
+def find_closest_line(y, lines, return_index=False):
+    '''
+    Find the closest line to y in lines
+    '''
+    # y: np.array, shape = (2,)
+    # lines: np.array, shape = (n_lines, n_obj, 2)
+    lines = np.array(lines)
+    assert lines.ndim == 3
+    n_lines, n_obj = lines.shape[0], lines.shape[1]
+
+    if y[0] < 0: # smaller than the left bound
+        idx = np.argmin(np.abs(lines[:, 0, 1] - y[1]))
+
+    elif y[0] >= n_obj - 1: # larger than the right bound
+        idx = np.argmin(np.abs(lines[:, n_obj - 1, 1] - y[1]))
+
+    else: # inside bounds
+        x_begin, x_end = int(y[0]), int(y[0]) + 1
+        key_lines = np.vstack([lines[:, x_begin, 1], lines[:, x_end, 1]]).T # shape = (n_lines, 2)
+        interp_values = key_lines[:, 0] + (y[0] - x_begin) * (key_lines[:, 1] - key_lines[:, 0]) # shape = (n_lines,)
+        idx = np.argmin(np.abs(interp_values - y[1]))
+
+    if return_index:
+        return lines[idx], idx
+    else:
+        return lines[idx]
+
+
+def parallel_transform(Y):
+    '''
+    Transform performance values from cartesian to parallel coordinates
+    '''
+    Y = np.array(Y)
+    return np.dstack([np.vstack([np.arange(Y.shape[1])] * len(Y)), Y])
+
+
+def parallel_untransform(segments):
+    '''
+    Transform performance values from parallel to cartesian coordinates
+    '''
+    segments = np.array(segments)
+    return segments[:, :, 1]
 
 
 class VizSpaceView:
@@ -68,17 +124,26 @@ class VizSpaceView:
         embed_figure(self.fig, self.root_view.frame_plot)
 
         # performance space figure
-        if self.n_obj == 2:
+        if self.n_obj == 2 or self.n_obj > 3:
             self.ax1 = self.fig.add_subplot(self.gs[0])
         elif self.n_obj == 3:
             self.ax1 = self.fig.add_subplot(self.gs[0], projection='3d')
         else:
             raise NotImplementedError
+        
         self.ax1.set_title('Performance Space')
-        self.ax1.set_xlabel(self.obj_name[0])
-        self.ax1.set_ylabel(self.obj_name[1])
-        if self.n_obj == 3:
+        if self.n_obj == 2:
+            self.ax1.set_xlabel(self.obj_name[0])
+            self.ax1.set_ylabel(self.obj_name[1])
+        elif self.n_obj == 3:
+            self.ax1.set_xlabel(self.obj_name[0])
+            self.ax1.set_ylabel(self.obj_name[1])
             self.ax1.set_zlabel(self.obj_name[2])
+        elif self.n_obj > 3:
+            self.ax1.set_xticks(np.arange(self.n_obj, dtype=int))
+            self.ax1.set_xticklabels(self.obj_name)
+        else:
+            raise NotImplementedError
 
         # design space figure
         if self.n_var > 2:
@@ -123,7 +188,7 @@ class VizSpaceView:
         '''
         '''
         fig = plt.figure()
-        if self.n_obj == 2:
+        if self.n_obj == 2 or self.n_obj > 3:
             ax = fig.add_subplot(111)
         elif self.n_obj == 3:
             ax = fig.add_subplot(111, projection='3d')
@@ -135,23 +200,41 @@ class VizSpaceView:
         else:
             ax.set_title(title)
 
-        ax.set_xlabel(self.obj_name[0])
-        ax.set_ylabel(self.obj_name[1])
-        if self.n_obj == 3:
-            ax.set_zlabel(self.obj_name[2])
+        if self.n_obj == 2 or self.n_obj == 3:
+            ax.set_xlabel(self.obj_name[0])
+            ax.set_ylabel(self.obj_name[1])
+            if self.n_obj == 3:
+                ax.set_zlabel(self.obj_name[2])
+        elif self.n_obj > 3:
+            ax.set_xticks(np.arange(self.n_obj, dtype=int))
+            ax.set_xticklabels(self.obj_name)
+        else:
+            raise NotImplementedError
 
         handles, labels = self.ax1.get_legend_handles_labels()
         for handle, label in zip(handles, labels):
             if label.startswith('New'): continue
-            if self.n_obj == 2:
-                new_handle = ax.scatter(*np.array(handle.get_offsets().data).T, label=label)
-            elif self.n_obj == 3:
-                new_handle = ax.scatter3D(*np.array(handle.get_offsets().data).T, label=label)
+            if self.n_obj == 2 or self.n_obj == 3:
+                offsets = handle.get_offsets().data
+                if len(offsets) == 0: continue
+                if self.n_obj == 2:
+                    new_handle = ax.scatter(*np.array(offsets).T, label=label)
+                else:
+                    new_handle = ax.scatter3D(*np.array(offsets).T, label=label)
+                new_handle.set_edgecolors(handle.get_edgecolors())
+                new_handle.set_facecolors(handle.get_facecolors())
+                new_handle.set_sizes(handle.get_sizes())
+            elif self.n_obj > 3:
+                segments = handle.get_segments()
+                if len(segments) == 0: continue
+                new_handle = ax.add_collection(LineCollection(segments, label=label))
+                new_handle.set_alpha(handle.get_alpha())
+                new_handle.set_color(handle.get_color())
+                bottom, top = ax.get_ylim()
+                Y = parallel_untransform(segments)
+                ax.set_ylim(min(bottom, np.min(Y)), max(top, np.max(Y)))
             else:
                 raise NotImplementedError
-            new_handle.set_edgecolors(handle.get_edgecolors())
-            new_handle.set_facecolors(handle.get_facecolors())
-            new_handle.set_sizes(handle.get_sizes())
 
         ax.legend()
         fig.tight_layout()
@@ -225,6 +308,8 @@ class VizSpaceController:
         # set values from root
         self.config, self.problem_cfg = self.root_controller.config, self.root_controller.problem_cfg
         self.agent = self.root_controller.agent
+        self.n_var, self.var_name = self.problem_cfg['n_var'], self.problem_cfg['var_name']
+        self.n_obj, self.obj_name = self.problem_cfg['n_obj'], self.problem_cfg['obj_name']
 
         self.view = VizSpaceView(self.root_view, self.problem_cfg)
 
@@ -239,18 +324,39 @@ class VizSpaceController:
             self.pfront_limit = [np.min(true_pfront, axis=1), np.max(true_pfront, axis=1)]
 
         # initialize performance space
-        scatter_list = []
-        if true_pfront is not None:
-            scatter_pfront = self.view.ax1.scatter(*true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
-            scatter_list.append(scatter_pfront)
-        self.scatter_x = None
-        self.scatter_y = self.view.ax1.scatter([], [], color='blue', s=10, label='Evaluated')
-        self.scatter_y_pareto = self.view.ax1.scatter([], [], color='red', s=10, label='Pareto front')
-        self.scatter_y_new = self.view.ax1.scatter([], [], color='m', s=10, label='New evaluated')
-        self.scatter_y_pred = self.view.ax1.scatter([], [], facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted')
-        scatter_list.extend([self.scatter_y, self.scatter_y_pareto, self.scatter_y_new, self.scatter_y_pred])
-        self.scatter_selected = None
-        self.line_y_pred_list = []
+        plot_obj_list = []
+        
+        if self.n_obj == 2 or self.n_obj == 3:
+
+            if true_pfront is not None:
+                plot_pfront = self.view.ax1.scatter(*true_pfront.T, color='gray', s=5, label='Oracle') # plot true pareto front
+                plot_obj_list.append(plot_pfront)
+            self.plot_x = None
+            self.plot_y = self.view.ax1.scatter([], [], color='blue', s=10, label='Evaluated')
+            self.plot_y_pareto = self.view.ax1.scatter([], [], color='red', s=10, label='Pareto front')
+            self.plot_y_new = self.view.ax1.scatter([], [], color='m', s=10, label='New evaluated')
+            self.plot_y_pred = self.view.ax1.scatter([], [], facecolors=(0, 0, 0, 0), edgecolors='m', s=15, label='New predicted')
+            plot_obj_list.extend([self.plot_y, self.plot_y_pareto, self.plot_y_new, self.plot_y_pred])
+            self.plot_selected = None
+            self.line_y_pred_list = []
+
+        elif self.n_obj > 3:
+
+            if true_pfront is not None:
+                plot_pfront = self.view.ax1.add_collection(LineCollection([], color='grey', label='Oracle', alpha=0.5))
+                plot_pfront.set_segments(parallel_transform(true_pfront))
+                plot_obj_list.append(plot_pfront)
+            self.plot_x = None
+            self.plot_y = self.view.ax1.add_collection(LineCollection([], color='blue', label='Evaluated', alpha=0.5))
+            self.plot_y_pareto = self.view.ax1.add_collection(LineCollection([], color='red', label='Pareto front', alpha=0.8))
+            self.plot_y_new = self.view.ax1.add_collection(LineCollection([], color='m', label='New evaluated', alpha=0.8))
+            plot_obj_list.extend([self.plot_y, self.plot_y_pareto, self.plot_y_new])
+            self.plot_selected = None
+            self.plot_y_pred = None # unused
+            self.line_y_pred_list = None # usused
+            
+        else:
+            raise NotImplementedError
 
         # support checking design variables
         self.line_x = None
@@ -262,7 +368,7 @@ class VizSpaceController:
         # set pick event on legend to enable/disable certain visualization
         legend = self.view.fig.legend(loc='lower center', ncol=5, frameon=False)
         self.picker_map = {}
-        for plot_obj, leg_obj, text in zip(scatter_list, legend.legendHandles, legend.get_texts()):
+        for plot_obj, leg_obj, text in zip(plot_obj_list, legend.legendHandles, legend.get_texts()):
             leg_obj.set_picker(True)
             text.set_picker(True)
             self.picker_map[leg_obj] = plot_obj
@@ -297,23 +403,33 @@ class VizSpaceController:
         if event.inaxes != self.view.ax1: return
 
         if event.button == MouseButton.LEFT and event.dblclick: # check certain design values
-            n_var, n_obj = self.problem_cfg['n_var'], self.problem_cfg['n_obj']
             var_type, var_name = self.problem_cfg['type'], self.problem_cfg['var_name']
             var_lb, var_ub = self.view.var_lb, self.view.var_ub
 
             # find nearest performance values with associated design values
             loc = [event.xdata, event.ydata]
-            all_y = self.scatter_y._offsets
-            closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
-            closest_x = self.scatter_x[closest_idx]
-            if n_obj == 3:
-                closest_y = np.array(self.scatter_y._offsets3d).T[closest_idx]
+            if self.n_obj == 2 or self.n_obj == 3:
+                all_y = self.plot_y._offsets
+                if len(all_y) == 0: return
+                closest_y, closest_idx = find_closest_point(loc, all_y, return_index=True)
+                if self.n_obj == 3:
+                    closest_y = np.array(self.plot_y._offsets3d).T[closest_idx]
+            elif self.n_obj > 3:
+                closest_line, closest_idx = find_closest_line(loc, self.plot_y.get_segments(), return_index=True)
+            else:
+                raise NotImplementedError
+            closest_x = self.plot_x[closest_idx]
 
             # clear checked design values
             self.clear_design_space()
 
             # highlight selected point
-            self.scatter_selected = self.view.ax1.scatter(*closest_y, s=50, facecolors=(0, 0, 0, 0), edgecolors='g', linewidths=2)
+            if self.n_obj == 2 or self.n_obj == 3:
+                self.plot_selected = self.view.ax1.scatter(*closest_y, s=50, facecolors=(0, 0, 0, 0), edgecolors='g', linewidths=2)
+            elif self.n_obj > 3:
+                self.plot_selected = self.view.ax1.plot(*closest_line.T, color='g', alpha=0.8)[0]
+            else:
+                raise NotImplementedError
 
             # compute normalized x
             if var_type in ['continuous', 'integer', 'binary']:
@@ -347,7 +463,7 @@ class VizSpaceController:
 
             # compute text label
             closest_x_str = []
-            for i in range(n_var):
+            for i in range(self.n_var):
                 if var_type == 'continuous':
                     closest_x_str.append(f'{closest_x[i]:.4g}')
                 elif var_type in ['integer', 'binary', 'categorical']:
@@ -361,14 +477,14 @@ class VizSpaceController:
                     raise Exception(f'invalid problem type {var_type}')
             
             # plot checked design values as radar plot or bar chart
-            if n_var > 2:
+            if self.n_var > 2:
                 self.line_x = self.view.ax2.plot(self.view.theta, normalized_x, color='g')[0]
                 self.fill_x = self.view.ax2.fill(self.view.theta, normalized_x, color='g', alpha=0.2)[0]
-                self.view.ax2.set_varlabels([f'{var_name[i]}\n{closest_x_str[i]}' for i in range(n_var)])
+                self.view.ax2.set_varlabels([f'{var_name[i]}\n{closest_x_str[i]}' for i in range(self.n_var)])
             else:
                 self.bar_x = self.view.ax2.bar(self.view.xticks, normalized_x, color='g')
                 self.text_x = []
-                for i in range(n_var):
+                for i in range(self.n_var):
                     if var_type in ['continuous', 'integer'] or (var_type == 'mixed' and var_type_list[i] in ['continuous', 'integer']):
                         self.view.text_lb[i].set_text(str(var_lb[i]))
                         self.view.text_ub[i].set_text(str(var_ub[i]))
@@ -384,14 +500,12 @@ class VizSpaceController:
         '''
         Clear design space plot
         '''
-        if self.scatter_selected is not None:
-            self.scatter_selected.remove()
-            self.scatter_selected = None
-            
-        n_var, var_name = self.problem_cfg['n_var'], self.problem_cfg['var_name']
+        if self.plot_selected is not None:
+            self.plot_selected.remove()
+            self.plot_selected = None
 
-        if n_var > 2:
-            self.view.ax2.set_varlabels(var_name)
+        if self.n_var > 2:
+            self.view.ax2.set_varlabels(self.var_name)
             if self.line_x is not None:
                 self.line_x.remove()
                 self.line_x = None
@@ -434,58 +548,78 @@ class VizSpaceController:
             pareto = check_pareto(Y, self.problem_cfg['obj_type'])
         
         # replot evaluated & pareto points
-        self.scatter_x = X
-        n_obj = Y.shape[1]
-        if n_obj == 2:
-            self.scatter_y.set_offsets(Y)
-            self.scatter_y_pareto.set_offsets(Y[pareto])
-        elif n_obj == 3:
-            self.scatter_y._offsets3d = Y.T
-            self.scatter_y_pareto._offsets3d = Y[pareto].T
+        self.plot_x = X
+        if self.n_obj == 2:
+            self.plot_y.set_offsets(Y)
+            self.plot_y_pareto.set_offsets(Y[pareto])
+        elif self.n_obj == 3:
+            self.plot_y._offsets3d = Y.T
+            self.plot_y_pareto._offsets3d = Y[pareto].T
+        elif self.n_obj > 3:
+            self.plot_y.set_segments(parallel_transform(Y))
+            self.plot_y_pareto.set_segments(parallel_transform(Y[pareto]))
+        else:
+            raise NotImplementedError
         
         # rescale plot according to Y and true_pfront
-        n_obj = self.problem_cfg['n_obj']
-        x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
-        y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
-        if n_obj == 3: z_min, z_max = np.min(Y[:, 2]), np.max(Y[:, 2])
-        if self.pfront_limit is not None:
-            x_min, x_max = min(x_min, self.pfront_limit[0][0]), max(x_max, self.pfront_limit[1][0])
-            y_min, y_max = min(y_min, self.pfront_limit[0][1]), max(y_max, self.pfront_limit[1][1])
-            if n_obj == 3: z_min, z_max = min(z_min, self.pfront_limit[0][2]), max(z_max, self.pfront_limit[1][2])
-        x_offset = (x_max - x_min) / 20
-        y_offset = (y_max - y_min) / 20
-        if n_obj == 3: z_offset = (z_max - z_min) / 20
-        self.view.ax1.set_xlim(x_min - x_offset, x_max + x_offset)
-        self.view.ax1.set_ylim(y_min - y_offset, y_max + y_offset)
-        if n_obj == 3: self.view.ax1.set_zlim(z_min - z_offset, z_max + z_offset)
+        if self.n_obj == 2 or self.n_obj == 3:
+            x_min, x_max = np.min(Y[:, 0]), np.max(Y[:, 0])
+            y_min, y_max = np.min(Y[:, 1]), np.max(Y[:, 1])
+            if self.n_obj == 3: z_min, z_max = np.min(Y[:, 2]), np.max(Y[:, 2])
+            if self.pfront_limit is not None:
+                x_min, x_max = min(x_min, self.pfront_limit[0][0]), max(x_max, self.pfront_limit[1][0])
+                y_min, y_max = min(y_min, self.pfront_limit[0][1]), max(y_max, self.pfront_limit[1][1])
+                if self.n_obj == 3: z_min, z_max = min(z_min, self.pfront_limit[0][2]), max(z_max, self.pfront_limit[1][2])
+            x_offset = (x_max - x_min) / 20
+            y_offset = (y_max - y_min) / 20
+            if self.n_obj == 3: z_offset = (z_max - z_min) / 20
+            self.view.ax1.set_xlim(x_min - x_offset, x_max + x_offset)
+            self.view.ax1.set_ylim(y_min - y_offset, y_max + y_offset)
+            if self.n_obj == 3: self.view.ax1.set_zlim(z_min - z_offset, z_max + z_offset)
+        elif self.n_obj > 3:
+            y_min, y_max = np.min(Y), np.max(Y)
+            y_offset = (y_max - y_min) / 20
+            self.view.ax1.set_ylim(y_min - y_offset, y_max + y_offset)
+        else:
+            raise NotImplementedError
 
         # replot new evaluated & predicted points
-        line_vis = True
-        for line in self.line_y_pred_list:
-            line_vis = line_vis and line.get_visible()
-            line.remove()
-        self.line_y_pred_list = []
+        if self.n_obj == 2 or self.n_obj == 3:
+            line_vis = True
+            for line in self.line_y_pred_list:
+                line_vis = line_vis and line.get_visible()
+                line.remove()
+            self.line_y_pred_list = []
 
         if max_iter > 0:
             last_batch = np.where(batch == max_iter)[0]
-            if n_obj == 2:
-                self.scatter_y_new.set_offsets(Y[last_batch])
-                self.scatter_y_pred.set_offsets(Y_expected[last_batch])
-            elif n_obj == 3:
-                self.scatter_y_new._offsets3d = Y[last_batch].T
-                self.scatter_y_pred._offsets3d = Y_expected[last_batch].T
-            for y, y_expected in zip(Y[last_batch], Y_expected[last_batch]):
-                line = self.view.ax1.plot(*[[y[i], y_expected[i]] for i in range(n_obj)], '--', color='m', alpha=0.5)[0]
-                line.set_visible(line_vis)
-                self.line_y_pred_list.append(line)
+            if self.n_obj == 2:
+                self.plot_y_new.set_offsets(Y[last_batch])
+                self.plot_y_pred.set_offsets(Y_expected[last_batch])
+            elif self.n_obj == 3:
+                self.plot_y_new._offsets3d = Y[last_batch].T
+                self.plot_y_pred._offsets3d = Y_expected[last_batch].T
+            elif self.n_obj > 3:
+                self.plot_y_new.set_segments(parallel_transform(Y[last_batch]))
+            else:
+                raise NotImplementedError
+            if self.n_obj == 2 or self.n_obj == 3:
+                for y, y_expected in zip(Y[last_batch], Y_expected[last_batch]):
+                    line = self.view.ax1.plot(*[[y[i], y_expected[i]] for i in range(self.n_obj)], '--', color='m', alpha=0.5)[0]
+                    line.set_visible(line_vis)
+                    self.line_y_pred_list.append(line)
         else:
-            empty_y = np.empty((0, n_obj))
-            if n_obj == 2:
-                self.scatter_y_new.set_offsets(empty_y)
-                self.scatter_y_pred.set_offsets(empty_y)
-            elif n_obj == 3:
-                self.scatter_y_new._offsets3d = empty_y.T
-                self.scatter_y_pred._offsets3d = empty_y.T
+            empty_y = np.empty((0, self.n_obj))
+            if self.n_obj == 2:
+                self.plot_y_new.set_offsets(empty_y)
+                self.plot_y_pred.set_offsets(empty_y)
+            elif self.n_obj == 3:
+                self.plot_y_new._offsets3d = empty_y.T
+                self.plot_y_pred._offsets3d = empty_y.T
+            elif self.n_obj > 3:
+                self.plot_y_new.set_segments([])
+            else:
+                raise NotImplementedError
 
         self.view.fig.canvas.draw()
 
@@ -501,12 +635,13 @@ class VizSpaceController:
         else:
             event.artist.set_color('gray')
 
-        if not self.scatter_y_new.get_visible() or not self.scatter_y_pred.get_visible():
-            for line in self.line_y_pred_list:
-                line.set_visible(False)
-        if self.scatter_y_new.get_visible() and self.scatter_y_pred.get_visible():
-            for line in self.line_y_pred_list:
-                line.set_visible(True)
+        if self.n_obj == 2 or self.n_obj == 3:
+            if not self.plot_y_new.get_visible() or not self.plot_y_pred.get_visible():
+                for line in self.line_y_pred_list:
+                    line.set_visible(False)
+            if self.plot_y_new.get_visible() and self.plot_y_pred.get_visible():
+                for line in self.line_y_pred_list:
+                    line.set_visible(True)
 
         self.view.fig.canvas.draw()
 
