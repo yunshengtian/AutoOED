@@ -6,6 +6,7 @@ import numpy as np
 
 from autooed.mobo.factory import init_surrogate_model, init_acquisition, init_solver, init_selection
 from autooed.mobo.async_strategy.factory import init_async_strategy
+from autooed.utils.pareto import convert_minimization
 
 
 class MOBO:
@@ -37,6 +38,7 @@ class MOBO:
         '''
         self.problem = problem
         self.n_var, self.n_obj = problem.n_var, problem.n_obj
+        self.obj_type = problem.obj_type
         self.bounds = np.array([problem.xl, problem.xu])
 
         # data transformation between all domains and continuous
@@ -85,6 +87,9 @@ class MOBO:
         X_next: np.array
             Proposed design samples to evaluate next.
         '''
+        # convert maximization to minimization
+        Y = convert_minimization(Y, self.obj_type)
+
         if self.async_strategy is None or X_busy is None:
             return self._optimize(X, Y, batch_size)
         else:
@@ -143,12 +148,18 @@ class MOBO:
         Y_next_std: np.array
             Standard deviation of predicted objectives.
         '''
+        # convert maximization to minimization
+        Y = convert_minimization(Y, self.obj_type)
+
         if fit or self.async_strategy is not None:
             # fit surrogate models
             self.surrogate_model.fit(X, Y)
 
         # predict objectives
         Y_next_mean, Y_next_std = self.surrogate_model.predict(X_next, std=True)
+
+        # convert back from minimization to maximization
+        Y_next_mean = convert_minimization(Y_next_mean, self.obj_type)
 
         return Y_next_mean, Y_next_std
 
