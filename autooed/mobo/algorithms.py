@@ -74,7 +74,7 @@ class Custom(MOBO):
     '''
     Fully customized algorithms which totally rely on user arguments to specify each component.
     '''
-    spec = None
+    pass
 
 
 algos = {

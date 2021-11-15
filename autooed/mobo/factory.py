@@ -86,6 +86,7 @@ def init_surrogate_model(name, params, problem):
     '''
     Initialize surrogate model.
     '''
+    if name is None: name = params['surrogate']
     surrogate_model_cls = get_surrogate_model(name)
     surrogate_model = surrogate_model_cls(problem, **params)
     return surrogate_model
@@ -95,6 +96,7 @@ def init_acquisition(name, params, surrogate_model):
     '''
     Initialize acquisition function.
     '''
+    if name is None: name = params['acquisition']
     acquisition_cls = get_acquisition(name)
     acquisition = acquisition_cls(surrogate_model, **params)
     return acquisition
@@ -113,6 +115,7 @@ def init_solver(name, params, problem):
     '''
     Initialize multi-objective solver.
     '''
+    if name is None: name = params['solver']
     solver_cls = get_solver(name)
     solver = solver_cls(problem, **params)
     return solver
@@ -122,6 +125,7 @@ def init_selection(name, params, surrogate_model):
     '''
     Initialize selection method.
     '''
+    if name is None: name = params['selection']
     selection_cls = get_selection(name)
     selection = selection_cls(surrogate_model, **params)
     return selection

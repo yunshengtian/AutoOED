@@ -38,7 +38,7 @@ def get_surroagte_args(args=None):
     parser = ArgumentParser()
 
     parser.add_argument('--surrogate', type=str, 
-        choices=['gp'], default='gp', 
+        choices=['gp', 'nn', 'bnn'], default='gp', 
         help='type of the surrogate model')
 
     args, _ = parser.parse_known_args(args)
@@ -67,7 +67,7 @@ def get_solver_args(args=None):
 
     # general solver
     parser.add_argument('--solver', type=str, 
-        choices=['nsga2', 'moead', 'discovery'], default='nsga2', 
+        choices=['nsga2', 'moead', 'parego', 'discovery'], default='nsga2', 
         help='type of the multiobjective solver')
     parser.add_argument('--n-process', type=int, default=cpu_count(),
         help='number of processes to be used for parallelization')
@@ -82,7 +82,8 @@ def get_selection_args(args=None):
     '''
     parser = ArgumentParser()
 
-    parser.add_argument('--selection', type=str, default='hvi', 
+    parser.add_argument('--selection', type=str,
+        choices=['direct', 'hvi', 'random', 'uncertainty'], default='hvi', 
         help='type of selection method for new batch')
 
     args, _ = parser.parse_known_args(args)
