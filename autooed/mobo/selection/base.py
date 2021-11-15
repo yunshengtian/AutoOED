@@ -3,6 +3,7 @@ Selection methods for new batch of samples to evaluate on real problem.
 '''
 
 from abc import ABC, abstractmethod
+import numpy as np
 
 
 class Selection(ABC):
@@ -44,7 +45,7 @@ class Selection(ABC):
         # fill the candidates in case less than batch size (TODO: optimize)
         len_candidate = len(X_candidate)
         if len_candidate < batch_size:
-            indices = np.concatenate([np.arange(len_candidate), np.random.choice(np.arange(len_candidate), batch_size - pop_size)])
+            indices = np.concatenate([np.arange(len_candidate), np.random.choice(np.arange(len_candidate), batch_size - len_candidate)])
             X_candidate = X_candidate[indices]
             Y_candidate = Y_candidate[indices]
 
