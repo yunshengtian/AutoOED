@@ -8,7 +8,7 @@ from autooed.mobo.hyperparams import get_hp_class_names, get_hp_class_by_name, g
 
 from autooed.system.config import config_map, load_config
 from autooed.system.gui.widgets.utils.grid import grid_configure
-from autooed.system.gui.widgets.factory import create_widget, show_widget_error
+from autooed.system.gui.widgets.factory import create_widget
 from autooed.system.gui.menu.config.ref_point import RefPointController
 from autooed.system.gui.menu.config.hyperparam import HyperparamController
 
@@ -69,10 +69,10 @@ class MenuConfigView:
 
             self.widget['set_x_init'], self.widget['disp_x_init'] = create_widget('labeled_button_entry',
                 master=frame_provided_init, row=0, column=0, label_text='Path of initial design variables', button_text='Browse', width=30, required=True,
-                valid_check=lambda x: os.path.exists(x), error_msg='file does not exist')
+                valid_check=lambda x: os.path.exists(x), error_msg='file of initial design variables does not exist')
             self.widget['set_y_init'], self.widget['disp_y_init'] = create_widget('labeled_button_entry',
                 master=frame_provided_init, row=1, column=0, label_text='Path of initial performance values', button_text='Browse', width=30,
-                valid_check=lambda x: os.path.exists(x), error_msg='file does not exist')
+                valid_check=lambda x: os.path.exists(x), error_msg='file of initial performance values does not exist')
 
             def set_random_init():
                 frame_provided_init.grid_remove()
@@ -88,7 +88,7 @@ class MenuConfigView:
                 elif text == 'Provided':
                     button.configure(command=set_provided_init)
                 else:
-                    raise Exception()
+                    raise NotImplementedError
 
             set_random_init()
 
@@ -285,20 +285,20 @@ class MenuConfigController:
             if init_type == 'Random':
                 try:
                     config['experiment']['n_random_sample'] = self.view.widget['n_init'].get()
-                except:
-                    show_widget_error(master=self.view.window, widget=self.view.widget['n_init'], name=config_map['experiment']['n_random_sample'])
+                except Exception as e:
+                    tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
 
             elif init_type == 'Provided':
                 try:
                     x_init_path = self.view.widget['disp_x_init'].get()
-                except:
-                    show_widget_error(master=self.view.window, widget=self.view.widget['disp_x_init'], name='Path of initial design variables')
+                except Exception as e:
+                    tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
                 try:
                     y_init_path = self.view.widget['disp_y_init'].get()
-                except:
-                    show_widget_error(master=self.view.window, widget=self.view.widget['disp_y_init'], name='Path of initial performance values')
+                except Exception as e:
+                    tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
 
                 assert x_init_path is not None, 'Path of initial design variables must be provided'
@@ -320,7 +320,7 @@ class MenuConfigController:
                     else:
                         config[cfg_type][cfg_name] = widget.get()
                 except Exception as e:
-                    show_widget_error(master=self.view.window, widget=widget, name=config_map[cfg_type][cfg_name])
+                    tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
 
         config['experiment'].update(self.exp_cfg)

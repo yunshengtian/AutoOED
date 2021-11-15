@@ -69,7 +69,7 @@ class StopCriterionView:
         cb_hv_conv.grid(row=0, column=0, sticky='W')
         tk.Label(master=frame_hv_conv, text=self.name_options['hv_conv'] + ': stop when hypervolume stops to improve over past').grid(row=0, column=1, sticky='W')
         self.widget['entry']['hv_conv'] = create_widget('entry', master=frame_hv_conv, row=0, column=2, class_type='int', 
-            required=True, valid_check=lambda x: x > 0, error_msg='number of iterations must be positive', pady=0)
+            required=True, valid_check=lambda x: x > 0, error_msg='number of iterations for determining hypervolume convergence must be positive', pady=0)
         tk.Label(master=frame_hv_conv, text='iterations').grid(row=0, column=3, sticky='W')
         cb_hv_conv.configure(command=lambda: check(self.widget['var']['hv_conv'], self.widget['entry']['hv_conv']))
 
@@ -105,10 +105,8 @@ class StopCriterionController:
             if self.view.widget['var'][key].get() == 1:
                 try:
                     value = self.view.widget['entry'][key].get()
-                except:
-                    error_msg = self.view.widget['entry'][key].get_error_msg()
-                    error_msg = '' if error_msg is None else ': ' + error_msg
-                    tk.messagebox.showinfo('Error', f'Invalid value for "{self.view.name_options[key]}"' + error_msg, parent=self.view.window)
+                except Exception as e:
+                    tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
                 stop_criterion = get_stop_criterion(key)(self.agent, value)
                 self.root_controller.stop_criterion.append(stop_criterion)

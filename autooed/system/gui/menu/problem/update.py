@@ -51,10 +51,8 @@ class UpdateProblemView:
         '''
         try:
             val = widget.get()
-        except:
-            error_msg = widget.get_error_msg()
-            error_msg = '' if error_msg is None else ': ' + error_msg
-            tk.messagebox.showinfo('Error', f'Invalid value for "{name}"' + error_msg, parent=self.window)
+        except Exception as e:
+            tk.messagebox.showinfo('Error', e, parent=self.window)
             return None, False
         return val, True
 
@@ -343,7 +341,7 @@ class UpdateProblemView:
         frame_excel = create_widget('frame', master=self.frame['design_unified'], row=1, column=0)
 
         self.widget['design_unified']['disp_n_var'] = create_widget('labeled_entry', master=frame_n_var, row=0, column=0, text='Number of variables',
-            class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number must be greater than zero')
+            class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number of variables must be greater than zero')
         self.widget['design_unified']['set_n_var'] = create_widget('button', master=frame_n_var, row=0, column=1, text='Set')
 
         def _set_n_var():
@@ -414,7 +412,7 @@ class UpdateProblemView:
         frame_obj_func = create_widget('frame', master=self.frame['performance'], row=2, column=0)
 
         self.widget['performance']['disp_n_obj'] = create_widget('labeled_entry', master=frame_n_obj, row=0, column=0, text='Number of objectives',
-            class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number must be greater than zero')
+            class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number of objectives must be greater than zero')
         self.widget['performance']['set_n_obj'] = create_widget('button', master=frame_n_obj, row=0, column=1, text='Set')
         self.widget['performance']['browse_obj_func'], self.widget['performance']['disp_obj_func'] = create_widget('labeled_button_entry',
             master=frame_obj_func, row=0, column=0, label_text='Path to objective function', button_text='Browse', width=30)
@@ -458,7 +456,7 @@ class UpdateProblemView:
         '''
         '''
         self.widget['constraint']['n_constr'] = create_widget('labeled_entry', master=self.frame['constraint'], row=0, column=0, text='Number of constraints',
-            class_type='int', default=0, valid_check=lambda x: x >= 0, error_msg='number cannot be negative')
+            class_type='int', default=0, valid_check=lambda x: x >= 0, error_msg='number of constraints cannot be negative')
         self.widget['constraint']['browse_constr_func'], self.widget['constraint']['disp_constr_func'] = create_widget('labeled_button_entry',
             master=self.frame['constraint'], row=1, column=0, label_text='Path to constraint function', button_text='Browse', width=30)
 
@@ -524,15 +522,13 @@ class UpdateProblemController:
         if forward:
             try:
                 self.config['name'] = self.view.widget['general']['name'].get()
-            except:
-                error_msg = self.view.widget['general']['name'].get_error_msg()
-                messagebox.showinfo('Error', f'Invalid problem name: {error_msg}', parent=self.view.window)
+            except Exception as e:
+                messagebox.showinfo('Error', e, parent=self.view.window)
                 return
             try:
                 self.config['type'] = self.view.widget['general']['type'].get()
-            except:
-                error_msg = self.view.widget['general']['type'].get_error_msg()
-                messagebox.showinfo('Error', f'Invalid problem type: {error_msg}', parent=self.view.window)
+            except Exception as e:
+                messagebox.showinfo('Error', e, parent=self.view.window)
                 return
         
         # reset button

@@ -4,7 +4,7 @@ from tkinter import ttk
 from autooed.mobo.algorithms import get_algorithm
 from autooed.mobo.hyperparams import get_hp_name_by_class, get_hp_class_by_name, get_hp_class_names, get_hp_params
 from autooed.system.gui.widgets.utils.grid import grid_configure
-from autooed.system.gui.widgets.factory import create_widget, show_widget_error
+from autooed.system.gui.widgets.factory import create_widget
 
 
 class ModuleView:
@@ -210,8 +210,8 @@ class HyperparamController:
             for param_name, widget in module_widgets.items():
                 try:
                     val = widget.get()
-                except:
-                    show_widget_error(master=self.view.window, widget=widget, name=param_name)
+                except Exception as e:
+                    tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
                 if param_name == 'name':
                     temp_cfg[module_type][param_name] = get_hp_class_by_name(module_type, val)

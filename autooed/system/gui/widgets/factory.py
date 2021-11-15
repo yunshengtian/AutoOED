@@ -218,12 +218,3 @@ def create_widget(name, *args, **kwargs):
         'labeled_button_entry': create_labeled_button_entry,
     }
     return factory[name](*args, **kwargs)
-
-
-def show_widget_error(master, widget, name):
-    '''
-    Show error messagebox if value of widget is not valid
-    '''
-    error_msg = widget.get_error_msg()
-    error_msg = '' if error_msg is None else ': ' + error_msg
-    tk.messagebox.showinfo('Error', f'Invalid value for "{name}"' + error_msg, parent=master)

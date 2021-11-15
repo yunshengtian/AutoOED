@@ -67,7 +67,10 @@ class Entry(ABC):
         if self.required:
             assert result is not None, 'Required value not specified'
         if result is not None and self.valid_check is not None and not self.valid_check(result):
-            raise Exception('Invalid value specified in the entry')
+            exception_msg = 'Invalid value'
+            if self.error_msg is not None:
+                exception_msg += ': ' + self.error_msg
+            raise Exception(exception_msg)
         return result
 
     def set(self, val):

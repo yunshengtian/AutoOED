@@ -76,7 +76,7 @@ class PanelControlController:
 
         self.view.widget['batch_size'].config(
             valid_check=lambda x: x > 0, 
-            error_msg='number of batch size must be positive',
+            error_msg='batch size must be positive',
         )
         self.view.widget['set_stop_cri'].configure(command=self.set_stop_criterion)
 
@@ -109,10 +109,8 @@ class PanelControlController:
         config = self.get_config()
         try:
             config['experiment']['batch_size'] = self.view.widget['batch_size'].get()
-        except:
-            error_msg = self.view.widget['batch_size'].get_error_msg()
-            error_msg = '' if error_msg is None else ': ' + error_msg
-            tk.messagebox.showinfo('Error', 'Invalid batch size' + error_msg, parent=self.root_view.root)
+        except Exception as e:
+            tk.messagebox.showinfo('Error', e, parent=self.root_view.root)
             return
         self.set_config(config)
 
