@@ -579,6 +579,9 @@ class VizSpaceController:
         elif self.n_obj > 3:
             y_min, y_max = np.min(Y), np.max(Y)
             y_offset = (y_max - y_min) / 20
+            x_min, x_max = 0, self.n_obj - 1
+            x_offset = (x_max - x_min) / 20
+            self.view.ax1.set_xlim(x_min - x_offset, x_max + x_offset)
             self.view.ax1.set_ylim(y_min - y_offset, y_max + y_offset)
         else:
             raise NotImplementedError
