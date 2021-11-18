@@ -1,6 +1,8 @@
 import os, platform, shutil
 from argparse import ArgumentParser
 
+from autooed.system.params import TITLE, VERSION
+
 
 def main():
 
@@ -21,7 +23,7 @@ def main():
     Software names and scripts
     '''
 
-    name, script = 'AutoOED_v1.0', 'run_gui.py'
+    name, script = f'{TITLE}_v{VERSION}', 'run_gui.py'
 
 
     '''
