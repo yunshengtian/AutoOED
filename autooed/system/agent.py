@@ -463,12 +463,18 @@ class EvaluateAgent(LoadAgent):
                 if (ref_point != ref_point_prev).any(): # update all previous hypervolume
                     assert (ref_point >= ref_point_prev).all(), 'error: new reference point is no worse than the previous one'
 
-                    utopian_point = np.min(convert_minimization(Y, obj_type), axis=0)
-                    delta_hv = (ref_point - utopian_point).prod() - (ref_point_prev - utopian_point).prod()
-
-                    hv_prev, rowids_prev = hv_all[prev_order_idx], np.arange(len(hv_all))[prev_order_idx] + 1
+                    Y_temp = np.empty((0, n_obj))
+                    rowid_temp_list = []
+                    hv_temp_list = []
+                    for order_temp in np.arange(min_curr_order):
+                        rowid_temp = np.where(all_order == order_temp)[0] + 1
+                        Y_temp = np.vstack([Y_temp, Y_all[rowid_temp - 1]])
+                        hv_temp = calc_hypervolume(Y_temp, ref_point, obj_type)
+                        rowid_temp_list.extend(rowid_temp)
+                        hv_temp_list.append(hv_temp)
+                    
                     self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], 
-                        data=[hv_prev + delta_hv], rowid=rowids_prev, transform=True)
+                        data=[hv_temp_list], rowid=rowid_temp_list, transform=True)
 
             # compute hypervolume according to evaluation order
             hv_list = []
