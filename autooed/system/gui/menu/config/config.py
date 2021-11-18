@@ -9,7 +9,6 @@ from autooed.mobo.hyperparams import get_hp_class_names, get_hp_class_by_name, g
 from autooed.system.config import config_map, load_config
 from autooed.system.gui.widgets.utils.grid import grid_configure
 from autooed.system.gui.widgets.factory import create_widget
-from autooed.system.gui.menu.config.ref_point import RefPointController
 from autooed.system.gui.menu.config.hyperparam import HyperparamController
 
 
@@ -35,9 +34,6 @@ class MenuConfigView:
 
         self.widget['problem_name'] = create_widget('labeled_combobox', 
             master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
-        self.widget['set_ref_point'] = create_widget('button',
-            master=frame_problem, row=1, column=0, text='Set Reference Point', sticky=None)
-        self.widget['set_ref_point'].disable()
 
         # algorithm subsection
         frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')
@@ -163,7 +159,6 @@ class MenuConfigController:
         self.view = MenuConfigView(self.root_view, self.first_time)
 
         self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
-        self.view.widget['set_ref_point'].configure(command=self.set_ref_point)
 
         self.view.widget['algo_name'].widget.bind('<<ComboboxSelected>>', self.select_algorithm)
         self.view.widget['set_advanced'].configure(command=self.set_algo_advanced)
@@ -209,17 +204,6 @@ class MenuConfigController:
 
         self.problem_cfg.clear()
         self.problem_cfg.update(config)
-
-        if config['n_obj'] == 1:
-            self.view.widget['set_ref_point'].disable()
-        else:
-            self.view.widget['set_ref_point'].enable()
-
-    def set_ref_point(self):
-        '''
-        Set reference point
-        '''
-        RefPointController(self)
         
     def set_x_init(self):
         '''

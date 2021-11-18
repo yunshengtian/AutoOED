@@ -2,7 +2,6 @@
 
 problem:
   name: ZDT1
-  ref_point: [1.0, 6.0] # reference point for hypervolume calculation (optional)
 algorithm:
   name: tsemo
   n_process: 1 # number of parallel processes used in algorithm (optional)

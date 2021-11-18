@@ -129,35 +129,6 @@ class NSampleStopCriterion(StopCriterion):
         return self.max_sample
 
 
-class HVStopCriterion(StopCriterion):
-    '''
-    Stopping criterion based on max hypervolume (when n_obj > 1).
-    '''
-    def __init__(self, agent, max_hv):
-        '''
-        Parameters
-        ----------
-        agent: autooed.system.agent.LoadAgent
-            Agent that talks to algorithms and database.
-        max_hv: float
-            Maximum hypervolume.
-        '''
-        super().__init__(agent)
-        n_obj = agent.problem_cfg['n_obj']
-        assert n_obj > 1, 'Hypervolume stopping criterion only works for n_obj > 1'
-        self.max_hv = max_hv
-
-    def check(self):
-        if not self.started:
-            return False
-        hv = self.agent.get_max_hv()
-        if hv is None: return False
-        return hv >= self.max_hv
-
-    def load(self):
-        return self.max_hv
-
-
 class HVConvStopCriterion(StopCriterion):
     '''
     Stopping criterion based on hypervolume convergence (when n_obj > 1).
@@ -287,7 +258,6 @@ def get_stop_criterion(name):
         'time': TimeStopCriterion,
         'n_iter': NIterStopCriterion,
         'n_sample': NSampleStopCriterion,
-        'hv': HVStopCriterion,
         'hv_conv': HVConvStopCriterion,
         'opt': OptStopCriterion,
         'opt_conv': OptConvStopCriterion,
@@ -302,7 +272,6 @@ def get_name(stop_criterion):
         TimeStopCriterion: 'time',
         NIterStopCriterion: 'n_iter',
         NSampleStopCriterion: 'n_sample',
-        HVStopCriterion: 'hv',
         HVConvStopCriterion: 'hv_conv',
         OptStopCriterion: 'opt',
         OptConvStopCriterion: 'opt_conv',

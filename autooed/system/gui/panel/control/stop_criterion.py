@@ -19,9 +19,9 @@ class StopCriterionView:
         frame_options = create_widget('frame', master=self.window, row=0, column=0, padx=0, pady=0)
         self.name_options = {'time': 'Time', 'n_iter': 'Number of iterations', 'n_sample': 'Number of samples'}
         if n_obj == 1:
-            self.name_options.update({'opt': 'Optimum value', 'opt_conv': 'Optimum convergence'})
+            self.name_options.update({'opt': 'Optimum value', 'opt_conv': 'Convergence'})
         else:
-            self.name_options.update({'hv': 'Hypervolume value', 'hv_conv': 'Hypervolume convergence'})
+            self.name_options.update({'hv_conv': 'Convergence'})
 
         def check(var, entry):
             if var.get() == 1:
@@ -75,28 +75,19 @@ class StopCriterionView:
             cb_opt_conv.grid(row=0, column=0, sticky='W')
             tk.Label(master=frame_opt_conv, text=self.name_options['opt_conv'] + ': stop when optimum stops to improve over past').grid(row=0, column=1, sticky='W')
             self.widget['entry']['opt_conv'] = create_widget('entry', master=frame_opt_conv, row=0, column=2, class_type='int', 
-                required=True, valid_check=lambda x: x > 0, error_msg='number of iterations for determining optimum convergence must be positive', pady=0)
+                required=True, valid_check=lambda x: x > 0, error_msg='number of iterations for determining convergence must be positive', pady=0)
             tk.Label(master=frame_opt_conv, text='iterations').grid(row=0, column=3, sticky='W')
             cb_opt_conv.configure(command=lambda: check(self.widget['var']['opt_conv'], self.widget['entry']['opt_conv']))
 
         else:
 
-            frame_hv = create_widget('frame', master=frame_options, row=3, column=0)
-            self.widget['var']['hv'] = tk.IntVar()
-            cb_hv = tk.Checkbutton(master=frame_hv, variable=self.widget['var']['hv'], highlightthickness=0, bd=0)
-            cb_hv.grid(row=0, column=0, sticky='W')
-            tk.Label(master=frame_hv, text=self.name_options['hv'] + ': stop when hypervolume reaches').grid(row=0, column=1, sticky='W')
-            self.widget['entry']['hv'] = create_widget('entry', master=frame_hv, row=0, column=2, class_type='float', 
-                required=True, valid_check=lambda x: x > 0, error_msg='hypervolume value must be positive', pady=0)
-            cb_hv.configure(command=lambda: check(self.widget['var']['hv'], self.widget['entry']['hv']))
-
-            frame_hv_conv = create_widget('frame', master=frame_options, row=4, column=0)
+            frame_hv_conv = create_widget('frame', master=frame_options, row=3, column=0)
             self.widget['var']['hv_conv'] = tk.IntVar()
             cb_hv_conv = tk.Checkbutton(master=frame_hv_conv, variable=self.widget['var']['hv_conv'], highlightthickness=0, bd=0)
             cb_hv_conv.grid(row=0, column=0, sticky='W')
             tk.Label(master=frame_hv_conv, text=self.name_options['hv_conv'] + ': stop when hypervolume stops to improve over past').grid(row=0, column=1, sticky='W')
             self.widget['entry']['hv_conv'] = create_widget('entry', master=frame_hv_conv, row=0, column=2, class_type='int', 
-                required=True, valid_check=lambda x: x > 0, error_msg='number of iterations for determining hypervolume convergence must be positive', pady=0)
+                required=True, valid_check=lambda x: x > 0, error_msg='number of iterations for determining convergence must be positive', pady=0)
             tk.Label(master=frame_hv_conv, text='iterations').grid(row=0, column=3, sticky='W')
             cb_hv_conv.configure(command=lambda: check(self.widget['var']['hv_conv'], self.widget['entry']['hv_conv']))
 
@@ -115,7 +106,7 @@ class StopCriterionController:
         self.root_view = self.root_controller.view
 
         self.agent = self.root_controller.agent
-        self.n_obj = self.agent.problem_cfg['n_obj']
+        n_obj = self.agent.problem_cfg['n_obj']
         self.view = StopCriterionView(self.root_view, n_obj)
 
         self.view.widget['save'].configure(command=self.save_stop_criterion)

@@ -22,7 +22,6 @@ config_map = {
         'init_sample_path': 'Path of provided initial samples',
         'n_worker': 'Number of evaluation workers',
         'batch_size': 'Batch size',
-        'ref_point': 'Reference point',
     },
     'problem': {
         'name': 'Problem name',
@@ -117,7 +116,7 @@ def check_config(config):
     exp_cfg = config['experiment']
 
     for key in exp_cfg:
-        assert key in ['n_random_sample', 'init_sample_path', 'batch_size', 'n_iter', 'n_worker', 'ref_point'], f'invalid key {key} in experiment config dictionary'
+        assert key in ['n_random_sample', 'init_sample_path', 'batch_size', 'n_iter', 'n_worker'], f'invalid key {key} in experiment config dictionary'
 
     assert 'n_random_sample' in exp_cfg or 'init_sample_path' in exp_cfg, 'either number of random initial samples or path to initial samples need to be provided'
     init_sample_exist = False
@@ -139,11 +138,6 @@ def check_config(config):
     
     if 'n_worker' in exp_cfg and exp_cfg['n_worker'] is not None:
         assert type(exp_cfg['n_worker']) == int and exp_cfg['n_worker'] > 0, 'number of evaluation workers must be a positive integer'
-
-    if 'ref_point' in exp_cfg and exp_cfg['ref_point'] is not None:
-        assert isinstance(exp_cfg['ref_point'], Iterable) and type(exp_cfg['ref_point']) != str, 'invalid type of reference point'
-        n_obj = get_problem_config(prob_cfg['name'])['n_obj']
-        assert len(exp_cfg['ref_point']) == n_obj, 'dimension of reference point mismatches number of objectives'
 
     # algorithm
     assert 'algorithm' in config, 'algorithm settings are not specified'
@@ -233,9 +227,6 @@ def complete_config(config, check=False):
 
     if 'n_worker' not in exp_cfg or exp_cfg['n_worker'] is None:
         exp_cfg['n_worker'] = exp_cfg['batch_size']
-
-    if 'ref_point' not in exp_cfg:
-        exp_cfg['ref_point'] = None
 
     # algorithm
     if 'n_process' not in algo_cfg or algo_cfg['n_process'] is None:

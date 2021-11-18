@@ -8,7 +8,7 @@ from multiprocessing import Lock
 
 from autooed.problem import build_problem
 from autooed.core import optimize, predict, optimize_predict, evaluate
-from autooed.utils.pareto import check_pareto, calc_hypervolume, calc_pred_error
+from autooed.utils.pareto import check_pareto, calc_hypervolume, calc_pred_error, convert_minimization
 
 
 class LoadAgent:
@@ -342,23 +342,7 @@ class EvaluateAgent(LoadAgent):
         '''
         super().__init__(database, table_name)
 
-        self.ref_point = None
-        self.initialized = False
         self.lock = Lock()
-
-    '''
-    Config
-    '''
-
-    def refresh(self):
-        '''
-        Refresh the agent to load the up-to-date config.
-        '''
-        super().refresh()
-
-        # update the status of initialization
-        if not self.initialized:
-            self.initialized = self.check_initialized()
 
     '''
     Main functions: evaluation
@@ -396,12 +380,6 @@ class EvaluateAgent(LoadAgent):
         pareto = check_pareto(Y_all, self.problem_cfg['obj_type']).astype(int)
         self.db.update_multiple_data(table=self.table_name, column=['pareto'], data=[pareto], rowid=rowids_all, transform=True)
 
-        # update the status of initialization
-        if not self.initialized:
-            self.initialized = self.check_initialized()
-            if self.initialized:
-                self._init_ref_point()
-
     def evaluate(self, rowid, eval_func=None):
         '''
         Evaluation of design variables given the associated rowid in database.
@@ -434,51 +412,6 @@ class EvaluateAgent(LoadAgent):
     Statistics
     '''
 
-    def _init_ref_point(self):
-        '''
-        Initialize the reference point.
-        '''
-        if self.problem_cfg['n_obj'] == 1: return
-        if self.ref_point is not None and None not in self.ref_point: return
-
-        # compute reference point based on current data
-        Y = self.load('Y')
-        valid_idx = self._get_valid_idx(Y)
-        assert len(valid_idx) > 0, 'no evaluated data so far, cannot set default reference point'
-        Y = Y[valid_idx]
-
-        ref_point = np.zeros(Y.shape[1])
-        for i, m in enumerate(self.problem_cfg['obj_type']):
-            if m == 'min':
-                ref_point[i] = np.max(Y[:, i])
-            elif m == 'max':
-                ref_point[i] = np.min(Y[:, i])
-            else:
-                raise Exception('obj_type must be min/max')
-
-        # set reference point where values are not provided
-        if self.ref_point is not None:
-            keep_idx = np.array(self.ref_point) != None
-            ref_point[keep_idx] = np.array(self.ref_point)[keep_idx]
-        self._set_ref_point(ref_point.tolist())
-
-        # update config
-        config = self.get_config()
-        config['experiment']['ref_point'] = self.ref_point
-        self.db.update_config(self.table_name, config)
-
-    def _set_ref_point(self, ref_point):
-        '''
-        Set the reference point.
-        '''
-        if ref_point is None: return
-        assert len(ref_point) == self.problem_cfg['n_obj']
-        assert type(ref_point) == list
-        if ref_point != self.ref_point:
-            self.ref_point = ref_point
-            if self.check_table_exist():
-                self._reload_hypervolume()
-
     def _update_hypervolume(self, rowids):
         '''
         Update hypervolume statistics to the database.
@@ -490,8 +423,6 @@ class EvaluateAgent(LoadAgent):
         '''
         n_obj, obj_type = self.problem_cfg['n_obj'], self.problem_cfg['obj_type']
 
-        if n_obj > 1 and self.ref_point is None: return
-
         # load and check order (assume only called after some evaluations)
         all_order = self.load('_order')
         assert (all_order >= 0).any()
@@ -501,62 +432,53 @@ class EvaluateAgent(LoadAgent):
         # find previously evaluated Y
         min_curr_order = np.min(curr_order)
         prev_order_idx = np.logical_and(all_order < min_curr_order, all_order >= 0)
-        Y_all = self.load('Y')
+        Y_all, hv_all = self.load(['Y', '_hypervolume'])
         Y = Y_all[prev_order_idx]
-        
-        # compute hypervolume according to evaluation order
-        hv_list = []
-        for rowid in rowids:
-            if len(Y) > 0:
-                Y = np.vstack([Y, np.atleast_2d(Y_all[rowid - 1])])
-            else:
-                Y = np.atleast_2d(Y_all[rowid - 1])
-            if n_obj == 1:
+
+        if n_obj == 1: # compute optimum
+
+            hv_list = []
+            for rowid in rowids:
+                if len(Y) > 0:
+                    Y = np.vstack([Y, np.atleast_2d(Y_all[rowid - 1])])
+                else:
+                    Y = np.atleast_2d(Y_all[rowid - 1])
                 if obj_type == ['min']:
                     hv = np.min(Y)
                 elif obj_type == ['max']:
                     hv = np.max(Y)
                 else:
                     raise NotImplementedError
-            else:
-                hv = calc_hypervolume(Y, self.ref_point, obj_type)
-            hv_list.append(hv)
+                hv_list.append(hv)
 
-        self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
+        else: # compute hypervolume
 
-    def _reload_hypervolume(self):
-        '''
-        Reload the hypervolume statistics.
-        '''
-        n_obj, obj_type = self.problem_cfg['n_obj'], self.problem_cfg['obj_type']
+            # compute reference point
+            Y_all_valid = Y_all[self._get_valid_idx(Y_all)]
+            ref_point = np.max(convert_minimization(Y_all_valid, obj_type), axis=0)
 
-        if n_obj > 1 and self.ref_point is None: return
+            if len(Y) > 0: # if previous evaluations exist
+                ref_point_prev = np.max(convert_minimization(Y, obj_type), axis=0)
 
-        # load and check order
-        all_order, Y = self.load(['_order', 'Y'])
-        if len(all_order) == 0: return
-        valid_idx = all_order >= 0
-        if not valid_idx.any(): return
-        valid_order = all_order[valid_idx]
+                if (ref_point != ref_point_prev).any(): # update all previous hypervolume
+                    assert (ref_point >= ref_point_prev).all(), 'error: new reference point is no worse than the previous one'
 
-        # compute hypervolume according to evaluation order
-        rowids = []
-        hv_list = []
-        Y_curr = np.zeros((0, Y.shape[1]))
-        for i in np.sort(valid_order):
-            idx = int(np.where(all_order == i)[0][0])
-            rowids.append(idx + 1)
-            Y_curr = np.vstack([Y_curr, np.atleast_2d(Y[idx])])
-            if n_obj == 1:
-                if obj_type == ['min']:
-                    hv = np.min(Y_curr)
-                elif obj_type == ['max']:
-                    hv = np.max(Y_curr)
+                    utopian_point = np.min(convert_minimization(Y, obj_type), axis=0)
+                    delta_hv = (ref_point - utopian_point).prod() - (ref_point_prev - utopian_point).prod()
+
+                    hv_prev, rowids_prev = hv_all[prev_order_idx], np.arange(len(hv_all))[prev_order_idx] + 1
+                    self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], 
+                        data=[hv_prev + delta_hv], rowid=rowids_prev, transform=True)
+
+            # compute hypervolume according to evaluation order
+            hv_list = []
+            for rowid in rowids:
+                if len(Y) > 0:
+                    Y = np.vstack([Y, np.atleast_2d(Y_all[rowid - 1])])
                 else:
-                    raise NotImplementedError
-            else:
-                hv = calc_hypervolume(Y_curr, self.ref_point, obj_type)
-            hv_list.append(hv)
+                    Y = np.atleast_2d(Y_all[rowid - 1])
+                hv = calc_hypervolume(Y, ref_point, obj_type)
+                hv_list.append(hv)
 
         self.db.update_multiple_data(table=self.table_name, column=['_hypervolume'], data=[hv_list], rowid=rowids, transform=True)
 

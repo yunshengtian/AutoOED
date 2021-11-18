@@ -126,4 +126,3 @@ then a more complicated configuration file could look like this:
       init_sample_path: # path to provided initial samples
       # NOTE: at least one of n_random_sample and init_sample_path must be specified
       n_worker: # number of evaluation workers that can be run in parallel
-      ref_point: # reference point (optional)
