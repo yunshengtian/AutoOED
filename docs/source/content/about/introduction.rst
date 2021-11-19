@@ -38,6 +38,5 @@ And the speed could be further boosted if you have a powerful CPU or enable para
 
 However, there are some requirements for your optimization problem that you should pay attention to:
 
-- AutoOED only supports problems with 2 or 3 objectives at the moment, but we are working on supporting higher dimensional performance space.
 - The problem constraints should depend only on design variables. AutoOED does not support constraints on objectives.
 
