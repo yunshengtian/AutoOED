@@ -39,8 +39,8 @@ class Table:
         if val is None:
             return 'N/A'
         elif isinstance(val, bool):
-            if val == True: return 'True'
-            else: return 'False'
+            if val == True: return 'Y'
+            else: return 'N'
         elif isinstance(val, float):
             if np.isnan(val): return 'N/A'
             else: return round(val, self.params['precision'])

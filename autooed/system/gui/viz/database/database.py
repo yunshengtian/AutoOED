@@ -52,13 +52,17 @@ class VizDatabaseController:
         '''
         data = self.database.load_table(name=self.table_name, column=self.columns_view + self.columns_pred_mean + self.columns_pred_std)
 
-        status_idx = self.columns_view.index('status')
+        status_idx, pareto_idx = self.columns_view.index('status'), self.columns_view.index('pareto')
         data_view_dim, obj_dim = len(self.columns_view), len(self.columns_pred_mean)
         data_processed = []
-        
-        # update the objective columns for unevaluated data with predicted values
+
         for row_data in data:
             row_data_processed = list(row_data[:data_view_dim])
+
+            # transform the pareto column to bool
+            row_data_processed[pareto_idx] = bool(row_data_processed[pareto_idx])
+
+            # update the objective columns for unevaluated data with predicted values
             if row_data[status_idx] == 'unevaluated':
                 for i, (column_mean, column_std) in enumerate(zip(self.columns_pred_mean, self.columns_pred_std)):
                     pred_mean, pred_std = row_data[data_view_dim + i], row_data[data_view_dim + obj_dim + i]
