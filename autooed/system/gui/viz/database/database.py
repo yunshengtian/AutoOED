@@ -22,9 +22,6 @@ class VizDatabaseView:
         self.widget['enter_performance'] = create_widget('button', master=frame_enter, row=0, column=1, text='Enter Performance')
         self.widget['table'].widget['set'].grid(row=1, column=1)
 
-    def get_table_columns(self):
-        return self.widget['table'].columns
-
 
 class VizDatabaseController:
 
@@ -38,8 +35,10 @@ class VizDatabaseController:
         self.agent, self.scheduler = self.root_controller.agent, self.root_controller.scheduler
 
         columns = self.database.get_column_names(self.table_name)
-        columns = [col for col in columns if not col.startswith('_')]
-        self.view = VizDatabaseView(self.root_view, columns=columns)
+        self.columns_view = [col for col in columns if not col.startswith('_')] # columns for viewing only
+        self.columns_pred_mean = [col for col in columns if col.startswith('_') and 'pred_mean' in col] # columns with prediction data
+        self.columns_pred_std = [col for col in columns if col.startswith('_') and 'pred_std' in col] # columns with prediction data
+        self.view = VizDatabaseView(self.root_view, columns=self.columns_view)
         self.table = self.view.widget['table']
 
         self.view.widget['enter_design'].configure(command=self.enter_design)
@@ -51,8 +50,26 @@ class VizDatabaseController:
         '''
         Update table data
         '''
-        data = self.database.load_table(name=self.table_name, column=self.view.get_table_columns())
-        self.table.load(data)
+        data = self.database.load_table(name=self.table_name, column=self.columns_view + self.columns_pred_mean + self.columns_pred_std)
+
+        status_idx = self.columns_view.index('status')
+        data_view_dim, obj_dim = len(self.columns_view), len(self.columns_pred_mean)
+        data_processed = []
+        
+        # update the objective columns for unevaluated data with predicted values
+        for row_data in data:
+            row_data_processed = list(row_data[:data_view_dim])
+            if row_data[status_idx] == 'unevaluated':
+                for i, (column_mean, column_std) in enumerate(zip(self.columns_pred_mean, self.columns_pred_std)):
+                    pred_mean, pred_std = row_data[data_view_dim + i], row_data[data_view_dim + obj_dim + i]
+                    if pred_mean is None or pred_std is None: continue
+                    obj_name = column_mean.rstrip('_pred_mean')[1:]
+                    assert obj_name == column_std.rstrip('_pred_std')[1:], 'objective name sequence error'
+                    obj_idx = self.columns_view.index(obj_name)
+                    row_data_processed[obj_idx] = complex(pred_mean, pred_std)
+            data_processed.append(row_data_processed)
+
+        self.table.load(data_processed)
 
     def get_config(self):
         return self.root_controller.get_config()

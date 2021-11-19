@@ -355,10 +355,8 @@ class Database:
                 description.append(f'x{i} {var_type_map[var_type]} not null')
         for i in range(1, n_obj + 1):
             description.append(f'f{i} float')
-        for i in range(1, n_obj + 1):
-            description.append(f'f{i}_expected float')
-        for i in range(1, n_obj + 1):
-            description.append(f'f{i}_uncertainty float')
+            description.append(f'_f{i}_pred_mean float')
+            description.append(f'_f{i}_pred_std float')
         description += ['pareto boolean', 'batch int not null']
         description += ['_order int default -1', '_hypervolume float']
         

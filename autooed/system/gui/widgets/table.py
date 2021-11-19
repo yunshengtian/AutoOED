@@ -44,6 +44,10 @@ class Table:
         elif isinstance(val, float):
             if np.isnan(val): return 'N/A'
             else: return round(val, self.params['precision'])
+        elif isinstance(val, complex):
+            mean = round(val.real, self.params['precision'])
+            std = round(val.imag, self.params['precision'])
+            return f'{mean}±{std}'
         else:
             return str(val)
 

@@ -550,10 +550,10 @@ class VizSpaceController:
         Redraw performance space
         '''
         # load data
-        X, Y, Y_expected, pareto, batch = self.agent.load(['X', 'Y', 'Y_expected', 'pareto', 'batch'])
+        X, Y, Y_pred_mean, pareto, batch = self.agent.load(['X', 'Y', '_Y_pred_mean', 'pareto', 'batch'])
         valid_idx = np.where((~np.isnan(Y)).all(axis=1))[0]
         if len(valid_idx) == 0: return
-        X, Y, Y_expected, pareto, batch = X[valid_idx], Y[valid_idx], Y_expected[valid_idx], pareto[valid_idx], batch[valid_idx]
+        X, Y, Y_pred_mean, pareto, batch = X[valid_idx], Y[valid_idx], Y_pred_mean[valid_idx], pareto[valid_idx], batch[valid_idx]
         max_iter = batch[-1]
 
         if reset_scaler:
@@ -568,7 +568,7 @@ class VizSpaceController:
 
         if draw_iter is not None and draw_iter < batch[-1]:
             draw_idx = batch <= draw_iter
-            X, Y, Y_expected, batch = X[draw_idx], Y[draw_idx], Y_expected[draw_idx], batch[draw_idx]
+            X, Y, Y_pred_mean, batch = X[draw_idx], Y[draw_idx], Y_pred_mean[draw_idx], batch[draw_idx]
             max_iter = batch[-1]
             pareto = check_pareto(Y, self.problem_cfg['obj_type'])
         
@@ -636,17 +636,17 @@ class VizSpaceController:
                 self.plot_y_new.set_offsets(np.hstack([Y[last_batch], np.zeros_like(Y[last_batch])]))
             elif self.n_obj == 2:
                 self.plot_y_new.set_offsets(Y[last_batch])
-                self.plot_y_pred.set_offsets(Y_expected[last_batch])
+                self.plot_y_pred.set_offsets(Y_pred_mean[last_batch])
             elif self.n_obj == 3:
                 self.plot_y_new._offsets3d = Y[last_batch].T
-                self.plot_y_pred._offsets3d = Y_expected[last_batch].T
+                self.plot_y_pred._offsets3d = Y_pred_mean[last_batch].T
             elif self.n_obj > 3:
                 self.plot_y_new.set_segments(parallel_transform(Y[last_batch]))
             else:
                 raise NotImplementedError
             if self.n_obj == 2 or self.n_obj == 3:
-                for y, y_expected in zip(Y[last_batch], Y_expected[last_batch]):
-                    line = self.view.ax1.plot(*[[y[i], y_expected[i]] for i in range(self.n_obj)], '--', color='m', alpha=0.5)[0]
+                for y, y_pred_mean in zip(Y[last_batch], Y_pred_mean[last_batch]):
+                    line = self.view.ax1.plot(*[[y[i], y_pred_mean[i]] for i in range(self.n_obj)], '--', color='m', alpha=0.5)[0]
                     line.set_visible(line_vis)
                     self.line_y_pred_list.append(line)
         else:

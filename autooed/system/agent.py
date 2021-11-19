@@ -68,8 +68,8 @@ class LoadAgent:
                 'status': 'status',
                 'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
                 'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
-                'Y_expected': [f'f{i + 1}_expected' for i in range(self.problem_cfg['n_obj'])],
-                'Y_uncertainty': [f'f{i + 1}_uncertainty' for i in range(self.problem_cfg['n_obj'])],
+                '_Y_pred_mean': [f'_f{i + 1}_pred_mean' for i in range(self.problem_cfg['n_obj'])],
+                '_Y_pred_std': [f'_f{i + 1}_pred_std' for i in range(self.problem_cfg['n_obj'])],
                 'pareto': 'pareto', 'batch': 'batch', 
                 '_order': '_order', '_hypervolume': '_hypervolume',
             }
@@ -88,8 +88,8 @@ class LoadAgent:
                 'status': str,
                 'X': var_type_map[self.problem_cfg['type']],
                 'Y': float,
-                'Y_expected': float,
-                'Y_uncertainty': float,
+                '_Y_pred_mean': float,
+                '_Y_pred_std': float,
                 'pareto': bool,
                 'batch': int,
                 '_order': int,
@@ -510,18 +510,18 @@ class EvaluateAgent(LoadAgent):
         '''
         Load the prediction error of the surrogate model.
         '''
-        order, Y, Y_expected = self.load(['_order', 'Y', 'Y_expected'])
+        order, Y, Y_pred_mean = self.load(['_order', 'Y', '_Y_pred_mean'])
         if len(order) == 0: return np.array([])
         valid_idx = order >= 0
         if valid_idx.sum() == 0: return np.array([])
-        order, Y, Y_expected = np.argsort(order[valid_idx]), Y[valid_idx], Y_expected[valid_idx]
+        order, Y, Y_pred_mean = np.argsort(order[valid_idx]), Y[valid_idx], Y_pred_mean[valid_idx]
 
-        ordered_Y, ordered_Y_expected = np.zeros_like(Y), np.zeros_like(Y_expected)
+        ordered_Y, ordered_Y_pred_mean = np.zeros_like(Y), np.zeros_like(Y_pred_mean)
         ordered_Y[order] = Y
-        ordered_Y_expected[order] = Y_expected
-        valid_idx = np.intersect1d(self._get_valid_idx(ordered_Y), self._get_valid_idx(ordered_Y_expected))
-        ordered_Y, ordered_Y_expected = ordered_Y[valid_idx], ordered_Y_expected[valid_idx]
-        return calc_pred_error(ordered_Y, ordered_Y_expected, average=False)
+        ordered_Y_pred_mean[order] = Y_pred_mean
+        valid_idx = np.intersect1d(self._get_valid_idx(ordered_Y), self._get_valid_idx(ordered_Y_pred_mean))
+        ordered_Y, ordered_Y_pred_mean = ordered_Y[valid_idx], ordered_Y_pred_mean[valid_idx]
+        return calc_pred_error(ordered_Y, ordered_Y_pred_mean, average=False)
 
 
 class OptimizeAgent(EvaluateAgent):
@@ -592,7 +592,7 @@ class OptimizeAgent(EvaluateAgent):
         '''
         return self._insert(key_list=['X'], data_list=[X])
 
-    def insert_design_and_prediction(self, X, Y_expected, Y_uncertainty):
+    def insert_design_and_prediction(self, X, Y_pred_mean, Y_pred_std):
         '''
         Insert designs and their predicted performance to the database.
 
@@ -600,9 +600,9 @@ class OptimizeAgent(EvaluateAgent):
         ----------
         X: np.array
             Designs to insert.
-        Y_expected: np.array
+        Y_pred_mean: np.array
             Mean of the predicted performance to insert.
-        Y_uncertainty: np.array
+        Y_pred_std: np.array
             Standard deviation of the predicted performance to insert.
 
         Returns
@@ -610,7 +610,7 @@ class OptimizeAgent(EvaluateAgent):
         list
             Row numbers of the inserted data.
         '''
-        return self._insert(key_list=['X', 'Y_expected', 'Y_uncertainty'], data_list=[X, Y_expected, Y_uncertainty])
+        return self._insert(key_list=['X', '_Y_pred_mean', '_Y_pred_std'], data_list=[X, Y_pred_mean, Y_pred_std])
 
     def insert_design_and_evaluation(self, X, Y):
         '''
@@ -632,22 +632,22 @@ class OptimizeAgent(EvaluateAgent):
         self.update_evaluation(Y, rowids)
         return rowids
 
-    def update_prediction(self, Y_expected, Y_uncertainty, rowids):
+    def update_prediction(self, Y_pred_mean, Y_pred_std, rowids):
         '''
         Update predicted performance to the database.
 
         Parameters
         ----------
-        Y_expected: np.array
+        Y_pred_mean: np.array
             Mean of the predicted performance to update.
-        Y_uncertainty: np.array
+        Y_pred_std: np.array
             Standard deviation of the predicted performance to update.
         rowids: list
             Row numbers to update.
         '''
-        # update data (Y_expected, Y_uncertainty)
-        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['Y_expected', 'Y_uncertainty'], flatten=True), 
-            data=[Y_expected, Y_uncertainty], rowid=rowids, transform=True)
+        # update data (Y_pred_mean, Y_pred_std)
+        self.db.update_multiple_data(table=self.table_name, column=self._map_key(['_Y_pred_mean', '_Y_pred_std'], flatten=True), 
+            data=[Y_pred_mean, Y_pred_std], rowid=rowids, transform=True)
 
     def initialize(self, X_evaluated, X_unevaluated, Y_evaluated):
         '''
@@ -708,11 +708,11 @@ class OptimizeAgent(EvaluateAgent):
 
         # optimize for best X_next
         config = self.get_config()
-        X_next, (Y_expected, Y_uncertainty) = optimize_predict(config, X, Y, X_busy, batch_size=batch_size)
+        X_next, (Y_pred_mean, Y_pred_std) = optimize_predict(config, X, Y, X_busy, batch_size=batch_size)
 
         # insert optimization and prediction result to database
-        if Y_expected is not None and Y_uncertainty is not None:
-            rowids = self.insert_design_and_prediction(X_next, Y_expected, Y_uncertainty)
+        if Y_pred_mean is not None and Y_pred_std is not None:
+            rowids = self.insert_design_and_prediction(X_next, Y_pred_mean, Y_pred_std)
         else:
             rowids = self.insert_design(X_next)
 
@@ -738,8 +738,8 @@ class OptimizeAgent(EvaluateAgent):
 
         # predict performance of given input X_next
         config = self.get_config()
-        Y_expected, Y_uncertainty = predict(config, X, Y, X_next)
+        Y_pred_mean, Y_pred_std = predict(config, X, Y, X_next)
 
         # update prediction result to database
-        if Y_expected is not None and Y_uncertainty is not None:
-            self.update_prediction(Y_expected, Y_uncertainty, rowids)
+        if Y_pred_mean is not None and Y_pred_std is not None:
+            self.update_prediction(Y_pred_mean, Y_pred_std, rowids)

@@ -71,12 +71,12 @@ def calc_hypervolume(Y, ref_point, obj_type=None):
     return Hypervolume(ref_point=ref_point).calc(Y)
 
 
-def calc_pred_error(Y, Y_expected, average=False):
+def calc_pred_error(Y, Y_pred_mean, average=False):
     '''
     Calculate prediction error
     '''
-    assert len(Y.shape) == len(Y_expected.shape) == 2
-    pred_error = np.abs(Y - Y_expected)
+    assert len(Y.shape) == len(Y_pred_mean.shape) == 2
+    pred_error = np.abs(Y - Y_pred_mean)
     if average:
         pred_error = np.sum(pred_error, axis=0) / len(Y)
     return pred_error
