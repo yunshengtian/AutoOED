@@ -174,6 +174,11 @@ class Excel(tk.Frame):
             self.disable(row, column)
 
     def update_n_row(self, n_row):
+        # remove existing entries
+        for row in range(self.n_row):
+            for column in range(self.n_column):
+                self.entries[row][column].grid_remove()
+
         self.n_row = n_row
         self.entries = [[None for _ in range(self.n_column)] for _ in range(self.n_row)]
 
