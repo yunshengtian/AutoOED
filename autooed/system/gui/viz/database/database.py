@@ -67,8 +67,8 @@ class VizDatabaseController:
                 for i, (column_mean, column_std) in enumerate(zip(self.columns_pred_mean, self.columns_pred_std)):
                     pred_mean, pred_std = row_data[data_view_dim + i], row_data[data_view_dim + obj_dim + i]
                     if pred_mean is None or pred_std is None: continue
-                    obj_name = column_mean.rstrip('_pred_mean')[1:]
-                    assert obj_name == column_std.rstrip('_pred_std')[1:], 'objective name sequence error'
+                    obj_name = column_mean.replace('_pred_mean', '')[1:]
+                    assert obj_name == column_std.replace('_pred_std', '')[1:], 'objective name sequence error'
                     obj_idx = self.columns_view.index(obj_name)
                     row_data_processed[obj_idx] = complex(pred_mean, pred_std)
             data_processed.append(row_data_processed)

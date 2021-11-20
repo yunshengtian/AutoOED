@@ -22,11 +22,6 @@ table_descriptions = {
         name varchar(50) not null primary key
         ''',
 
-    '_problem_info': '''
-        name varchar(50) not null primary key,
-        problem_name varchar(50) not null
-        ''',
-
     '_config': '''
         name varchar(50) not null,
         config text not null
@@ -317,7 +312,6 @@ class Database:
             assert not self.check_table_exist(name, block=False), f'Table {name} exists'
 
             # in case not removed completely
-            self.execute(f'delete from _problem_info where name="{name}"')
             self.execute(f'delete from _config where name="{name}"')
             self.execute(f'delete from _empty_table where name="{name}"')
 
@@ -337,6 +331,7 @@ class Database:
         '''
         problem_name = problem_cfg['name']
         n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
+        var_name_list, obj_name_list = problem_cfg['var_name'], problem_cfg['obj_name']
         var_type = problem_cfg['type']
 
         var_type_map = {
@@ -348,22 +343,21 @@ class Database:
 
         description = ['status varchar(20) not null default "unevaluated"']
         if var_type == 'mixed':
-            for i, var_info in enumerate(problem_cfg['var'].values()):
-                description.append(f'x{i + 1} {var_type_map[var_info["type"]]} not null')
+            for var_name, var_info in zip(var_name_list, problem_cfg['var'].values()):
+                description.append(f'"{var_name}" {var_type_map[var_info["type"]]} not null')
         else:
-            for i in range(1, n_var + 1):
-                description.append(f'x{i} {var_type_map[var_type]} not null')
-        for i in range(1, n_obj + 1):
-            description.append(f'f{i} float')
-            description.append(f'_f{i}_pred_mean float')
-            description.append(f'_f{i}_pred_std float')
+            for var_name in var_name_list:
+                description.append(f'"{var_name}" {var_type_map[var_type]} not null')
+        for obj_name in obj_name_list:
+            description.append(f'"{obj_name}" float')
+            description.append(f'"_{obj_name}_pred_mean" float')
+            description.append(f'"_{obj_name}_pred_std" float')
         description += ['pareto boolean', 'batch int not null']
         description += ['_order int default -1', '_hypervolume float']
         
         with SafeLock(self.lock):
             self.execute(f'create table "{name}" ({",".join(description)})')
             self.execute(f'delete from _empty_table where name="{name}"')
-            self.execute(f'insert into _problem_info values ("{name}", "{problem_name}")')
             self.commit()
 
     def remove_table(self, name):
@@ -380,7 +374,6 @@ class Database:
         with SafeLock(self.lock):
             if self.check_inited_table_exist(name):
                 self.execute(f'drop table "{name}"')
-                self.execute(f'delete from _problem_info where name="{name}"')
                 self.execute(f'delete from _config where name="{name}"')
                 self.commit()
             elif self.check_table_exist(name, block=False):
@@ -390,30 +383,6 @@ class Database:
                 table_exist = False
         if not table_exist:
             raise Exception(f'Table {name} does not exist')
-
-    '''
-    problem
-    '''
-
-    def query_problem(self, name):
-        '''
-        Query the problem name given the database table name.
-
-        Parameters
-        ----------
-        name: str
-            Name of the database table.
-        
-        Returns
-        -------
-        str
-            Problem name of the given database table (None if not found).
-        '''
-        result = self.execute(f'select problem_name from _problem_info where name="{name}"', fetchone=True)
-        if result is None:
-            return None
-        else:
-            return result[0]
 
     '''
     config
@@ -498,10 +467,11 @@ class Database:
         if column is None:
             query = f'insert into "{table}" values ({",".join(["?"] * len(data))})'
         elif type(column) == str:
-            query = f'insert into "{table}" values (?)'
+            query = f'insert into "{table}" ("{column}") values (?)'
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f'insert into "{table}" ({",".join(column)}) values ({",".join(["?"] * len(data))})'
+            column_str = ','.join([f'"{col}"' for col in column])
+            query = f'insert into "{table}" ({column_str}) values ({",".join(["?"] * len(data))})'
 
         with SafeLock(self.lock):
             self.execute(query, data)
@@ -539,10 +509,11 @@ class Database:
         if column is None:
             query = f'insert into "{table}" values ({",".join(["?"] * len(data[0]))})'
         elif type(column) == str:
-            query = f'insert into "{table}" values (?)'
+            query = f'insert into "{table}" ("{column}") values (?)'
         else:
             # assert len(column) == len(data[0]), 'length mismatch of keys and values'
-            query = f'insert into "{table}" ({",".join(column)}) values ({",".join(["?"] * len(data[0]))})'
+            column_str = ','.join([f'"{col}"' for col in column])
+            query = f'insert into "{table}" ({column_str}) values ({",".join(["?"] * len(data[0]))})'
 
         with SafeLock(self.lock):
             self.executemany(query, data)
@@ -601,10 +572,11 @@ class Database:
             data = data.tolist()
 
         if type(column) == str:
-            query = f'update "{table}" set {column}=?'
+            query = f'update "{table}" set "{column}"=?'
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f'update "{table}" set {",".join([col + "=?" for col in column])}'
+            column_exp_str = ','.join([f'"{col}"=?' for col in column])
+            query = f'update "{table}" set {column_exp_str}'
 
         assert type(rowid) == int, 'row number is not an integer, use update_multiple_data instead for multiple row numbers'
         condition = self._get_rowid_condition(rowid)
@@ -638,10 +610,11 @@ class Database:
             data = data.tolist()
 
         if type(column) == str:
-            query = f'update "{table}" set {column}=?'
+            query = f'update "{table}" set "{column}"=?'
         else:
             # assert len(column) == len(data), 'length mismatch of keys and values'
-            query = f'update "{table}" set {",".join([col + "=?" for col in column])}'
+            column_exp_str = ','.join([f'"{col}"=?' for col in column])
+            query = f'update "{table}" set {column_exp_str}'
 
         with SafeLock(self.lock):
             # updating different data for different rows is not supported by sqlite
@@ -741,9 +714,10 @@ class Database:
         if column is None:
             query = f'select * from "{table}"'
         elif type(column) == str:
-            query = f'select {column} from "{table}"'
+            query = f'select "{column}" from "{table}"'
         else:
-            query = f'select {",".join(column)} from "{table}"'
+            column_str = ','.join([f'"{col}"' for col in column])
+            query = f'select {column_str} from "{table}"'
 
         condition = self._get_rowid_condition(rowid)
         query += condition

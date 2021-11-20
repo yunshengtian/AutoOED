@@ -66,10 +66,10 @@ class LoadAgent:
             # mapping from keys to database column names (e.g., X -> [x1, x2, ...])
             self.key_map = {
                 'status': 'status',
-                'X': [f'x{i + 1}' for i in range(self.problem_cfg['n_var'])],
-                'Y': [f'f{i + 1}' for i in range(self.problem_cfg['n_obj'])],
-                '_Y_pred_mean': [f'_f{i + 1}_pred_mean' for i in range(self.problem_cfg['n_obj'])],
-                '_Y_pred_std': [f'_f{i + 1}_pred_std' for i in range(self.problem_cfg['n_obj'])],
+                'X': self.problem_cfg['var_name'],
+                'Y': self.problem_cfg['obj_name'],
+                '_Y_pred_mean': [f'_{name}_pred_mean' for name in self.problem_cfg['obj_name']],
+                '_Y_pred_std': [f'_{name}_pred_std' for name in self.problem_cfg['obj_name']],
                 'pareto': 'pareto', 'batch': 'batch', 
                 '_order': '_order', '_hypervolume': '_hypervolume',
             }
@@ -468,6 +468,7 @@ class EvaluateAgent(LoadAgent):
                     hv_temp_list = []
                     for order_temp in np.arange(min_curr_order):
                         rowid_temp = np.where(all_order == order_temp)[0] + 1
+                        if len(rowid_temp) == 0: continue # happens because re-evaluation overwrites past orders
                         Y_temp = np.vstack([Y_temp, Y_all[rowid_temp - 1]])
                         hv_temp = calc_hypervolume(Y_temp, ref_point, obj_type)
                         rowid_temp_list.extend(rowid_temp)

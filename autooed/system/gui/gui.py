@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 
-from autooed.problem import build_problem
+from autooed.problem import build_problem, get_problem_config
 from autooed.utils.path import get_root_dir
 from autooed.system.config import complete_config
 
@@ -296,10 +296,10 @@ class GUIController:
             table_exist = self.agent.check_table_exist()
 
             if table_exist:
-                column_names = self.agent.get_column_names()
-                data_n_var = len([name for name in column_names if name.startswith('x')])
-                data_n_obj = len([name for name in column_names if name.startswith('f') and '_' not in name])
-                if problem_cfg['n_var'] != data_n_var or problem_cfg['n_obj'] != data_n_obj:
+                problem_name_stored = self.agent.get_config()['problem']['name']
+                problem_cfg_stored = get_problem_config(problem_name_stored)
+                n_var, n_obj = problem_cfg_stored['n_var'], problem_cfg_stored['n_obj']
+                if problem_cfg['n_var'] != n_var or problem_cfg['n_obj'] != n_obj:
                     tk.messagebox.showinfo('Error', 'Problem dimension mismatch between configuration and history data', parent=window)
                     return False
 

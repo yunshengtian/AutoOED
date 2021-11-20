@@ -7,8 +7,9 @@ from autooed.system.gui.widgets.excel import Excel
 
 class EnterPerformanceView:
 
-    def __init__(self, root_view, n_obj):
+    def __init__(self, root_view, obj_name):
         self.root_view = root_view
+        n_obj = len(obj_name)
 
         self.window = create_widget('toplevel', master=self.root_view.root, title='Enter Performance')
 
@@ -20,7 +21,7 @@ class EnterPerformanceView:
         self.widget['set_n_row'] = create_widget('button', master=frame_n_row, row=0, column=1, text='Update')
 
         self.widget['performance_excel'] = Excel(master=self.window, rows=1, columns=n_obj + 1, width=10, 
-            title=['Row number'] + [f'f{i + 1}' for i in range(n_obj)], dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), required_mark=False)
+            title=['Row number'] + list(obj_name), dtype=[int] + [float] * n_obj, default=None, required=[True] * (n_obj + 1), required_mark=False)
         self.widget['performance_excel'].grid(row=1, column=0)
 
         frame_action = create_widget('frame', master=self.window, row=2, column=0, sticky=None, pady=0)
@@ -35,9 +36,9 @@ class EnterPerformanceController:
         self.root_view = self.root_controller.view
 
         problem_cfg = self.root_controller.get_problem_cfg()
-        n_obj = problem_cfg['n_obj']
+        n_obj, obj_name = problem_cfg['n_obj'], problem_cfg['obj_name']
 
-        self.view = EnterPerformanceView(self.root_view, n_obj)
+        self.view = EnterPerformanceView(self.root_view, obj_name)
 
         self.view.widget['disp_n_row'].config(
             default=1, 
@@ -74,15 +75,16 @@ class EnterPerformanceController:
             tk.messagebox.showinfo('Error', 'Invalid row numbers', parent=self.view.window)
             return
 
-        n_obj = self.root_controller.get_problem_cfg()['n_obj']
+        problem_cfg = self.root_controller.get_problem_cfg()
+        obj_name_list = problem_cfg['obj_name']
         table = self.root_controller.table
         agent = self.root_controller.agent
 
         # check for overwriting
         overwrite = False
         for rowid in rowids:
-            for i in range(n_obj):
-                if table.get(rowid - 1, f'f{i + 1}') != 'N/A':
+            for obj_name in obj_name_list:
+                if table.get(rowid - 1, obj_name) != 'N/A':
                     overwrite = True
         if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=self.view.window) == 'no': return
 
