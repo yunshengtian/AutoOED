@@ -8,7 +8,6 @@ from collections.abc import Iterable
 from multiprocessing import cpu_count
 
 from autooed.problem import get_problem_config, check_problem_exist
-from autooed.problem.config import transform_config
 from autooed.mobo import check_algorithm_exist
 from autooed.mobo.hyperparams import get_hp_classes, get_hp_value
 

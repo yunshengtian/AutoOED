@@ -125,8 +125,10 @@ def check_config(config):
             assert len(config['var']) > 0, 'the dictionary of variable properties is empty'
             n_var = len(config['var'])
 
-            for var_name, var_choices in config['var'].items():
+            for var_name, var_info in config['var'].items():
                 assert is_str(var_name), 'invalid type of variable name'
+                assert var_info['type'] == 'categorical', 'invalid variable type for categorical problem'
+                var_choices = var_info['choices']
                 assert is_iterable(var_choices), 'invalid type of variable choices'
                 assert len(var_choices) == len(np.unique(var_choices)), 'duplicates in variable choices'
 
@@ -265,9 +267,9 @@ def transform_config(config, check=False):
 
     elif config['type'] == 'categorical':
         if 'var' in config:
-            new_config['n_var'] = len(config['var'])
+            new_config['n_var'] = np.sum([len(var_info['choices']) for var_info in config['var'].values()])
         else:
-            new_config['n_var'] = len(config['var_choices'])
+            new_config['n_var'] = len(config['var_choices']) * config['n_var']
 
         new_config['xl'] = 0
         new_config['xu'] = 1
