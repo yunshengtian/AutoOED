@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 from autooed.problem import get_problem_config, check_problem_exist
 from autooed.problem.config import transform_config
 from autooed.mobo import check_algorithm_exist
-from autooed.mobo.hyperparams import get_hp_classes
+from autooed.mobo.hyperparams import get_hp_classes, get_hp_value
 
 
 '''
@@ -167,26 +167,30 @@ def check_config(config):
 
     if 'surrogate' in algo_cfg and algo_cfg['surrogate'] is not None:
         assert isinstance(algo_cfg['surrogate'], dict), 'surrogate settings must be provided as a dictionary'
-        assert 'name' in algo_cfg['surrogate'], 'surrogate name is not provided'
-        assert type(algo_cfg['surrogate']['name']) == str, 'invalid type of surrogate name'
+        if algo_cfg['name'] == 'custom':
+            assert 'name' in algo_cfg['surrogate'], 'surrogate name is not provided'
+            assert type(algo_cfg['surrogate']['name']) == str, 'invalid type of surrogate name'
         # TODO: check validity of arguments
 
     if 'acquisition' in algo_cfg and algo_cfg['acquisition'] is not None:
         assert isinstance(algo_cfg['acquisition'], dict), 'acquisition settings must be provided as a dictionary'
-        assert 'name' in algo_cfg['acquisition'], 'acquisition name is not provided'
-        assert type(algo_cfg['acquisition']['name']) == str, 'invalid type of acquisition name'
+        if algo_cfg['name'] == 'custom':
+            assert 'name' in algo_cfg['acquisition'], 'acquisition name is not provided'
+            assert type(algo_cfg['acquisition']['name']) == str, 'invalid type of acquisition name'
         # TODO: check validity of arguments
 
     if 'solver' in algo_cfg and algo_cfg['solver'] is not None:
         assert isinstance(algo_cfg['solver'], dict), 'solver settings must be provided as a dictionary'
-        assert 'name' in algo_cfg['solver'], 'solver name is not provided'
-        assert type(algo_cfg['solver']['name']) == str, 'invalid type of solver name'
+        if algo_cfg['name'] == 'custom':
+            assert 'name' in algo_cfg['solver'], 'solver name is not provided'
+            assert type(algo_cfg['solver']['name']) == str, 'invalid type of solver name'
         # TODO: check validity of arguments
 
     if 'selection' in algo_cfg and algo_cfg['selection'] is not None:
         assert isinstance(algo_cfg['selection'], dict), 'selection settings must be provided as a dictionary'
-        assert 'name' in algo_cfg['selection'], 'selection name is not provided'
-        assert type(algo_cfg['selection']['name']) == str, 'invalid type of selection name'
+        if algo_cfg['name'] == 'custom':
+            assert 'name' in algo_cfg['selection'], 'selection name is not provided'
+            assert type(algo_cfg['selection']['name']) == str, 'invalid type of selection name'
         # TODO: check validity of arguments
 
 
@@ -236,47 +240,17 @@ def complete_config(config, check=False):
         algo_cfg['async'] = None
     
     if 'surrogate' not in algo_cfg or algo_cfg['surrogate'] is None:
-        algo_cfg['surrogate'] = {
-            'name': 'gp',
-            'n_spectral_pts': 100,
-            'nu': 5,
-            'mean_sample': False,
-        }
+        algo_cfg['surrogate'] = {}
 
     if 'acquisition' not in algo_cfg or algo_cfg['acquisition'] is None:
-        algo_cfg['acquisition'] = {
-            'name': 'identity',
-        }
+        algo_cfg['acquisition'] = {}
 
     if 'solver' not in algo_cfg or algo_cfg['solver'] is None:
-        if algo_cfg['name'] == 'dgemo':
-            algo_cfg['solver'] = {
-                'name': 'discovery',
-                'pop_size': 100,
-                'n_gen': 10,
-                'pop_init_method': 'nds',
-            }
-        else:
-            algo_cfg['solver'] = {
-                'name': 'nsga2',
-                'pop_size': 100,
-                'n_gen': 200,
-                'pop_init_method': 'nds',
-            }
+        algo_cfg['solver'] = {}
+    else:
+        algo_cfg['solver'].update({'n_process': algo_cfg['n_process']})
 
     if 'selection' not in algo_cfg or algo_cfg['selection'] is None:
-        algo_cfg['selection'] = {
-            'name': 'hvi',
-        }
-
-    # update arguments for algorithm config
-    full_prob_cfg = get_problem_config(prob_cfg['name'])
-    trans_prob_cfg = transform_config(full_prob_cfg)
-    n_var, n_obj = trans_prob_cfg['n_var'], full_prob_cfg['n_obj']
-    n_process, batch_size = algo_cfg['n_process'], exp_cfg['batch_size']
-
-    algo_cfg['surrogate'].update({'problem_cfg': full_prob_cfg})
-    algo_cfg['solver'].update({'n_obj': n_obj, 'n_process': n_process, 'batch_size': batch_size})
-    algo_cfg['selection'].update({'batch_size': batch_size})
+        algo_cfg['selection'] = {}
 
     return new_config
