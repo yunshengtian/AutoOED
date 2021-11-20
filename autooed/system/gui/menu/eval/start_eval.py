@@ -68,15 +68,24 @@ class StartEvalController:
             tk.messagebox.showinfo('Error', 'Invalid row numbers', parent=self.view.window)
             return
 
-        n_obj = self.root_controller.get_problem_cfg()['n_obj']
+        problem_cfg = self.root_controller.get_problem_cfg()
+        obj_name_list = problem_cfg['obj_name']
         table = self.root_controller.get_table()
 
         # check for overwriting
         overwrite = False
         for rowid in rowids:
-            for i in range(n_obj):
-                if table.get(rowid - 1, f'f{i + 1}') != 'N/A':
+            for obj_name in obj_name_list:
+                table_value = table.get(rowid - 1, obj_name)
+                if type(table_value) == str:
+                    if table_value == 'N/A' or '±' in table_value:
+                        pass
+                    else:
+                        raise Exception(f'Invalid objective value {table_value}')
+                elif type(table_value) in [float, int]:
                     overwrite = True
+                else:
+                    raise Exception(f'Invalid objective type {type(table_value)}')
         if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=self.view.window) == 'no': return
 
         self.view.window.destroy()

@@ -84,8 +84,16 @@ class EnterPerformanceController:
         overwrite = False
         for rowid in rowids:
             for obj_name in obj_name_list:
-                if table.get(rowid - 1, obj_name) != 'N/A':
+                table_value = table.get(rowid - 1, obj_name)
+                if type(table_value) == str:
+                    if table_value == 'N/A' or '±' in table_value:
+                        pass
+                    else:
+                        raise Exception(f'Invalid objective value {table_value}')
+                elif type(table_value) in [float, int]:
                     overwrite = True
+                else:
+                    raise Exception(f'Invalid objective type {type(table_value)}')
         if overwrite and tk.messagebox.askquestion('Overwrite Data', 'Are you sure to overwrite evaluated data?', parent=self.view.window) == 'no': return
 
         try:
