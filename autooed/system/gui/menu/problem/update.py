@@ -60,7 +60,7 @@ class UpdateProblemView:
         '''
         '''
         self.widget['general']['name'] = create_widget('labeled_entry', master=self.frame['general'], row=0, column=0, text='Problem name', 
-            class_type='string', width=10, required=True)
+            class_type='string', width=10, required=True, valid_check=lambda x: not x.startswith('"'), error_msg='problem name cannot start with "')
         self.widget['general']['type'] = create_widget('labeled_combobox', master=self.frame['general'], row=1, column=0, text='Problem type', 
             values=['continuous', 'integer', 'binary', 'categorical', 'mixed'], required=True)
 
@@ -353,21 +353,27 @@ class UpdateProblemView:
             if 'excel' in self.widget['design_unified']:
                 self.widget['design_unified']['excel'].grid_remove()
 
+            valid_naming_cond = lambda x: not (x.startswith('_') or x.startswith('"'))
+
             if problem_type == 'continuous':
                 self.widget['design_unified']['excel'] = Excel(master=frame_excel, rows=n_var, columns=3, width=15,
-                    title=['Name', 'Lower bound', 'Upper bound'], dtype=[str, float, float], required=[True] * 3)
+                    title=['Name', 'Lower bound', 'Upper bound'], dtype=[str, float, float], required=[True] * 3,
+                    valid_check=[valid_naming_cond, None, None])
 
             elif problem_type == 'integer':
                 self.widget['design_unified']['excel'] = Excel(master=frame_excel, rows=n_var, columns=3, width=15,
-                    title=['Name', 'Lower bound', 'Upper bound'], dtype=[str, int, int], required=[True] * 3)
+                    title=['Name', 'Lower bound', 'Upper bound'], dtype=[str, int, int], required=[True] * 3,
+                    valid_check=[valid_naming_cond, None, None])
 
             elif problem_type == 'binary':
                 self.widget['design_unified']['excel'] = Excel(master=frame_excel, rows=n_var, columns=1, width=15,
-                    title=['Name'], dtype=[str], required=[True])
+                    title=['Name'], dtype=[str], required=[True],
+                    valid_check=[valid_naming_cond])
 
             elif problem_type == 'categorical':
                 self.widget['design_unified']['excel'] = Excel(master=frame_excel, rows=n_var, columns=2, width=15,
-                    title=['Name', 'Choices'], dtype=[str, str], required=[True] * 2)
+                    title=['Name', 'Choices'], dtype=[str, str], required=[True] * 2,
+                    valid_check=[valid_naming_cond, None])
 
             else:
                 raise Exception(f'invalid problem type {problem_type}')
@@ -424,7 +430,8 @@ class UpdateProblemView:
             if not success: return
 
             self.widget['performance']['excel'] = Excel(master=frame_excel, rows=n_obj, columns=2, width=15,
-                title=['Name', 'Type'], dtype=[str, str], required=[True, True], valid_check=[None, lambda x: x in ['min', 'max']])
+                title=['Name', 'Type'], dtype=[str, str], required=[True, True], 
+                valid_check=[lambda x: not (x.startswith('_') or x.startswith('"')), lambda x: x in ['min', 'max']])
             self.widget['performance']['excel'].grid(row=0, column=0)
             self.widget['performance']['excel'].set_column(0, [f'f{i}' for i in range(1, n_obj + 1)])
             self.widget['performance']['excel'].set_column(1, ['min'] * n_obj)
