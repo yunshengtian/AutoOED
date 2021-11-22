@@ -163,7 +163,7 @@ class HyperparamController:
         if first_time:
             self.load_default_algo_config(algo_selected) # first time
         elif algo_selected == self.get_config()['algorithm']['name']:
-            self.load_existing_algo_config() # non-first time, select same algo
+            self.load_existing_algo_config(algo_selected) # non-first time, select same algo
         else:
             self.load_default_algo_config(algo_selected) # non-first time, select different algo
 
@@ -187,13 +187,17 @@ class HyperparamController:
                 if hasattr(widget, 'select'):
                     widget.select()
 
-    def load_existing_algo_config(self):
+    def load_existing_algo_config(self, algo_name):
         '''
         Load existing algorithm configuration.
         '''
+        default_spec = get_algorithm(algo_name).spec
         for module_type, module_widgets in self.view.cfg_widget.items():
             # set names
-            module_class = self.algo_cfg[module_type]['name']
+            if 'name' in self.algo_cfg[module_type]:
+                module_class = self.algo_cfg[module_type]['name']
+            else:
+                module_class = default_spec[module_type]
             module_widgets['name'].set(get_hp_name_by_class(module_type, module_class))
             module_widgets['name'].select()
             # set params
