@@ -114,25 +114,25 @@ class PanelControlController:
         self.set_config(config)
 
     def enable_manual(self):
-        # TODO: check!!!
+        self.root_controller.controller['panel_info'].enable_update()
         self.view.widget['mode'].enable('Manual')
         self.view.widget['optimize_manual'].enable()
         self.view.widget['stop_manual'].enable()
 
     def enable_auto(self):
-        # TODO: check!!!
+        self.root_controller.controller['panel_info'].enable_update()
         self.view.widget['mode'].enable('Auto')
         self.view.widget['set_stop_cri'].enable()
         self.view.widget['optimize_auto'].enable()
         self.view.widget['stop_auto'].enable()
 
     def disable_manual(self):
-        # TODO: check!!!
+        self.root_controller.controller['panel_info'].disable_update()
         self.view.widget['mode'].disable('Manual')
         self.view.widget['optimize_manual'].disable()
 
     def disable_auto(self):
-        # TODO: check!!!
+        self.root_controller.controller['panel_info'].disable_update()
         self.view.widget['mode'].disable('Auto')
         self.view.widget['set_stop_cri'].disable()
         self.view.widget['optimize_auto'].disable()

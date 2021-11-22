@@ -34,6 +34,9 @@ class Variable:
         '''
         self.var.set(val)
 
+    def select(self):
+        pass
+
 
 class CheckbuttonVar(Variable):
     '''
@@ -82,6 +85,7 @@ class RadiobuttonVar(Variable):
             assert name in self.widget
             if self.widget[name]['state'] != 'disabled':
                 self.widget[name].configure(state='disabled')
+
 
 class SpinboxVar(Variable):
     '''

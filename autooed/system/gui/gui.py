@@ -255,7 +255,6 @@ class GUIController:
         self.view.menu_export.entryconfig(2, command=self.controller['menu_export'].export_figures)
 
         # initialize GUI params
-        self.controller['panel_info'].set_info(self.problem_cfg)
         if not self.agent.can_eval:
             entry_mode = self.controller['panel_control'].view.widget['mode']
             entry_mode.widget['Auto'].config(state=tk.DISABLED)

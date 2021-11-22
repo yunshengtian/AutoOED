@@ -19,46 +19,42 @@ class ExpConfigView:
     def __init__(self, root_view, first_time):
 
         self.root_view = root_view
-        self.first_time = first_time
 
-        title = 'Create Experiment' if self.first_time else 'Update Experiment'
+        title = 'Create Experiment' if first_time else 'Update Config'
         self.master_window = self.root_view.root
         self.window = create_widget('toplevel', master=self.master_window, title=title)
 
         self.frame = {}
         self.widget = {}
 
-        # experiment section
-        self.frame['exp'] = create_widget('frame', master=self.window, row=0, column=0, padx=2 * PADX)
-        grid_configure(self.frame['exp'], 0, 0)
-        self.widget['exp_name'] = create_widget('labeled_entry', master=self.frame['exp'], row=0, column=0,
-            text='Experiment name', class_type='string', width=10, required=True, 
-            valid_check=lambda x: not x.startswith('sqlite_'), error_msg='experiment name cannot start with sqlite_')
-        self.widget['cfg_input_type'] = create_widget('labeled_radiobutton',
-            master=self.frame['exp'], row=1, column=0, label_text='Create config by', button_text_list=['User interface', 'Loading from file'])
+        if first_time:
+
+            # experiment section
+            self.frame['exp'] = create_widget('frame', master=self.window, row=0, column=0, padx=2 * PADX)
+            grid_configure(self.frame['exp'], 0, 0)
+            self.widget['exp_name'] = create_widget('labeled_entry', master=self.frame['exp'], row=0, column=0,
+                text='Experiment name', class_type='string', width=10, required=True, 
+                valid_check=lambda x: not x.startswith('sqlite_'), error_msg='experiment name cannot start with sqlite_')
+            self.widget['cfg_input_type'] = create_widget('labeled_radiobutton',
+                master=self.frame['exp'], row=1, column=0, label_text='Create config by', button_text_list=['User interface', 'Loading from file'])
 
         # enter config section
         self.frame['enter'] = tk.Frame(master=self.window)
-        self.frame['enter'].grid(row=1, column=0, sticky='NSEW')
+        self.frame['enter'].grid(row=1 if first_time else 0, column=0, sticky='NSEW')
         grid_configure(self.frame['enter'], 0, 0)
 
         nb_cfg = ttk.Notebook(self.frame['enter'])
         nb_cfg.grid(row=0, column=0, sticky='NSEW')
-        frame_problem = tk.Frame(master=nb_cfg)
-        frame_opt = tk.Frame(master=nb_cfg)
-        frame_eval = tk.Frame(master=nb_cfg)
-        grid_configure(frame_problem, 0, 0)
-        grid_configure(frame_opt, 0, 0)
-        grid_configure(frame_eval, 0, 0)
-        nb_cfg.add(child=frame_problem, text='Problem')
-        nb_cfg.add(child=frame_opt, text='Optimization')
-        nb_cfg.add(child=frame_eval, text='Evaluation')
 
-        # problem subsection
-        self.widget['problem_name'] = create_widget('labeled_combobox', 
-            master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
+        if first_time:
 
-        if self.first_time:
+            # problem subsection
+            frame_problem = tk.Frame(master=nb_cfg)
+            grid_configure(frame_problem, 0, 0)
+            nb_cfg.add(child=frame_problem, text='Problem')
+
+            self.widget['problem_name'] = create_widget('labeled_combobox', 
+                master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
 
             self.widget['init_type'] = create_widget('labeled_radiobutton',
                 master=frame_problem, row=1, column=0, label_text='Initialization', button_text_list=['Random', 'From file'], default='Random')
@@ -98,6 +94,10 @@ class ExpConfigView:
             set_random_init()
 
         # optimization subsection
+        frame_opt = tk.Frame(master=nb_cfg)
+        grid_configure(frame_opt, 0, 0)
+        nb_cfg.add(child=frame_opt, text='Optimization')
+
         self.widget['algo_name'] = create_widget('labeled_combobox', 
             master=frame_opt, row=0, column=0, text=config_map['algorithm']['name'], values=get_algorithm_list(), required=True)
         self.widget['n_process'] = create_widget('labeled_spinbox', 
@@ -108,11 +108,15 @@ class ExpConfigView:
         self.widget['set_advanced'] = create_widget('button', master=frame_opt, row=3, column=0, text='Advanced Settings', sticky=None)
         
         # evaluation subsection
+        frame_eval = tk.Frame(master=nb_cfg)
+        grid_configure(frame_eval, 0, 0)
+        nb_cfg.add(child=frame_eval, text='Evaluation')
+
         self.widget['n_worker'] = create_widget('labeled_spinbox',
             master=frame_eval, row=0, column=0, text=config_map['experiment']['n_worker'], from_=1, to=int(1e10))
 
         # load config section
-        if self.first_time:
+        if first_time:
             self.frame['load'] = create_widget('frame', master=self.window, row=1, column=0, padx=2 * PADX)
             grid_configure(self.frame['load'], 0, 0)
 
@@ -140,22 +144,27 @@ class ExpConfigView:
                 else:
                     raise NotImplementedError
 
+            self.frame['enter'].grid_remove()
+            self.frame['load'].grid_remove()
+
         # action section
         frame_action = tk.Frame(master=self.window)
-        frame_action.grid(row=2, column=0, columnspan=3)
-        save_text = 'Create' if self.first_time else 'Update'
-        self.widget['save'] = create_widget('button', master=frame_action, row=0, column=0, text=save_text)
+        frame_action.grid(row=2 if first_time else 1, column=0, columnspan=3)
+        self.widget['save'] = create_widget('button', master=frame_action, row=0, column=0, text='Create' if first_time else 'Update')
         self.widget['cancel'] = create_widget('button', master=frame_action, row=0, column=1, text='Cancel')
-
-        self.frame['enter'].grid_remove()
-        self.frame['load'].grid_remove()
         
         center(self.window, self.master_window)
 
-        self.cfg_widget = {
-            'problem': {
-                'name': self.widget['problem_name'],
-            },
+        self.cfg_widget = {}
+
+        if first_time:
+            self.cfg_widget.update({
+                'problem': {
+                    'name': self.widget['problem_name'],
+                },
+            })
+
+        self.cfg_widget.update({
             'algorithm': {
                 'name': self.widget['algo_name'],
                 'n_process': self.widget['n_process'],
@@ -163,8 +172,8 @@ class ExpConfigView:
             },
             'experiment': {
                 'n_worker': self.widget['n_worker'],
-            }
-        }
+            },
+        })
 
 
 class ExpConfigController:
@@ -176,8 +185,6 @@ class ExpConfigController:
         self.problem_cfg = {} # problem config
         self.exp_cfg = {} # experiment config (for reference point)
         self.algo_cfg = {} # advanced algorithm config
-
-        self.first_time = True
         self.algo_selected = None
 
         self.view = None
@@ -185,50 +192,46 @@ class ExpConfigController:
     def get_config(self):
         return self.root_controller.get_config()
 
-    def build_config_window(self):
+    def build_config_window(self, first_time):
         '''
         Build configuration window (for create/change)
         '''
-        self.view = ExpConfigView(self.root_view, self.first_time)
+        self.view = ExpConfigView(self.root_view, first_time)
 
-        self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
+        if first_time:
+            self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
 
         self.view.widget['algo_name'].widget.bind('<<ComboboxSelected>>', self.select_algorithm)
-        self.view.widget['set_advanced'].configure(command=self.set_algo_advanced)
+        self.view.widget['set_advanced'].configure(command=lambda: self.set_algo_advanced(first_time))
 
-        if self.first_time:
+        if first_time:
             self.view.widget['set_cfg_path'].configure(command=self.load_config_from_file)
             self.view.widget['set_x_init'].configure(command=self.set_x_init)
             self.view.widget['set_y_init'].configure(command=self.set_y_init)
 
-        self.view.widget['save'].configure(command=self.save_config)
+        self.view.widget['save'].configure(command=lambda: self.save_config(first_time))
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
 
         # load current config values to entry if not first time setting config
-        if not self.first_time:
+        if not first_time:
             self.load_curr_config()
 
         # disable widgets
-        if self.first_time:
+        if first_time:
             self.view.widget['set_advanced'].disable()
             self.view.widget['save'].disable()
-        else:
-            self.view.widget['exp_name'].disable()
-            self.view.widget['problem_name'].disable()
 
     def create_config(self):
         '''
         Create experiment configurations
         '''
-        self.first_time = True
-        self.build_config_window()
+        self.build_config_window(first_time=True)
 
     def update_config(self):
         '''
         Update experiment configurations
         '''
-        self.first_time = False
-        self.build_config_window()
+        self.build_config_window(first_time=False)
 
     def load_config_from_file(self):
         '''
@@ -272,11 +275,11 @@ class ExpConfigController:
         self.algo_selected = event.widget.get()
         self.view.widget['set_advanced'].enable()
 
-    def set_algo_advanced(self):
+    def set_algo_advanced(self, first_time):
         '''
         Set advanced settings of the algorithm
         '''
-        HyperparamController(self)
+        HyperparamController(self, first_time)
 
     def load_curr_config(self):
         '''
@@ -297,11 +300,11 @@ class ExpConfigController:
         self.algo_cfg.pop('n_process') # TODO: check
         self.view.widget['set_advanced'].enable()
 
-    def save_config(self):
+    def save_config(self, first_time):
         '''
         Save specified configuration values (TODO: clean)
         '''
-        if self.first_time:
+        if first_time:
             try:
                 exp_name = self.view.widget['exp_name'].get()
             except Exception as e:
@@ -337,7 +340,7 @@ class ExpConfigController:
             }
 
         # specifically deal with initial samples (TODO: clean)
-        if self.first_time:
+        if first_time:
             init_type = self.view.widget['init_type'].get()
 
             if init_type == 'Random':
@@ -384,7 +387,7 @@ class ExpConfigController:
         config['experiment'].update(self.exp_cfg)
         config['algorithm'].update(self.algo_cfg)
 
-        if self.first_time: # init config
+        if first_time: # init config
             config = self.root_controller.verify_config(exp_name, config, window=self.view.window)
             if config is not None:
                 self.view.window.destroy()

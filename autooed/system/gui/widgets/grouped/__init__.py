@@ -1,1 +1,0 @@
-from autooed.system.gui.widgets.grouped.problem_info import ProblemInfo

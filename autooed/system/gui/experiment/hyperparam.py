@@ -143,7 +143,7 @@ class HyperparamView:
 
 class HyperparamController:
 
-    def __init__(self, root_controller):
+    def __init__(self, root_controller, first_time):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
@@ -160,7 +160,7 @@ class HyperparamController:
         self.view.widget['cancel'].configure(command=self.view.window.destroy)
         
         algo_selected = self.root_controller.algo_selected
-        if self.root_controller.first_time:
+        if first_time:
             self.load_default_algo_config(algo_selected) # first time
         elif algo_selected == self.get_config()['algorithm']['name']:
             self.load_existing_algo_config() # non-first time, select same algo

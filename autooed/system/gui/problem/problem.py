@@ -6,8 +6,8 @@ from autooed.problem.config import complete_config
 from autooed.system.gui.widgets.factory import create_widget
 from autooed.system.gui.widgets.utils.layout import grid_configure, center
 from autooed.system.gui.widgets.listbox import Listbox
-from autooed.system.gui.widgets.grouped import ProblemInfo
 from autooed.system.gui.problem.update import UpdateProblemController
+from autooed.system.params import PADY
 
 
 class ProblemModel:
@@ -33,10 +33,10 @@ class ProblemView:
         self.widget = {}
 
         frame_list = create_widget('labeled_frame', master=self.window, row=0, column=0, text='Problem List')
-        frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, sticky='N')
+        frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, sticky='NS')
         frame_list_action = create_widget('frame', master=frame_list, row=1, column=0, padx=0, pady=0, sticky=None)
-        frame_config = create_widget('frame', master=self.window, row=0, column=1, sticky=None, padx=0, pady=0)
-        frame_config_display = create_widget('frame', master=frame_config, row=0, column=0, padx=0, pady=0, sticky='N')
+        frame_config = create_widget('labeled_frame', master=self.window, row=0, column=1, text='Problem Info')
+        frame_config_display = create_widget('frame', master=frame_config, row=0, column=0, sticky='NS')
         frame_config_action = create_widget('frame', master=frame_config, row=1, column=0, padx=0, pady=0, sticky=None)
         grid_configure(frame_list, 0, 0)
         grid_configure(frame_config, 0, 0)
@@ -45,7 +45,18 @@ class ProblemView:
         self.widget['list'].grid()
         self.widget['create'] = create_widget('button', master=frame_list_action, row=0, column=0, text='Create')
 
-        self.widget['info'] = ProblemInfo(master=frame_config_display, row=0, column=0)
+        self.desc = {
+            'name': 'Name',
+            'type': 'Variable type',
+            'n_var': 'Number of variables',
+            'n_obj': 'Number of objectives',
+            'n_constr': 'Number of constraints',
+            'obj_type': 'Type of objectives',
+        }
+        self.widget['info'] = {}
+        for row, key in enumerate(self.desc.keys()):
+            self.widget['info'][key] = create_widget('label', master=frame_config_display, row=row, column=0, text=f'{self.desc[key]}:')
+
         self.widget['update'] = create_widget('button', master=frame_config_action, row=0, column=0, text='Update')
         self.widget['delete'] = create_widget('button', master=frame_config_action, row=0, column=1, text='Delete')
 
@@ -57,20 +68,17 @@ class ProblemView:
     def set_problem_info(self, config):
         '''
         '''
-        problem_info = {
-            'name': config['name'],
-            'type': config['type'],
-            'n_var': config['n_var'],
-            'n_obj': config['n_obj'],
-            'n_constr': config['n_constr'],
-            'obj_type': config['obj_type'],
-        }
-        self.widget['info'].set_info(problem_info)
+        for key, widget in self.widget['info'].items():
+            if config[key] is not None:
+                widget.config(text=f'{self.desc[key]}: {config[key]}')
+            else:
+                widget.config(text=f'{self.desc[key]}:')
 
     def clear_problem_info(self):
         '''
         '''
-        self.widget['info'].clear_info()
+        for key, widget in self.widget['info'].items():
+            widget.config(text=f'{self.desc[key]}:')
 
 
 class ProblemController:
