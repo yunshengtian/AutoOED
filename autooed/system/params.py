@@ -4,10 +4,6 @@ Parameters of the GUI.
 
 import tkinter as tk
 
-# basic info
-TITLE = 'AutoOED'
-VERSION = '0.1.0'
-COPYRIGHT = '© Copyright 2021'
 
 # refresh rate
 REFRESH_RATE = 100 # ms

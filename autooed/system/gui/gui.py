@@ -109,7 +109,7 @@ class GUIController:
         self.scheduler = None
 
         self.root = tk.Tk()
-        self.root.title(TITLE)
+        self.root.title('AutoOED')
         self.root.protocol('WM_DELETE_WINDOW', self._quit_init)
         self.root.resizable(False, False)
         self.root.iconphoto(True, tk.Image('photo', file=get_icon_path()))
@@ -235,7 +235,7 @@ class GUIController:
         # initialize window
         self._quit_init(quit_db=False)
         self.root = tk.Tk()
-        self.root.title(f'{TITLE}')
+        self.root.title('AutoOED')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
         self.root.iconphoto(True, tk.Image('photo', file=get_icon_path()))
 
