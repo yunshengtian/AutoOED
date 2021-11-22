@@ -29,7 +29,6 @@ a = Analysis(['../../run_gui.py'],
              datas=[('../../autooed/problem/custom', 'autooed/problem/custom'), ('../../autooed/problem/predefined', 'autooed/problem/predefined'), ('../../examples', 'examples'), ('../../static', 'static')],
              hiddenimports=['PIL._tkinter_finder', 'pymoo.cython.non_dominated_sorting', 'sklearn.neighbors._typedefs', 'sklearn.neighbors._quad_tree', 'sklearn.tree._utils', 'sklearn.utils._cython_blas'],
              hookspath=[],
-             hooksconfig={},
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,
@@ -61,23 +60,38 @@ coll = COLLECT(exe,
                upx=True,
                upx_exclude=[],
                name='AutoOED_{version}')
+"""
+
+if system == 'Darwin':
+    spec_str += \
+"""
 app = BUNDLE(coll,
-             name='AutoOED.app',
-             icon='../../static/icon.{icon_fmt}',
-             bundle_identifier='com.autooed',
-             info_plist={
-                 'NSPrincipalClass': 'NSApplication',
-                 'NSAppleScriptEnabled': False,
-                 'CFBundleDocumentTypes': [
-                     {
-                         'CFBundleTypeName': 'AutoOED',
-                         'CFBundleTypeIconFile': '../../static/icon.{icon_fmt}',
-                         'LSItemContentTypes': ['com.autooed.autooed'],
-                         'LSHandlerRank': 'Owner'
-                     }
-                 ]
-             })
-""".replace('{version}', get_version()).replace('{icon_fmt}', icon_fmt)
+            name='AutoOED.app',
+            icon='../../static/icon.{icon_fmt}',
+            bundle_identifier='com.autooed',
+            info_plist={
+                'NSPrincipalClass': 'NSApplication',
+                'NSAppleScriptEnabled': False,
+                'CFBundleDocumentTypes': [
+                    {
+                        'CFBundleTypeName': 'AutoOED',
+                        'CFBundleTypeIconFile': '../../static/icon.{icon_fmt}',
+                        'LSItemContentTypes': ['com.autooed.autooed'],
+                        'LSHandlerRank': 'Owner'
+                    }
+                ]
+            })
+"""
+else:
+    spec_str += \
+"""
+app = BUNDLE(coll,
+            name='AutoOED.app',
+            icon='../../static/icon.{icon_fmt}',
+            bundle_identifier=None)
+"""
+
+spec_str = spec_str.replace('{version}', get_version()).replace('{icon_fmt}', icon_fmt)
 
 
 def main():
