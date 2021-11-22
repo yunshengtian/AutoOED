@@ -19,19 +19,25 @@ class VizDatabaseView:
 
         self.widget = {}
 
-        frame_table = create_widget('frame', master=frame_db, row=0, column=0, columnspan=3 if can_eval else 2, padx=0, pady=0)
+        frame_table = create_widget('frame', master=frame_db, row=0, column=0, padx=0, pady=0)
         self.widget['table'] = Table(master=frame_table, columns=columns)
+
+        frame_action = create_widget('frame', master=frame_db, row=1, column=0, padx=0, pady=0)
+        if can_eval:
+            grid_configure(frame_action, 0, [2])
+        else:
+            grid_configure(frame_action, 0, [1])
         
-        frame_enter = create_widget('frame', master=frame_db, row=1, column=0, padx=0, pady=0)
+        frame_enter = create_widget('frame', master=frame_action, row=0, column=0, padx=0, pady=0)
         self.widget['enter_design'] = create_widget('button', master=frame_enter, row=0, column=0, text='Enter Design')
         self.widget['enter_performance'] = create_widget('button', master=frame_enter, row=0, column=1, text='Enter Performance')
 
         if can_eval:
-            frame_eval = create_widget('frame', master=frame_db, row=1, column=1, padx=0, pady=0)
+            frame_eval = create_widget('frame', master=frame_action, row=0, column=1, padx=0, pady=0)
             self.widget['start_eval'] = create_widget('button', master=frame_eval, row=0, column=0, text='Start Evaluation')
             self.widget['stop_eval'] = create_widget('button', master=frame_eval, row=0, column=1, text='Stop Evaluation')
 
-        self.widget['set_display'] = create_widget('button', master=frame_db, row=1, column=2 if can_eval else 1, sticky='E', text='Display Settings')
+        self.widget['set_display'] = create_widget('button', master=frame_action, row=0, column=2 if can_eval else 1, sticky='E', text='Display Settings')
 
 
 class VizDatabaseController:
