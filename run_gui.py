@@ -17,7 +17,7 @@ def set_environment():
 
 def main():
     set_environment()
-    GUIController().run()
+    GUIController()
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 import tkinter as tk
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure
 
 
 class Listbox:

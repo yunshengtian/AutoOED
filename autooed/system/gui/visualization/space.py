@@ -5,11 +5,12 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.backend_bases import MouseButton
 from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
+from tkinter import ttk
 
 from autooed.utils.pareto import check_pareto
 from autooed.system.gui.widgets.utils.radar import radar_factory
 from autooed.system.params import FIGURE_DPI
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure
 from autooed.system.gui.widgets.utils.figure import embed_figure
 from autooed.system.gui.widgets.factory import create_widget
 
@@ -177,13 +178,13 @@ class VizSpaceView:
             self.ax2.set_ylim(0, 1.04)
 
         # configure slider widget
-        frame_slider = create_widget('frame', master=self.root_view.frame_plot, row=2, column=0, pady=0)
+        frame_slider = create_widget('frame', master=self.root_view.frame_plot, row=2, column=0)
         grid_configure(frame_slider, [0], [1])
         
-        label_iter = tk.Label(master=frame_slider, text='Iteration:')
-        label_iter.grid(row=0, column=0, sticky='EW')
+        self.label_iter = tk.Label(master=frame_slider, text='Iteration')
+        self.label_iter.grid(row=0, column=0, sticky='EW')
         self.curr_iter = tk.IntVar()
-        self.scale_iter = tk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
+        self.scale_iter = ttk.Scale(master=frame_slider, orient=tk.HORIZONTAL, variable=self.curr_iter, from_=0, to=0)
         self.scale_iter.grid(row=0, column=1, sticky='EW')
 
     def save_performance_figure(self, path, title=None):
@@ -314,7 +315,7 @@ class VizSpaceController:
         self.root_view = self.root_controller.view
 
         # set values from root
-        self.config, self.problem_cfg = self.root_controller.config, self.root_controller.problem_cfg
+        self.problem_cfg = self.root_controller.problem_cfg
         self.agent = self.root_controller.agent
         self.n_var, self.var_name = self.problem_cfg['n_var'], self.problem_cfg['var_name']
         self.n_obj, self.obj_name = self.problem_cfg['n_obj'], self.problem_cfg['obj_name']
@@ -404,16 +405,13 @@ class VizSpaceController:
         self.view.fig.subplots_adjust(bottom=0.15)
         self.redraw_performance_space(reset_scaler=True)
 
-    def set_config(self, config=None):
-        if config is not None:
-            self.config = config
-
     def redraw(self, val):
         '''
         Redraw design and performance space when slider changes
         '''
         # get current iteration from slider value
-        curr_iter = int(val)
+        curr_iter = int(round(float(val)))
+        self.view.label_iter.config(text=f'Iteration {curr_iter}')
 
         # clear design space
         self.clear_design_space()
@@ -562,6 +560,7 @@ class VizSpaceController:
             if self.view.curr_iter.get() >= self.max_iter:
                 self.max_iter = max_iter
                 self.view.curr_iter.set(max_iter)
+                self.view.label_iter.config(text=f'Iteration {max_iter}')
             else:
                 # no need to redraw performance space if not focusing on the max iteration
                 return

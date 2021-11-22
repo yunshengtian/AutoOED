@@ -1,1 +1,0 @@
-from autooed.system.gui.menu.problem.problem import MenuProblemController

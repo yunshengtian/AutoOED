@@ -9,7 +9,7 @@ from autooed.utils.path import get_logo_path
 from autooed.system.gui.widgets.button import Button
 from autooed.system.gui.widgets.entry import get_entry
 from autooed.system.gui.widgets.variable import get_variable
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure
 from autooed.system.gui.widgets.image import StaticImageFrame
 from autooed.system.params import *
 
@@ -20,8 +20,8 @@ def create_toplevel(master, title=None, resizable=False):
         toplevel.title(title)
     if not resizable:
         toplevel.resizable(False, False)
-    x, y = master.winfo_x(), master.winfo_y()
-    toplevel.geometry(f'+{x}+{y}')
+    # x, y = master.winfo_x(), master.winfo_y()
+    # toplevel.geometry(f'+{x}+{y}')
     return toplevel
 
 
@@ -90,28 +90,12 @@ def create_radiobutton(master, row, column, text_list, default=None, orientation
     for i, text in enumerate(text_list):
         button = ttk.Radiobutton(master=frame, text=text, variable=var, value=text)
         if orientation == 'horizontal':
-            button.grid(row=0, column=i)
+            button.grid(row=0, column=i, padx=padx)
         elif orientation == 'vertical':
-            button.grid(row=i, column=0, sticky='W')
+            button.grid(row=i, column=0, sticky='W', pady=pady)
         buttons[text] = button
     variable = get_variable('radiobutton', var, buttons)
     return variable
-
-
-def create_spinbox(master, row, column, text, from_, to, width=ENTRY_WIDTH,
-        rowspan=1, columnspan=1, padx=PADX, pady=PADY, sticky=None, return_label=False):
-    frame = create_frame(master, row, column, rowspan, columnspan, padx, pady, sticky)
-    grid_configure(frame, 0, 1)
-    label = tk.Label(master=frame, text=text)
-    label.grid(row=0, column=0, sticky='W')
-    var = tk.IntVar()
-    spinbox = tk.Spinbox(master=frame, from_=from_, to=to, width=width, textvariable=var)
-    spinbox.grid(row=0, column=1, padx=padx, sticky='E')
-    variable = get_variable('spinbox', var, spinbox)
-    if return_label:
-        return label, variable
-    else:
-        return variable
 
 
 def create_text(master, row, column, width=TEXT_WIDTH, height=TEXT_HEIGHT, rowspan=1, columnspan=1, padx=PADX, pady=PADY, sticky='NSEW'):
@@ -195,6 +179,50 @@ def create_labeled_button_entry(master, row, column, label_text, button_text, co
         return button, entry
 
 
+def create_labeled_radiobutton(master, row, column, label_text, button_text_list, default=None, orientation='horizontal', required=False, required_mark=True, 
+        rowspan=1, columnspan=1, padx=PADX, pady=PADY, sticky='NSEW', return_label=False):
+    assert orientation in ['horizontal', 'vertical']
+    frame = create_frame(master, row, column, rowspan, columnspan, 0, pady / 2, sticky)
+    grid_configure(frame, [0], [1])
+    label_text = label_text + ' (*): ' if required and required_mark else label_text + ': '
+    label = tk.Label(master=frame, text=label_text)
+    label.grid(row=0, column=0, sticky='W', padx=padx, pady=pady / 2)
+    frame_button = create_frame(frame, row=0, column=1, padx=padx, pady=pady / 2, sticky='E')
+    var = tk.StringVar(master=None, value=default)
+    buttons = {}
+    for i, text in enumerate(button_text_list):
+        button = ttk.Radiobutton(master=frame_button, text=text, variable=var, value=text)
+        if orientation == 'horizontal':
+            button.grid(row=0, column=i, padx=padx)
+        elif orientation == 'vertical':
+            button.grid(row=i, column=0, sticky='W', pady=pady)
+        buttons[text] = button
+    variable = get_variable('radiobutton', var, buttons)
+    if return_label:
+        return label, variable
+    else:
+        return variable
+
+
+def create_labeled_spinbox(master, row, column, text, from_, to, default=None, width=ENTRY_WIDTH, required=False, required_mark=True, 
+        rowspan=1, columnspan=1, padx=PADX, pady=PADY, sticky='NSEW', return_label=False):
+    frame = create_frame(master, row, column, rowspan, columnspan, 0, pady / 2, sticky)
+    grid_configure(frame, [0], [1])
+    text = text + ' (*): ' if required and required_mark else text + ': '
+    label = tk.Label(master=frame, text=text)
+    label.grid(row=0, column=0, sticky='W', padx=padx, pady=pady / 2)
+    var = tk.IntVar()
+    spinbox = tk.Spinbox(master=frame, from_=from_, to=to, width=width, textvariable=var)
+    spinbox.grid(row=0, column=1, padx=padx, pady=pady / 2, sticky='E')
+    variable = get_variable('spinbox', var, spinbox)
+    if default is not None:
+        variable.set(default)
+    if return_label:
+        return label, variable
+    else:
+        return variable
+
+
 def create_widget(name, *args, **kwargs):
     '''
     Create widget by name and other arguments
@@ -209,12 +237,13 @@ def create_widget(name, *args, **kwargs):
         'entry': create_entry,
         'checkbutton': create_checkbutton,
         'radiobutton': create_radiobutton,
-        'spinbox': create_spinbox,
         'text': create_text,
         'labeled_frame': create_labeled_frame,
         'labeled_combobox': create_labeled_combobox,
         'labeled_button': create_labeled_button,
         'labeled_entry': create_labeled_entry,
         'labeled_button_entry': create_labeled_button_entry,
+        'labeled_radiobutton': create_labeled_radiobutton,
+        'labeled_spinbox': create_labeled_spinbox,
     }
     return factory[name](*args, **kwargs)

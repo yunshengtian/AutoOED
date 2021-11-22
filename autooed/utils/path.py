@@ -17,3 +17,7 @@ def get_static_dir():
 
 def get_logo_path():
     return os.path.join(get_static_dir(), 'logo.png')
+
+
+def get_icon_path():
+    return os.path.join(get_static_dir(), 'icon.png')

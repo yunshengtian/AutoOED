@@ -2,14 +2,15 @@ import tkinter as tk
 
 from autooed.system.stop_criterion import get_stop_criterion, get_name
 from autooed.system.gui.widgets.factory import create_widget
+from autooed.system.gui.widgets.utils.layout import center
 
 
 class StopCriterionView:
 
     def __init__(self, root_view, n_obj):
         self.root_view = root_view
-
-        self.window = create_widget('toplevel', master=self.root_view.root_view.root, title='Stopping Criterion')
+        self.master_window = self.root_view.root_view.root
+        self.window = create_widget('toplevel', master=self.master_window, title='Stopping Criterion')
 
         self.widget = {
             'var': {},
@@ -97,6 +98,8 @@ class StopCriterionView:
         frame_action = create_widget('frame', master=self.window, row=1, column=0, pady=0, sticky=None)
         self.widget['save'] = create_widget('button', master=frame_action, row=0, column=0, text='Save')
         self.widget['cancel'] = create_widget('button', master=frame_action, row=0, column=1, text='Cancel')
+
+        center(self.window, self.master_window)
 
 
 class StopCriterionController:

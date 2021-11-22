@@ -9,7 +9,8 @@ from tkinter import ttk
 from tkinter import messagebox
 
 from autooed.problem import build_problem, get_problem_config
-from autooed.utils.path import get_root_dir
+from autooed.utils.path import get_root_dir, get_icon_path
+from autooed.utils.initialization import load_provided_initial_samples, verify_provided_initial_samples
 from autooed.system.config import complete_config
 
 from autooed.system.params import *
@@ -19,13 +20,13 @@ from autooed.system.scheduler import OptimizeScheduler
 
 from autooed.system.gui.widgets.image import ImageFrame
 from autooed.system.gui.widgets.factory import create_widget
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure, center
 
-from autooed.system.gui.init import InitCreateController, InitLoadController, InitRemoveController
-from autooed.system.gui.menu import MenuConfigController, MenuProblemController, MenuEvalController, MenuExportController
+from autooed.system.gui.experiment import ExpConfigController, ExpLoadController, ExpRemoveController
+from autooed.system.gui.problem import ProblemController
+from autooed.system.gui.menu import MenuExportController
 from autooed.system.gui.panel import PanelInfoController, PanelControlController, PanelLogController
-from autooed.system.gui.viz import VizSpaceController, VizStatsController, VizDatabaseController
-
+from autooed.system.gui.visualization import VizSpaceController, VizStatsController, VizDatabaseController
 
 
 class GUIInitView:
@@ -34,12 +35,13 @@ class GUIInitView:
         self.root = root
 
         frame_init = create_widget('frame', master=self.root, row=0, column=0)
-        create_widget('logo', master=frame_init, row=0, column=0, columnspan=3)
+        create_widget('logo', master=frame_init, row=0, column=0, rowspan=4)
 
         self.widget = {}
-        self.widget['create_experiment'] = create_widget('button', master=frame_init, row=1, column=0, text='Create Experiment')
-        self.widget['load_experiment'] = create_widget('button', master=frame_init, row=1, column=1, text='Load Experiment')
-        self.widget['remove_experiment'] = create_widget('button', master=frame_init, row=1, column=2, text='Remove Experiment')
+        self.widget['manage_problem'] = create_widget('button', master=frame_init, row=0, column=1, text='Manage Problem')
+        self.widget['create_experiment'] = create_widget('button', master=frame_init, row=1, column=1, text='Create Experiment')
+        self.widget['load_experiment'] = create_widget('button', master=frame_init, row=2, column=1, text='Load Experiment')
+        self.widget['remove_experiment'] = create_widget('button', master=frame_init, row=3, column=1, text='Remove Experiment')
 
 
 class GUIView:
@@ -65,21 +67,6 @@ class GUIView:
         self.root.config(menu=self.menu)
 
         # sub-level menu
-        self.menu_config = tk.Menu(master=self.menu, tearoff=0)
-        self.menu.add_cascade(label='Config', menu=self.menu_config)
-        self.menu_config.add_command(label='Load')
-        self.menu_config.add_command(label='Create')
-        self.menu_config.add_command(label='Change')
-
-        self.menu_problem = tk.Menu(master=self.menu, tearoff=0)
-        self.menu.add_cascade(label='Problem', menu=self.menu_problem)
-        self.menu_problem.add_command(label='Manage')
-
-        self.menu_eval = tk.Menu(master=self.menu, tearoff=0)
-        self.menu.add_cascade(label='Evaluation', menu=self.menu_eval)
-        self.menu_eval.add_command(label='Start')
-        self.menu_eval.add_command(label='Stop')
-
         self.menu_export = tk.Menu(master=self.menu, tearoff=0)
         self.menu.add_cascade(label='Export', menu=self.menu_export)
         self.menu_export.add_command(label='Database')
@@ -107,268 +94,201 @@ class GUIView:
         grid_configure(self.frame_stat, [0], [0])
         grid_configure(self.frame_db, [0], [0])
 
-        # temporarily disable tabs until data loaded
-        self.nb_viz.tab(0, state=tk.DISABLED)
-        self.nb_viz.tab(1, state=tk.DISABLED)
-        self.nb_viz.tab(2, state=tk.DISABLED)
-
-        # initialize tutorial image
-        img_path = os.path.join(get_root_dir(), 'static', 'tutorial.png')
-        self.image_tutorial = ImageFrame(master=self.root, img_path=img_path)
-        self.image_tutorial.grid(row=0, column=0, rowspan=3, sticky='NSEW')
-
-    def activate_viz(self):
-        '''
-        activate visualization tabs
-        '''
-        self.nb_viz.tab(0, state=tk.NORMAL)
-        self.nb_viz.tab(1, state=tk.NORMAL)
-        self.nb_viz.tab(2, state=tk.NORMAL)
-        self.nb_viz.select(0)
-
 
 class GUIController:
 
     def __init__(self):
-        self.root_init = tk.Tk()
-        self.root_init.title(TITLE)
-        self.root_init.protocol('WM_DELETE_WINDOW', self._quit_init)
-        self.root_init.resizable(False, False)
-        self.view_init = GUIInitView(self.root_init)
-        self.bind_command_init()
-
-        self.root = None
-        self.view = None
-        
         self.database = Database()
         self.table_name = None
         self.table_checksum = None
+        self.refresh_rate = REFRESH_RATE
+        self.timestamp = None
+        self.config = None
+        self.problem_cfg = None
+        self.agent = None
+        self.scheduler = None
 
-    def bind_command_init(self):
+        self.root = tk.Tk()
+        self.root.title(TITLE)
+        self.root.protocol('WM_DELETE_WINDOW', self._quit_init)
+        self.root.resizable(False, False)
+        self.root.iconphoto(True, tk.Image('photo', file=get_icon_path()))
+
+        self.view = GUIInitView(self.root)
+        self.view.widget['manage_problem'].configure(command=self.manage_problem)
+        self.view.widget['create_experiment'].configure(command=self.create_experiment)
+        self.view.widget['load_experiment'].configure(command=self.load_experiment)
+        self.view.widget['remove_experiment'].configure(command=self.remove_experiment)
+
+        center(self.root)
+        self.root.mainloop()
+
+    def manage_problem(self):
         '''
         '''
-        self.view_init.widget['create_experiment'].configure(command=self.create_experiment)
-        self.view_init.widget['load_experiment'].configure(command=self.load_experiment)
-        self.view_init.widget['remove_experiment'].configure(command=self.remove_experiment)
+        ProblemController(self)
 
     def create_experiment(self):
         '''
         '''
-        InitCreateController(self)
+        ExpConfigController(self).create_config()
+
+    def update_experiment(self):
+        '''
+        '''
+        ExpConfigController(self).update_config()
                 
     def load_experiment(self):
         '''
         '''
-        InitLoadController(self)
+        ExpLoadController(self)
 
     def remove_experiment(self):
         '''
         '''
-        InitRemoveController(self)
+        ExpRemoveController(self)
 
-    def _quit_init(self, force=True):
+    def verify_config(self, table_name, config, window=None):
         '''
-        Quit handling for init window
+        Verify experiment configuration for the first time. 
+        Return processed config if successful, otherwise, return None.
         '''
-        self.root_init.quit()
-        self.root_init.destroy()
-        if force:
-            self.database.quit()
+        assert self.table_name is None
+        if window is None: window = self.root
 
-    def after_init(self, table_name):
-        '''
-        '''
-        self._quit_init(force=False)
+        # check if experiment exists
+        if self.database.check_table_exist(name=table_name):
+            tk.messagebox.showinfo('Error', f'Experiment {table_name} already exists', parent=window)
+            return
 
+        # check if config is valid
+        try:
+            config = complete_config(config, check=True)
+        except Exception as e:
+            tk.messagebox.showinfo('Error', 'Invalid configurations: ' + str(e), parent=window)
+            return
+
+        # check if problem can be built
+        try:
+            problem = build_problem(config['problem']['name'])
+        except Exception as e:
+            tk.messagebox.showinfo('Error', 'Failed to build problem: ' + str(e), parent=window)
+            return
+
+        # check if initial samples to be loaded are valid
+        if 'init_sample_path' in config['experiment'] and config['experiment']['init_sample_path'] is not None:
+            try:
+                X_init, Y_init = load_provided_initial_samples(config['experiment']['init_sample_path'])
+                problem_cfg = problem.get_config()
+                n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
+                verify_provided_initial_samples(X_init, Y_init, n_var, n_obj)
+            except Exception as e:
+                tk.messagebox.showinfo('Error', 'Failed to load initial samples from file: ' + str(e), parent=window)
+                return
+
+        # success
+        return config
+
+    def init_config(self, table_name, config=None, window=None):
+        '''
+        '''
+        if window is None: window = self.root
+
+        # check if table exists
+        if config is None: # load experiment
+            config = self.database.query_config(table_name)
+            if config is None:
+                tk.messagebox.showinfo('Error', f'Database cannot find config of {table_name}, please recreate this experiment', parent=window)
+                return
+            table_exist = True
+        else: # create experiment
+            table_exist = False
+
+        # create database table
+        if not table_exist:
+            try:
+                self.database.create_table(table_name)
+            except Exception as e:
+                tk.messagebox.showinfo('Error', 'Failed to create database table: ' + str(e), parent=window)
+                return
+
+        # create agent and scheduler
+        agent = OptimizeAgent(self.database, table_name)
+        scheduler = OptimizeScheduler(agent)
+        try:
+            scheduler.set_config(config)
+        except Exception as e:
+            scheduler.stop_all()
+            self.database.remove_table(table_name)
+            tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
+            return
+
+        # set properties
         self.table_name = table_name
+        self.config = config
+        problem, self.true_pfront = build_problem(self.config['problem']['name'], get_pfront=True)
+        self.problem_cfg = problem.get_config()
+        self.problem_cfg.update(self.config['problem'])
+        self.agent = agent
+        self.scheduler = scheduler
 
+        # initialize window
+        self._quit_init(quit_db=False)
         self.root = tk.Tk()
         self.root.title(f'{TITLE}')
         self.root.protocol('WM_DELETE_WINDOW', self._quit)
+        self.root.iconphoto(True, tk.Image('photo', file=get_icon_path()))
 
-        self.refresh_rate = REFRESH_RATE # ms
-        self.config = None
-        self.problem_cfg = None
-        self.timestamp = None
-
-        self.agent = OptimizeAgent(self.database, self.table_name)
-        self.scheduler = OptimizeScheduler(self.agent)
-
-        self.true_pfront = None
-
-        self.n_sample = None
-        self.n_valid_sample = None
-
+        # initialize main GUI
         self.view = GUIView(self.root)
-        self.controller = {}
+        self.controller = {
+            'menu_export': MenuExportController(self),
+            'panel_info': PanelInfoController(self),
+            'panel_control': PanelControlController(self),
+            'panel_log': PanelLogController(self),
+            'viz_space': VizSpaceController(self),
+            'viz_stats': VizStatsController(self),
+            'viz_database': VizDatabaseController(self),
+        }
+        self.view.menu_export.entryconfig(0, command=self.controller['menu_export'].export_db)
+        self.view.menu_export.entryconfig(1, command=self.controller['menu_export'].export_stats)
+        self.view.menu_export.entryconfig(2, command=self.controller['menu_export'].export_figures)
 
-        self._init_menu()
-        self._init_panel()
-        config = self.database.query_config(self.table_name)
-        if config is not None:
-            self.set_config(config)
+        # initialize GUI params
+        self.controller['panel_info'].set_info(self.problem_cfg)
+        if not self.agent.can_eval:
+            entry_mode = self.controller['panel_control'].view.widget['mode']
+            entry_mode.widget['Auto'].config(state=tk.DISABLED)
+        entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
+        entry_batch_size.set(self.config['experiment']['batch_size'])
 
+        # trigger periodic refresh
+        self.root.after(self.refresh_rate, self.refresh)
+        center(self.root)
         self.root.mainloop()
-    
-    def _init_menu(self):
-        '''
-        Menu initialization
-        '''
-        self.controller['menu_config'] = MenuConfigController(self)
-        self.view.menu_config.entryconfig(0, command=self.controller['menu_config'].load_config_from_file)
-        self.view.menu_config.entryconfig(1, command=self.controller['menu_config'].create_config)
-        self.view.menu_config.entryconfig(2, command=self.controller['menu_config'].change_config, state=tk.DISABLED)
 
-        self.controller['menu_problem'] = MenuProblemController(self)
-        self.view.menu_problem.entryconfig(0, command=self.controller['menu_problem'].manage_problem)
-
-        self.controller['menu_eval'] = MenuEvalController(self)
-        self.view.menu_eval.entryconfig(0, command=self.controller['menu_eval'].start_eval, state=tk.DISABLED)
-        self.view.menu_eval.entryconfig(1, command=self.controller['menu_eval'].stop_eval, state=tk.DISABLED)
-
-        self.controller['menu_export'] = MenuExportController(self)
-        self.view.menu_export.entryconfig(0, command=self.controller['menu_export'].export_db, state=tk.DISABLED)
-        self.view.menu_export.entryconfig(1, command=self.controller['menu_export'].export_stats, state=tk.DISABLED)
-        self.view.menu_export.entryconfig(2, command=self.controller['menu_export'].export_figures, state=tk.DISABLED)
-
-    def _init_panel(self):
-        '''
-        Panel initialization
-        '''
-        self.controller['panel_info'] = PanelInfoController(self)
-        self.controller['panel_control'] = PanelControlController(self)
-        self.controller['panel_log'] = PanelLogController(self)
-
-    def _init_visualization(self):
-        '''
-        Visualization initialization
-        '''
-        self.controller['viz_space'] = VizSpaceController(self)
-        self.controller['viz_stats'] = VizStatsController(self)
-        self.controller['viz_database'] = VizDatabaseController(self)
-        self.view.activate_viz()
-
-    def _load_existing_data(self):
+    def set_config(self, config):
         '''
         '''
-        # load table data
-        self.controller['viz_database'].update_data()
-
-        # load viz status
-        self.controller['viz_space'].redraw_performance_space(reset_scaler=True)
-        self.controller['viz_stats'].redraw()
+        try:
+            self.scheduler.set_config(config)
+        except Exception as e:
+            self.scheduler.stop_all()
+            tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=self.root)
+            return
+        self.config = config
 
     def get_config(self):
-        return self.agent.get_config()
+        if self.config is None:
+            return None
+        else:
+            return self.config.copy()
 
     def get_problem_cfg(self):
         if self.problem_cfg is None:
             return None
         else:
             return self.problem_cfg.copy()
-
-    def set_config(self, config, window=None):
-        '''
-        Setting configurations
-        '''
-        # set parent window for displaying potential error messagebox
-        if window is None: window = self.root
-
-        try:
-            config = complete_config(config, check=True)
-        except Exception as e:
-            tk.messagebox.showinfo('Error', 'Invalid configurations: ' + str(e), parent=window)
-            return False
-        
-        old_config = None if self.config is None else self.config.copy()
-
-        if self.config is None: # first time setting config
-            # initialize problem
-            try:
-                problem, self.true_pfront = build_problem(config['problem']['name'], get_pfront=True)
-            except Exception as e:
-                tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
-                return False
-
-            problem_cfg = problem.get_config()
-
-            # check if config is compatible with history data (problem dimension)
-            table_exist = self.agent.check_table_exist()
-
-            if table_exist:
-                problem_name_stored = self.agent.get_config()['problem']['name']
-                problem_cfg_stored = get_problem_config(problem_name_stored)
-                n_var, n_obj = problem_cfg_stored['n_var'], problem_cfg_stored['n_obj']
-                if problem_cfg['n_var'] != n_var or problem_cfg['n_obj'] != n_obj:
-                    tk.messagebox.showinfo('Error', 'Problem dimension mismatch between configuration and history data', parent=window)
-                    return False
-
-            # configure scheduler
-            try:
-                self.scheduler.set_config(config)
-            except Exception as e:
-                tk.messagebox.showinfo('Error', 'Invalid values in configuration: ' + str(e), parent=window)
-                return False
-
-            # update config
-            self.config = config
-            self.problem_cfg = problem.get_config()
-            self.problem_cfg.update(self.config['problem'])
-
-            # remove tutorial image
-            self.view.image_tutorial.destroy()
-
-            # set problem info
-            self.controller['panel_info'].set_info(self.problem_cfg)
-
-            # initialize visualization widgets
-            self._init_visualization()
-
-            # load existing data
-            if table_exist:
-                self._load_existing_data()
-            
-            # change menu button status
-            self.view.menu_config.entryconfig(0, state=tk.DISABLED)
-            self.view.menu_config.entryconfig(1, state=tk.DISABLED)
-            self.view.menu_config.entryconfig(2, state=tk.NORMAL)
-            for i in range(3):
-                self.view.menu_export.entryconfig(i, state=tk.NORMAL)
-            for i in range(2):
-                self.view.menu_eval.entryconfig(i, state=tk.NORMAL)
-
-            # activate widgets
-            entry_mode = self.controller['panel_control'].view.widget['mode']
-            entry_mode.enable()
-            if not self.agent.can_eval:
-                entry_mode.widget['Auto'].config(state=tk.DISABLED)
-
-            entry_batch_size = self.controller['panel_control'].view.widget['batch_size']
-            entry_batch_size.enable()
-            try:
-                entry_batch_size.set(self.config['experiment']['batch_size'])
-            except:
-                entry_batch_size.set(5)
-
-            self.controller['panel_log'].view.widget['clear'].enable()
-
-            # trigger periodic refresh
-            self.root.after(self.refresh_rate, self.refresh)
-
-        else: # user changed config in the middle
-            try:
-                assert self.config['problem']['name'] == config['problem']['name']
-            except:
-                tk.messagebox.showinfo('Error', 'Cannot change problem', parent=window)
-                return False
-
-            self.config = config
-            self.scheduler.set_config(self.config)
-        
-        if self.config != old_config:
-            self.controller['viz_space'].set_config(self.config)
-
-        return True
 
     def get_timestamp(self):
         return self.timestamp
@@ -407,6 +327,15 @@ class GUIController:
         
         # trigger another refresh
         self.root.after(self.refresh_rate, self.refresh)
+
+    def _quit_init(self, quit_db=True):
+        '''
+        Quit handling for init window
+        '''
+        self.root.quit()
+        self.root.destroy()
+        if quit_db:
+            self.database.quit()
         
     def _quit(self):
         '''
@@ -419,6 +348,3 @@ class GUIController:
 
         self.root.quit()
         self.root.destroy()
-
-    def run(self):
-        self.root_init.mainloop()

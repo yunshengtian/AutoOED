@@ -1,7 +1,7 @@
 from datetime import datetime
 import tkinter as tk
 
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure
 from autooed.system.gui.widgets.factory import create_widget
 
 
@@ -31,7 +31,6 @@ class PanelLogController:
         self.view = PanelLogView(self.root_view)
 
         self.view.widget['clear'].configure(command=self.clear_log)
-        self.view.widget['clear'].disable()
 
     def log(self, string):
         '''

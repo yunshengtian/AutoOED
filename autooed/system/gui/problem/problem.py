@@ -4,13 +4,13 @@ from autooed.problem import get_problem_list, get_yaml_problem_list
 from autooed.problem import load_yaml_problem, save_yaml_problem, remove_yaml_problem
 from autooed.problem.config import complete_config
 from autooed.system.gui.widgets.factory import create_widget
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure, center
 from autooed.system.gui.widgets.listbox import Listbox
 from autooed.system.gui.widgets.grouped import ProblemInfo
-from autooed.system.gui.menu.problem.update import UpdateProblemController
+from autooed.system.gui.problem.update import UpdateProblemController
 
 
-class MenuProblemModel:
+class ProblemModel:
 
     def load_problem(self, name):
         return load_yaml_problem(name)
@@ -22,17 +22,17 @@ class MenuProblemModel:
         return remove_yaml_problem(name)
 
 
-class MenuProblemView:
+class ProblemView:
 
     def __init__(self, root_view):
         self.root_view = root_view
-
-        self.window = create_widget('toplevel', master=self.root_view.root, title='Manage Problem')
+        self.master_window = self.root_view.root
+        self.window = create_widget('toplevel', master=self.master_window, title='Manage Problem')
         grid_configure(self.window, 0, 0)
 
         self.widget = {}
 
-        frame_list = create_widget('labeled_frame', master=self.window, row=0, column=0, text='Problem list')
+        frame_list = create_widget('labeled_frame', master=self.window, row=0, column=0, text='Problem List')
         frame_list_display = create_widget('frame', master=frame_list, row=0, column=0, sticky='N')
         frame_list_action = create_widget('frame', master=frame_list, row=1, column=0, padx=0, pady=0, sticky=None)
         frame_config = create_widget('frame', master=self.window, row=0, column=1, sticky=None, padx=0, pady=0)
@@ -51,6 +51,8 @@ class MenuProblemView:
 
         self.widget['update'].disable()
         self.widget['delete'].disable()
+
+        center(self.window, self.master_window)
 
     def set_problem_info(self, config):
         '''
@@ -71,19 +73,14 @@ class MenuProblemView:
         self.widget['info'].clear_info()
 
 
-class MenuProblemController:
+class ProblemController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
         self.root_view = self.root_controller.view
 
-        self.model = MenuProblemModel()
-        self.view = None
-
-    def manage_problem(self):
-        '''
-        '''
-        self.view = MenuProblemView(self.root_view)
+        self.model = ProblemModel()
+        self.view = ProblemView(self.root_view)
         
         self.view.widget['list'].bind_cmd(reload_cmd=get_yaml_problem_list, select_cmd=self.select_problem)
         self.view.widget['list'].reload()

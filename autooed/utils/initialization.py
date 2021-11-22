@@ -69,6 +69,20 @@ def load_provided_initial_samples(init_sample_path):
     return X, Y
 
 
+def verify_provided_initial_samples(X, Y, n_var, n_obj):
+    '''
+    '''
+    assert X.ndim == 2, 'initial designs need to have exactly two dimensions'
+    if Y is not None:
+        assert Y.ndim == 2, 'initial performance values need to have exactly two dimensions'
+        assert X.shape[0] == Y.shape[0], 'number of initial designs and performance values does not match'
+    assert X.shape[0] >= 2, 'need to have at least two initial designs' # TODO
+
+    assert X.shape[1] == n_var, 'dimension mismatch between problem and initial designs'
+    if Y is not None:
+        assert Y.shape[1] == n_obj, 'dimension mismatch between problem and initial performance values'
+
+
 def get_initial_samples(problem, n_random_sample=0, init_sample_path=None):
     '''
     Getting initial samples of the problem
@@ -92,6 +106,11 @@ def get_initial_samples(problem, n_random_sample=0, init_sample_path=None):
 
     if provided_init:
         X_init_provided, Y_init_provided = load_provided_initial_samples(init_sample_path)
+
+        problem_cfg = problem.get_config()
+        n_var, n_obj = problem_cfg['n_var'], problem_cfg['n_obj']
+        verify_provided_initial_samples(X_init_provided, Y_init_provided, n_var, n_obj)
+
         if Y_init_provided is None:
             if random_init:
                 X_init_unevaluated = np.vstack([X_init_unevaluated, X_init_provided])
@@ -100,5 +119,5 @@ def get_initial_samples(problem, n_random_sample=0, init_sample_path=None):
         else:
             X_init_evaluated = X_init_provided
             Y_init_evaluated = Y_init_provided
-    
+
     return X_init_evaluated, X_init_unevaluated, Y_init_evaluated

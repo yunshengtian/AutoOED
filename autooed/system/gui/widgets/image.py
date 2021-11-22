@@ -1,6 +1,6 @@
 import tkinter as tk
 from PIL import ImageTk, Image
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure
 
 
 class ImageFrame(tk.Frame):

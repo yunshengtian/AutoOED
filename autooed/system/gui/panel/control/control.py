@@ -3,7 +3,7 @@ import tkinter as tk
 from autooed.system.gui.panel.control.stop_criterion import StopCriterionController
 from autooed.system.gui.widgets.button import Button
 from autooed.system.gui.widgets.factory import create_widget
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure
 
 
 class PanelControlView:
@@ -12,19 +12,19 @@ class PanelControlView:
         self.root_view = root_view
 
         # control overall frame
-        frame_control = create_widget('labeled_frame', master=self.root_view.root, row=1, column=1, text='Control')
+        frame_control = create_widget('labeled_frame', master=self.root_view.root, row=1, column=1, text='Optimization')
         grid_configure(frame_control, 2, 0)
 
         self.widget = {}
         self.widget['mode'] = create_widget('radiobutton',
             master=frame_control, row=0, column=0, text_list=['Manual', 'Auto'], default='Manual')
-        self.widget['batch_size'] = create_widget('labeled_entry', 
-            master=frame_control, row=1, column=0, text='Batch size', class_type='int', required=True, required_mark=False)
+        self.widget['batch_size'] = create_widget('labeled_spinbox', 
+            master=frame_control, row=1, column=0, text='Batch size', from_=1, to=int(1e10), required=True, required_mark=False)
         
         frame_manual = create_widget('frame', master=frame_control, row=2, column=0, padx=0, pady=0)
         frame_auto = create_widget('frame', master=frame_control, row=2, column=0, padx=0, pady=0)
-        grid_configure(frame_manual, 0, 1)
-        grid_configure(frame_auto, 1, 1)
+        grid_configure(frame_manual, 0, 0)
+        grid_configure(frame_auto, 1, 0)
         frame_auto.grid_remove()
 
         def set_manual():
@@ -43,23 +43,21 @@ class PanelControlView:
             else:
                 raise Exception()
 
-        self.widget['set_stop_cri'] = create_widget('labeled_button', 
-            master=frame_auto, row=0, column=0, columnspan=2, label_text='Stopping criterion', button_text='Set', pady=5)
+        self.widget['set_stop_cri'] = create_widget('button', 
+            master=frame_auto, row=0, column=0, text='Set stopping criterion', pady=5)
+        self.widget['set_stop_cri'].disable()
 
-        for key in ['mode', 'batch_size', 'set_stop_cri']:
-            self.widget[key].disable()
+        # manual command
+        frame_manual_action = create_widget('frame', master=frame_manual, row=0, column=0, padx=0, pady=0, sticky='EW')
+        grid_configure(frame_manual_action, 0, 1)
+        self.widget['optimize_manual'] = create_widget('button', master=frame_manual_action, row=0, column=0, text='Optimize')
+        self.widget['stop_manual'] = create_widget('button', master=frame_manual_action, row=0, column=1, text='Stop')
 
-        # optimization command
-        self.widget['optimize_manual'] = create_widget('button', master=frame_manual, row=0, column=0, text='Optimize')
-        self.widget['optimize_manual'].disable()
-        self.widget['optimize_auto'] = create_widget('button', master=frame_auto, row=1, column=0, text='Optimize')
-        self.widget['optimize_auto'].disable()
-
-        # stop optimization command
-        self.widget['stop_manual'] = create_widget('button', master=frame_manual, row=0, column=1, text='Stop')
-        self.widget['stop_manual'].disable()
-        self.widget['stop_auto'] = create_widget('button', master=frame_auto, row=1, column=1, text='Stop')
-        self.widget['stop_auto'].disable()
+        # auto command
+        frame_auto_action = create_widget('frame', master=frame_auto, row=1, column=0, padx=0, pady=0, sticky='EW')
+        grid_configure(frame_auto_action, 0, 1)
+        self.widget['optimize_auto'] = create_widget('button', master=frame_auto_action, row=0, column=0, text='Optimize')
+        self.widget['stop_auto'] = create_widget('button', master=frame_auto_action, row=0, column=1, text='Stop')
 
 
 class PanelControlController:
@@ -74,10 +72,6 @@ class PanelControlController:
 
         self.view = PanelControlView(self.root_view)
 
-        self.view.widget['batch_size'].config(
-            valid_check=lambda x: x > 0, 
-            error_msg='batch size must be positive',
-        )
         self.view.widget['set_stop_cri'].configure(command=self.set_stop_criterion)
 
         self.view.widget['optimize_manual'].configure(command=self.optimize_manual)
@@ -85,11 +79,16 @@ class PanelControlController:
         self.view.widget['stop_manual'].configure(command=self.stop_manual)
         self.view.widget['stop_auto'].configure(command=self.stop_auto)
 
+        # self.view.widget['optimize_manual'].disable()
+        # self.view.widget['optimize_auto'].disable()
+        # self.view.widget['stop_manual'].disable()
+        # self.view.widget['stop_auto'].disable()
+
     def get_config(self):
         return self.root_controller.get_config()
 
-    def set_config(self, *args, **kwargs):
-        return self.root_controller.set_config(*args, **kwargs)
+    def set_config(self, config):
+        return self.root_controller.set_config(config)
 
     def get_timestamp(self):
         return self.root_controller.get_timestamp()
@@ -115,29 +114,25 @@ class PanelControlController:
         self.set_config(config)
 
     def enable_manual(self):
-        if self.root_view.menu_config.entrycget(2, 'state') != tk.NORMAL:
-            self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
+        # TODO: check!!!
         self.view.widget['mode'].enable('Manual')
         self.view.widget['optimize_manual'].enable()
         self.view.widget['stop_manual'].enable()
 
     def enable_auto(self):
-        if self.root_view.menu_config.entrycget(2, 'state') != tk.NORMAL:
-            self.root_view.menu_config.entryconfig(2, state=tk.NORMAL)
+        # TODO: check!!!
         self.view.widget['mode'].enable('Auto')
         self.view.widget['set_stop_cri'].enable()
         self.view.widget['optimize_auto'].enable()
         self.view.widget['stop_auto'].enable()
 
     def disable_manual(self):
-        if self.root_view.menu_config.entrycget(2, 'state') != tk.DISABLED:
-            self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
+        # TODO: check!!!
         self.view.widget['mode'].disable('Manual')
         self.view.widget['optimize_manual'].disable()
 
     def disable_auto(self):
-        if self.root_view.menu_config.entrycget(2, 'state') != tk.DISABLED:
-            self.root_view.menu_config.entryconfig(2, state=tk.DISABLED)
+        # TODO: check!!!
         self.view.widget['mode'].disable('Auto')
         self.view.widget['set_stop_cri'].disable()
         self.view.widget['optimize_auto'].disable()

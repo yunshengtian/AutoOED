@@ -1,67 +1,76 @@
 import os
 import tkinter as tk
+from tkinter import ttk
 from multiprocessing import cpu_count
 
 from autooed.problem import get_problem_config, get_problem_list
 from autooed.mobo import get_algorithm_list
 from autooed.mobo.hyperparams import get_hp_class_names, get_hp_class_by_name, get_hp_name_by_class
 
-from autooed.system.config import config_map, load_config
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.params import PADX
+from autooed.system.config import config_map, load_config, complete_config
+from autooed.system.gui.widgets.utils.layout import grid_configure, center
 from autooed.system.gui.widgets.factory import create_widget
-from autooed.system.gui.menu.config.hyperparam import HyperparamController
+from autooed.system.gui.experiment.hyperparam import HyperparamController
 
 
-class MenuConfigView:
+class ExpConfigView:
 
     def __init__(self, root_view, first_time):
+
         self.root_view = root_view
         self.first_time = first_time
 
-        title = 'Create Configurations' if self.first_time else 'Change Configurations'
-        self.window = create_widget('toplevel', master=self.root_view.root, title=title)
+        title = 'Create Experiment' if self.first_time else 'Update Experiment'
+        self.master_window = self.root_view.root
+        self.window = create_widget('toplevel', master=self.master_window, title=title)
 
+        self.frame = {}
         self.widget = {}
 
-        # parameter section
-        frame_param = tk.Frame(master=self.window)
-        frame_param.grid(row=0, column=0)
-        grid_configure(frame_param, 2, 0)
+        # experiment section
+        self.frame['exp'] = create_widget('frame', master=self.window, row=0, column=0, padx=2 * PADX)
+        grid_configure(self.frame['exp'], 0, 0)
+        self.widget['exp_name'] = create_widget('labeled_entry', master=self.frame['exp'], row=0, column=0,
+            text='Experiment name', class_type='string', width=10, required=True, 
+            valid_check=lambda x: not x.startswith('sqlite_'), error_msg='experiment name cannot start with sqlite_')
+        self.widget['cfg_input_type'] = create_widget('labeled_radiobutton',
+            master=self.frame['exp'], row=1, column=0, label_text='Create config by', button_text_list=['User interface', 'Loading from file'])
+
+        # enter config section
+        self.frame['enter'] = tk.Frame(master=self.window)
+        self.frame['enter'].grid(row=1, column=0, sticky='NSEW')
+        grid_configure(self.frame['enter'], 0, 0)
+
+        nb_cfg = ttk.Notebook(self.frame['enter'])
+        nb_cfg.grid(row=0, column=0, sticky='NSEW')
+        frame_problem = tk.Frame(master=nb_cfg)
+        frame_opt = tk.Frame(master=nb_cfg)
+        frame_eval = tk.Frame(master=nb_cfg)
+        grid_configure(frame_problem, 0, 0)
+        grid_configure(frame_opt, 0, 0)
+        grid_configure(frame_eval, 0, 0)
+        nb_cfg.add(child=frame_problem, text='Problem')
+        nb_cfg.add(child=frame_opt, text='Optimization')
+        nb_cfg.add(child=frame_eval, text='Evaluation')
 
         # problem subsection
-        frame_problem = create_widget('labeled_frame', master=frame_param, row=0, column=0, text='Problem')
-        grid_configure(frame_problem, 0, 0)
-
         self.widget['problem_name'] = create_widget('labeled_combobox', 
             master=frame_problem, row=0, column=0, text=config_map['problem']['name'], values=get_problem_list(), width=15, required=True)
 
-        # algorithm subsection
-        frame_algorithm = create_widget('labeled_frame', master=frame_param, row=1, column=0, text='Algorithm')
-        grid_configure(frame_algorithm, 0, 0)
-        self.widget['algo_name'] = create_widget('labeled_combobox', 
-            master=frame_algorithm, row=0, column=0, text=config_map['algorithm']['name'], values=get_algorithm_list(), required=True)
-        self.widget['n_process'] = create_widget('labeled_entry', 
-            master=frame_algorithm, row=1, column=0, text=config_map['algorithm']['n_process'], class_type='int', default=cpu_count(),
-            valid_check=lambda x: x > 0, error_msg='number of processes to use must be positive')
-        self.widget['async'] = create_widget('labeled_combobox',
-            master=frame_algorithm, row=2, column=0, text=config_map['algorithm']['async'], default='None',
-            values=get_hp_class_names('async'))
-        self.widget['set_advanced'] = create_widget('button', master=frame_algorithm, row=3, column=0, text='Advanced Settings', sticky=None)
-        
-        # initialization subsection
         if self.first_time:
-            frame_init = create_widget('labeled_frame', master=frame_param, row=2, column=0, text='Initialization')
-            grid_configure(frame_init, 1, 0)
 
-            self.widget['init_type'] = create_widget('radiobutton',
-                master=frame_init, row=0, column=0, text_list=['Random', 'Provided'], default='Random')
+            self.widget['init_type'] = create_widget('labeled_radiobutton',
+                master=frame_problem, row=1, column=0, label_text='Initialization', button_text_list=['Random', 'From file'], default='Random')
 
-            frame_random_init = create_widget('frame', master=frame_init, row=1, column=0, padx=0, pady=0)
-            frame_provided_init = create_widget('frame', master=frame_init, row=1, column=0, padx=0, pady=0)
+            frame_random_init = create_widget('frame', master=frame_problem, row=2, column=0, padx=0, pady=0)
+            frame_provided_init = create_widget('frame', master=frame_problem, row=2, column=0, padx=0, pady=0)
+            grid_configure(frame_random_init, 0, 0)
+            grid_configure(frame_provided_init, 0, 0)
 
-            self.widget['n_init'] = create_widget('labeled_entry', 
-                master=frame_random_init, row=0, column=0, text=config_map['experiment']['n_random_sample'], class_type='int', required=True,
-                valid_check=lambda x: x > 0, error_msg='number of random initial samples must be positive')
+            self.widget['n_init'] = create_widget('labeled_spinbox', 
+                master=frame_random_init, row=0, column=0, text=config_map['experiment']['n_random_sample'], 
+                from_=2, to=int(1e10), required=True)
 
             self.widget['set_x_init'], self.widget['disp_x_init'] = create_widget('labeled_button_entry',
                 master=frame_provided_init, row=0, column=0, label_text='Path of initial design variables', button_text='Browse', width=30, required=True,
@@ -81,25 +90,67 @@ class MenuConfigView:
             for text, button in self.widget['init_type'].widget.items():
                 if text == 'Random':
                     button.configure(command=set_random_init)
-                elif text == 'Provided':
+                elif text == 'From file':
                     button.configure(command=set_provided_init)
                 else:
                     raise NotImplementedError
 
             set_random_init()
 
+        # optimization subsection
+        self.widget['algo_name'] = create_widget('labeled_combobox', 
+            master=frame_opt, row=0, column=0, text=config_map['algorithm']['name'], values=get_algorithm_list(), required=True)
+        self.widget['n_process'] = create_widget('labeled_spinbox', 
+            master=frame_opt, row=1, column=0, text=config_map['algorithm']['n_process'], from_=1, to=int(1e10), default=cpu_count())
+        self.widget['async'] = create_widget('labeled_combobox',
+            master=frame_opt, row=2, column=0, text=config_map['algorithm']['async'], default='None',
+            values=get_hp_class_names('async'))
+        self.widget['set_advanced'] = create_widget('button', master=frame_opt, row=3, column=0, text='Advanced Settings', sticky=None)
+        
         # evaluation subsection
-        frame_experiment = create_widget('labeled_frame', master=frame_param, row=3 if self.first_time else 2, column=0, text='Experiment')
-        grid_configure(frame_experiment, 0, 0)
-        self.widget['n_worker'] = create_widget('labeled_entry',
-            master=frame_experiment, row=0, column=0, text=config_map['experiment']['n_worker'], class_type='int', default=1,
-            valid_check=lambda x: x > 0, error_msg='max number of evaluation workers must be positive')
+        self.widget['n_worker'] = create_widget('labeled_spinbox',
+            master=frame_eval, row=0, column=0, text=config_map['experiment']['n_worker'], from_=1, to=int(1e10))
+
+        # load config section
+        if self.first_time:
+            self.frame['load'] = create_widget('frame', master=self.window, row=1, column=0, padx=2 * PADX)
+            grid_configure(self.frame['load'], 0, 0)
+
+            self.widget['set_cfg_path'], self.widget['disp_cfg_path'] = create_widget('labeled_button_entry',
+                master=self.frame['load'], row=0, column=0, label_text='Path of config file', button_text='Browse', width=30, required=True,
+                valid_check=lambda x: os.path.exists(x), error_msg='config file does not exist')
+
+            def set_enter_input():
+                self.frame['load'].grid_remove()
+                self.frame['enter'].grid()
+                self.widget['save'].enable()
+                center(self.window, reset=True)
+
+            def set_load_input():
+                self.frame['enter'].grid_remove()
+                self.frame['load'].grid()
+                self.widget['save'].enable()
+                center(self.window, reset=True)
+
+            for text, button in self.widget['cfg_input_type'].widget.items():
+                if text == 'User interface':
+                    button.configure(command=set_enter_input)
+                elif text == 'Loading from file':
+                    button.configure(command=set_load_input)
+                else:
+                    raise NotImplementedError
 
         # action section
         frame_action = tk.Frame(master=self.window)
-        frame_action.grid(row=1, column=0, columnspan=3)
-        self.widget['save'] = create_widget('button', master=frame_action, row=0, column=0, text='Save')
+        frame_action.grid(row=2, column=0, columnspan=3)
+        save_text = 'Create' if self.first_time else 'Update'
+        self.widget['save'] = create_widget('button', master=frame_action, row=0, column=0, text=save_text)
         self.widget['cancel'] = create_widget('button', master=frame_action, row=0, column=1, text='Cancel')
+
+        self.frame['enter'].grid_remove()
+        self.frame['load'].grid_remove()
+        
+        center(self.window, self.master_window)
 
         self.cfg_widget = {
             'problem': {
@@ -116,7 +167,7 @@ class MenuConfigView:
         }
 
 
-class MenuConfigController:
+class ExpConfigController:
 
     def __init__(self, root_controller):
         self.root_controller = root_controller
@@ -134,29 +185,11 @@ class MenuConfigController:
     def get_config(self):
         return self.root_controller.get_config()
 
-    def set_config(self, *args, **kwargs):
-        return self.root_controller.set_config(*args, **kwargs)
-
-    def load_config_from_file(self):
-        '''
-        Load experiment configurations from file
-        '''
-        filename = tk.filedialog.askopenfilename(parent=self.root_view.root)
-        if not isinstance(filename, str) or filename == '': return
-
-        try:
-            config = load_config(filename)
-        except:
-            tk.messagebox.showinfo('Error', 'Invalid yaml file', parent=self.root_view.root)
-            return
-            
-        self.set_config(config)
-
     def build_config_window(self):
         '''
         Build configuration window (for create/change)
         '''
-        self.view = MenuConfigView(self.root_view, self.first_time)
+        self.view = ExpConfigView(self.root_view, self.first_time)
 
         self.view.widget['problem_name'].widget.bind('<<ComboboxSelected>>', self.select_problem)
 
@@ -164,6 +197,7 @@ class MenuConfigController:
         self.view.widget['set_advanced'].configure(command=self.set_algo_advanced)
 
         if self.first_time:
+            self.view.widget['set_cfg_path'].configure(command=self.load_config_from_file)
             self.view.widget['set_x_init'].configure(command=self.set_x_init)
             self.view.widget['set_y_init'].configure(command=self.set_y_init)
 
@@ -177,7 +211,9 @@ class MenuConfigController:
         # disable widgets
         if self.first_time:
             self.view.widget['set_advanced'].disable()
+            self.view.widget['save'].disable()
         else:
+            self.view.widget['exp_name'].disable()
             self.view.widget['problem_name'].disable()
 
     def create_config(self):
@@ -187,12 +223,20 @@ class MenuConfigController:
         self.first_time = True
         self.build_config_window()
 
-    def change_config(self):
+    def update_config(self):
         '''
-        Change experiment configurations
+        Update experiment configurations
         '''
         self.first_time = False
         self.build_config_window()
+
+    def load_config_from_file(self):
+        '''
+        Load experiment configurations From file
+        '''
+        filename = tk.filedialog.askopenfilename(parent=self.root_view.root)
+        if not isinstance(filename, str) or filename == '': return
+        self.view.widget['disp_cfg_path'].set(filename)
 
     def select_problem(self, event):
         '''
@@ -255,8 +299,35 @@ class MenuConfigController:
 
     def save_config(self):
         '''
-        Save specified configuration values
+        Save specified configuration values (TODO: clean)
         '''
+        if self.first_time:
+            try:
+                exp_name = self.view.widget['exp_name'].get()
+            except Exception as e:
+                tk.messagebox.showinfo('Error', e, parent=self.view.window)
+                return
+
+            cfg_input_type = self.view.widget['cfg_input_type'].get()
+
+            # if load config From file
+            if cfg_input_type == 'Loading from file':
+
+                filename = self.view.widget['disp_cfg_path'].get()
+                try:
+                    config = load_config(filename)
+                except Exception as e:
+                    tk.messagebox.showinfo('Error', 'Invalid yaml file: ' + str(e), parent=self.view.window)
+                    return
+
+                config = self.root_controller.verify_config(exp_name, config, self.view.window)
+                if config is not None:
+                    self.view.window.destroy()
+                    self.root_controller.init_config(exp_name, config)
+                else:
+                    return
+
+        # if enter config
         config = self.get_config()
         if config is None:
             config = {
@@ -276,7 +347,7 @@ class MenuConfigController:
                     tk.messagebox.showinfo('Error', e, parent=self.view.window)
                     return
 
-            elif init_type == 'Provided':
+            elif init_type == 'From file':
                 try:
                     x_init_path = self.view.widget['disp_x_init'].get()
                 except Exception as e:
@@ -295,7 +366,7 @@ class MenuConfigController:
                     config['experiment']['init_sample_path'] = [x_init_path, y_init_path]
 
             else:
-                raise Exception()
+                raise Exception(f'Invalid initialization type {init_type}')
 
         # set config values from widgets
         for cfg_type, val_map in self.view.cfg_widget.items():
@@ -313,6 +384,18 @@ class MenuConfigController:
         config['experiment'].update(self.exp_cfg)
         config['algorithm'].update(self.algo_cfg)
 
-        success = self.set_config(config, self.view.window)
-        if success:
+        if self.first_time: # init config
+            config = self.root_controller.verify_config(exp_name, config, window=self.view.window)
+            if config is not None:
+                self.view.window.destroy()
+                self.root_controller.init_config(exp_name, config)
+            else:
+                return
+        else: # update config
+            try:
+                config = complete_config(config, check=True)
+            except Exception as e:
+                tk.messagebox.showinfo('Error', 'Invalid configurations: ' + str(e), parent=self.view.window)
+                return
             self.view.window.destroy()
+            self.root_controller.set_config(config)

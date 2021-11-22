@@ -3,7 +3,7 @@ from tkinter import messagebox
 
 from autooed.problem.config import complete_config
 from autooed.system.gui.widgets.factory import create_widget
-from autooed.system.gui.widgets.utils.grid import grid_configure
+from autooed.system.gui.widgets.utils.layout import grid_configure, center
 from autooed.system.gui.widgets.listbox import Listbox
 from autooed.system.gui.widgets.excel import Excel
 
@@ -12,8 +12,8 @@ class UpdateProblemView:
     
     def __init__(self, root_view):
         self.root_view = root_view
-
-        self.window = create_widget('toplevel', master=self.root_view.window, title='Create Problem')
+        self.master_window = self.root_view.window
+        self.window = create_widget('toplevel', master=self.master_window, title='Create Problem')
         grid_configure(self.window, 0, 0)
 
         self.frame = {}
@@ -45,6 +45,8 @@ class UpdateProblemView:
         self.widget['back'] = create_widget('button', master=frame_control, row=0, column=1, text='Back', sticky='E')
         self.widget['next'] = create_widget('button', master=frame_control, row=0, column=2, text='Next', sticky='E')
         self.widget['finish'] = create_widget('button', master=frame_control, row=0, column=2, text='Finish', sticky='E')
+
+        center(self.window, self.master_window)
 
     def _try_get_val(self, widget, name):
         '''
@@ -340,8 +342,8 @@ class UpdateProblemView:
         frame_n_var = create_widget('frame', master=self.frame['design_unified'], row=0, column=0, padx=0, pady=0, sticky=None)
         frame_excel = create_widget('frame', master=self.frame['design_unified'], row=1, column=0)
 
-        self.widget['design_unified']['disp_n_var'] = create_widget('labeled_entry', master=frame_n_var, row=0, column=0, text='Number of variables',
-            class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number of variables must be greater than zero')
+        self.widget['design_unified']['disp_n_var'] = create_widget('labeled_spinbox', master=frame_n_var, row=0, column=0, text='Number of variables',
+            from_=1, to=int(1e10), required=True)
         self.widget['design_unified']['set_n_var'] = create_widget('button', master=frame_n_var, row=0, column=1, text='Set')
 
         def _set_n_var():
@@ -382,6 +384,8 @@ class UpdateProblemView:
             self.widget['design_unified']['excel'].set_column(0, [f'x{i}' for i in range(1, n_var + 1)])
             self.widget['next'].enable()
 
+            center(self.window, reset=True)
+
         self.widget['design_unified']['set_n_var'].configure(command=_set_n_var)
         self.widget['next'].disable()
 
@@ -417,8 +421,8 @@ class UpdateProblemView:
         frame_excel = create_widget('frame', master=self.frame['performance'], row=1, column=0)
         frame_obj_func = create_widget('frame', master=self.frame['performance'], row=2, column=0)
 
-        self.widget['performance']['disp_n_obj'] = create_widget('labeled_entry', master=frame_n_obj, row=0, column=0, text='Number of objectives',
-            class_type='int', required=True, valid_check=lambda x: x > 0, error_msg='number of objectives must be greater than zero')
+        self.widget['performance']['disp_n_obj'] = create_widget('labeled_spinbox', master=frame_n_obj, row=0, column=0, text='Number of objectives',
+            from_=1, to=int(1e10), required=True)
         self.widget['performance']['set_n_obj'] = create_widget('button', master=frame_n_obj, row=0, column=1, text='Set')
         self.widget['performance']['browse_obj_func'], self.widget['performance']['disp_obj_func'] = create_widget('labeled_button_entry',
             master=frame_obj_func, row=0, column=0, label_text='Path to objective function', button_text='Browse', width=30)
@@ -429,6 +433,9 @@ class UpdateProblemView:
             n_obj, success = self._try_get_val(self.widget['performance']['disp_n_obj'], 'Number of objectives')
             if not success: return
 
+            if 'excel' in self.widget['performance']:
+                self.widget['performance']['excel'].grid_remove()
+
             self.widget['performance']['excel'] = Excel(master=frame_excel, rows=n_obj, columns=2, width=15,
                 title=['Name', 'Type'], dtype=[str, str], required=[True, True], 
                 valid_check=[lambda x: not (x.startswith('_') or x.startswith('"')), lambda x: x in ['min', 'max']])
@@ -436,6 +443,8 @@ class UpdateProblemView:
             self.widget['performance']['excel'].set_column(0, [f'f{i}' for i in range(1, n_obj + 1)])
             self.widget['performance']['excel'].set_column(1, ['min'] * n_obj)
             self.widget['next'].enable()
+
+            center(self.window, reset=True)
 
         def _set_obj_func():
             '''
@@ -462,8 +471,8 @@ class UpdateProblemView:
     def create_constraint_widget(self):
         '''
         '''
-        self.widget['constraint']['n_constr'] = create_widget('labeled_entry', master=self.frame['constraint'], row=0, column=0, text='Number of constraints',
-            class_type='int', default=0, valid_check=lambda x: x >= 0, error_msg='number of constraints cannot be negative')
+        self.widget['constraint']['n_constr'] = create_widget('labeled_spinbox', master=self.frame['constraint'], row=0, column=0, text='Number of constraints',
+            from_=0, to=int(1e10))
         self.widget['constraint']['browse_constr_func'], self.widget['constraint']['disp_constr_func'] = create_widget('labeled_button_entry',
             master=self.frame['constraint'], row=1, column=0, label_text='Path to constraint function', button_text='Browse', width=30)
 
