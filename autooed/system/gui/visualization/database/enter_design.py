@@ -129,7 +129,6 @@ class EnterDesignController:
         '''
         n_row = self.view.widget['disp_n_row'].get()
         self.view.widget['design_excel'].update_n_row(n_row)
-        center(self.view.window, reset=True)
 
     def add_design(self):
         '''

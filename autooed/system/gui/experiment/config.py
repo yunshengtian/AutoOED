@@ -128,13 +128,11 @@ class ExpConfigView:
                 self.frame['load'].grid_remove()
                 self.frame['enter'].grid()
                 self.widget['save'].enable()
-                center(self.window, reset=True)
 
             def set_load_input():
                 self.frame['enter'].grid_remove()
                 self.frame['load'].grid()
                 self.widget['save'].enable()
-                center(self.window, reset=True)
 
             for text, button in self.widget['cfg_input_type'].widget.items():
                 if text == 'User interface':

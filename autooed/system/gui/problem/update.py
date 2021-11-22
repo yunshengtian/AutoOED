@@ -384,8 +384,6 @@ class UpdateProblemView:
             self.widget['design_unified']['excel'].set_column(0, [f'x{i}' for i in range(1, n_var + 1)])
             self.widget['next'].enable()
 
-            center(self.window, reset=True)
-
         self.widget['design_unified']['set_n_var'].configure(command=_set_n_var)
         self.widget['next'].disable()
 
@@ -443,8 +441,6 @@ class UpdateProblemView:
             self.widget['performance']['excel'].set_column(0, [f'f{i}' for i in range(1, n_obj + 1)])
             self.widget['performance']['excel'].set_column(1, ['min'] * n_obj)
             self.widget['next'].enable()
-
-            center(self.window, reset=True)
 
         def _set_obj_func():
             '''

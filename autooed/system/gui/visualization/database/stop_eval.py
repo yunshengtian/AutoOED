@@ -54,7 +54,6 @@ class StopEvalController:
         '''
         n_row = self.view.widget['disp_n_row'].get()
         self.view.widget['rowid_excel'].update_n_row(n_row)
-        center(self.view.window, reset=True)
 
     def stop_eval_worker(self):
         '''

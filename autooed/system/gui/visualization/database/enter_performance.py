@@ -60,7 +60,6 @@ class EnterPerformanceController:
         '''
         n_row = self.view.widget['disp_n_row'].get()
         self.view.widget['performance_excel'].update_n_row(n_row)
-        center(self.view.window, reset=True)
 
     def add_performance(self):
         '''

@@ -263,7 +263,7 @@ class GUIController:
 
         # trigger periodic refresh
         self.root.after(self.refresh_rate, self.refresh)
-        center(self.root)
+        # center(self.root)
         self.root.mainloop()
 
     def set_config(self, config):

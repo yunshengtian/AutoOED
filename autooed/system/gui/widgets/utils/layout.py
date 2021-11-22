@@ -21,25 +21,20 @@ def grid_configure(master, row_list=None, column_list=None, row_weights=None, co
             tk.Grid.columnconfigure(master, column, weight=column_weights[i])
 
 
-def center(window, master=None, reset=False):
+def center(window, master=None):
     '''
     Center a tkinter window
     '''
-    assert not (master is not None and reset)
     window.update_idletasks()
     width = window.winfo_width()
     height = window.winfo_height()
-    if master is None:
-        if reset: # self center
-            x = window.winfo_x() + window.winfo_width() // 2 - width // 2
-            y = window.winfo_y() + window.winfo_height() // 2 - height // 2
-        else: # screen center
-            frm_width = window.winfo_rootx() - window.winfo_x()
-            titlebar_height = window.winfo_rooty() - window.winfo_y()
-            win_width = width + 2 * frm_width
-            win_height = height + titlebar_height + frm_width
-            x = window.winfo_screenwidth() // 2 - win_width // 2
-            y = window.winfo_screenheight() // 2 - win_height // 2
+    if master is None: # screen center
+        frm_width = window.winfo_rootx() - window.winfo_x()
+        titlebar_height = window.winfo_rooty() - window.winfo_y()
+        win_width = width + 2 * frm_width
+        win_height = height + titlebar_height + frm_width
+        x = window.winfo_screenwidth() // 2 - win_width // 2
+        y = window.winfo_screenheight() // 2 - win_height // 2
     else: # master center
         x = master.winfo_x() + master.winfo_width() // 2 - width // 2
         y = master.winfo_y() + master.winfo_height() // 2 - height // 2
