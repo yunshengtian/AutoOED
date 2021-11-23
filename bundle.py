@@ -125,9 +125,9 @@ def main():
 
     if args.zip:
         if system == 'Darwin':
-            os.system(f"cd {dist_dir} && zip -r {os.path.join('..', 'AutoOED')}.zip ./AutoOED.app")
+            os.system(f"cd {dist_dir} && zip -r {os.path.join('..', 'AutoOED_MacOS')}.zip ./AutoOED.app")
         else:
-            shutil.make_archive(os.path.join(base_dir, 'AutoOED'), 'zip', root_dir=dist_dir, base_dir='AutoOED')
+            shutil.make_archive(os.path.join(base_dir, f'AutoOED_{system}'), 'zip', root_dir=dist_dir, base_dir=f'AutoOED_{get_version()}')
 
 
 if __name__ == '__main__':
