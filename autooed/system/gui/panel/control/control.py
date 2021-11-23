@@ -44,7 +44,7 @@ class PanelControlView:
                 raise Exception()
 
         self.widget['set_stop_cri'] = create_widget('button', 
-            master=frame_auto, row=0, column=0, text='Set stopping criterion', pady=5)
+            master=frame_auto, row=0, column=0, text='Set Stopping Criterion', pady=5, sticky='EW')
         self.widget['set_stop_cri'].disable()
 
         # manual command

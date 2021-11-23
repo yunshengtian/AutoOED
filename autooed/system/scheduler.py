@@ -472,6 +472,8 @@ class OptimizeScheduler:
                 batch_size = self.config['experiment']['batch_size'] - n_running_eval_workers - self.n_optimizing_sample
                 if batch_size > 0:
                     self._optimize(batch_size=batch_size)
+                elif batch_size == 0:
+                    pass
                 else:
                     raise Exception('number of running evaluation workers exceeds the maximum set')
             else:
