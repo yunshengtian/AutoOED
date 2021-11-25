@@ -448,6 +448,7 @@ class UpdateProblemView:
             filename = tk.filedialog.askopenfilename(parent=self.window)
             if not isinstance(filename, str) or filename == '': return
             self.widget['performance']['disp_obj_func'].set(filename)
+            self.widget['performance']['disp_obj_func'].widget.xview_moveto(1)
 
         self.widget['performance']['set_n_obj'].configure(command=_set_n_obj)
         self.widget['performance']['browse_obj_func'].configure(command=_set_obj_func)
@@ -478,6 +479,7 @@ class UpdateProblemView:
             filename = tk.filedialog.askopenfilename(parent=self.window)
             if not isinstance(filename, str) or filename == '': return
             self.widget['constraint']['disp_constr_func'].set(filename)
+            self.widget['constraint']['disp_constr_func'].widget.xview_moveto(1)
 
         self.widget['constraint']['browse_constr_func'].configure(command=_set_constr_func)
 

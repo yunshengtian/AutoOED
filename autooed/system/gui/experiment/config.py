@@ -238,6 +238,7 @@ class ExpConfigController:
         filename = tk.filedialog.askopenfilename(parent=self.root_view.root)
         if not isinstance(filename, str) or filename == '': return
         self.view.widget['disp_cfg_path'].set(filename)
+        self.view.widget['disp_cfg_path'].widget.xview_moveto(1)
 
     def select_problem(self, event):
         '''
@@ -257,6 +258,7 @@ class ExpConfigController:
         filename = tk.filedialog.askopenfilename(parent=self.view.window)
         if not isinstance(filename, str) or filename == '': return
         self.view.widget['disp_x_init'].set(filename)
+        self.view.widget['disp_x_init'].widget.xview_moveto(1)
 
     def set_y_init(self):
         '''
@@ -265,6 +267,7 @@ class ExpConfigController:
         filename = tk.filedialog.askopenfilename(parent=self.view.window)
         if not isinstance(filename, str) or filename == '': return
         self.view.widget['disp_y_init'].set(filename)
+        self.view.widget['disp_y_init'].widget.xview_moveto(1)
 
     def select_algorithm(self, event):
         '''
