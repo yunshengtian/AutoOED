@@ -64,3 +64,28 @@ python run_gui.py
 ```
 
 For more detailed usage and information of AutoOED, please checkout our documentation.
+
+## Citation
+
+If you find our work helpful to your research, please consider citing our [paper](https://arxiv.org/abs/2104.05959).
+
+```
+@misc{tian2021autooed,
+    title={AutoOED: Automated Optimal Experiment Design Platform},
+    author={Yunsheng Tian and Mina Konaković Luković and Timothy Erps and Michael Foshey and Wojciech Matusik},
+    year={2021},
+    eprint={2104.05959},
+    archivePrefix={arXiv},
+    primaryClass={cs.AI}
+}
+```
+
+## Contributing
+
+We highly welcome all kinds of contributions, including but not limited to bug fixes, new feature suggestions, more intuitive error messages, and so on.
+
+Especially, [the algorithmic part](https://github.com/yunshengtian/AutoOED/tree/master/algorithm/mobo) of our code repository is written in a clean and modular way, facilitating extensions and tailoring the code, serving as a testbed for machine learning researchers to easily develop and evaluate their own multi-objective Bayesian optimization algorithms. We are looking forward to supporting more powerful optimization algorithms on our platform.
+
+## Contact
+
+If you experience any issues during installing or using the software, or if you want to contribute to AutoOED, please feel free to reach out to us either by creating issues on GitHub or sending emails to autooed@csail.mit.edu.
