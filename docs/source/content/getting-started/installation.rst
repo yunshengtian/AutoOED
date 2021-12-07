@@ -2,8 +2,32 @@
 Installation
 ------------
 
-AutoOED can be installed either directly from the links to the executable files, or from the source code.
-For source code installation, please follow the instructions in README.
+AutoOED can be installed either directly from the links to the executable files, or from source code.
+Source code is the most up-to-date version, while executable files are relatively stable.
+
+
+Executable File
+---------------
+
+.. _Windows: https://drive.google.com/file/d/1bAPK3HPPxwXy1k-epYXmL5HgW7KkJigi/view
+.. _MacOS: https://drive.google.com/file/d/1-XkUYi9M21gZ5bpsYAVbINJoYC7THu_U/view
+.. _Linux: https://drive.google.com/file/d/1fOF636a4fsKXBT3mZzjxh7lhghMc2jX5/view
+
++--------------------+------------------------------------------------------------+
+| Installation Link  | Instructions                                               |
++====================+============================================================+
+| `Windows`_         | Install using AutoOED-Setup.exe                            |
++--------------------+------------------------------------------------------------+
+| `MacOS`_           | Install using AutoOED.dmg                                  |
++--------------------+------------------------------------------------------------+
+| `Linux`_           | Unzip and directly run AutoOED_{version}/AutoOED_{version} |
++--------------------+------------------------------------------------------------+
+
+
+Source Code
+-----------
+
+Clone the github repository at https://github.com/yunshengtian/AutoOED, then follow the instructions in README to install.
 
 
 Extra Steps for Custom Evaluation Programs
