@@ -4,7 +4,9 @@
 
 **AutoOED: Automated Optimal Experimental Design Platform**
 
-AutoOED is an optimal experimental design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated. 
+**[Paper (outdated)](https://arxiv.org/abs/2104.05959) | [Website](https://autooed.org) | [Documentation (outdated)](https://autooed.readthedocs.io) | [Contact](mailto:autooed@csail.mit.edu)**
+
+AutoOED is an optimal experimental design platform powered with automated machine learning to accelerate the discovery of optimal solutions. Our platform solves multi-objective optimization problems and automatically guides the design of experiment to be evaluated.
 
 ## Overview
 
@@ -21,9 +23,12 @@ One of the most important features of AutoOED is an intuitive graphical user int
 
 AutoOED can be installed either directly from the links to the executable files, or from source code. AutoOED generally works across all Windows/MacOS/Linux operating systems. After installation, there are some extra steps to take if you want to link your own evaluation programs to AutoOED for fully automatic experimentation.
 
+
 ### Executable files
 
-Instructions and links are coming soon.
+[**Windows**](https://drive.google.com/file/d/1bAPK3HPPxwXy1k-epYXmL5HgW7KkJigi/view) (Install using AutoOED-Setup.exe)
+[**MacOS**](https://drive.google.com/file/d/1-XkUYi9M21gZ5bpsYAVbINJoYC7THu_U/view) (Install using AutoOED.dmg)
+[**Linux**](https://drive.google.com/file/d/1fOF636a4fsKXBT3mZzjxh7lhghMc2jX5/view) (Unzip and find the executable at AutoOED_0.2.0/AutoOED_0.2.0)
 
 ### Source code
 
