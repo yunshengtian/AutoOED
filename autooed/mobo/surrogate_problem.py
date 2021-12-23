@@ -47,12 +47,6 @@ class SurrogateProblem(Problem):
         # evaluate F, dF, hF by acquisition function
         out['F'], out['dF'], out['hF'] = self.acquisition.evaluate(X, dtype='continuous', gradient=gradient, hessian=hessian)
         
-        # multiply a +1/-1 factor for converting maximization to minimization
-        factor = 2 * (np.array(self.problem.obj_type) == 'min') - 1
-        if out['F'] is not None: out['F'] *= factor
-        if out['dF'] is not None: out['dF'] *= factor.reshape(1, -1, 1)
-        if out['hF'] is not None: out['hF'] *= factor.reshape(1, -1, 1, 1)
-        
         # evaluate cheap constraints by real problem
         X_raw = self.transformation.undo(X)
         out['G'] = np.array([self.problem.evaluate_constraint(x_raw) for x_raw in X_raw])
