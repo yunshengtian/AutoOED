@@ -11,7 +11,7 @@ Executable File
 
 .. _Windows: https://drive.google.com/file/d/1bAPK3HPPxwXy1k-epYXmL5HgW7KkJigi/view
 .. _MacOS: https://drive.google.com/file/d/1-XkUYi9M21gZ5bpsYAVbINJoYC7THu_U/view
-.. _Linux: https://drive.google.com/file/d/1fOF636a4fsKXBT3mZzjxh7lhghMc2jX5/view
+.. _Linux: https://drive.google.com/file/d/1VUxXQrjC16_S2IzWJex4lSkYhIxGBAly/view
 
 +--------------------+------------------------------------------------------------+
 | Installation Link  | Instructions                                               |
