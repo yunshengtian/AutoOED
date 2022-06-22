@@ -13,6 +13,7 @@ class PenalizedAcquisition(Acquisition):
     def __init__(self, base_acq):
         self.base_acq = base_acq
         self.X_busy = None
+        self.transformation = self.base_acq.transformation
 
     def fit(self, X, Y, X_busy=None, dtype='raw'):
         '''
@@ -36,6 +37,10 @@ class PenalizedAcquisition(Acquisition):
 
         self.X_busy = X_busy
         self._fit(X, Y)
+
+    @property
+    def fitted(self):
+        return self.base_acq.fitted
 
     def evaluate(self, X, dtype='raw', gradient=False, hessian=False):
         '''
@@ -167,7 +172,7 @@ class LocalPenalization(PenalizedAcquisition):
         space. This way gradients can be computed additively and are more
         stable.
         '''
-        F, dF, hF = self.base_acq.evaluate(X, gradient, hessian)
+        F, dF, hF = self.base_acq.evaluate(X, dtype='continuous', gradient=gradient, hessian=hessian)
 
         F = np.log1p(np.exp(-F)) # softplus transform
         F = -np.exp(np.log(F) + hammer_function(X, self.X_busy, self.R, self.S))
@@ -200,7 +205,7 @@ class HardLocalPenalization(PenalizedAcquisition):
         self.S = Y_busy_std / L
 
     def _evaluate(self, X, gradient, hessian):
-        F, dF, hF = self.base_acq.evaluate(X, gradient, hessian)
+        F, dF, hF = self.base_acq.evaluate(X, dtype='continuous', gradient=gradient, hessian=hessian)
 
         F = np.log1p(np.exp(-F)) # softplus transform
 

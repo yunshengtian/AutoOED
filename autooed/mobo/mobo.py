@@ -118,7 +118,7 @@ class MOBO:
         Asynchronous optimization.
         '''
         # fit surrogate models and acquisition functions based on the asynchronous strategy
-        X, Y, acquisition = self.async_strategy.fit(X, Y, X_busy, batch_size)
+        X, Y, acquisition = self.async_strategy.fit(X, Y, X_busy)
 
         # solve surrogate problem
         X_candidate, Y_candidate = self.solver.solve(X, Y, batch_size, acquisition)
