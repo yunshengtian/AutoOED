@@ -154,6 +154,9 @@ def estimate_local_lipschitz_constant(surrogate_model, X_busy, n_sample=500):
     return L
 
 
+def softplus(x): return np.log1p(np.exp(-np.abs(x))) + np.maximum(x, 0)
+
+
 class LocalPenalization(PenalizedAcquisition):
     '''
     Local Penalization.
@@ -174,7 +177,8 @@ class LocalPenalization(PenalizedAcquisition):
         '''
         F, dF, hF = self.base_acq.evaluate(X, dtype='continuous', gradient=gradient, hessian=hessian)
 
-        F = np.log1p(np.exp(-F)) # softplus transform
+        # F = np.log1p(np.exp(-F)) # softplus transform
+        F = softplus(-F)
         F = -np.exp(np.log(F) + hammer_function(X, self.X_busy, self.R, self.S))
 
         if gradient or hessian:
