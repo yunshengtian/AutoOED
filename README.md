@@ -32,7 +32,7 @@ AutoOED can be installed either directly from the links to the executable files,
 
 [**MacOS**](https://drive.google.com/file/d/1-XkUYi9M21gZ5bpsYAVbINJoYC7THu_U/view) (Install using AutoOED.dmg)
 
-[**Linux**](https://drive.google.com/file/d/1fOF636a4fsKXBT3mZzjxh7lhghMc2jX5/view) (Unzip and find the executable at AutoOED_{version}/AutoOED_{version})
+[**Linux**](https://drive.google.com/file/d/1VUxXQrjC16_S2IzWJex4lSkYhIxGBAly/view) (Unzip and find the executable at AutoOED_{version}/AutoOED_{version})
 
 
 ### Source code
