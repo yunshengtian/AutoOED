@@ -97,7 +97,7 @@ class Problem(PymooProblem):
         else:
             G = [self.evaluate_constraint(x_) for x_ in x]
             assert None not in G, 'constraint evaluation function is invalid'
-            CV = Problem.calc_constraint_violation(np.column_stack(np.atleast_2d(G)))
+            CV = Problem.calc_constraint_violation(np.atleast_2d(G))
         feasible = (CV <= 0).flatten()
         return feasible
 
